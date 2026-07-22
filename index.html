@@ -141,6 +141,119 @@
       padding: 1.5rem 1.75rem;
       margin: 0 0 3rem;
     }
+
+    /* === Volumes Nav === */
+    .vols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 0 0 3rem;
+    }
+    .vol-card {
+      display: block;
+      background: var(--bg3);
+      border: 1px solid var(--rule);
+      border-top: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      text-decoration: none;
+      color: var(--ink);
+      transition: transform .18s, box-shadow .18s, border-color .18s;
+    }
+    .vol-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+      border-top-color: var(--accent2);
+    }
+    .vol-card.placeholder-vol {
+      border-top-color: var(--muted);
+      background: repeating-linear-gradient(
+        45deg,
+        var(--bg3),
+        var(--bg3) 10px,
+        rgba(226,220,207,.35) 10px,
+        rgba(226,220,207,.35) 20px
+      );
+      cursor: default;
+    }
+    .vol-card.placeholder-vol:hover { transform: none; box-shadow: none; }
+    .vol-card .vol-num {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      margin-bottom: 0.4rem;
+    }
+    .vol-card.placeholder-vol .vol-num { color: var(--muted); }
+    .vol-card .vol-name {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.2rem;
+      letter-spacing: 0.08em;
+    }
+    .vol-card.placeholder-vol .vol-name {
+      color: var(--muted);
+      font-style: italic;
+    }
+    .vol-card .vol-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-style: italic;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.5rem;
+    }
+    .vol-card .vol-tag {
+      font-family: var(--font-mono);
+      display: inline-block;
+      font-size: 0.7rem;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 8px;
+      border-radius: 3px;
+      letter-spacing: 0.1em;
+    }
+    .vol-card.placeholder-vol .vol-tag { color: var(--muted); background: var(--bg2); }
+
+    /* === Volume Section === */
+    section.volume {
+      margin-top: 4rem;
+      scroll-margin-top: 1rem;
+    }
+    .volume-cover {
+      text-align: center;
+      padding: 2.5rem 1rem 2rem;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 2.5rem;
+      background: linear-gradient(180deg, transparent 0%, var(--accent-soft) 100%);
+    }
+    .volume-cover .vol-brand {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .volume-cover .vol-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--ink);
+      margin: 0 0 0.5rem;
+      border: none;
+      padding: 0;
+    }
+    .volume-cover .vol-tagline {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 1rem;
+      color: var(--ink-soft);
+      letter-spacing: 0.05em;
+    }
     .toc-title {
       font-family: var(--font-mono);
       font-size: 0.7rem;
@@ -755,12 +868,42 @@
     <!-- ======= Cover ======= -->
     <header class="cover">
       <div class="brand">Xue Hai Wu Ya · 学 · 海 · 无 · 涯</div>
-      <h1>学海无涯<span class="sep">·</span>网络篇</h1>
-      <div class="subtitle">从零开始，一览网络世界的骨骼与经络</div>
+      <h1>学 海 无 涯</h1>
+      <div class="subtitle">一份属于自己的知识合集，随时可读、随处可读</div>
       <div class="meta">
-        <span>Vol. 01</span><span>·</span><span>Networking Fundamentals</span><span>·</span><span>2026</span>
+        <span>2026</span><span>·</span><span>持续增补</span><span>·</span><span>xuehai-wuya.pages.dev</span>
       </div>
     </header>
+
+    <!-- ======= Volumes Nav ======= -->
+    <nav class="vols" aria-label="篇目导航">
+      <a class="vol-card active" href="#vol-network">
+        <div class="vol-num">Vol. 01</div>
+        <div class="vol-name">网络篇</div>
+        <div class="vol-sub">Networking Fundamentals</div>
+        <div class="vol-tag">16 章</div>
+      </a>
+      <a class="vol-card active" href="#vol-git">
+        <div class="vol-num">Vol. 02</div>
+        <div class="vol-name">Git 篇</div>
+        <div class="vol-sub">Version Control with Git</div>
+        <div class="vol-tag">10 章</div>
+      </a>
+      <div class="vol-card placeholder-vol">
+        <div class="vol-num">Vol. 03</div>
+        <div class="vol-name">未完待续</div>
+        <div class="vol-sub">Coming Soon</div>
+        <div class="vol-tag">—</div>
+      </div>
+    </nav>
+
+    <!-- ======= 篇一：网络篇 ======= -->
+    <section id="vol-network" class="volume">
+      <div class="volume-cover">
+        <div class="vol-brand">Volume · 01</div>
+        <h2 class="vol-title">网 络 篇</h2>
+        <div class="vol-tagline">从零开始，一览网络世界的骨骼与经络</div>
+      </div>
 
     <!-- ======= TOC ======= -->
     <nav class="toc" aria-label="目录">
@@ -1634,9 +1777,518 @@ Public  1.2.3.4:8080  →  Private  192.168.1.100:80</div>
       </div>
     </section>
 
+    </section><!-- /vol-network -->
+
+    <!-- ======= 篇二：Git 篇 ======= -->
+    <section id="vol-git" class="volume">
+      <div class="volume-cover">
+        <div class="vol-brand">Volume · 02</div>
+        <h2 class="vol-title">Git 篇</h2>
+        <div class="vol-tagline">用一部时间机器，管理你所有的代码与文字</div>
+      </div>
+
+      <!-- ======= TOC ======= -->
+      <nav class="toc" aria-label="Git 篇目录">
+        <div class="toc-title">目 录 · Table of Contents</div>
+        <div class="toc-part">卷一 · 入门篇 · The Beginning</div>
+        <ol>
+          <li><a href="#g-01">序章 · Git 是什么</a></li>
+          <li><a href="#g-02">概念地图 · 仓库、工作区、暂存区</a></li>
+          <li><a href="#g-03">初次上手 · 从零建立一个仓库</a></li>
+        </ol>
+        <div class="toc-part">卷二 · 日常篇 · Daily Workflow</div>
+        <ol start="4">
+          <li><a href="#g-04">日常命令 · 十条最常用</a></li>
+          <li><a href="#g-05">分支 · 平行世界的开关</a></li>
+          <li><a href="#g-06">合并与冲突 · 两条河汇入一条</a></li>
+          <li><a href="#g-07">远程 · 与 GitHub 对话</a></li>
+        </ol>
+        <div class="toc-part">卷三 · 进阶篇 · Deeper</div>
+        <ol start="8">
+          <li><a href="#g-08">时光机 · 回退、撤销与拯救</a></li>
+          <li><a href="#g-09">协作流 · PR、Fork 与团队工作流</a></li>
+          <li><a href="#g-10">锦囊 · 高频问答与私藏技巧</a></li>
+        </ol>
+      </nav>
+
+      <!-- ======= G-01 序章 ======= -->
+      <section class="chapter" id="g-01">
+        <div class="chapter-head">
+          <div class="num">CH · 01</div>
+          <h2>序章 · Git 是什么</h2>
+          <div class="cn">What is Git</div>
+        </div>
+
+        <p class="lead">
+          Git 是一部<mark class="key">时间机器</mark>，也是一份<mark class="key">分身术</mark>——它记住你每一次修改，让你可以随时回到过去；也让你同时活在多条时间线里，做完实验再决定要不要保留。
+        </p>
+
+        <h3>一句话理解</h3>
+        <p>Git 是一个<strong>分布式版本控制系统</strong>：它把你的整个项目历史存在一个 <code>.git</code> 文件夹里，让你可以查看、比较、回退任何一次改动。它由 Linux 之父 Linus Torvalds 于 2005 年为管理 Linux 内核而写。</p>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 譬喻</span>
+          <p>如果说"网盘"是保存最新一份文件，Git 就是<strong>保存所有版本的私人史官</strong>——从你项目诞生那一秒起的每一次改动都被记录，且可以用一条命令回到任意时刻。</p>
+        </div>
+
+        <h3>为什么要学 Git</h3>
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">01</div>
+            <h4>不再"final_v3_真的最终版"</h4>
+            <p>每一次改动自动有版本号，随时可回退，不再靠文件名区分。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">02</div>
+            <h4>多设备无缝同步</h4>
+            <p>推到 GitHub，家里公司随时接着写。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">03</div>
+            <h4>多人协作不打架</h4>
+            <p>用分支把每个人的改动隔离，最后再合并。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">04</div>
+            <h4>时光机自救</h4>
+            <p>"糟糕，代码删多了" —— 一条命令回到 30 分钟前。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======= G-02 概念地图 ======= -->
+      <section class="chapter" id="g-02">
+        <div class="chapter-head">
+          <div class="num">CH · 02</div>
+          <h2>概念地图 · 仓库、工作区、暂存区</h2>
+          <div class="cn">Core Concepts</div>
+        </div>
+
+        <p>入门 Git 最重要的一步：<strong>建立"三个区"的心智模型</strong>。所有 Git 命令都是在这三个区之间搬运东西。</p>
+
+        <h3>三个区 · The Three Trees</h3>
+        <ul class="keylist">
+          <li><span class="k">工作区</span><span class="v">Working Directory —— 你当前看得见、能编辑的文件夹</span></li>
+          <li><span class="k">暂存区</span><span class="v">Staging Area / Index —— 一个"待打包"的清单，决定这次提交带走哪些改动</span></li>
+          <li><span class="k">仓库</span><span class="v">Repository —— <code>.git</code> 文件夹，保存所有历史版本</span></li>
+        </ul>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 譬喻</span>
+          <p><strong>寄快递</strong>：工作区是你桌面上散落的东西；暂存区是你挑好、放进纸箱的东西；仓库是快递公司的档案库，收下后就永久登记。<br/><code>git add</code> = 把东西放进纸箱；<code>git commit</code> = 封箱送走。</p>
+        </div>
+
+        <h3>三条常用命令的定位</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>命令</th><th>做什么</th><th>影响哪个区</th></tr></thead>
+            <tbody>
+              <tr><td><code>git add 文件</code></td><td>把改动加入暂存区</td><td>工作区 → 暂存区</td></tr>
+              <tr><td><code>git commit -m "说明"</code></td><td>把暂存区打包为一次提交</td><td>暂存区 → 仓库</td></tr>
+              <tr><td><code>git checkout 文件</code></td><td>放弃工作区改动，回到上一版</td><td>仓库 → 工作区</td></tr>
+              <tr><td><code>git reset 文件</code></td><td>把改动从暂存区退回工作区</td><td>暂存区 → 工作区</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure class="chart-figure">
+          <figcaption>
+            三个区之间的流动 · Git 命令的搬运方向
+            <small>看懂这张图，Git 就入门一半</small>
+          </figcaption>
+          <div id="chart-git-areas" style="width:100%;min-height:340px"></div>
+        </figure>
+      </section>
+
+      <!-- ======= G-03 初次上手 ======= -->
+      <section class="chapter" id="g-03">
+        <div class="chapter-head">
+          <div class="num">CH · 03</div>
+          <h2>初次上手 · 从零建立一个仓库</h2>
+          <div class="cn">First Repo</div>
+        </div>
+
+        <p>你已经用 Git 部署过 <code>xuehai-wuya</code>，我们复盘一下每一步的意义。</p>
+
+        <h3>四步建立一个 Git 项目</h3>
+        <div class="journey">
+          <div class="step">
+            <h4>初始化仓库</h4>
+            <p>在项目文件夹里执行 <code>git init</code>——Git 会新建一个隐藏的 <code>.git</code> 目录，作为整个仓库的大脑。</p>
+          </div>
+          <div class="step">
+            <h4>配置身份</h4>
+            <p><code>git config user.name "你的名字"</code>、<code>git config user.email "你的邮箱"</code>——决定这次提交的作者是谁。</p>
+          </div>
+          <div class="step">
+            <h4>加入所有文件</h4>
+            <p><code>git add .</code>——把当前目录里的所有变化放入暂存区。</p>
+          </div>
+          <div class="step">
+            <h4>提交</h4>
+            <p><code>git commit -m "初次提交"</code>——把暂存区打包成一次带说明的历史记录。</p>
+          </div>
+        </div>
+
+        <h3>完整命令示例</h3>
+        <div class="cmd"><span class="prompt">PS&gt;</span> cd 'd:\我的项目'
+<span class="prompt">PS&gt;</span> git init
+<span class="prompt">PS&gt;</span> git config user.name "wang"
+<span class="prompt">PS&gt;</span> git config user.email "wang@example.com"
+<span class="prompt">PS&gt;</span> git add .
+<span class="prompt">PS&gt;</span> git commit -m "初次提交"</div>
+
+        <div class="callout">
+          <span class="tag">.gitignore</span>
+          <p>项目里总有一些"不想被跟踪"的文件（临时缓存、密码、大二进制）。在根目录建一个 <code>.gitignore</code> 文件，写上不想上传的内容，Git 就会自动忽略：</p>
+        </div>
+
+        <div class="cmd"><span class="comment"># .gitignore 示例</span>
+node_modules/
+*.log
+.env
+.DS_Store
+*.zip</div>
+      </section>
+
+      <!-- ======= G-04 日常命令 ======= -->
+      <section class="chapter" id="g-04">
+        <div class="chapter-head">
+          <div class="num">CH · 04</div>
+          <h2>日常命令 · 十条最常用</h2>
+          <div class="cn">Daily Commands</div>
+        </div>
+
+        <p>日常 95% 的 Git 使用，就是这十条命令的组合。背下它们，你就能自如工作。</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>命令</th><th>作用</th><th>使用频率</th></tr></thead>
+            <tbody>
+              <tr><td><code>git status</code></td><td>看当前哪些文件改动了、哪些进了暂存区</td><td>★★★★★</td></tr>
+              <tr><td><code>git add .</code></td><td>把所有改动加入暂存区</td><td>★★★★★</td></tr>
+              <tr><td><code>git commit -m "说明"</code></td><td>提交暂存区</td><td>★★★★★</td></tr>
+              <tr><td><code>git push</code></td><td>把提交推到远程（GitHub）</td><td>★★★★★</td></tr>
+              <tr><td><code>git pull</code></td><td>从远程拉取别人的更新</td><td>★★★★☆</td></tr>
+              <tr><td><code>git log</code></td><td>看历史记录</td><td>★★★★☆</td></tr>
+              <tr><td><code>git diff</code></td><td>看具体改动了什么</td><td>★★★☆☆</td></tr>
+              <tr><td><code>git branch</code></td><td>查看/新建分支</td><td>★★★★☆</td></tr>
+              <tr><td><code>git checkout / switch</code></td><td>切换分支</td><td>★★★★☆</td></tr>
+              <tr><td><code>git merge</code></td><td>合并另一条分支</td><td>★★★☆☆</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>典型的一天</h3>
+        <div class="cmd"><span class="prompt">PS&gt;</span> git status                <span class="comment"># 看看有什么变化</span>
+<span class="prompt">PS&gt;</span> git add .                  <span class="comment"># 全部纳入暂存</span>
+<span class="prompt">PS&gt;</span> git commit -m "新增登录页"  <span class="comment"># 提交</span>
+<span class="prompt">PS&gt;</span> git push                   <span class="comment"># 推到远程</span></div>
+
+        <div class="callout">
+          <span class="tag">Note · Commit 说明的写法</span>
+          <p>一条好的提交信息应该<strong>一句话说清"这次改了什么、为什么"</strong>。业界流行的规范叫 Conventional Commits：<code>feat: 新增登录功能</code>、<code>fix: 修复分页错误</code>、<code>docs: 更新 README</code>。</p>
+        </div>
+      </section>
+
+      <!-- ======= G-05 分支 ======= -->
+      <section class="chapter" id="g-05">
+        <div class="chapter-head">
+          <div class="num">CH · 05</div>
+          <h2>分支 · 平行世界的开关</h2>
+          <div class="cn">Branching</div>
+        </div>
+
+        <p class="lead">
+          分支（Branch）是 Git 最重要的特性：它让你可以在<mark class="key">不影响主线</mark>的前提下尝试任何改动。做完满意就合并，不满意就抛弃。
+        </p>
+
+        <h3>分支是什么</h3>
+        <p>分支不是"复制一份代码"，而是<strong>一个指向某次提交的可移动指针</strong>。默认分支叫 <code>main</code>（旧版叫 <code>master</code>）。</p>
+
+        <h3>分支常用命令</h3>
+        <ul class="keylist">
+          <li><span class="k">git branch</span><span class="v">列出所有本地分支，当前所在分支前面有 *</span></li>
+          <li><span class="k">git branch feat-login</span><span class="v">新建一个叫 feat-login 的分支</span></li>
+          <li><span class="k">git switch feat-login</span><span class="v">切换到该分支（新版命令）</span></li>
+          <li><span class="k">git switch -c feat-login</span><span class="v">一步到位：新建 + 切换</span></li>
+          <li><span class="k">git branch -d feat-login</span><span class="v">删除该分支（已合并的）</span></li>
+          <li><span class="k">git branch -D feat-login</span><span class="v">强制删除（未合并也删）</span></li>
+        </ul>
+
+        <h3>分支的典型工作流</h3>
+        <div class="journey">
+          <div class="step">
+            <h4>从 main 开一个新分支</h4>
+            <p><code>git switch -c feat-search</code>，开始搞"搜索功能"。</p>
+          </div>
+          <div class="step">
+            <h4>在分支上改代码、提交</h4>
+            <p>正常 <code>add</code> / <code>commit</code>，改坏也不影响 main。</p>
+          </div>
+          <div class="step">
+            <h4>切回 main</h4>
+            <p><code>git switch main</code>，此时你看到的代码回到未加搜索功能的状态。</p>
+          </div>
+          <div class="step">
+            <h4>合并 or 抛弃</h4>
+            <p>满意就 <code>git merge feat-search</code>；不满意就 <code>git branch -D feat-search</code>。</p>
+          </div>
+        </div>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 譬喻</span>
+          <p>分支像<strong>写小说时的多个存档</strong>：主线剧情一直存着，你另开一个 slot 尝试"如果主角选另一条路会怎样"。写不下去就删掉存档，写好了就把它并回主线。</p>
+        </div>
+      </section>
+
+      <!-- ======= G-06 合并与冲突 ======= -->
+      <section class="chapter" id="g-06">
+        <div class="chapter-head">
+          <div class="num">CH · 06</div>
+          <h2>合并与冲突 · 两条河汇入一条</h2>
+          <div class="cn">Merge &amp; Conflicts</div>
+        </div>
+
+        <h3>merge 与 rebase</h3>
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">merge</div>
+            <h4>合并式</h4>
+            <p>把两条分支的提交都保留下来，多一个"合并提交"节点。历史真实但可能显得杂乱。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">rebase</div>
+            <h4>变基式</h4>
+            <p>把你的提交"复制粘贴"到目标分支尾部，历史看起来是一条直线。整洁但改写了历史。</p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <span class="tag">建议</span>
+          <p>刚学 Git 时<strong>只用 merge</strong> 就够了，安全、直观。rebase 是熟练之后再学的进阶技巧。</p>
+        </div>
+
+        <h3>冲突长什么样</h3>
+        <p>当两条分支改了<strong>同一个文件的同一处</strong>，Git 无法自动判断该用谁的，就会产生冲突。文件里会出现这样的标记：</p>
+
+        <div class="cmd">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+我这边的版本
+=======
+另一分支的版本
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feat-search</div>
+
+        <h3>三步解冲突</h3>
+        <div class="journey">
+          <div class="step">
+            <h4>打开冲突文件</h4>
+            <p>手动决定保留哪一边（或两边都要），删掉那些 <code>&lt;&lt;&lt;</code>/<code>===</code>/<code>&gt;&gt;&gt;</code> 标记。</p>
+          </div>
+          <div class="step">
+            <h4>标记冲突已解决</h4>
+            <p><code>git add 文件</code></p>
+          </div>
+          <div class="step">
+            <h4>完成合并</h4>
+            <p><code>git commit</code>（无需 -m，Git 会自动写一条合并说明）</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======= G-07 远程 ======= -->
+      <section class="chapter" id="g-07">
+        <div class="chapter-head">
+          <div class="num">CH · 07</div>
+          <h2>远程 · 与 GitHub 对话</h2>
+          <div class="cn">Remotes</div>
+        </div>
+
+        <p>本地仓库和远程仓库（GitHub 上那份）通过"远程地址"关联。默认远程别名叫 <code>origin</code>。</p>
+
+        <h3>常用远程命令</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>命令</th><th>作用</th></tr></thead>
+            <tbody>
+              <tr><td><code>git remote -v</code></td><td>看已配置的远程地址</td></tr>
+              <tr><td><code>git remote add origin URL</code></td><td>添加一个叫 origin 的远程</td></tr>
+              <tr><td><code>git remote remove origin</code></td><td>移除远程</td></tr>
+              <tr><td><code>git push -u origin main</code></td><td>首次推送并绑定跟踪关系（-u 只需要一次）</td></tr>
+              <tr><td><code>git push</code></td><td>之后直接推</td></tr>
+              <tr><td><code>git pull</code></td><td>拉取并合并远程更新</td></tr>
+              <tr><td><code>git fetch</code></td><td>只拉取，不自动合并</td></tr>
+              <tr><td><code>git clone URL</code></td><td>克隆一个远程仓库到本地</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>HTTPS vs SSH</h3>
+        <ul class="keylist">
+          <li><span class="k">HTTPS</span><span class="v">形如 <code>https://github.com/xxx/yyy.git</code>，每次推送要密码/Token</span></li>
+          <li><span class="k">SSH</span><span class="v">形如 <code>git@github.com:xxx/yyy.git</code>，配好密钥后一劳永逸</span></li>
+        </ul>
+
+        <div class="callout">
+          <span class="tag">Token 认证</span>
+          <p>从 2021 年起 GitHub 不再支持密码登录，必须用 <strong>Personal Access Token（PAT）</strong>。在 <code>Settings → Developer settings → Personal access tokens</code> 里生成，第一次 push 弹窗时把它当密码填即可。Windows 会用凭据管理器帮你记住。</p>
+        </div>
+      </section>
+
+      <!-- ======= G-08 时光机 ======= -->
+      <section class="chapter" id="g-08">
+        <div class="chapter-head">
+          <div class="num">CH · 08</div>
+          <h2>时光机 · 回退、撤销与拯救</h2>
+          <div class="cn">Undo &amp; Recovery</div>
+        </div>
+
+        <p class="lead">
+          Git 最迷人的地方，是<mark class="key">几乎所有操作都可撤销</mark>。你以为删没了？只要提交过一次，就能捞回来。
+        </p>
+
+        <h3>不同场景对应不同"撤销"</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>情况</th><th>命令</th></tr></thead>
+            <tbody>
+              <tr><td>改错了，还没 add，想还原</td><td><code>git checkout -- 文件</code> 或 <code>git restore 文件</code></td></tr>
+              <tr><td>已经 add 了，想退回工作区</td><td><code>git reset HEAD 文件</code> 或 <code>git restore --staged 文件</code></td></tr>
+              <tr><td>已经 commit 了，想改上一条 commit 说明</td><td><code>git commit --amend -m "新说明"</code></td></tr>
+              <tr><td>想撤销最近一次 commit（保留改动）</td><td><code>git reset --soft HEAD~1</code></td></tr>
+              <tr><td>想彻底丢掉最近一次 commit</td><td><code>git reset --hard HEAD~1</code>（危险）</td></tr>
+              <tr><td>想不改历史、追加一条"反悔"commit</td><td><code>git revert 提交号</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <span class="tag">终极救命 · reflog</span>
+          <p>如果你误 reset --hard 把提交搞没了 —— 别慌！<code>git reflog</code> 会列出你所有"HEAD 曾经指向过的位置"，找到那个提交号，<code>git reset --hard 提交号</code> 就能救回。Git 通常要 30 天后才真正删除。</p>
+        </div>
+      </section>
+
+      <!-- ======= G-09 协作流 ======= -->
+      <section class="chapter" id="g-09">
+        <div class="chapter-head">
+          <div class="num">CH · 09</div>
+          <h2>协作流 · PR、Fork 与团队工作流</h2>
+          <div class="cn">Collaboration</div>
+        </div>
+
+        <h3>Pull Request（PR）· 请求合并</h3>
+        <p>在 GitHub 上，你不能直接把改动推到别人的仓库。<strong>标准动作</strong>是：</p>
+
+        <div class="journey">
+          <div class="step">
+            <h4>Fork</h4>
+            <p>在别人的仓库右上角点 Fork，得到一个属于你自己的副本。</p>
+          </div>
+          <div class="step">
+            <h4>Clone 你的 Fork</h4>
+            <p><code>git clone https://github.com/你/xxx.git</code>，本地开始改。</p>
+          </div>
+          <div class="step">
+            <h4>开分支 + 改 + 提交 + 推</h4>
+            <p>把改动推到你自己的 Fork。</p>
+          </div>
+          <div class="step">
+            <h4>发起 Pull Request</h4>
+            <p>在原仓库页面点 "New pull request"，说明你改了什么。等原作者审核合并。</p>
+          </div>
+        </div>
+
+        <h3>三种主流团队工作流</h3>
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">01</div>
+            <h4>Git Flow</h4>
+            <p>有 master / develop / feature / release / hotfix 多种分支。经典但重。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">02</div>
+            <h4>GitHub Flow</h4>
+            <p>只有 main + feature 分支。GitHub 官方推荐，轻量高效。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">03</div>
+            <h4>Trunk Based</h4>
+            <p>大家都往 main 提交，短命分支即开即合。Google、Facebook 在用。</p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <span class="tag">建议</span>
+          <p>小团队/个人项目 → GitHub Flow 就够了；大型持续发布产品 → Git Flow；追求速度的顶尖工程团队 → Trunk Based。</p>
+        </div>
+      </section>
+
+      <!-- ======= G-10 锦囊 ======= -->
+      <section class="chapter" id="g-10">
+        <div class="chapter-head">
+          <div class="num">CH · 10</div>
+          <h2>锦囊 · 高频问答与私藏技巧</h2>
+          <div class="cn">Tips &amp; Q&amp;A</div>
+        </div>
+
+        <h3>十个高频问答</h3>
+        <ul class="keylist">
+          <li><span class="k">Q · 忘了 -m 写说明？</span><span class="v">默认会弹出编辑器（vim/nano），按 <code>i</code> 编辑，写完 <code>Esc</code> → <code>:wq</code> 保存退出</span></li>
+          <li><span class="k">Q · 想少打 git status？</span><span class="v">配置别名：<code>git config --global alias.s status</code>，之后 <code>git s</code> 即可</span></li>
+          <li><span class="k">Q · 提交历史像坨面条？</span><span class="v"><code>git log --oneline --graph --all</code>，一览无余</span></li>
+          <li><span class="k">Q · 改动只想推一部分？</span><span class="v"><code>git add -p</code> 逐块选择要加什么</span></li>
+          <li><span class="k">Q · 临时切走但不想 commit？</span><span class="v"><code>git stash</code> 暂存，回来后 <code>git stash pop</code> 还原</span></li>
+          <li><span class="k">Q · 想看某文件的历史？</span><span class="v"><code>git log -p 文件名</code></span></li>
+          <li><span class="k">Q · 谁写的这一行代码？</span><span class="v"><code>git blame 文件</code></span></li>
+          <li><span class="k">Q · 想同步别人最新更新？</span><span class="v"><code>git pull --rebase</code>，比默认 pull 历史更整洁</span></li>
+          <li><span class="k">Q · 上传了敏感信息怎么办？</span><span class="v">立即改密码 + 用 <code>git filter-repo</code> 清历史 + 强推。血泪教训是永远不要直接推 <code>.env</code></span></li>
+          <li><span class="k">Q · GUI 工具推荐？</span><span class="v">VS Code 自带 Source Control 面板；进阶用 GitKraken、SourceTree、Fork</span></li>
+        </ul>
+
+        <h3>三条私藏技巧</h3>
+        <div class="callout analogy">
+          <span class="tag">Tip · 1</span>
+          <p><strong>写有意义的 commit 信息</strong>。一年后你翻历史，能不能一眼看懂当时改了什么，全看当时那句 -m。</p>
+        </div>
+        <div class="callout analogy">
+          <span class="tag">Tip · 2</span>
+          <p><strong>小步提交，频繁 push</strong>。一次改 1000 行难以复审也难以回退；一次改 100 行，回退极其精准。</p>
+        </div>
+        <div class="callout analogy">
+          <span class="tag">Tip · 3</span>
+          <p><strong>先建 .gitignore 再 git add .</strong>。否则一旦把 node_modules 之类的大目录传上去，之后想清很麻烦。</p>
+        </div>
+
+        <div class="callout">
+          <span class="tag">收束 · Recap</span>
+          <p>Git 的世界看似浩瀚，其实<strong>日常 90% 只用五个动作</strong>：<code>status</code> → <code>add</code> → <code>commit</code> → <code>push</code> → <code>pull</code>。剩下的都是"救命"和"进阶"，遇到时再查即可。</p>
+        </div>
+      </section>
+
+      <!-- ======= 篇尾预留位 ======= -->
+      <section class="chapter" id="g-placeholder">
+        <div class="chapter-head">
+          <div class="num">CH · ??</div>
+          <h2>未完待续 · 更多板块</h2>
+          <div class="cn">Coming Chapters</div>
+        </div>
+
+        <div class="placeholder">
+          <div class="ico">◇ ◇ ◇</div>
+          <h3>Git 内部原理</h3>
+          <p>对象、SHA-1、pack 文件、HEAD 指针背后的世界。</p>
+        </div>
+        <div class="placeholder">
+          <div class="ico">◇ ◇ ◇</div>
+          <h3>GitHub Actions · CI/CD</h3>
+          <p>推送时自动测试、自动部署，让代码自己会跑起来。</p>
+        </div>
+      </section>
+
+    </section><!-- /vol-git -->
+
     <footer>
-      <div class="sig">— 学海无涯，一卷之始 —</div>
-      <div class="stamp">Xue Hai Wu Ya · Vol.01 · Networking</div>
+      <div class="sig">— 学海无涯，一卷方毕，下卷已启 —</div>
+      <div class="stamp">Xue Hai Wu Ya · Vol.01 Networking · Vol.02 Git</div>
     </footer>
   </article>
 

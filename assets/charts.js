@@ -1,4 +1,4 @@
-// assets/charts.js — 学海无涯 · 网络篇 图表
+// assets/charts.js — 学海无涯 图表
 (function () {
   if (typeof echarts === 'undefined') return;
 
@@ -14,7 +14,7 @@
   var bodyFont  = 'Lora, "Noto Serif SC", serif';
 
   // ==============================================================
-  // Chart 1: OSI 7 vs TCP/IP 4 —— 层级对应关系
+  // Chart 1: OSI 7 vs TCP/IP 4
   // ==============================================================
   (function () {
     var el = document.getElementById('chart-layers');
@@ -121,7 +121,7 @@
   })();
 
   // ==============================================================
-  // Chart 2: 常见协议流量占比（示意）
+  // Chart 2: 常见协议流量占比
   // ==============================================================
   (function () {
     var el = document.getElementById('chart-protocol');
@@ -161,7 +161,7 @@
   })();
 
   // ==============================================================
-  // Chart 3: HTTPS 请求耗时分解（毫秒）
+  // Chart 3: HTTPS 请求耗时分解
   // ==============================================================
   (function () {
     var el = document.getElementById('chart-timing');
@@ -206,7 +206,7 @@
   })();
 
   // ==============================================================
-  // Chart 4: HTTP 三代演进对比（雷达图）
+  // Chart 4: HTTP 三代雷达
   // ==============================================================
   (function () {
     var el = document.getElementById('chart-http-versions');
@@ -251,7 +251,7 @@
   })();
 
   // ==============================================================
-  // Chart 5: 蜂窝网络 2G→5G 峰值速率
+  // Chart 5: 蜂窝网络 2G→5G
   // ==============================================================
   (function () {
     var el = document.getElementById('chart-cellular');
@@ -303,6 +303,59 @@
             return v >= 1000 ? (v / 1000) + ' Gbps' : v + ' Mbps';
           }
         }
+      }]
+    });
+    window.addEventListener('resize', function () { chart.resize(); });
+  })();
+
+  // ==============================================================
+  // Chart 6: Git 三区流动
+  // ==============================================================
+  (function () {
+    var el = document.getElementById('chart-git-areas');
+    if (!el) return;
+    var chart = echarts.init(el, null, { renderer: 'svg' });
+
+    chart.setOption({
+      animation: false,
+      textStyle: { fontFamily: bodyFont, color: ink },
+      tooltip: {
+        appendToBody: true,
+        trigger: 'item',
+        formatter: function (p) {
+          if (p.dataType === 'edge') {
+            return p.data.source.replace('\n', ' / ') + ' → ' + p.data.target.replace('\n', ' / ') +
+                   '<br/>命令：<code>' + p.data.cmd + '</code>';
+          }
+          return p.name.replace('\n', ' / ');
+        }
+      },
+      series: [{
+        type: 'sankey',
+        left: 30, right: 130, top: 20, bottom: 20,
+        nodeWidth: 24,
+        nodeGap: 22,
+        emphasis: { focus: 'adjacency' },
+        data: [
+          { name: '工作区\nWorking',    itemStyle: { color: accent } },
+          { name: '暂存区\nStaging',    itemStyle: { color: accent2 } },
+          { name: '仓库\nRepository',   itemStyle: { color: '#7d6c3e' } },
+          { name: '远程\nGitHub',       itemStyle: { color: '#8a8579' } }
+        ],
+        links: [
+          { source: '工作区\nWorking',   target: '暂存区\nStaging',    value: 2, cmd: 'git add',      lineStyle: { color: 'gradient', opacity: 0.5 } },
+          { source: '暂存区\nStaging',   target: '仓库\nRepository',   value: 2, cmd: 'git commit',   lineStyle: { color: 'gradient', opacity: 0.5 } },
+          { source: '仓库\nRepository',  target: '远程\nGitHub',       value: 2, cmd: 'git push',     lineStyle: { color: 'gradient', opacity: 0.5 } },
+          { source: '远程\nGitHub',      target: '仓库\nRepository',   value: 1, cmd: 'git pull',     lineStyle: { color: 'gradient', opacity: 0.3 } },
+          { source: '仓库\nRepository',  target: '工作区\nWorking',    value: 1, cmd: 'git checkout', lineStyle: { color: 'gradient', opacity: 0.3 } }
+        ],
+        label: {
+          color: ink,
+          fontFamily: bodyFont,
+          fontSize: 12,
+          fontWeight: 'bold'
+        },
+        lineStyle: { curveness: 0.5 }
       }]
     });
     window.addEventListener('resize', function () { chart.resize(); });
