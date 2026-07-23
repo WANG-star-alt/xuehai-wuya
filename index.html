@@ -626,6 +626,51 @@
       letter-spacing: 0;
     }
 
+    /* === Scene box (生活场景导入) === */
+    .scene {
+      background: linear-gradient(135deg, #fbf5e8 0%, #f2ede4 100%);
+      border: 1px solid var(--rule);
+      border-left: 6px solid var(--accent2);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem 1.35rem;
+      margin: 1.5rem 0 2rem;
+      position: relative;
+    }
+    .scene .scene-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      color: var(--accent2);
+      background: #f7e9d6;
+      padding: 3px 10px;
+      border-radius: 3px;
+      margin-bottom: 0.65rem;
+      text-transform: uppercase;
+    }
+    .scene .scene-title {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.03em;
+    }
+    .scene p {
+      margin: 0.4rem 0;
+      color: var(--ink-soft);
+      font-size: 0.98rem;
+    }
+    .scene .link {
+      margin-top: 0.7rem;
+      padding-top: 0.7rem;
+      border-top: 1px dashed var(--rule);
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--accent);
+      font-size: 0.92rem;
+    }
+
     /* === HTTP method badges === */
     .method-badges {
       display: flex;
@@ -1012,6 +1057,14 @@
         <div class="cn">Hosts, Protocols &amp; Addresses</div>
       </div>
 
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🍜 你在美团上点了一份外卖</div>
+        <p>此刻你在餐桌前，手机是<strong>点单方</strong>；美团的机房里有一台机器负责接单，是<strong>接单方</strong>；订单能顺利到达，是因为你们双方遵守同一份"下单规则"——什么时候写地址、什么时候填联系方式、错误怎么处理，规则清清楚楚。</p>
+        <p>网络里也一样，需要三样东西：<strong>参与者</strong>、<strong>规则</strong>、<strong>身份标识</strong>。</p>
+        <div class="link">→ 对应到网络：主机（Host）、协议（Protocol）、地址（Address）</div>
+      </div>
+
       <p>入门先要认识三个最常听到的词：<strong>主机</strong>、<strong>协议</strong>、<strong>地址</strong>。它们像"参与者、规则、身份证"，缺一不可。</p>
 
       <h3>三个最基础的概念</h3>
@@ -1043,6 +1096,18 @@
         <div class="num">CH · 03</div>
         <h2>分层模型 · OSI 与 TCP/IP</h2>
         <div class="cn">Layered Models</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">📦 一个跨国包裹的旅行</div>
+        <p>你在网上买了个东西，从美国仓库寄到你家。这个包裹的旅行是<strong>分层</strong>的：</p>
+        <p>① <strong>你</strong>只在乎"东西好不好用"；<br/>
+        ② <strong>商家</strong>负责打包、贴单；<br/>
+        ③ <strong>物流公司</strong>负责选路线、转运；<br/>
+        ④ <strong>飞机 / 卡车 / 快递员</strong>负责真的把箱子搬过来。</p>
+        <p>每一层<strong>只操心自己的事</strong>——你不用知道飞机什么型号，快递员也不需要知道你买了什么。这就是"分层"的智慧。</p>
+        <div class="link">→ 网络也是这么分层的：应用层、传输层、网络层、链路层……</div>
       </div>
 
       <p class="lead">
@@ -1079,6 +1144,14 @@
         <div class="num">CH · 04</div>
         <h2>常见协议 · 一览通用语言</h2>
         <div class="cn">Common Protocols</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🗣️ 你和外国人说话，得先约好用哪种语言</div>
+        <p>你会中文，对方会英文。要交流，就得<strong>约定一种共同语言</strong>——是英文？是普通话？是手语？这叫"协议"。</p>
+        <p>网络里的"协议"就是这个意思——<strong>两台机器约定用什么方式说话</strong>。看网页用一种方式（HTTP），发邮件用另一种（SMTP），视频通话又不一样（RTP/UDP）。</p>
+        <div class="link">→ 对应到本章：HTTP、DNS、TCP、UDP……都是网络里的"语言"</div>
       </div>
 
       <p>协议是"网络的语言"。日常你会反复看到这些缩写，先建立最粗略的印象即可：</p>
@@ -1121,6 +1194,17 @@
         <div class="num">CH · 05</div>
         <h2>IP 与端口 · 门牌与房间</h2>
         <div class="cn">IP &amp; Port</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🏢 给一栋写字楼里的同事寄快递</div>
+        <p>你要寄东西给一位朋友，光写"北京市朝阳区某某大厦"够吗？<strong>不够</strong>——大厦里有上千人，快递员不知道送给谁。</p>
+        <p>你还得写"<strong>1503 室 张三</strong>"，快递才能真正送到人手上。</p>
+        <p>把这套逻辑搬到网络里：<br/>
+        · <strong>IP 地址</strong> = 那栋"大厦的地址"，用来找到<strong>哪台机器</strong>；<br/>
+        · <strong>端口</strong> = 大厦里的"房间号"，用来找到<strong>那台机器上的哪个程序</strong>。</p>
+        <div class="link">→ 一台电脑上可能同时开着微信、浏览器、游戏，靠端口区分它们</div>
       </div>
 
       <p>如果说 <strong>IP 地址</strong>是一栋楼的门牌号，那 <strong>端口</strong>就是这栋楼里的具体房间号。数据要送达，必须知道"送到哪栋楼的哪个房间"。</p>
@@ -1176,6 +1260,19 @@
         <div class="cn">The Journey of a Request</div>
       </div>
 
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🚕 打车去朋友家的全过程</div>
+        <p>你要去一位朋友家，只知道<strong>名字</strong>不知道详细地址。你会怎么做？</p>
+        <p>① 打电话问朋友要地址（<strong>把名字变成地址</strong>）；<br/>
+        ② 打开滴滴，输入地址、叫车（<strong>建立联系</strong>）；<br/>
+        ③ 上车、跟司机说"走吧"（<strong>发出请求</strong>）；<br/>
+        ④ 司机开过去，把你送到（<strong>响应到达</strong>）；<br/>
+        ⑤ 到了门口，敲门进去看到朋友（<strong>把内容呈现出来</strong>）。</p>
+        <p>你在浏览器输入 <code>www.baidu.com</code> 到看到百度首页——背后发生的事，几乎是这五步的电子版。</p>
+        <div class="link">→ 本章会把这五步一一拆解，让你看清"看网页"背后的每一秒</div>
+      </div>
+
       <p class="lead">
         以你在浏览器输入 <code>www.baidu.com</code> 为例，短短几百毫秒之内，其实发生了六个关键动作。<mark class="key">看懂这一段，等于把前面所有概念串成一条线。</mark>
       </p>
@@ -1222,6 +1319,19 @@
         <div class="num">CH · 07</div>
         <h2>网络设备 · 数据的驿站</h2>
         <div class="cn">Network Devices</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🛣️ 一次快递从北京到深圳，中间经过多少地方？</div>
+        <p>你在北京寄一个包裹去深圳，快递不会直接飞过去。它会经过：</p>
+        <p>· <strong>小区门口的丰巢柜</strong>（临时收件点）<br/>
+        · <strong>市内分拣中心</strong>（按目的地分堆）<br/>
+        · <strong>机场 / 高铁站</strong>（干线运输）<br/>
+        · <strong>深圳的分拣中心</strong>（再分堆）<br/>
+        · <strong>快递员的电动车</strong>（最后一公里）</p>
+        <p>网络数据的旅程一模一样，只不过"驿站"变成了各种设备：<strong>路由器、交换机、防火墙、网关</strong>——每个都有自己的分工。</p>
+        <div class="link">→ 本章带你认识每一台"网络驿站"的作用</div>
       </div>
 
       <p>数据从你到远方，中间要经过若干"驿站"。它们各自分工：</p>
@@ -1271,6 +1381,18 @@
         <div class="num">CH · 08</div>
         <h2>HTTP 深读 · 请求、方法与状态码</h2>
         <div class="cn">HTTP In Depth</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">☕ 在咖啡馆点单</div>
+        <p>你走进星巴克，跟店员的对话是这样的：</p>
+        <p>你："请给我一杯拿铁，热的，中杯。"（<strong>请求</strong>）<br/>
+        店员："好的，等一下。"（<strong>确认收到</strong>）<br/>
+        …片刻后…<br/>
+        店员："您的拿铁好了，请拿走。"（<strong>响应</strong>）</p>
+        <p>浏览器向服务器要网页，就是这套"点单 → 上菜"的循环。这个循环用的"点单话术"就叫 HTTP。</p>
+        <div class="link">→ 本章带你看懂浏览器和服务器"讲的每一句话"</div>
       </div>
 
       <p class="lead">
@@ -1388,6 +1510,15 @@ Content-Length: 1024
         <div class="cn">DNS Resolution</div>
       </div>
 
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">📞 打114查号台</div>
+        <p>你要联系"北京大学招生办"，但只记得名字，不记得电话号码。怎么办？</p>
+        <p>拨 114 查号台，告诉他名字，他一层层帮你查——先查是哪所学校，再查招生办的号码，最后把电话回给你。</p>
+        <p>你记得住 <code>baidu.com</code>、<code>weibo.com</code> 这些名字，但机器只认数字（比如 <code>110.242.68.66</code>）。DNS 就是互联网上的 114 查号台，把"名字"翻译成"数字"。</p>
+        <div class="link">→ 全球每秒都在发生数百万次这种"查号"</div>
+      </div>
+
       <p class="lead">
         DNS（Domain Name System，域名系统）是互联网的<mark class="key">"电话簿"</mark>——你只记得住 <code>baidu.com</code> 这样的名字，机器却只认 <code>110.242.68.66</code> 这样的数字，DNS 负责在二者之间来回翻译。
       </p>
@@ -1458,6 +1589,17 @@ Content-Length: 1024
         <div class="cn">TCP Handshake</div>
       </div>
 
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">📱 打电话之前，你俩要先确认能听到</div>
+        <p>你打电话给朋友，接通后的对话是不是这样：</p>
+        <p>你："喂？能听到吗？"（<strong>我发送 OK 吗？</strong>）<br/>
+        朋友："能听到，我说话你也能听到吗？"（<strong>你发送 OK，我也发送试试</strong>）<br/>
+        你："能。"（<strong>你也发送 OK，可以正式聊了</strong>）</p>
+        <p>——这就是"三次握手"。你会发现少一次都不行：如果朋友没说第二句，你不知道他能不能听到你；如果你没说第三句，朋友也不确定他讲的话你能不能听到。</p>
+        <div class="link">→ 网络里 TCP 建立连接，就是这套"三次确认"</div>
+      </div>
+
       <p>TCP 建立一次连接，需要三个来回；关闭连接，需要四个。这是网络课程最经典的"必背题"，理解它能一举打通传输层。</p>
 
       <h3>三次握手 · 建立连接</h3>
@@ -1504,6 +1646,17 @@ Content-Length: 1024
         <div class="cn">Subnetting &amp; CIDR</div>
       </div>
 
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🏘️ 一个小区的门牌怎么设计</div>
+        <p>假设有个新小区叫"阳光家园"，里面有 1000 户人家。你会怎么编号？</p>
+        <p>· 简单粗暴每户一个从 1 到 1000 的编号，找起来累死；<br/>
+        · 更聪明的做法：先分"1 号楼、2 号楼……"，每栋楼再分"101、102、201……"。</p>
+        <p>这样地址就有<strong>层级</strong>了。找 "3 号楼 502 室" 就非常快。</p>
+        <p>IP 地址世界里也是这么划分的：把庞大的 IP 空间切成一个个"子网"（一栋楼），每个子网里有若干"主机号"（房间号）。<code>/24</code>、<code>/16</code> 这些数字，就是告诉你"这一片是一栋多大的楼"。</p>
+        <div class="link">→ 本章带你看懂 <code>192.168.1.0/24</code> 这种写法是什么意思</div>
+      </div>
+
       <p>一个 IP 地址实际上分成两半：<strong>网络号</strong>（哪个院子）+ <strong>主机号</strong>（院子里的第几户）。子网掩码（Subnet Mask）就是那条"分割线"。</p>
 
       <h3>CIDR 记法</h3>
@@ -1542,6 +1695,15 @@ Content-Length: 1024
         <div class="cn">NAT &amp; Port Forwarding</div>
       </div>
 
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🏨 酒店总机替房客转接电话</div>
+        <p>一家酒店有 200 间房，但对外只公布一个总机号 <code>010-12345678</code>。</p>
+        <p>你在酒店 1503 房间想打电话给朋友——朋友回电时怎么找到你？答：<strong>酒店前台记住了</strong>"这个外线来电对应 1503 房"，帮你转接。</p>
+        <p>家里的路由器就是这个"酒店前台"：你家里有几十个设备（手机、电脑、电视、扫地机器人……），但对外只有<strong>一个公网 IP</strong>。路由器帮你在内部和外部之间"转接"。</p>
+        <div class="link">→ 这个魔法叫 NAT（Network Address Translation）</div>
+      </div>
+
       <p>你家里明明有十几个设备联网，运营商却只分给你一个公网 IP——它们是怎么共用的？答案是 <strong>NAT（Network Address Translation，网络地址转换）</strong>。</p>
 
       <h3>NAT 做了什么</h3>
@@ -1577,6 +1739,17 @@ Public  1.2.3.4:8080  →  Private  192.168.1.100:80</div>
         <div class="num">CH · 13</div>
         <h2>网络安全 · 加密、认证与常见威胁</h2>
         <div class="cn">Networking Security</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">✉️ 你要给朋友寄一封信</div>
+        <p>你要给朋友寄一封信，谈的是<strong>私密的事</strong>。你担心三件事：</p>
+        <p>① <strong>路上有没有人偷偷拆开看</strong>？（机密性）<br/>
+        ② <strong>信到手了，会不会被人偷偷改过内容</strong>？（完整性）<br/>
+        ③ <strong>邮筒会不会突然罢工，信永远寄不到</strong>？（可用性）</p>
+        <p>网络安全操心的就是这三件事——业内简称 <strong>CIA</strong>。加密、签名、防火墙……都是围绕这三个目标展开。</p>
+        <div class="link">→ 本章带你看清"网上的信"到底怎么才安全</div>
       </div>
 
       <p class="lead">
@@ -1639,6 +1812,19 @@ Public  1.2.3.4:8080  →  Private  192.168.1.100:80</div>
         <div class="cn">Wireless &amp; Mobile</div>
       </div>
 
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">📻 你家里同时有多个"广播"</div>
+        <p>想象你家里同时开着：一台收音机（长距、慢），一台无绳电话（中距），一副耳机（短距）——它们都是"无线"，但用了<strong>不同的频段、不同的规矩</strong>，互不打扰。</p>
+        <p>网络世界也是这样：<br/>
+        · <strong>WiFi</strong>：家里几十米范围，速度快；<br/>
+        · <strong>蓝牙</strong>：几米，专门给耳机、鼠标；<br/>
+        · <strong>4G / 5G</strong>：几公里，靠基站；<br/>
+        · <strong>NFC</strong>：几厘米，用于刷公交、支付。</p>
+        <p>它们都是"无线"，但分工不同、用途不同。</p>
+        <div class="link">→ 本章告诉你每种无线的擅长和不擅长</div>
+      </div>
+
       <p>把线拔掉、让数据通过电磁波传输，就是无线网络。它们靠<strong>频段</strong>、<strong>信道</strong>、<strong>协议</strong>三件事区分。</p>
 
       <h3>WiFi 各代速览</h3>
@@ -1685,6 +1871,16 @@ Public  1.2.3.4:8080  →  Private  192.168.1.100:80</div>
         <div class="num">CH · 15</div>
         <h2>云与边缘 · CDN、云网络与容器</h2>
         <div class="cn">Cloud &amp; Edge</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">☕ 星巴克为什么开满全城？</div>
+        <p>星巴克咖啡豆的原产地在南美。如果全国人喝一杯咖啡，都要去南美的仓库取豆，肯定慢死。</p>
+        <p>所以星巴克在<strong>每个城市开分店</strong>，甚至每条街都开一家——豆子提前运到分店，你要喝就近取。这是"离用户近"。</p>
+        <p>网络里也有类似的东西：<strong>CDN（内容分发网络）</strong>。腾讯视频、B 站的内容不会每次都从深圳源头服务器拉，而是提前放在离你最近的城市机房里，你打开就几乎瞬间加载。</p>
+        <p>你今天访问的 <code>xuehai-wuya.pages.dev</code> 也是——Cloudflare 在全球有 300+ 个"分店"，你打开的是离你最近那一家。</p>
+        <div class="link">→ 本章讲清 CDN、云网络、容器这些"新概念"</div>
       </div>
 
       <p>过去的网络世界是"我搭机房、我买带宽、我配路由器"；今天大部分服务都跑在<strong>云</strong>上，用户和服务之间还夹着<strong>边缘节点</strong>。</p>
@@ -1741,6 +1937,17 @@ Public  1.2.3.4:8080  →  Private  192.168.1.100:80</div>
         <div class="num">CH · 16</div>
         <h2>排错工具箱 · 五个救急命令</h2>
         <div class="cn">Troubleshooting Toolkit</div>
+      </div>
+
+      <div class="scene">
+        <span class="scene-tag">生活场景</span>
+        <div class="scene-title">🔧 水管漏水了，你怎么找原因？</div>
+        <p>家里水管漏水，你不会直接砸墙——会先<strong>一段段排查</strong>：</p>
+        <p>① 总闸阀有水吗？ → 没水是自来水公司的事；<br/>
+        ② 家里主管道通吗？ → 不通是入户线的事；<br/>
+        ③ 具体哪个水龙头出问题？ → 找到罪魁祸首。</p>
+        <p>网络出问题——"网页打不开"——也是这么一层一层排查的。本章给你五个"网络水管工工具"：<code>ping</code>、<code>traceroute</code>、<code>nslookup</code>、<code>curl</code>、<code>netstat</code>。</p>
+        <div class="link">→ 学会它们，你就能自己解决"上不了网"了</div>
       </div>
 
       <p>当"上不了网"时，怎样一步步定位？以下五个命令是终端里的"急救包"，Windows 和 macOS/Linux 略有差异，写法我一并给你：</p>
