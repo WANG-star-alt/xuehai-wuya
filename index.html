@@ -950,6 +950,32 @@
         网络（Network），本质上不过是<mark class="key">"让两台机器能说上话"</mark>的一整套约定与设施。你手中的手机、桌上的电脑、远在天边的服务器——只要它们之间能传递信息，就构成了网络。
       </p>
 
+      <h3>先看你现在正在发生的事</h3>
+      <p>此刻你正在浏览 <code>xuehai-wuya.pages.dev</code> 这个页面。你有没有想过，这背后其实发生了这些事？</p>
+      <div class="journey">
+        <div class="step">
+          <h4>你的手机 / 电脑</h4>
+          <p>发出一个"我想看这个网站"的请求。</p>
+        </div>
+        <div class="step">
+          <h4>路由器 / 运营商</h4>
+          <p>把请求转出去，穿越好几台"中转站"（路由器）。</p>
+        </div>
+        <div class="step">
+          <h4>DNS 翻译</h4>
+          <p>把 <code>xuehai-wuya.pages.dev</code> 这个名字翻译成一串数字（IP），机器只认数字。</p>
+        </div>
+        <div class="step">
+          <h4>Cloudflare 服务器</h4>
+          <p>某台在离你最近城市的机房里的服务器，收到你的请求。</p>
+        </div>
+        <div class="step">
+          <h4>返回网页</h4>
+          <p>服务器把 HTML 顺着原路送回，你的浏览器把它渲染成你看到的样子。</p>
+        </div>
+      </div>
+      <p>短短几百毫秒之内，全球可能穿越了几十台设备。<strong>本篇要做的，就是让你逐步看懂这一切。</strong></p>
+
       <h3>一句话理解</h3>
       <p>把网络想象成一条条<strong>看不见的公路</strong>：路面（物理线路）、交通规则（协议）、门牌号（IP 地址）、目的地房间号（端口）、快递员（路由器）——所有这些加在一起，才让"你发一条消息，对方能收到"这件事成立。</p>
 
@@ -1790,26 +1816,114 @@ Public  1.2.3.4:8080  →  Private  192.168.1.100:80</div>
       <!-- ======= TOC ======= -->
       <nav class="toc" aria-label="Git 篇目录">
         <div class="toc-title">目 录 · Table of Contents</div>
-        <div class="toc-part">卷一 · 入门篇 · The Beginning</div>
+        <div class="toc-part">卷零 · 迎宾篇 · Before Everything</div>
         <ol>
-          <li><a href="#g-01">序章 · Git 是什么</a></li>
+          <li><a href="#g-00">迎宾章 · 从你今天做的事说起</a></li>
+        </ol>
+        <div class="toc-part">卷一 · 入门篇 · The Beginning</div>
+        <ol start="2">
+          <li><a href="#g-01">序章 · Git 到底是什么</a></li>
+          <li><a href="#g-01b">Git 与 GitHub · 二者到底什么关系</a></li>
           <li><a href="#g-02">概念地图 · 仓库、工作区、暂存区</a></li>
           <li><a href="#g-03">初次上手 · 从零建立一个仓库</a></li>
         </ol>
         <div class="toc-part">卷二 · 日常篇 · Daily Workflow</div>
-        <ol start="4">
+        <ol start="6">
           <li><a href="#g-04">日常命令 · 十条最常用</a></li>
           <li><a href="#g-05">分支 · 平行世界的开关</a></li>
           <li><a href="#g-06">合并与冲突 · 两条河汇入一条</a></li>
           <li><a href="#g-07">远程 · 与 GitHub 对话</a></li>
         </ol>
         <div class="toc-part">卷三 · 进阶篇 · Deeper</div>
-        <ol start="8">
+        <ol start="10">
           <li><a href="#g-08">时光机 · 回退、撤销与拯救</a></li>
           <li><a href="#g-09">协作流 · PR、Fork 与团队工作流</a></li>
           <li><a href="#g-10">锦囊 · 高频问答与私藏技巧</a></li>
         </ol>
       </nav>
+
+      <!-- ======= G-00 迎宾章 ======= -->
+      <section class="chapter" id="g-00">
+        <div class="chapter-head">
+          <div class="num">CH · 00</div>
+          <h2>迎宾章 · 从你今天做的事说起</h2>
+          <div class="cn">A Warm Welcome</div>
+        </div>
+
+        <p class="lead">
+          在讲抽象概念之前，我先用<mark class="key">你今天亲手做的那件事</mark>——把"学海无涯"网站放到互联网上——一步步告诉你：Git 是什么、GitHub 是什么、它们到底做了什么。
+        </p>
+
+        <h3>你今天到底做了什么</h3>
+        <p>今天下午，你完成了这样一套流程：</p>
+        <div class="journey">
+          <div class="step">
+            <h4>你的电脑上写好了一份网页</h4>
+            <p>它就是那个 <code>xuehai-wuya</code> 文件夹，里面有 <code>index.html</code>、字体、图片脚本等。此时它只在<strong>你的硬盘</strong>上，别人看不到。</p>
+          </div>
+          <div class="step">
+            <h4>你安装了 Git，并用它"记录"了整个文件夹</h4>
+            <p>Git 是一个装在你电脑上的<strong>工具</strong>。它给你的文件夹打了一个"档案编号"，把整个文件夹的内容拍了一张"完整快照"存起来。这一步叫 <strong>提交（commit）</strong>。</p>
+          </div>
+          <div class="step">
+            <h4>你在 GitHub 上开了一个"仓库"账户</h4>
+            <p>GitHub 是<strong>互联网上的一个网站</strong>，任何人可以在上面免费开一个"文件夹储物柜"，叫做<strong>仓库（Repository）</strong>。你开的那个柜子叫 <code>WANG-star-alt/xuehai-wuya</code>。</p>
+          </div>
+          <div class="step">
+            <h4>你把本地的档案推（push）到了 GitHub</h4>
+            <p>Git 就像一个快递员，把你电脑上的这个文件夹的"完整快照"以及所有历史记录，一次性搬上互联网 GitHub 的那个储物柜。</p>
+          </div>
+          <div class="step">
+            <h4>Cloudflare 从 GitHub 那把柜子里"取件"，摆到网上</h4>
+            <p>Cloudflare Pages 是另一个网站，它<strong>盯着</strong>你在 GitHub 的那个仓库。你一 push，它立刻把新内容拿出来，架设成一个真正能访问的网址：<code>xuehai-wuya.pages.dev</code>。</p>
+          </div>
+        </div>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 一个譬喻串起来</span>
+          <p>把你的电脑文件夹想象成<strong>你家书房里的一本手稿</strong>：<br/>
+          · <strong>Git</strong> = 一个私人抄写员，替你把手稿的每一次改动都拍照存档；<br/>
+          · <strong>GitHub</strong> = 城市中央图书馆，愿意免费借你一个"专属书架"存这本书的所有版本；<br/>
+          · <strong>你 push</strong> = 抄写员把最新的稿子送去图书馆书架；<br/>
+          · <strong>Cloudflare</strong> = 一个印刷厂，它看到图书馆有新稿子就自动开印，做成免费的报纸贴到互联网大街上。</p>
+        </div>
+
+        <h3>三个名字，三种角色</h3>
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">Git</div>
+            <h4>装在你电脑上的工具</h4>
+            <p>它是一个软件，负责"记录、比较、回退"你的文件历史。<strong>离线也能用</strong>，跟互联网无关。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">GitHub</div>
+            <h4>互联网上的网站</h4>
+            <p>它是一个"给 Git 用的云盘 + 社交平台"，帮你把本地仓库放到网上，也让其他人能看到、协作。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">Repository</div>
+            <h4>仓库</h4>
+            <p>就是"一个项目"。本地那份叫本地仓库，GitHub 上那份叫远程仓库。两者内容会通过 push / pull 保持同步。</p>
+          </div>
+        </div>
+
+        <h3>常见的疑问，先在这里回答</h3>
+        <ul class="keylist">
+          <li><span class="k">Git 要联网吗？</span><span class="v">不用。本机做记录、看历史都不需要网。只有和 GitHub 传输时才要。</span></li>
+          <li><span class="k">GitHub 一定要用吗？</span><span class="v">不是。Git 单独就能用；GitHub 只是最流行的"Git 云盘"。类似的还有 GitLab、Gitee。</span></li>
+          <li><span class="k">我上传的东西是啥？</span><span class="v">是你项目文件夹 + 每一次提交的完整历史。不是压缩包，是可查询的历史全集。</span></li>
+          <li><span class="k">为什么叫 push？</span><span class="v">因为是"推"——把本地的东西<strong>推</strong>到远端。反过来把远端拉回本地叫 <code>pull</code>。</span></li>
+          <li><span class="k">别人看得到吗？</span><span class="v">仓库是 Public 就任何人可看；Private 就只有你和你邀请的人可看。你的是 Public。</span></li>
+        </ul>
+
+        <div class="callout">
+          <span class="tag">看完这章你应该能回答</span>
+          <p>1. Git 是<strong>软件</strong>还是<strong>网站</strong>？（软件）<br/>
+          2. GitHub 是<strong>软件</strong>还是<strong>网站</strong>？（网站）<br/>
+          3. 你今天的网页托管在哪台服务器上？（Cloudflare 的边缘节点，源码存在 GitHub）<br/>
+          4. 如果 GitHub 挂了，你本地代码会丢吗？（不会，本地那份完整独立）</p>
+        </div>
+      </section>
 
       <!-- ======= G-01 序章 ======= -->
       <section class="chapter" id="g-01">
@@ -1853,6 +1967,101 @@ Public  1.2.3.4:8080  →  Private  192.168.1.100:80</div>
             <h4>时光机自救</h4>
             <p>"糟糕，代码删多了" —— 一条命令回到 30 分钟前。</p>
           </div>
+        </div>
+
+        <h3>Git 的三条"底层信条"</h3>
+        <p>不是要背，是要理解——理解了这三条，很多命令就顺理成章：</p>
+        <ul class="keylist">
+          <li><span class="k">① 快照式</span><span class="v">Git 不是记"这次改了哪几行"，而是每次都<strong>拍一张完整的文件夹快照</strong>。这样任何时刻都能立刻切到任何一版。</span></li>
+          <li><span class="k">② 分布式</span><span class="v">每台电脑上都有<strong>完整历史</strong>——GitHub 挂了、别人硬盘坏了，你这里都还在。没有"中央服务器"这个单点。</span></li>
+          <li><span class="k">③ 只增不减</span><span class="v">Git 几乎不会真删东西。删掉的东西通常还在硬盘里 30 天，用 <code>git reflog</code> 大概率能捞回。</span></li>
+        </ul>
+      </section>
+
+      <!-- ======= G-01b Git 与 GitHub 关系 ======= -->
+      <section class="chapter" id="g-01b">
+        <div class="chapter-head">
+          <div class="num">CH · 01b</div>
+          <h2>Git 与 GitHub · 二者到底什么关系</h2>
+          <div class="cn">Git vs. GitHub</div>
+        </div>
+
+        <p class="lead">
+          很多人第一次听到 Git 和 GitHub，会以为它们是<strong>同一样东西</strong>。其实完全不是。<mark class="key">它们的关系类似"Word 之于 OneDrive"、"微信之于腾讯"</mark>——一个是工具，一个是承载工具产物的平台。
+        </p>
+
+        <h3>先看一张对照表</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>维度</th><th>Git</th><th>GitHub</th></tr></thead>
+            <tbody>
+              <tr><td>是什么</td><td>一个软件（命令行工具）</td><td>一个网站（在线服务）</td></tr>
+              <tr><td>装在哪里</td><td>你自己的电脑</td><td>别人家的服务器（微软的机房）</td></tr>
+              <tr><td>需要联网吗</td><td>不需要</td><td>需要（是个网站嘛）</td></tr>
+              <tr><td>谁做的</td><td>Linus Torvalds，2005 年</td><td>三个美国人 2008 年创立，2018 年被微软收购</td></tr>
+              <tr><td>要不要钱</td><td>免费开源</td><td>基础版免费，企业版收费</td></tr>
+              <tr><td>能替换成什么</td><td>Git 几乎没替代品</td><td>可换 GitLab、Gitee、Bitbucket 等</td></tr>
+              <tr><td>做什么用</td><td>记录、比较、回退文件版本</td><td>把你的 Git 仓库放到网上、协作、展示</td></tr>
+              <tr><td>核心动词</td><td><code>commit / branch / merge</code></td><td>Pull Request / Issue / Star</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>一句话说清关系</h3>
+        <div class="callout analogy">
+          <span class="tag">Analogy · 便捷记忆</span>
+          <p><strong>Git 是"照相机"，GitHub 是"网络相册"。</strong><br/>
+          没有相册，你依然能拍照；但把照片放到相册里，别人才能看到、评论、点赞。<br/>
+          少了照相机，相册也无照可放。二者互相成就，但确实是两件事。</p>
+        </div>
+
+        <h3>为什么大家都用 GitHub</h3>
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">01</div>
+            <h4>免费的云备份</h4>
+            <p>你本地硬盘坏了、电脑丢了，GitHub 上那份完整还在。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">02</div>
+            <h4>多设备同步</h4>
+            <p>家里改一半、去公司 <code>git pull</code> 就能接着写。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">03</div>
+            <h4>开源社交</h4>
+            <p>全球开发者的"聚集地"，很多顶级项目都在这里协作。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">04</div>
+            <h4>免费部署</h4>
+            <p>Cloudflare / Vercel / Netlify 都能直连 GitHub 自动部署——就像你今天做的一样。</p>
+          </div>
+        </div>
+
+        <h3>三个容易搞混的名字</h3>
+        <ul class="keylist">
+          <li><span class="k">Git</span><span class="v">你电脑上的软件。你今天 <code>winget install</code> 装的就是它。</span></li>
+          <li><span class="k">GitHub</span><span class="v">一个具体的网站：<code>github.com</code>。你今天注册的账号 <code>WANG-star-alt</code> 就在这。</span></li>
+          <li><span class="k">Git 仓库 / GitHub 仓库</span><span class="v">同一个东西的两个位置——"本地仓库"在你电脑里、"远程仓库"在 GitHub 上。用 <code>push</code>/<code>pull</code> 同步。</span></li>
+        </ul>
+
+        <h3>你今天做的事，用这两个概念重述一次</h3>
+        <div class="cmd"><span class="comment"># 第 1 步：本地——用 Git 建立仓库</span>
+<span class="prompt">PS&gt;</span> git init            <span class="comment"># Git 在你电脑上开档</span>
+<span class="prompt">PS&gt;</span> git add .            <span class="comment"># 把所有文件放进"待打包"清单</span>
+<span class="prompt">PS&gt;</span> git commit -m "..."  <span class="comment"># 打包成一次"完整快照"</span>
+
+<span class="comment"># 第 2 步：远程——把本地推到 GitHub</span>
+<span class="prompt">PS&gt;</span> git remote add origin https://github.com/WANG-star-alt/xuehai-wuya.git
+<span class="prompt">PS&gt;</span> git push -u origin main     <span class="comment"># 把本地历史全部推到 GitHub</span>
+
+<span class="comment"># 第 3 步：Cloudflare（第三方，跟 Git/GitHub 无关）</span>
+<span class="comment"># 它自动监视你在 GitHub 的仓库，一有更新就重新部署</span></div>
+
+        <div class="callout">
+          <span class="tag">重要 · 认知</span>
+          <p>Git 和 GitHub 的关系类似"文件 → 网盘"：<strong>Git 管的是版本，GitHub 管的是同步与共享</strong>。理解了这一点，剩下所有 Git 相关的概念都能对号入座。</p>
         </div>
       </section>
 
