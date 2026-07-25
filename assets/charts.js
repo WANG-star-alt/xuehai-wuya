@@ -1009,7 +1009,7 @@
         left: '12%',
         right: '20%',
         symbol: 'emptyCircle',
-        symbolSize: 7,
+        symbolSize: 14,
         roam: true,
         initialTreeDepth: 2,
         lineStyle: {
@@ -1019,7 +1019,7 @@
         },
         itemStyle: {
           borderColor: ink,
-          borderWidth: 1.2,
+          borderWidth: 2,
           color: 'rgba(250,247,242,0.9)'
         },
         cursor: 'pointer',
@@ -1097,27 +1097,51 @@
       return node;
     }
 
-    // 点击节点：叶子跳转、非叶子切换展开状态（由我们自己维护）
+    // 点击节点：区分"点圆点"（展开/收起）和"点文字"（跳转）
     chart.on('click', function (params) {
-      // 1) 带 link 的节点 → 跳转 / 滚动
-      if (params && params.data && params.data.link) {
-        var link = params.data.link;
-        if (params.data.external) {
-          window.location.href = link;
+      // 找到数据源里的真实节点
+      var real = findNodeByPath(params.treePathInfo || []);
+      if (!real) return;
+
+      // 判断是否点击了圆点（symbol）区域
+      // params.event.event 是原生事件，offsetX/offsetY 是点击在画布上的位置
+      // params.data.x / params.data.y 是节点圆心的画布坐标
+      var isSymbolClick = false;
+      if (params.event && params.event.event && params.data) {
+        var ev = params.event.event;
+        var data = params.data;
+        // 圆点半径大约 symbolSize/2 = 7，加 3px 容错 = 10
+        var dx = (ev.offsetX || 0) - (data.x || 0);
+        var dy = (ev.offsetY || 0) - (data.y || 0);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        isSymbolClick = dist <= 12; // 12px 内算点中圆点
+      }
+
+      // 1) 点击圆点 → 展开/收起（如果有子节点）
+      if (isSymbolClick && real.children && real.children.length) {
+        real.collapsed = !real.collapsed;
+        chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
+        return;
+      }
+
+      // 2) 点击文字 → 跳转（如果有 link）
+      if (real.link) {
+        if (real.external) {
+          window.location.href = real.link;
           return;
         }
-        var target = document.getElementById(link);
+        var target = document.getElementById(real.link);
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
           if (history && history.replaceState) {
-            history.replaceState(null, '', '#' + link);
+            history.replaceState(null, '', '#' + real.link);
           }
           return;
         }
       }
-      // 2) 找到数据源里的真实节点（无论是否折叠都能拿到），有子节点 → 切换 collapsed
-      var real = findNodeByPath(params.treePathInfo || []);
-      if (real && real.children && real.children.length) {
+
+      // 3) 点击文字但无 link → 也展开/收起（方便浏览）
+      if (real.children && real.children.length) {
         real.collapsed = !real.collapsed;
         chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
       }
