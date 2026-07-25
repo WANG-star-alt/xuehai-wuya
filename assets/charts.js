@@ -500,12 +500,12 @@
 
     // ---------- AI 篇（14 章 · 带锚点） ----------
     var aiChildren = [
-      { name: '第 1 章 · AI 是什么', link: 'a-01',
+      { name: '第 1 章 · AI 是什么', link: 'chapters/ai/01-what-is-ai.html', external: true,
         children: [
-          { name: '弱 AI · ANI 篇',    link: 'a-01-1' },
-          { name: '通用 AI · AGI 篇',  link: 'a-01-2' },
-          { name: '超级 AI · ASI 篇',  link: 'a-01-3' },
-          { name: '四种能力篇 · 感知 / 理解 / 决策 / 生成', link: 'a-01-4' }
+          { name: '弱 AI · ANI 篇',    link: 'chapters/ai/01-1-ani.html',       external: true },
+          { name: '通用 AI · AGI 篇',  link: 'chapters/ai/01-2-agi.html',       external: true },
+          { name: '超级 AI · ASI 篇',  link: 'chapters/ai/01-3-asi.html',       external: true },
+          { name: '四种能力篇 · 感知 / 理解 / 决策 / 生成', link: 'chapters/ai/01-4-abilities.html', external: true }
         ] },
       { name: '第 2 章 · 三个圈', link: 'a-02',
         children: [
@@ -1018,14 +1018,19 @@
     console.log('[kmap] rendered OK');
     window.addEventListener('resize', function () { chart.resize(); });
 
-    // 点击带 link 字段的章节节点 → 平滑滚动到对应正文
+    // 点击带 link 字段的章节节点 → 跳转新页面 或 平滑滚动
     chart.on('click', function (params) {
       if (params && params.data && params.data.link) {
-        var target = document.getElementById(params.data.link);
+        var link = params.data.link;
+        if (params.data.external) {
+          window.location.href = link;
+          return;
+        }
+        var target = document.getElementById(link);
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
           if (history && history.replaceState) {
-            history.replaceState(null, '', '#' + params.data.link);
+            history.replaceState(null, '', '#' + link);
           }
         }
       }

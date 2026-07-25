@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.4 · 四种能力篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-ai.html">第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.4</span>
+    </div>
+    <a href="./01-what-is-ai.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.4 · Sub-chapter</div>
+    <h1>四种能力篇 · 感知 / 理解 / 决策 / 生成</h1>
+    <div class="cn">Perceive · Understand · Decide · Generate</div>
+  </header>
+
+  <p class="lead">
+    抛开定义之争，AI 能做的事说到底就四件：<mark class="key">感知世界、理解意思、做出决策、生成内容</mark>。任何一个 AI 产品，都能拆解到这四种能力里。
+  </p>
+
+  <h3>能力一 · 感知（Perceive）</h3>
+  <p><strong>把物理世界翻译成机器能读的数字。</strong>没有感知，AI 就是"闭眼睛的天才"。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>感知类型</th><th>典型技术</th><th>身边的应用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>视觉</td><td>CNN、ViT</td><td>人脸识别 / 车牌识别 / 医疗影像</td></tr>
+        <tr><td>听觉</td><td>ASR、Whisper</td><td>语音输入 / 语音助手 / 会议纪要</td></tr>
+        <tr><td>触觉 · 传感</td><td>IMU、力矩</td><td>机器人、可穿戴设备</td></tr>
+        <tr><td>OCR · 文字</td><td>文字识别</td><td>发票扫描 / 拍照翻译 / 扫码识文</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>能力二 · 理解（Understand）</h3>
+  <p><strong>从内容里抽出"意思"。</strong>感知给出"这是什么"，理解回答"它在说什么、意味着什么"。</p>
+  <ul class="keylist">
+    <li><span class="k">语义理解</span><span class="v">"帮我看看这份合同有没有陷阱"——AI 能读出条款背后的意图。</span></li>
+    <li><span class="k">情感识别</span><span class="v">从用户评论里读出满意 / 不满 / 讽刺。</span></li>
+    <li><span class="k">意图识别</span><span class="v">你说"我饿了"，音箱知道你在暗示叫外卖。</span></li>
+    <li><span class="k">关系抽取</span><span class="v">从一段新闻里挖出"谁 / 做了什么 / 对谁 / 影响如何"。</span></li>
+  </ul>
+
+  <h3>能力三 · 决策（Decide）</h3>
+  <p><strong>在多种可能里选一个"更好的"。</strong>只要有取舍，就有决策空间。</p>
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">A</div>
+      <h4>推荐系统</h4>
+      <p>抖音下一个视频、淘宝首页、Netflix 排片——从千百个候选里挑最合你意的。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">B</div>
+      <h4>规划路径</h4>
+      <p>高德地图算最快路线；快递骑手 App 排配送顺序；自动驾驶实时决定加速刹车。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">C</div>
+      <h4>博弈决策</h4>
+      <p>下棋、打游戏、金融交易——在对手也会反应的场景里，决策难度指数级上升。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">D</div>
+      <h4>风控 / 审核</h4>
+      <p>银行判断是否放贷；平台判断内容是否违规——都是"是 / 否 / 待审"的决策。</p>
+    </div>
+  </div>
+
+  <h3>能力四 · 生成（Generate）</h3>
+  <p><strong>造出以前不存在的内容。</strong>这是 2022 年之后 AI 最出圈的一支——从"识别"跨到"创作"。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模态</th><th>代表产品</th><th>典型用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>文字</td><td>ChatGPT、Claude、DeepSeek</td><td>写作、代码、翻译、总结</td></tr>
+        <tr><td>图像</td><td>Midjourney、Stable Diffusion、可灵</td><td>海报、插画、产品渲染</td></tr>
+        <tr><td>视频</td><td>Sora、Runway、可灵、即梦</td><td>短视频、创意广告</td></tr>
+        <tr><td>音频 / 音乐</td><td>Suno、Udio、ElevenLabs</td><td>整首歌、配音、有声书</td></tr>
+        <tr><td>3D · 建模</td><td>Meshy、Tripo</td><td>游戏资产、AR 素材</td></tr>
+        <tr><td>代码</td><td>Cursor、Copilot、TRAE</td><td>写代码、写测试、修 bug</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 四条腿的动物</span>
+    <p>把 AI 想象成"四条腿的动物"：<br/>
+    · <strong>感知</strong> = 眼睛耳朵；<br/>
+    · <strong>理解</strong> = 大脑皮层；<br/>
+    · <strong>决策</strong> = 前额叶；<br/>
+    · <strong>生成</strong> = 双手嘴巴。<br/>
+    缺一条腿，AI 就跑不起来。今天最强的 AI 产品几乎都是四腿齐全。</p>
+  </div>
+
+  <h3>如何用这四种能力"透视"一个 AI 产品</h3>
+  <ul class="keylist">
+    <li><span class="k">Q1 · 它看到了什么？</span><span class="v">输入哪些模态：文本？图片？声音？</span></li>
+    <li><span class="k">Q2 · 它理解了什么？</span><span class="v">从输入里提取了什么"意思"或"结构"？</span></li>
+    <li><span class="k">Q3 · 它决定了什么？</span><span class="v">在什么候选里选了哪一个？</span></li>
+    <li><span class="k">Q4 · 它生成了什么？</span><span class="v">最终输出的形式是啥？</span></li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>感知 / 理解 / 决策 / 生成，是 AI 能力的<mark class="key">"四原色"</mark>——不管产品叫什么名字，本质都是这四原色的调配。学会这把尺子，你以后看 AI 就有了坐标系。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-3-asi.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 1.3 · 超级 AI · ASI 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 2 章（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 1.4 · Four Abilities</div>
+
+</article>
+</body>
+</html>
