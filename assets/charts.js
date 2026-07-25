@@ -378,7 +378,7 @@
 
     // ---------- 网络篇 ----------
     var netChildren = [
-      { name: '第 1 章 · 网络是什么',
+      { name: '第 1 章 · 网络是什么', link: 'chapters/network/01-what-is-network.html', external: true,
         children: [
           { name: '主机 Host' }, { name: '协议 Protocol' }, { name: '地址 Address' },
           { name: '客户端 / 服务器' }, { name: '数据包 Packet' }, { name: '带宽 / 时延 / 丢包' }
@@ -527,7 +527,7 @@
           { name: '生成式 AI · GenAI 篇',  link: 'chapters/ai/02-4-genai.html', external: true },
           { name: '大语言模型 · LLM 篇',   link: 'chapters/ai/02-5-llm.html',   external: true }
         ] },
-      { name: '第 3 章 · 简史', link: 'a-03',
+      { name: '第 3 章 · 简史', link: 'chapters/ai/03-history.html', external: true,
         children: [
           { name: '1950 图灵测试' }, { name: '1956 达特茅斯会议' },
           { name: '1980s 专家系统' }, { name: '1997 深蓝' },
