@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.3 · 地址 · Address 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-network.html">网络篇 · 第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.3</span>
+    </div>
+    <a href="./01-what-is-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.3 · Sub-chapter</div>
+    <h1>地址 · Address 篇</h1>
+    <div class="cn">IP, MAC &amp; Domain Names</div>
+  </header>
+
+  <p class="lead">
+    网络上每台主机都得有"门牌号"，不然数据包找不到它。但"门牌号"这个词其实有<mark class="key">三种不同的地址</mark>——IP、MAC、域名——它们各自解决不同的问题，又互相配合。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🗺️ 三种方式找到同一个人</div>
+    <p>你想找朋友小明——可以用三种方式描述他：</p>
+    <p>① <strong>身份证号</strong>：370100199001011234——一辈子不变，全国唯一。<br/>
+    ② <strong>现居地址</strong>：北京市朝阳区 XX 路 5 号院 3 栋 501——小明搬家就换。<br/>
+    ③ <strong>名字</strong>：张小明——方便你叫他，但同名的人很多。</p>
+    <p>在网络世界里，这三种描述对应：<br/>
+    ① 身份证号 = <strong>MAC 地址</strong>（出厂烧死，全球唯一）；<br/>
+    ② 现居地址 = <strong>IP 地址</strong>（走到哪，临时分一个）；<br/>
+    ③ 名字 = <strong>域名</strong>（baidu.com 这种，方便人记）。</p>
+  </div>
+
+  <h3>MAC 地址 · 出厂身份证号</h3>
+  <p><strong>MAC 地址</strong>（Media Access Control）是网卡出厂时被厂家烧进硬件的唯一编号，格式像这样：<code>a4:5e:60:3f:21:b7</code>。前 6 位是厂家编号（IEEE 分配），后 6 位是厂家自己排的流水号。理论上全球唯一。</p>
+  <ul class="keylist">
+    <li><span class="k">永久</span><span class="v">跟网卡一起出生、一起销毁——除非你换网卡，否则一辈子不变。</span></li>
+    <li><span class="k">本地</span><span class="v">只在"同一局域网"内有效——出了你家，外面没人关心你的 MAC。</span></li>
+    <li><span class="k">有泄露风险</span><span class="v">近年手机厂商用"MAC 地址随机化"防止商场用 WiFi 探针追踪你。</span></li>
+  </ul>
+
+  <h3>IP 地址 · 网络世界的"现居地址"</h3>
+  <p><strong>IP 地址</strong>（Internet Protocol Address）是主机在当前网络上的"逻辑位置"。它<strong>会变</strong>——你连家里 WiFi 是一个 IP，连 5G 是另一个 IP，去公司又是另一个。</p>
+
+  <p>IPv4 是最经典的 IP 格式：<code>192.168.1.101</code>——4 个数字，每个 0-255，点号分隔。全世界总共能编 2<sup>32</sup> = 43 亿个地址——<mark class="key">早就不够用了</mark>（这就是 IPv6 出现的原因）。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>类型</th><th>格式</th><th>典型例子</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>IPv4</td><td>4 个 0-255 数字</td><td><code>8.8.8.8</code></td><td>经典老格式，43 亿上限，已耗尽</td></tr>
+        <tr><td>IPv6</td><td>8 组 16 进制</td><td><code>2001:4860:4860::8888</code></td><td>新格式，能给地球每粒沙子都分一个</td></tr>
+        <tr><td>公网 IP</td><td>全球唯一</td><td><code>110.242.68.66</code></td><td>整个互联网认识你</td></tr>
+        <tr><td>私网 IP</td><td>局域网内唯一</td><td><code>192.168.1.101</code></td><td>只在你家局域网里有效</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>域名 · 给人看的名字</h3>
+  <p><strong>域名</strong>（Domain Name）是给人类看的——<code>baidu.com</code>、<code>xuehai-wuya.pages.dev</code>。它比 IP 好记得多。</p>
+
+  <p>但计算机只认 IP。所以每次你输入域名，系统都要先做一次"翻译"——这就是 <strong>DNS</strong>（域名系统）做的事。它像一本全球联网的"电话簿"——问一句"xuehai-wuya.pages.dev 对应什么 IP"，毫秒级给你答案。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一本会自己更新的电话簿</span>
+    <p>老式电话簿一年印一次，过时就要等新版。<br/>
+    DNS 像一本<strong>全球 24 小时在线的电话簿</strong>——任何人买了域名，几分钟内全世界都能查到。<br/>
+    这本"电话簿"分布在几十万台服务器上，互相备份——任何一个节点挂了，全球 DNS 也不会瘫。</p>
+  </div>
+
+  <h3>三种地址如何配合</h3>
+  <p>一次典型的"打开百度"过程，三种地址是这样协作的：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>① 你输入 baidu.com</h4>
+      <p>计算机看不懂这名字，先去问 DNS——"baidu.com 对应哪个 IP？"</p>
+    </div>
+    <div class="step">
+      <h4>② DNS 返回 IP</h4>
+      <p>DNS 服务器回答："是 110.242.68.66"。你的电脑记住了这个公网 IP。</p>
+    </div>
+    <div class="step">
+      <h4>③ 你的电脑构造数据包</h4>
+      <p>包上写：源 IP（你的）= 192.168.1.101，目标 IP = 110.242.68.66。</p>
+    </div>
+    <div class="step">
+      <h4>④ 数据包经过你家的路由器</h4>
+      <p>路由器一看"目标是公网 IP，不在我家局域网"——把包丢给上级网络，并把你的私网 IP"翻译"成你家对外的公网 IP（这个翻译叫 NAT）。</p>
+    </div>
+    <div class="step">
+      <h4>⑤ 数据包穿越公网</h4>
+      <p>一路上经过几十个路由器，每个路由器都看一眼目标 IP，决定下一跳送哪。</p>
+    </div>
+    <div class="step">
+      <h4>⑥ 抵达百度机房</h4>
+      <p>百度的服务器收到，按端口分发给具体的服务进程，处理请求，回包给你。</p>
+    </div>
+  </div>
+
+  <h3>动态 vs 静态 IP</h3>
+  <p>你的 IP 怎么来的？分两种：</p>
+  <ul class="keylist">
+    <li><span class="k">动态 IP（DHCP）</span><span class="v">路由器临时分一个给你——家用宽带、手机 WiFi 都是这种。便宜，省心。</span></li>
+    <li><span class="k">静态 IP</span><span class="v">管理员手动写死一个 IP——服务器、打印机、摄像头常用。稳定，但要花钱或手动维护。</span></li>
+  </ul>
+
+  <h3>localhost · 一个特殊的 IP</h3>
+  <p><code>127.0.0.1</code>（或者 <code>localhost</code>）是个特殊地址——它永远指向<strong>你自己这台机器</strong>。程序员常说"我在 127.0.0.1:3000 起了个服务"，意思是"这个服务跑在我自己电脑上，外面访问不到"。<br/>
+  你 ping 一下 <code>127.0.0.1</code>——光速返回，因为根本没出网。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>三种地址，三种用途：<mark class="key">MAC 是身份证（一生不变）；IP 是住址（暂时所属）；域名是绰号（方便人记）</mark>。它们一起工作，让数据包既能在全球互联网上找到你，又能在你家客厅找到你的手机。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-2-protocol.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 1.2 · 协议 · Protocol 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-4-client-server.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 1.4 · 客户端 vs 服务器篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 1.3 · Address</div>
+
+</article>
+</body>
+</html>

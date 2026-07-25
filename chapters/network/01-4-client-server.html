@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.4 · 客户端 vs 服务器篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-network.html">网络篇 · 第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.4</span>
+    </div>
+    <a href="./01-what-is-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.4 · Sub-chapter</div>
+    <h1>客户端 vs 服务器篇</h1>
+    <div class="cn">Client &amp; Server</div>
+  </header>
+
+  <p class="lead">
+    网络里，通信的双方关系不是"平等对话"——而是<mark class="key">"一个主动提需求，一个被动响应"</mark>。提需求的叫<strong>客户端</strong>（Client），响应的叫<strong>服务器</strong>（Server）。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍜 你去餐馆吃饭</div>
+    <p>你坐下——菜单（这是你的"客户端"）——你说："我要一碗牛肉面，加香菜不加葱。"<br/>
+    服务员把单子送到后厨——后厨（这是"服务器"）——开始切肉、煮面、配汤、装盘——端给你。<br/>
+    整个过程中，你<strong>主动发起</strong>，餐馆<strong>被动响应</strong>。你不能指望餐馆主动猜到你今天想吃啥——这就是客户端和服务器的本质关系。</p>
+  </div>
+
+  <h3>三个角色的"性格"</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>客户端 · Client</th><th>服务器 · Server</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>性格</td><td>主动出击——"我要什么"</td><td>被动响应——"等着被问"</td></tr>
+        <tr><td>位置</td><td>通常在你手上</td><td>通常在远方机房</td></tr>
+        <tr><td>数量</td><td>单个用户用一台</td><td>同时服务成千上万人</td></tr>
+        <tr><td>性能</td><td>一般，省电为主</td><td>强大，多核大内存</td></tr>
+        <tr><td>状态</td><td>经常关、休眠</td><td>7×24 开机，不能挂</td></tr>
+        <tr><td>典型例子</td><td>浏览器、App、邮箱客户端</td><td>Web 服务器、邮件服务器、数据库</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>一次典型对话 · 你打开微信</h3>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 你点开微信</h4>
+      <p>你的手机（客户端）主动连上微信服务器（腾讯机房）。</p>
+    </div>
+    <div class="step">
+      <h4>2. 服务器推送新消息</h4>
+      <p>服务器查你账号，发现有人给你留言了，把消息推给你。</p>
+    </div>
+    <div class="step">
+      <h4>3. 你回了一条消息</h4>
+      <p>你（客户端）发请求 → 微信服务器收到 → 转发给你朋友（也是客户端）→ 朋友手机响了。</p>
+    </div>
+    <div class="step">
+      <h4>4. 服务器做了什么</h4>
+      <p>它在这一秒同时在跟几亿个客户端保持连接，分发消息、记录日志、同步状态。这就是服务器的"忙"。</p>
+    </div>
+  </div>
+
+  <h3>一台机器可以既是客户端又是服务器</h3>
+  <p>这是新手最容易迷糊的点——"客户端"和"服务器"<strong>不是两台固定的机器，而是"在某次通信里的角色"</strong>。同一台机器，这一刻是客户端，下一刻可能是服务器。</p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🖨️ 你的笔记本变身"打印服务器"</div>
+    <p>你在家里笔记本上访问百度——你的笔记本是<strong>客户端</strong>（在请求网页）。<br/>
+    你的家人通过局域网共享你的打印机——这台笔记本此时又变成了<strong>打印服务器</strong>（在响应打印请求）。<br/>
+    同一台机器，只是角色在变。这完全取决于"它在这次对话里是发起方还是响应方"。</p>
+  </div>
+
+  <h3>P2P · 没有"老大"的对话</h3>
+  <p>有一种特殊模式叫 <strong>P2P</strong>（Peer-to-Peer，点对点）——所有参与者既是客户端又是服务器，互相直接对话，没有"中心服务器"。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模式</th><th>典型应用</th><th>优缺点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>客户端 / 服务器</td><td>网页浏览、App 聊天、电商</td><td>管理方便，但服务器挂了就全完</td></tr>
+        <tr><td>P2P</td><td>BT 下载、早期 Skype、局域网共享</td><td>去中心，但监管难、稳定性差</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 餐厅 vs 大杂烩市集</span>
+    <p><strong>客户端/服务器</strong> 像一家正规餐厅——你点菜，厨师做，规则明确，但厨师罢工餐厅就停业。<br/>
+    <strong>P2P</strong> 像农村市集——你既是卖家也是买家，没有"老板"，市集永远不会"关门"，但质量也参差不齐。</p>
+  </div>
+
+  <h3>服务器有"专用款"</h3>
+  <p>服务器不只有"通用款"——按照它专门做什么，可以分很多种：</p>
+  <ul class="keylist">
+    <li><span class="k">Web 服务器</span><span class="v">专门处理 HTTP 请求——返回网页。Nginx、Apache 是经典软件。</span></li>
+    <li><span class="k">应用服务器</span><span class="v">跑业务逻辑——下单、扣款、风控。常用 Java、Node.js、Python。</span></li>
+    <li><span class="k">数据库服务器</span><span class="v">专门存数据。MySQL、PostgreSQL、Redis。</span></li>
+    <li><span class="k">文件服务器</span><span class="v">专门存文件。NAS、网盘后端。</span></li>
+    <li><span class="k">邮件服务器</span><span class="v">专门收发邮件。SMTP/IMAP/POP3。</span></li>
+    <li><span class="k">DNS 服务器</span><span class="v">专门做"域名 → IP"的翻译。</span></li>
+    <li><span class="k">代理服务器</span><span class="v">帮客户端转发请求，做"中间人"。</span></li>
+    <li><span class="k">CDN 服务器</span><span class="v">把内容缓存到离用户最近的节点，加速访问。</span></li>
+  </ul>
+
+  <h3>服务器为什么"不能挂"</h3>
+  <p>服务器不是"更好的电脑"，它是<mark class="key">"承诺永远在线的电脑"</mark>。一家大公司的服务器一挂，可能意味着几亿用户不能下单、不能登录、不能聊天。所以服务器有：</p>
+  <ul class="keylist">
+    <li><span class="k">双电源 · 双网络</span><span class="v">断电、断网都能自动切换。</span></li>
+    <li><span class="k">RAID 磁盘阵列</span><span class="v">硬盘坏一块，数据还在。</span></li>
+    <li><span class="k">冗余部署</span><span class="v">同一份业务跑在多台机器上——一台挂了另一台顶上。</span></li>
+    <li><span class="k">24 小时监控</span><span class="v">服务器一报警，运维人员立刻收到短信。</span></li>
+  </ul>
+
+  <h3>你要记住的一句话</h3>
+  <p><mark class="key">客户端和服务器，是"角色"而不是"机器"</mark>——同一个设备，在 A 次对话里是客户端，在 B 次对话里可能是服务器。判断标准只有一个：<strong>谁先发起请求，谁就是客户端</strong>。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>所有网络通信，本质都是<strong>一对"问与答"</strong>——客户端问、服务器答。理解了这个分工，你就理解了整个互联网服务的骨架。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-3-address.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 1.3 · 地址 · Address 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-5-packet.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 1.5 · 数据包 · Packet 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 1.4 · Client &amp; Server</div>
+
+</article>
+</body>
+</html>

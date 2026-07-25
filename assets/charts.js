@@ -380,8 +380,12 @@
     var netChildren = [
       { name: '第 1 章 · 网络是什么', link: 'chapters/network/01-what-is-network.html', external: true,
         children: [
-          { name: '主机 Host' }, { name: '协议 Protocol' }, { name: '地址 Address' },
-          { name: '客户端 / 服务器' }, { name: '数据包 Packet' }, { name: '带宽 / 时延 / 丢包' }
+          { name: '§ 1.1 · 主机 Host 篇',         link: 'chapters/network/01-1-host.html',          external: true },
+          { name: '§ 1.2 · 协议 Protocol 篇',      link: 'chapters/network/01-2-protocol.html',      external: true },
+          { name: '§ 1.3 · 地址 Address 篇',       link: 'chapters/network/01-3-address.html',       external: true },
+          { name: '§ 1.4 · 客户端 vs 服务器篇',     link: 'chapters/network/01-4-client-server.html', external: true },
+          { name: '§ 1.5 · 数据包 Packet 篇',      link: 'chapters/network/01-5-packet.html',        external: true },
+          { name: '§ 1.6 · 带宽/时延/丢包 篇',     link: 'chapters/network/01-6-metrics.html',       external: true }
         ] },
       { name: '第 2 章 · 分层模型',
         children: [

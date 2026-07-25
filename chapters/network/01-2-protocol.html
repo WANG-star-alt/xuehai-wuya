@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.2 · 协议 · Protocol 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-network.html">网络篇 · 第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.2</span>
+    </div>
+    <a href="./01-what-is-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.2 · Sub-chapter</div>
+    <h1>协议 · Protocol 篇</h1>
+    <div class="cn">Rules of the Conversation</div>
+  </header>
+
+  <p class="lead">
+    两台机器能"连上"只是第一步——能"听懂对方说什么"才是关键。<mark class="key">协议就是两台机器"说话之前先约好的规矩"</mark>：先说什么、再说什么、用什么格式、出错怎么办。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🤝 第一次跟陌生人谈生意</div>
+    <p>你跟一位外国朋友打电话——上来第一句你肯定说"Hello, do you speak Chinese?" 而不是直接开始谈生意。<br/>
+    对方答"Yes, I do."——好，双方达成一致：用中文。然后才进入正题：<br/>
+    "我这批货 100 件，每件 80 元……"<br/>
+    这"先打招呼、确认语言、再谈正事"的过程，就是<strong>一次"握手"</strong>（Handshake）。<br/>
+    协议做的事，就是把这些"寒暄、约定、确认、确认收到的细节"全部标准化，让两台机器也能这么有条不紊地聊天。</p>
+  </div>
+
+  <h3>协议的三要素</h3>
+  <p>任何一个网络协议，都至少包含这三件事：</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">01</div>
+      <h4>语法 · Syntax</h4>
+      <p><strong>"格式怎么写"</strong>——比如 HTTP 请求第一行必须是"GET /index.html HTTP/1.1"，顺序、空格、换行都写死了。<br/>类比：信封必须"省-市-区-街道-门牌号"按顺序写。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02</div>
+      <h4>语义 · Semantics</h4>
+      <p><strong>"每个字段是啥意思"</strong>——比如 HTTP 状态码 200 表示成功，404 表示没找到，500 表示服务器挂了。<br/>类比：信封左上角贴"加急"贴纸——谁都知道意味着啥。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">03</div>
+      <h4>时序 · Timing</h4>
+      <p><strong>"谁先说话、什么时候说、出错怎么办"</strong>——比如 TCP 三次握手的顺序：你问"在吗" → 我答"在" → 你说"那我开始了"。<br/>类比：打电话先响铃，对方接起才能说话，不能说挂就挂。</p>
+    </div>
+  </div>
+
+  <h3>协议是如何"分层"的</h3>
+  <p>你可能听过"OSI 7 层"、"TCP/IP 4 层"——这其实就是把"一次完整对话"拆成多个不同层次的协议，每层只管一件事：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>层次</th><th>负责</th><th>类比</th><th>代表协议</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>应用层</td><td>这次对话的"业务"是什么</td><td>写信还是寄包裹</td><td>HTTP · SMTP · DNS</td></tr>
+        <tr><td>传输层</td><td>这次对话"靠不靠谱"</td><td>挂号信 vs 平信</td><td>TCP · UDP</td></tr>
+        <tr><td>网络层</td><td>这封信"送到哪个城市"</td><td>分拣中心</td><td>IP · ICMP</td></tr>
+        <tr><td>链路层</td><td>"送到下一个路口"</td><td>邮递员最后一公里</td><td>Ethernet · WiFi</td></tr>
+        <tr><td>物理层</td><td>"怎么把信号发出去"</td><td>用光缆还是无线电</td><td>光纤 · 5G · 双绞线</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 写信的每一步</span>
+    <p>你写一封信给朋友——你决定<strong>内容</strong>（应用层）；你决定<strong>要不要挂号</strong>（传输层）；你写上<strong>收信城市</strong>（网络层）；邮递员负责<strong>送到对方楼下</strong>（链路层）；最后邮车 <strong>走哪条路</strong>（物理层）。<br/>
+    每层都有专门的"工人"和专门的"规则"，互不干扰——这就是分层的智慧。</p>
+  </div>
+
+  <h3>你每天用到的 8 个协议</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>协议</th><th>它管什么</th><th>你什么时候用到它</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>HTTP / HTTPS</td><td>浏览网页</td><td>每天打开任何网页</td></tr>
+        <tr><td>DNS</td><td>域名翻译成 IP</td><td>你输入 baidu.com 的瞬间</td></tr>
+        <tr><td>TCP</td><td>可靠传输</td><td>聊天消息、邮件、文件下载</td></tr>
+        <tr><td>UDP</td><td>快速传输（不保证到达）</td><td>视频会议、直播、游戏</td></tr>
+        <tr><td>IP</td><td>把数据包送到目标城市</td><td>每一次网络通信</td></tr>
+        <tr><td>ICMP</td><td>网络诊断</td><td>你 ping 一台服务器时</td></tr>
+        <tr><td>DHCP</td><td>自动分配 IP</td><td>你每次连 WiFi</td></tr>
+        <tr><td>SMTP</td><td>发邮件</td><td>你点"发送"按钮时</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>协议为什么"必须双方都遵守"</h3>
+  <p>这是新手最容易困惑的一点——协议不是"厂家规定"，它是<strong>双方都必须遵守的"约定"</strong>。如果两台机器用了不同的协议，它们就<strong>互相听不懂</strong>——就像你打电话说的是中文，对方只懂西班牙语，根本聊不下去。</p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📻 对讲机为什么有"频道"</div>
+    <p>保安对讲机上有"1-16 频道"。你说 "1 频道"，对方也必须调到 1 频道——频道就是"频率协议"。<br/>
+    换成 WiFi 也是同样：2.4G / 5G / 6G 是不同"频道"，WiFi 4 / 5 / 6 / 7 是不同"协议版本"——路由器和手机必须支持同一版本才能聊。<br/>
+    你买过"WiFi 6 路由器但手机只支持 WiFi 5"的情况吗？它能工作，但只会按双方都支持的最老协议跑——这就是协议协商。</p>
+  </div>
+
+  <h3>协议升级的方式：向后兼容</h3>
+  <p>网络用了 50 年，怎么没崩？因为新协议几乎都<strong>向后兼容</strong>——你 WiFi 6 路由器也接受 WiFi 5 手机；HTTP/2 浏览器也能跟 HTTP/1.1 服务器对话。这就是为什么 1980 年的老标准到今天还能用。<mark class="key">好的协议不是取代旧的，而是兼容旧的。</mark></p>
+
+  <h3>读懂一次握手</h3>
+  <p>以"TCP 三次握手"为例，让你感受协议有多严谨：</p>
+  <div class="journey">
+    <div class="step">
+      <h4>① 客户端：SYN</h4>
+      <p>"我想和你建立连接，我的初始序号是 X。"——只发，不等回话。</p>
+    </div>
+    <div class="step">
+      <h4>② 服务器：SYN + ACK</h4>
+      <p>"我听到了你的 SYN，确认号 X+1；同时我也 SYN，我的初始序号是 Y。"——一次说两件事。</p>
+    </div>
+    <div class="step">
+      <h4>③ 客户端：ACK</h4>
+      <p>"我听到了你的 SYN，确认号 Y+1。"——三次握手完成，双方都知道对方"听到了自己"，连接建立。</p>
+    </div>
+  </div>
+
+  <p>为什么要三次？两次行不行？答：不行——两次时，服务器不知道客户端有没有收到自己的 SYN。三次之后，<strong>双方都明确知道对方收到了自己</strong>。协议的设计就是这么严谨。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>协议 = <strong>网络里的"共同语言"</strong>。它规定了格式、含义、时序，让两台互不相识的机器能听懂对方。<br/>
+    你不需要背下所有协议——只要记住一件事：<mark class="key">遇到"两台机器连不上"的问题，第一步就是问：它们的协议对得上吗？</mark></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-1-host.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 1.1 · 主机 · Host 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-3-address.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 1.3 · 地址 · Address 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 1.2 · Protocol</div>
+
+</article>
+</body>
+</html>

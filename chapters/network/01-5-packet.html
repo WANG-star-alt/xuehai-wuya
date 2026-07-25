@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.5 · 数据包 · Packet 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-network.html">网络篇 · 第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.5</span>
+    </div>
+    <a href="./01-what-is-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.5 · Sub-chapter</div>
+    <h1>数据包 · Packet 篇</h1>
+    <div class="cn">The Atom of the Internet</div>
+  </header>
+
+  <p class="lead">
+    互联网发送信息，从来不是一整块扔过去——而是<mark class="key">先切成一小块一小块，每块叫一个"数据包"</mark>（Packet）。这些包独立走自己的路，到了目的地再拼回来。这个看似简单的设计，是互联网能稳定运转 50 年的核心秘密。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📦 你搬家，但不会"一次性搬所有家具"</div>
+    <p>你不会叫一辆大卡车把所有家具一次搬走——你会把沙发拆成几块、把书装箱、把餐具分门别类包好，每一箱都贴上标签："厨房"、"客厅"、"书房"，到了新家再拼起来。<br/>
+    为什么要这么做？<br/>
+    ① 卡车装不下整家当；<br/>
+    ② 一箱丢了还能单独补，不用全部重搬；<br/>
+    ③ 不同的箱子可以走不同的路（有的走高速、有的走船）——哪条快到哪。<br/>
+    网络发数据，逻辑完全一样。<strong>大包拆小包、每个包贴序号、到了目的地再拼起来</strong>——这就是为什么你的视频哪怕跨越半个地球，画面也是完整流畅的。</p>
+  </div>
+
+  <h3>一个数据包长什么样</h3>
+  <p>每个数据包大致分两块——<strong>头部（Header）</strong>和<strong>载荷（Payload）</strong>：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>部分</th><th>类比</th><th>装的是什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>头部 · Header</td><td>快递面单</td><td>源地址、目标地址、序号、长度、协议类型、校验码</td></tr>
+        <tr><td>载荷 · Payload</td><td>快递内容</td><td>真正的数据——可能是网页代码的一小段、图片的一个分片、视频的一帧</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 快递包裹</span>
+    <p>一个快递包裹里——<strong>面单</strong>是"头部"（收件人、寄件人、单号、重量），<strong>里面的东西</strong>是"载荷"。<br/>
+    快递公司只看面单就能决定这包往哪送——根本不需要打开看里面是书还是袜子。<br/>
+    数据包也一样——路由器只读头部，不关心载荷里装的是什么字节。</p>
+  </div>
+
+  <h3>包可以有多小？可以有多大？</h3>
+  <p>数据包不是想多大就多大——受一个叫 <strong>MTU</strong>（Maximum Transmission Unit）的限制：以太网默认是 <strong>1500 字节</strong>。超过这个大小，就必须切片。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>典型包大小</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>普通以太网</td><td>1500 B</td><td>最常见的 MTU</td></tr>
+        <tr><td>数据中心专用 Jumbo Frame</td><td>9000 B</td><td>减少头部开销，效率更高</td></tr>
+        <tr><td>语音 / 视频流</td><td>几十到几百 B</td><td>小包降低延迟</td></tr>
+        <tr><td>纯 ACK 确认包</td><td>40-60 B</td><td>只有头没有载荷</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>为什么要拆小？三个原因</h3>
+  <ul class="keylist">
+    <li><span class="k">公平共享</span><span class="v">互联网是亿万人共享的"高速路"。如果一个大文件占路半小时，其他人都得等着——拆小包让数据流"穿插"，大家都能前进。</span></li>
+    <li><span class="k">失败成本低</span><span class="v">一个 1MB 文件如果不拆，丢一次就得全重发；拆成 700 个 1.5KB 的包，丢一个只重传那一个，效率差 700 倍。</span></li>
+    <li><span class="k">绕路灵活</span><span class="v">小包可以走不同路线——北京到上海的包可能一半走京沪光缆，一半绕西安。哪条不堵走哪条。</span></li>
+  </ul>
+
+  <h3>为什么"绕路"也能拼回去</h3>
+  <p>这是新手最容易困惑的一点——包走的路线不同，到达时间不同，怎么保证最后拼出来的内容是正确的？答案是<strong>序号</strong>。</p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧩 把 100 张纸装进 10 个信封寄出</h4>
+    <p>你有一份 100 页的报告，但每个信封最多塞 10 页——你只能拆成 10 个信封，分别寄给朋友。<br/>
+    ① 你给每个信封标注："第 1 页到第 10 页"、"第 11 页到第 20 页"……<br/>
+    ② 朋友收到所有信封后，按编号排好，从 1 拼到 100。<br/>
+    ③ 如果第 5 个信封没到，朋友就告诉你："请重发第 5 封。"——不用重发全部 10 封。<br/>
+    这就是 TCP 协议做的事——给每个字节一个序号，按序号排序、按序号确认、按序号重传。</p>
+  </div>
+
+  <h3>数据包的"生命周期"</h3>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 诞生</h4>
+      <p>你的应用程序（比如浏览器）构造一份数据，TCP 协议栈把它切成若干段，每段加序号、加校验和，封装成 TCP 包。</p>
+    </div>
+    <div class="step">
+      <h4>2. 加 IP 头</h4>
+      <p>TCP 包再被 IP 层包裹——加上源 IP 和目标 IP。现在它能被路由器识别了。</p>
+    </div>
+    <div class="step">
+      <h4>3. 加 MAC 头</h4>
+      <p>IP 包再被以太网层包裹——加上源 MAC 和下一跳路由器的 MAC。现在它能从你家网卡出去了。</p>
+    </div>
+    <div class="step">
+      <h4>4. 一跳一跳转发</h4>
+      <p>包经过你家路由器 → 运营商骨干 → 骨干网 → 对方运营商 → 对方路由器——每跳都会看一眼目标 IP，决定下一跳去哪。</p>
+    </div>
+    <div class="step">
+      <h4>5. 抵达目标</h4>
+      <p>对方机器收到包，反过来一层一层"剥皮"——MAC 头撕掉、IP 头撕掉、TCP 头撕掉——剩下的就是真正的数据。</p>
+    </div>
+    <div class="step">
+      <h4>6. 拼装回完整内容</h4>
+      <p>所有包都到齐了，TCP 按序号排序、检查有没有缺——齐了，交给应用程序（浏览器）渲染。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 洋葱</span>
+    <p>一个完整的数据包像一颗洋葱——<strong>MAC 头在最外层，IP 头在中间，TCP 头在更里，数据在最心</strong>。<br/>
+    每过一台路由器，路由器会撕掉外层（MAC 头），换上新的（自己的 MAC 头）继续往前送。最终目标机器一层层撕到最里，才看到真正的数据。</p>
+  </div>
+
+  <h3>包丢了怎么办</h3>
+  <ul class="keylist">
+    <li><span class="k">TCP 模式（可靠）</span><span class="v">接收方每隔一段时间告诉发送方"我收到 1-1500 号了"——发送方看到哪个号没收到，就自动重发。代价是慢一点。</span></li>
+    <li><span class="k">UDP 模式（快速）</span><span class="v">丢了就丢了，不管。优点是快——视频通话、直播、游戏用 UDP，丢一两帧你根本察觉不到。</span></li>
+  </ul>
+
+  <h3>你刚才看这篇文章，经过了多少数据包</h3>
+  <p>粗略估算：本页 HTML + 样式 + 字体 + 图片 ≈ 300KB。<br/>
+  按每包 1500 字节算，大约需要 <strong>200 个数据包</strong>，从 Cloudflare 服务器发到你手机。这 200 个包跨越了<strong>十几个路由器</strong>，可能走了<strong>3-5 条不同路径</strong>，最终在 <strong>200 毫秒</strong>内全部到齐——你完全无感知。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>数据包是互联网的"原子"——<mark class="key">小而独立、贴序号、走自己的路、到了再拼</mark>。<br/>
+    这个看似简单的设计，让互联网能做到"任何一条线路断了都不影响整体"、"任何一段内容丢了只重传那一点"、"所有人共享同一张网而不互相堵死"。<br/>
+    下一次你看到"网络拥塞"、"丢包"、"MTU"这些词，脑海里就该浮现出"快递分箱"的画面。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-4-client-server.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 1.4 · 客户端 vs 服务器篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-6-metrics.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 1.6 · 带宽 / 时延 / 丢包 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 1.5 · Packet</div>
+
+</article>
+</body>
+</html>
