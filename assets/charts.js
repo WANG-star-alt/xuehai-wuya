@@ -1042,7 +1042,7 @@
             backgroundColor: 'rgba(250,247,242,1)'
           }
         },
-        expandAndCollapse: true,
+        expandAndCollapse: false,
         animationDuration: 500,
         animationDurationUpdate: 500
       }]
@@ -1051,8 +1051,31 @@
     console.log('[kmap] rendered OK');
     window.addEventListener('resize', function () { chart.resize(); });
 
-    // 点击带 link 字段的章节节点 → 跳转新页面 或 平滑滚动
+    // 通过 treePathInfo 找到数据源里对应的原节点（保持 collapsed 状态跟数据同步）
+    function findNodeByPath(pathInfo) {
+      if (!pathInfo || !pathInfo.length) return null;
+      var roots = window.__xhwyTreeData;
+      // pathInfo[0] 是根节点，从 roots 里按 name 找
+      var node = null;
+      for (var i = 0; i < roots.length; i++) {
+        if (roots[i].name === pathInfo[0].name) { node = roots[i]; break; }
+      }
+      if (!node) return null;
+      for (var j = 1; j < pathInfo.length; j++) {
+        if (!node.children) return null;
+        var found = null;
+        for (var k = 0; k < node.children.length; k++) {
+          if (node.children[k].name === pathInfo[j].name) { found = node.children[k]; break; }
+        }
+        if (!found) return null;
+        node = found;
+      }
+      return node;
+    }
+
+    // 点击节点：叶子跳转、非叶子切换展开状态（由我们自己维护）
     chart.on('click', function (params) {
+      // 1) 带 link 的节点 → 跳转 / 滚动
       if (params && params.data && params.data.link) {
         var link = params.data.link;
         if (params.data.external) {
@@ -1065,6 +1088,15 @@
           if (history && history.replaceState) {
             history.replaceState(null, '', '#' + link);
           }
+          return;
+        }
+      }
+      // 2) 有子节点 → 切换 collapsed
+      if (params && params.data && params.data.children && params.data.children.length) {
+        var real = findNodeByPath(params.treePathInfo || []);
+        if (real) {
+          real.collapsed = !real.collapsed;
+          chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
         }
       }
     });
@@ -1105,11 +1137,21 @@
       chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
     }
     function zoom(factor) {
-      var opt = chart.getOption();
-      var s = opt.series && opt.series[0];
-      var current = (s && s.zoom) || 1;
-      var next = Math.max(0.3, Math.min(4, current * factor));
-      chart.setOption({ series: [{ zoom: next }] });
+      // 获取当前 zoom：先从 chart option 读，没有就用记忆里的
+      if (typeof zoom.current !== 'number') zoom.current = 1;
+      zoom.current = Math.max(0.3, Math.min(4, zoom.current * factor));
+      chart.setOption({ series: [{
+        zoom: zoom.current,
+        data: window.__xhwyTreeData
+      }] });
+    }
+    function resetView() {
+      if (typeof zoom.current !== 'undefined') zoom.current = 1;
+      chart.setOption({ series: [{
+        zoom: 1,
+        center: null,
+        data: window.__xhwyTreeData
+      }] });
     }
 
     var btnExpand   = document.getElementById('kmap-expand');
@@ -1126,9 +1168,7 @@
     if (btnLevel2)   btnLevel2.addEventListener('click',   function () { expandToDepth(2); });
     if (btnZoomIn)   btnZoomIn.addEventListener('click',   function () { zoom(1.25); });
     if (btnZoomOut)  btnZoomOut.addEventListener('click',  function () { zoom(0.8);  });
-    if (btnReset)    btnReset.addEventListener('click',    function () {
-      chart.setOption({ series: [{ zoom: 1, center: null }] });
-    });
+    if (btnReset)    btnReset.addEventListener('click',    resetView);
   }
 
   if (document.readyState === 'loading') {
