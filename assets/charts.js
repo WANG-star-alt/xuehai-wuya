@@ -958,42 +958,51 @@
       series: [{
         type: 'tree',
         data: window.__xhwyTreeData,
-        layout: 'radial',
-        top: '5%',
-        bottom: '5%',
-        left: '10%',
-        right: '10%',
-        symbol: 'circle',
-        symbolSize: 7,
+        layout: 'orthogonal',
+        orient: 'LR',
+        top: '2%',
+        bottom: '2%',
+        left: '8%',
+        right: '18%',
+        symbol: 'emptyCircle',
+        symbolSize: 8,
         roam: true,
-        initialTreeDepth: 3,
+        initialTreeDepth: 1,
         lineStyle: {
           color: rule,
-          width: 1,
+          width: 1.2,
           curveness: 0.5
         },
         itemStyle: {
-          borderColor: '#faf7f2',
-          borderWidth: 1
+          borderColor: ink,
+          borderWidth: 1.2,
+          color: '#faf7f2'
         },
         label: {
+          position: 'left',
+          verticalAlign: 'middle',
+          align: 'right',
           fontFamily: bodyFont,
-          fontSize: isMobile ? 10 : 11,
-          color: ink
+          fontSize: isMobile ? 11 : 13,
+          color: ink,
+          distance: 6
         },
         leaves: {
           label: {
+            position: 'right',
+            verticalAlign: 'middle',
+            align: 'left',
             color: muted,
-            fontSize: isMobile ? 9 : 10
+            fontSize: isMobile ? 10 : 12
           }
         },
         emphasis: {
-          focus: 'ancestor',
+          focus: 'descendant',
           itemStyle: { shadowBlur: 6, shadowColor: 'rgba(85,107,61,.35)' },
           label: { fontWeight: 'bold', color: accent2 }
         },
         expandAndCollapse: true,
-        animationDuration: 550,
+        animationDuration: 500,
         animationDurationUpdate: 500
       }]
     });
