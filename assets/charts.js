@@ -337,17 +337,19 @@
         nodeGap: 22,
         emphasis: { focus: 'adjacency' },
         data: [
-          { name: '工作区\nWorking',    itemStyle: { color: accent } },
-          { name: '暂存区\nStaging',    itemStyle: { color: accent2 } },
-          { name: '仓库\nRepository',   itemStyle: { color: '#7d6c3e' } },
-          { name: '远程\nGitHub',       itemStyle: { color: '#8a8579' } }
+          { name: '远程 (pull)\nGitHub',    itemStyle: { color: '#8a8579' } },
+          { name: '仓库 (pull)\nRepository', itemStyle: { color: '#7d6c3e' } },
+          { name: '工作区\nWorking',        itemStyle: { color: accent } },
+          { name: '暂存区\nStaging',        itemStyle: { color: accent2 } },
+          { name: '仓库\nRepository',       itemStyle: { color: '#7d6c3e' } },
+          { name: '远程\nGitHub',           itemStyle: { color: '#8a8579' } }
         ],
         links: [
-          { source: '工作区\nWorking',   target: '暂存区\nStaging',    value: 2, cmd: 'git add',      lineStyle: { color: 'gradient', opacity: 0.5 } },
-          { source: '暂存区\nStaging',   target: '仓库\nRepository',   value: 2, cmd: 'git commit',   lineStyle: { color: 'gradient', opacity: 0.5 } },
-          { source: '仓库\nRepository',  target: '远程\nGitHub',       value: 2, cmd: 'git push',     lineStyle: { color: 'gradient', opacity: 0.5 } },
-          { source: '远程\nGitHub',      target: '仓库\nRepository',   value: 1, cmd: 'git pull',     lineStyle: { color: 'gradient', opacity: 0.3 } },
-          { source: '仓库\nRepository',  target: '工作区\nWorking',    value: 1, cmd: 'git checkout', lineStyle: { color: 'gradient', opacity: 0.3 } }
+          { source: '远程 (pull)\nGitHub',    target: '仓库 (pull)\nRepository', value: 1, cmd: 'git pull',     lineStyle: { opacity: 0.3 } },
+          { source: '仓库 (pull)\nRepository', target: '工作区\nWorking',        value: 1, cmd: 'git checkout', lineStyle: { opacity: 0.3 } },
+          { source: '工作区\nWorking',        target: '暂存区\nStaging',         value: 2, cmd: 'git add',      lineStyle: { opacity: 0.55 } },
+          { source: '暂存区\nStaging',        target: '仓库\nRepository',        value: 2, cmd: 'git commit',   lineStyle: { opacity: 0.55 } },
+          { source: '仓库\nRepository',       target: '远程\nGitHub',            value: 2, cmd: 'git push',     lineStyle: { opacity: 0.55 } }
         ],
         label: {
           color: ink,
