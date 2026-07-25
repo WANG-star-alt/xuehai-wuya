@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.1 · OSI 七层模型篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-layered-models.html">网络篇 · 第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.1</span>
+    </div>
+    <a href="./02-layered-models.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.1 · Sub-chapter</div>
+    <h1>OSI 七层模型篇</h1>
+    <div class="cn">Open Systems Interconnection Model</div>
+  </header>
+
+  <p class="lead">
+    OSI 七层模型是 1984 年国际标准化组织（ISO）提出的"理想分层"——<mark class="key">把网络通信拆成 7 个层次，每层只管一件事</mark>。虽然互联网实际用的是 TCP/IP 四层，但 OSI 是理解分层的最佳教材。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📮 寄一封国际挂号信</div>
+    <p>你从北京寄一封挂号信到纽约——整个过程可以拆成 7 步：</p>
+    <p>① 你<strong>写信</strong>（内容）<br/>
+    ② 你<strong>装信封</strong>，写地址（格式）<br/>
+    ③ 你<strong>去邮局</strong>，填国际快递单（协议）<br/>
+    ④ 邮局<strong>分拣</strong>，决定走空运还是海运（路由）<br/>
+    ⑤ 飞机/船<strong>运输</strong>到美国（传输）<br/>
+    ⑥ 美国邮局<strong>分拣</strong>，送到收件人楼下（链路）<br/>
+    ⑦ 邮递员<strong>敲门</strong>，收件人签收（物理送达）</p>
+    <p>每一步都有专人负责，换其中一步不影响其他步。OSI 七层就是把这个思路应用到网络。</p>
+  </div>
+
+  <h3>七层模型总览</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>层数</th><th>名称</th><th>干什么</th><th>类比</th><th>代表协议/设备</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>7</td><td>应用层 · Application</td><td>用户直接用的服务</td><td>信的内容</td><td>HTTP、FTP、SMTP、DNS</td></tr>
+        <tr><td>6</td><td>表示层 · Presentation</td><td>数据格式转换、加密</td><td>翻译官（中文→英文）</td><td>SSL/TLS、JPEG、ASCII</td></tr>
+        <tr><td>5</td><td>会话层 · Session</td><td>建立、管理、断开会话</td><td>电话接线员</td><td>NetBIOS、RPC</td></tr>
+        <tr><td>4</td><td>传输层 · Transport</td><td>端到端可靠传输</td><td>挂号信 vs 平信</td><td>TCP、UDP</td></tr>
+        <tr><td>3</td><td>网络层 · Network</td><td>选路、寻址</td><td>分拣中心</td><td>IP、ICMP、路由器</td></tr>
+        <tr><td>2</td><td>数据链路层 · Data Link</td><td>相邻节点可靠传输</td><td>邮递员</td><td>Ethernet、WiFi、交换机</td></tr>
+        <tr><td>1</td><td>物理层 · Physical</td><td>比特流传输</td><td>马路/飞机/船</td><td>网线、光纤、无线电</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>第一层 · 物理层（Physical）</h3>
+  <p><strong>最底层——只管"怎么把 0 和 1 变成电信号/光信号/无线电波发出去"</strong>。</p>
+  <ul class="keylist">
+    <li><span class="k">干什么</span><span class="v">定义电压高低、线缆接口、传输速率、物理拓扑</span></li>
+    <li><span class="k">类比</span><span class="v">马路、飞机、船——不管你运什么货，只管"路"本身</span></li>
+    <li><span class="k">设备</span><span class="v">网线、光纤、集线器（Hub）、中继器</span></li>
+  </ul>
+
+  <h3>第二层 · 数据链路层（Data Link）</h3>
+  <p><strong>管"怎么在相邻两台设备之间可靠地传数据"</strong>——比如你的电脑和路由器之间。</p>
+  <ul class="keylist">
+    <li><span class="k">干什么</span><span class="v">把比特流组成"帧"（Frame）、差错检测、MAC 地址寻址</span></li>
+    <li><span class="k">类比</span><span class="v">邮递员——只负责"从这栋楼送到隔壁楼"，不管全城怎么跑</span></li>
+    <li><span class="k">设备</span><span class="v">交换机（Switch）、网桥</span></li>
+    <li><span class="k">协议</span><span class="v">Ethernet（以太网）、WiFi（802.11）、PPP</span></li>
+  </ul>
+
+  <h3>第三层 · 网络层（Network）</h3>
+  <p><strong>管"怎么从源地址找到目标地址"</strong>——跨城市、跨国家、跨大洲。</p>
+  <ul class="keylist">
+    <li><span class="k">干什么</span><span class="v">IP 地址寻址、路由选择、拥塞控制</span></li>
+    <li><span class="k">类比</span><span class="v">分拣中心——看邮编，决定这封信走哪条路线</span></li>
+    <li><span class="k">设备</span><span class="v">路由器（Router）——三层交换机的核心</span></li>
+    <li><span class="k">协议</span><span class="v">IP（IPv4/IPv6）、ICMP（ping 用的）、IGMP</span></li>
+  </ul>
+
+  <h3>第四层 · 传输层（Transport）</h3>
+  <p><strong>管"端到端的可靠传输"</strong>——你的电脑到百度的服务器，中间可能经过几十个路由器，传输层确保数据完整到达。</p>
+  <ul class="keylist">
+    <li><span class="k">干什么</span><span class="v">分段、编号、确认、重传、流量控制</span></li>
+    <li><span class="k">类比</span><span class="v">挂号信 vs 平信——挂号信有回执，平信没有</span></li>
+    <li><span class="k">协议</span><span class="v">TCP（可靠）、UDP（快速）</span></li>
+  </ul>
+
+  <h3>第五层 · 会话层（Session）</h3>
+  <p><strong>管"怎么建立、维持、断开一次对话"</strong>——比如视频会议开始时握手，结束时说拜拜。</p>
+  <ul class="keylist">
+    <li><span class="k">干什么</span><span class="v">会话建立、会话管理、会话终止、断点续传</span></li>
+    <li><span class="k">类比</span><span class="v">电话接线员——帮你接通、保持通话、挂断</span></li>
+    <li><span class="k">协议</span><span class="v">NetBIOS、PPTP、RPC</span></li>
+  </ul>
+
+  <h3>第六层 · 表示层（Presentation）</h3>
+  <p><strong>管"数据格式怎么统一"</strong>——你的电脑用 UTF-8，对方的电脑用 GBK，表示层负责翻译。</p>
+  <ul class="keylist">
+    <li><span class="k">干什么</span><span class="v">数据格式转换、加密解密、压缩解压</span></li>
+    <li><span class="k">类比</span><span class="v">翻译官——中文信翻译成英文，收信人才能看懂</span></li>
+    <li><span class="k">协议</span><span class="v">SSL/TLS（加密）、JPEG/MPEG（压缩）、ASCII/Unicode（编码）</span></li>
+  </ul>
+
+  <h3>第七层 · 应用层（Application）</h3>
+  <p><strong>最高层——用户直接感知的服务</strong>。</p>
+  <ul class="keylist">
+    <li><span class="k">干什么</span><span class="v">提供网络服务接口——浏览网页、发邮件、传文件</span></li>
+    <li><span class="k">类比</span><span class="v">信的内容——你真正想表达的东西</span></li>
+    <li><span class="k">协议</span><span class="v">HTTP、HTTPS、FTP、SMTP、DNS、SSH</span></li>
+  </ul>
+
+  <h3>数据怎么"穿层"</h3>
+  <p>你发一封邮件，数据是这样"穿"过七层的：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>7. 应用层</h4>
+      <p>你写"Hello" → 邮件客户端把它包装成 SMTP 协议格式。</p>
+    </div>
+    <div class="step">
+      <h4>6. 表示层</h4>
+      <p>SMTP 数据被加密（TLS）、编码（Base64）。</p>
+    </div>
+    <div class="step">
+      <h4>5. 会话层</h4>
+      <p>建立到邮件服务器的会话连接。</p>
+    </div>
+    <div class="step">
+      <h4>4. 传输层</h4>
+      <p>数据切成 TCP 段，加序号，准备可靠传输。</p>
+    </div>
+    <div class="step">
+      <h4>3. 网络层</h4>
+      <p>加上 IP 头（源 IP + 目标 IP），路由器开始选路。</p>
+    </div>
+    <div class="step">
+      <h4>2. 数据链路层</h4>
+      <p>加上 MAC 头（源 MAC + 下一跳 MAC），交换机转发。</p>
+    </div>
+    <div class="step">
+      <h4>1. 物理层</h4>
+      <p>变成电信号/光信号，通过网线/光纤发出去。</p>
+    </div>
+  </div>
+
+  <p>到了对方机器，再反过来一层层"剥皮"——从 1 到 7，最终看到"Hello"。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 洋葱</span>
+    <p>数据包像一颗洋葱——<strong>应用层数据在最里面，每往下一层就包一层"皮"（头部信息）</strong>。<br/>
+    到了对方机器，再从外到内一层层剥皮，最后看到最里面的数据。<br/>
+    这就是"封装"和"解封装"。</p>
+  </div>
+
+  <h3>为什么要七层？三层行不行？</h3>
+  <p>理论上可以——但分七层的好处是<mark class="key">"每层可以独立升级"</mark>：</p>
+  <ul class="keylist">
+    <li><span class="k">物理层升级</span><span class="v">从铜缆换光纤，其他层不用改</span></li>
+    <li><span class="k">链路层升级</span><span class="v">从 Ethernet 换 WiFi，其他层不用改</span></li>
+    <li><span class="k">网络层升级</span><span class="v">从 IPv4 换 IPv6，其他层不用改</span></li>
+    <li><span class="k">应用层升级</span><span class="v">从 HTTP/1.1 换 HTTP/2，其他层不用改</span></li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>OSI 七层 = <mark class="key">"网络世界的分工表"</mark>。每层只管一件事，互不干扰，坏了单独修。<br/>
+    虽然互联网实际用的是 TCP/IP 四层（下一篇讲），但 OSI 七层是理解网络分层的最佳教材——面试必考，排查问题必用。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-layered-models.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">第 2 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-2-tcpip.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 2.2 · TCP/IP 四层模型篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 2.1 · OSI Model</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

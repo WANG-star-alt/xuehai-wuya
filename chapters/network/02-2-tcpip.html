@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.2 · TCP/IP 四层模型篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-layered-models.html">网络篇 · 第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.2</span>
+    </div>
+    <a href="./02-layered-models.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.2 · Sub-chapter</div>
+    <h1>TCP/IP 四层模型篇</h1>
+    <div class="cn">The Internet Protocol Suite</div>
+  </header>
+
+  <p class="lead">
+    OSI 七层是"理论上的完美"，TCP/IP 四层是<mark class="key">"实际上的好用"</mark>——互联网真正跑的就是这套。它把 OSI 的 7 层压缩成 4 层，更简洁、更实用。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏗️ 盖房子：设计院图纸 vs 施工队做法</div>
+    <p>OSI 像<strong>设计院的图纸</strong>——完美、严谨、考虑周全，但施工队可能觉得太复杂。<br/>
+    TCP/IP 像<strong>施工队的实际做法</strong>——把设计院 7 个工种合并成 4 个，照样把楼盖起来，而且更快。<br/>
+    不是设计院错了，是施工队找到了更高效的协作方式。</p>
+  </div>
+
+  <h3>四层模型总览</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>层数</th><th>名称</th><th>对应 OSI</th><th>干什么</th><th>代表协议</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>4</td><td>应用层 · Application</td><td>5+6+7</td><td>用户服务 + 数据格式 + 会话管理</td><td>HTTP、FTP、SMTP、DNS</td></tr>
+        <tr><td>3</td><td>传输层 · Transport</td><td>4</td><td>端到端可靠传输</td><td>TCP、UDP</td></tr>
+        <tr><td>2</td><td>网络层 · Internet</td><td>3</td><td>寻址、路由</td><td>IP、ICMP</td></tr>
+        <tr><td>1</td><td>网络接口层 · Network Interface</td><td>1+2</td><td>物理传输 + 相邻节点传输</td><td>Ethernet、WiFi</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>四层 vs 七层 · 怎么对应</h3>
+  <p>TCP/IP 把 OSI 的"会话层"和"表示层"合并到"应用层"，把"物理层"和"数据链路层"合并到"网络接口层"：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>OSI 七层</th><th>TCP/IP 四层</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>应用层</td><td rowspan="3">应用层</td><td rowspan="3">TCP/IP 认为"数据格式"和"会话管理"是应用自己的事</td></tr>
+        <tr><td>表示层</td></tr>
+        <tr><td>会话层</td></tr>
+        <tr><td>传输层</td><td>传输层</td><td>完全对应</td></tr>
+        <tr><td>网络层</td><td>网络层</td><td>完全对应</td></tr>
+        <tr><td>数据链路层</td><td rowspan="2">网络接口层</td><td rowspan="2">TCP/IP 认为"物理传输"和"相邻传输"是一回事</td></tr>
+        <tr><td>物理层</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>为什么 TCP/IP 赢了</h3>
+  <p>OSI 和 TCP/IP 在 1980-90 年代"打架"，最终 TCP/IP 胜出，原因：</p>
+
+  <ul class="keylist">
+    <li><span class="k">先有实现，后有标准</span><span class="v">TCP/IP 是 ARPANET 实际跑出来的，OSI 是委员会"设计"出来的——实践胜了理论。</span></li>
+    <li><span class="k">更简单</span><span class="v">4 层比 7 层好理解、好实现。</span></li>
+    <li><span class="k">免费开源</span><span class="v">TCP/IP 协议栈免费开放，OSI 要授权费。</span></li>
+    <li><span class="k">互联网选择</span><span class="v">ARPANET → NSFNET → 互联网，一路都是 TCP/IP。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · VHS vs Betamax</span>
+    <p>1980 年代录像带格式大战——Betamax 技术更先进（像 OSI），VHS 更便宜更普及（像 TCP/IP）。<br/>
+    最后 VHS 赢了，不是因为更好，而是因为<strong>更多人用</strong>。<br/>
+    TCP/IP 赢 OSI，也是同样的逻辑——<strong>生态打败了完美</strong>。</p>
+  </div>
+
+  <h3>四层各干什么</h3>
+
+  <h4>第一层 · 网络接口层（Network Interface）</h4>
+  <p>对应 OSI 的 1+2 层。管"怎么在物理介质上传数据，怎么在相邻设备间传数据"。</p>
+  <ul class="keylist">
+    <li><span class="k">协议</span><span class="v">Ethernet、WiFi（802.11）、PPP</span></li>
+    <li><span class="k">设备</span><span class="v">网卡、交换机、集线器</span></li>
+    <li><span class="k">数据单位</span><span class="v">帧（Frame）</span></li>
+  </ul>
+
+  <h4>第二层 · 网络层（Internet）</h4>
+  <p>对应 OSI 的第 3 层。管"怎么从源地址找到目标地址"。</p>
+  <ul class="keylist">
+    <li><span class="k">协议</span><span class="v">IP（IPv4/IPv6）、ICMP、IGMP</span></li>
+    <li><span class="k">设备</span><span class="v">路由器</span></li>
+    <li><span class="k">数据单位</span><span class="v">包（Packet）</span></li>
+  </ul>
+
+  <h4>第三层 · 传输层（Transport）</h4>
+  <p>对应 OSI 的第 4 层。管"端到端的可靠传输"。</p>
+  <ul class="keylist">
+    <li><span class="k">协议</span><span class="v">TCP（可靠）、UDP（快速）</span></li>
+    <li><span class="k">数据单位</span><span class="v">段（Segment）</span></li>
+  </ul>
+
+  <h4>第四层 · 应用层（Application）</h4>
+  <p>对应 OSI 的 5+6+7 层。管"用户直接用的服务"。</p>
+  <ul class="keylist">
+    <li><span class="k">协议</span><span class="v">HTTP、HTTPS、FTP、SMTP、DNS、SSH、Telnet</span></li>
+    <li><span class="k">数据单位</span><span class="v">消息（Message）</span></li>
+  </ul>
+
+  <h3>TCP/IP 协议栈 · 一张全家福</h3>
+  <p>把前面学的协议"对号入座"：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>TCP/IP 层</th><th>协议</th><th>你什么时候用到</th></tr>
+      </thead>
+      <tbody>
+        <tr><td rowspan="4">应用层</td><td>HTTP / HTTPS</td><td>打开网页</td></tr>
+        <tr><td>DNS</td><td>域名解析</td></tr>
+        <tr><td>SMTP / POP3 / IMAP</td><td>发邮件 / 收邮件</td></tr>
+        <tr><td>FTP / SSH</td><td>传文件 / 远程登录</td></tr>
+        <tr><td rowspan="2">传输层</td><td>TCP</td><td>网页、邮件、文件下载</td></tr>
+        <tr><td>UDP</td><td>视频、语音、游戏、DNS 查询</td></tr>
+        <tr><td rowspan="2">网络层</td><td>IP</td><td>所有网络通信</td></tr>
+        <tr><td>ICMP</td><td>ping、traceroute</td></tr>
+        <tr><td rowspan="2">网络接口层</td><td>Ethernet</td><td>插网线上网</td></tr>
+        <tr><td>WiFi</td><td>无线上网</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>TCP/IP 四层 = <mark class="key">"互联网的实际分工"</mark>。它比 OSI 更简洁，是真实世界的标准。<br/>
+    记住四层：<strong>应用层（服务）、传输层（可靠/快速）、网络层（地址）、接口层（物理）</strong>——你就掌握了互联网 90% 的底层逻辑。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-1-osi.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 2.1 · OSI 七层模型篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-3-layers-in-action.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 2.3 · 分层实战篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 2.2 · TCP/IP Model</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

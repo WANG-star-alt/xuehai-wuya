@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.3 · 分层实战篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-layered-models.html">网络篇 · 第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.3</span>
+    </div>
+    <a href="./02-layered-models.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.3 · Sub-chapter</div>
+    <h1>分层实战篇</h1>
+    <div class="cn">Protocols in Their Layers</div>
+  </header>
+
+  <p class="lead">
+    前面学了 OSI 七层、TCP/IP 四层，也学了 HTTP、TCP、UDP、IP 这些协议。这一篇把它们<mark class="key">"对号入座"</mark>——每个协议到底在哪一层？为什么在这一层？理解了"谁在哪层"，你就能像医生看 X 光片一样，一眼看穿网络问题的病根。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🚗 车坏了，修理工怎么找问题</div>
+    <p>你车坏了，开去修理厂。修理工不会瞎拆——他先问："是发动机问题、变速箱问题、还是电路问题？"<br/>
+    发动机 → 打开发动机盖修<br/>
+    变速箱 → 钻车底修<br/>
+    电路 → 查保险丝修<br/>
+    网络也一样——<strong>先判断"问题出在哪一层"，再拆那一层的"盖子"修</strong>。分层模型就是网络的"修理手册"。</p>
+  </div>
+
+  <h3>协议对号入座总表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>协议</th><th>OSI 层</th><th>TCP/IP 层</th><th>一句话记住</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>HTTP / HTTPS</td><td>7 应用层</td><td>4 应用层</td><td>浏览器和服务器聊天</td></tr>
+        <tr><td>FTP</td><td>7 应用层</td><td>4 应用层</td><td>传文件</td></tr>
+        <tr><td>SMTP</td><td>7 应用层</td><td>4 应用层</td><td>发邮件</td></tr>
+        <tr><td>POP3 / IMAP</td><td>7 应用层</td><td>4 应用层</td><td>收邮件</td></tr>
+        <tr><td>DNS</td><td>7 应用层</td><td>4 应用层</td><td>域名翻译成 IP</td></tr>
+        <tr><td>SSH</td><td>7 应用层</td><td>4 应用层</td><td>远程登录</td></tr>
+        <tr><td>SSL / TLS</td><td>6 表示层</td><td>4 应用层</td><td>加密解密</td></tr>
+        <tr><td>TCP</td><td>4 传输层</td><td>3 传输层</td><td>可靠传输</td></tr>
+        <tr><td>UDP</td><td>4 传输层</td><td>3 传输层</td><td>快速传输</td></tr>
+        <tr><td>IP</td><td>3 网络层</td><td>2 网络层</td><td>寻址和路由</td></tr>
+        <tr><td>ICMP</td><td>3 网络层</td><td>2 网络层</td><td>网络诊断（ping）</td></tr>
+        <tr><td>IGMP</td><td>3 网络层</td><td>2 网络层</td><td>组播管理</td></tr>
+        <tr><td>Ethernet</td><td>2 数据链路层</td><td>1 网络接口层</td><td>有线局域网</td></tr>
+        <tr><td>WiFi (802.11)</td><td>2 数据链路层</td><td>1 网络接口层</td><td>无线局域网</td></tr>
+        <tr><td>ARP</td><td>2 数据链路层</td><td>1 网络接口层</td><td>IP 找 MAC</td></tr>
+        <tr><td>PPP</td><td>2 数据链路层</td><td>1 网络接口层</td><td>拨号上网</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>排查问题 · 从哪层开始</h3>
+  <p>网络出问题了，怎么快速定位？分层模型给你一张"排查地图"：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>第 1 步 · 物理层检查</h4>
+      <p>网线插了吗？WiFi 连了吗？路由器灯亮吗？—— 90% 的问题在这一步解决。</p>
+    </div>
+    <div class="step">
+      <h4>第 2 步 · 数据链路层检查</h4>
+      <p>电脑和路由器通了吗？<code>ping 192.168.1.1</code> 通吗？—— 不通说明本地连接有问题。</p>
+    </div>
+    <div class="step">
+      <h4>第 3 步 · 网络层检查</h4>
+      <p>能 ping 通外网 IP 吗？<code>ping 114.114.114.114</code>—— 不通说明路由或 ISP 有问题。</p>
+    </div>
+    <div class="step">
+      <h4>第 4 步 · 传输层检查</h4>
+      <p>特定端口通吗？<code>telnet baidu.com 80</code>—— 不通说明防火墙拦了。</p>
+    </div>
+    <div class="step">
+      <h4>第 5 步 · 应用层检查</h4>
+      <p>网页能打开但慢？视频能看但卡？—— 应用层或服务器问题。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 看病</span>
+    <p>你去医院，医生不会一上来就做全身 CT——先问"哪不舒服？"（定位），再查对应科室（分层）。<br/>
+    网络排查也一样——<strong>先定位"哪层不舒服"，再查那一层的"专科"</strong>。</p>
+  </div>
+
+  <h3>一次网页访问的"全层之旅"</h3>
+  <p>把你前面学的所有知识串起来——你输入 <code>baidu.com</code> 按回车，数据在各层之间这样流动：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>应用层（第 4 层）</h4>
+      <p>浏览器构造 HTTP 请求："GET / HTTP/1.1 Host: baidu.com"。</p>
+    </div>
+    <div class="step">
+      <h4>传输层（第 3 层）</h4>
+      <p>HTTP 数据被 TCP 分段，加序号，准备可靠传输。</p>
+    </div>
+    <div class="step">
+      <h4>网络层（第 2 层）</h4>
+      <p>DNS 先把 baidu.com 翻译成 IP（比如 110.242.68.66），然后 IP 协议加上源 IP 和目标 IP。</p>
+    </div>
+    <div class="step">
+      <h4>网络接口层（第 1 层）</h4>
+      <p>Ethernet/WiFi 加上 MAC 头，变成电信号/无线电波发出去。</p>
+    </div>
+    <div class="step">
+      <h4>穿越互联网</h4>
+      <p>经过你家路由器（NAT 转换）、运营商骨干、百度机房路由器——每一跳都"看"IP 头决定下一跳。</p>
+    </div>
+    <div class="step">
+      <h4>百度服务器接收</h4>
+      <p>反过来一层层剥皮：接口层 → 网络层 → 传输层 → 应用层，最后看到 HTTP 请求。</p>
+    </div>
+    <div class="step">
+      <h4>返回数据</h4>
+      <p>百度服务器把网页内容按同样路径发回来——你屏幕显示出网页。</p>
+    </div>
+  </div>
+
+  <h3>常见问题定位练习</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>症状</th><th>可能出问题的层</th><th>排查方法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>WiFi 连不上</td><td>1 物理层 / 2 链路层</td><td>检查密码、信号强度、路由器</td></tr>
+        <tr><td>能连 WiFi 但打不开网页</td><td>3 网络层</td><td>ping 网关、ping 外网 IP</td></tr>
+        <tr><td>能 ping 通 IP 但打不开网页</td><td>4 传输层 / 7 应用层</td><td>检查 DNS、检查防火墙</td></tr>
+        <tr><td>网页打开慢</td><td>4 传输层 / 7 应用层</td><td>测带宽、查服务器负载</td></tr>
+        <tr><td>视频卡顿</td><td>3 网络层 / 4 传输层</td><td>测延迟、测丢包</td></tr>
+        <tr><td>邮件发不出去</td><td>7 应用层</td><td>检查 SMTP 设置、端口是否被封</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>一句话总结每层</h3>
+  <ul class="keylist">
+    <li><span class="k">物理层</span><span class="v">"路通不通"——网线、光纤、无线电</span></li>
+    <li><span class="k">链路层</span><span class="v">"隔壁通不通"——电脑到路由器</span></li>
+    <li><span class="k">网络层</span><span class="v">"全城通不通"——IP 寻址、路由</span></li>
+    <li><span class="k">传输层</span><span class="v">"端到端通不通"——TCP 可靠、UDP 快速</span></li>
+    <li><span class="k">应用层</span><span class="v">"服务好不好"——HTTP、DNS、邮件</span></li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>分层模型不是"考试知识点"，是<mark class="key">"排查问题的地图"</mark>。记住：<strong>物理层看线、链路层看本地、网络层看路由、传输层看端口、应用层看服务</strong>。<br/>
+    下次网络出问题，先问自己："这是哪一层的问题？"——你就已经比 90% 的人更懂网络了。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-2-tcpip.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 2.2 · TCP/IP 四层模型篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./03-protocols.html">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 3 章 · 关键协议篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 2.3 · Layers in Action</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 2 章 · 分层模型篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-network.html">网络篇 · 第 1 章</a>
+      <span class="sep">›</span>
+      <span>第 2 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Network · Chapter 02</div>
+    <h1>第 2 章 · 分层模型篇</h1>
+    <div class="cn">Layered Models · OSI &amp; TCP/IP</div>
+  </header>
+
+  <p class="lead">
+    你可能听过"OSI 七层"、"TCP/IP 四层"——但为什么网络要"分层"？<mark class="key">因为复杂的问题，最好的解法是"拆"</mark>。就像盖楼要分地基、框架、水电、装修，网络也分成若干层，每层只管一件事，互不干扰。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏢 开一家餐厅，不需要一个人会所有事</div>
+    <p>你开一家餐厅——不需要一个人既会炒菜、又会收银、又会擦桌子、又会修空调。<br/>
+    你拆成：<strong>厨师</strong>（做菜）、<strong>服务员</strong>（点菜上菜）、<strong>收银员</strong>（结账）、<strong>保洁</strong>（打扫）、<strong>维修工</strong>（修设备）。<br/>
+    每个人只干一件事，干好就行。换厨师不影响服务员，换服务员不影响收银员。<br/>
+    网络分层就是这个思路——<strong>每层有专门的"工人"和专门的"规则"，互不干扰，坏了单独修</strong>。</p>
+  </div>
+
+  <h3>为什么需要分层</h3>
+  <p>不分层会怎样？想象 1970 年代——每台电脑厂商自己搞一套"联网方案"，IBM 的电脑只能连 IBM，DEC 的只能连 DEC。要连别的厂？重写整套软件。<mark class="key">分层让"换一层不影响其他层"</mark>——这就是标准化的力量。</p>
+
+  <h3>本章的三篇子篇</h3>
+  <div class="cards">
+    <a class="card" href="./02-1-osi.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.1</div>
+      <h4>OSI 七层模型篇</h4>
+      <p>国际标准化组织提出的"理论完美"模型——从物理层到应用层，每层职责一目了然。</p>
+    </a>
+    <a class="card" href="./02-2-tcpip.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.2</div>
+      <h4>TCP/IP 四层模型篇</h4>
+      <p>互联网实际在用的模型——比 OSI 更简洁，TCP/IP 协议栈就是按这个分的。</p>
+    </a>
+    <a class="card" href="./02-3-layers-in-action.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.3</div>
+      <h4>分层实战篇</h4>
+      <p>把前面学的协议"对号入座"——HTTP 在哪层？TCP 在哪层？IP 在哪层？</p>
+    </a>
+  </div>
+
+  <h3>OSI vs TCP/IP · 一句话对比</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>OSI 七层</th><th>TCP/IP 四层</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>提出者</td><td>ISO 国际标准化组织（1984）</td><td>美国国防部 ARPANET（1970s）</td></tr>
+        <tr><td>性质</td><td>理论模型——"应该这样分"</td><td>实践模型——"实际就是这样分"</td></tr>
+        <tr><td>层数</td><td>7 层</td><td>4 层</td></tr>
+        <tr><td>现状</td><td>教学用，面试常考</td><td>互联网实际运行标准</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>分层 = <mark class="key">"把复杂问题拆成简单问题"</mark>。OSI 是"理论上的完美分层"，TCP/IP 是"实际上的实用分层"。理解它们，你就理解了网络设计的核心思想：<strong>分而治之</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-6-metrics.html">
+      <span class="dir">← 上一章</span>
+      <span class="title">§ 1.6 · 带宽 / 时延 / 丢包 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-1-osi.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 2.1 · OSI 七层模型篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · Chapter 02</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

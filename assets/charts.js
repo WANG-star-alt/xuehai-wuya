@@ -387,15 +387,22 @@
           { name: '§ 1.5 · 数据包 Packet 篇',      link: 'chapters/network/01-5-packet.html',        external: true },
           { name: '§ 1.6 · 带宽/时延/丢包 篇',     link: 'chapters/network/01-6-metrics.html',       external: true }
         ] },
-      { name: '第 2 章 · 分层模型',
+      { name: '第 2 章 · 分层模型', link: 'chapters/network/02-layered-models.html', external: true,
         children: [
           { name: 'OSI 7 层',
             children: [
+              { name: '§ 2.1 · OSI 七层模型篇', link: 'chapters/network/02-1-osi.html', external: true },
               { name: '物理层' }, { name: '数据链路层' }, { name: '网络层' },
               { name: '传输层' }, { name: '会话层' }, { name: '表示层' }, { name: '应用层' }
             ] },
-          { name: 'TCP/IP 4 层' },
-          { name: '每层职责一览' }
+          { name: 'TCP/IP 4 层',
+            children: [
+              { name: '§ 2.2 · TCP/IP 四层模型篇', link: 'chapters/network/02-2-tcpip.html', external: true }
+            ] },
+          { name: '每层职责一览',
+            children: [
+              { name: '§ 2.3 · 分层实战篇', link: 'chapters/network/02-3-layers-in-action.html', external: true }
+            ] }
         ] },
       { name: '第 3 章 · 关键协议', link: 'chapters/network/03-protocols.html', external: true,
         children: [
