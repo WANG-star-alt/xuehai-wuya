@@ -978,10 +978,31 @@
 
     var style = getComputedStyle(document.documentElement);
     var accent2 = (style.getPropertyValue('--accent2') || '#a05a2c').trim();
+    var accent  = (style.getPropertyValue('--accent')  || '#556b3d').trim();
     var ink     = (style.getPropertyValue('--ink')     || '#2b2a26').trim();
     var muted   = (style.getPropertyValue('--muted')   || '#8a8579').trim();
     var rule    = (style.getPropertyValue('--rule')    || '#e2dccf').trim();
     var bodyFont = 'Lora, "Noto Serif SC", serif';
+
+    // 统一处理节点颜色：有 link 的浅绿色，无 link 的浅灰色
+    (function colorNodes(nodes) {
+      nodes.forEach(function (n) {
+        if (n.link) {
+          // 有链接 → 浅绿色边框 + 浅绿填充
+          n.itemStyle = n.itemStyle || {};
+          n.itemStyle.borderColor = accent;
+          n.itemStyle.color = 'rgba(85,107,61,0.15)';
+          n.itemStyle.borderWidth = 2;
+        } else if (!n.children || !n.children.length) {
+          // 无链接的叶子 → 浅灰色
+          n.itemStyle = n.itemStyle || {};
+          n.itemStyle.borderColor = muted;
+          n.itemStyle.color = 'rgba(138,133,121,0.15)';
+          n.itemStyle.borderWidth = 1.5;
+        }
+        if (n.children && n.children.length) colorNodes(n.children);
+      });
+    })(window.__xhwyTreeData);
 
     var chart = echarts.init(el, null, { renderer: 'svg' });
     var isMobile = window.innerWidth <= 720;
@@ -1097,34 +1118,13 @@
       return node;
     }
 
-    // 点击节点：区分"点圆点"（展开/收起）和"点文字"（跳转）
+    // 点击节点：有 link 跳转，无 link 展开/收起
     chart.on('click', function (params) {
       // 找到数据源里的真实节点
       var real = findNodeByPath(params.treePathInfo || []);
       if (!real) return;
 
-      // 判断是否点击了圆点（symbol）区域
-      // params.event.event 是原生事件，offsetX/offsetY 是点击在画布上的位置
-      // params.data.x / params.data.y 是节点圆心的画布坐标
-      var isSymbolClick = false;
-      if (params.event && params.event.event && params.data) {
-        var ev = params.event.event;
-        var data = params.data;
-        // 圆点半径大约 symbolSize/2 = 7，加 3px 容错 = 10
-        var dx = (ev.offsetX || 0) - (data.x || 0);
-        var dy = (ev.offsetY || 0) - (data.y || 0);
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        isSymbolClick = dist <= 12; // 12px 内算点中圆点
-      }
-
-      // 1) 点击圆点 → 展开/收起（如果有子节点）
-      if (isSymbolClick && real.children && real.children.length) {
-        real.collapsed = !real.collapsed;
-        chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
-        return;
-      }
-
-      // 2) 点击文字 → 跳转（如果有 link）
+      // 1) 有 link → 跳转
       if (real.link) {
         if (real.external) {
           window.location.href = real.link;
@@ -1140,7 +1140,7 @@
         }
       }
 
-      // 3) 点击文字但无 link → 也展开/收起（方便浏览）
+      // 2) 无 link 但有子节点 → 展开/收起
       if (real.children && real.children.length) {
         real.collapsed = !real.collapsed;
         chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
