@@ -950,23 +950,16 @@
     var rule    = (style.getPropertyValue('--rule')    || '#e2dccf').trim();
     var bodyFont = 'Lora, "Noto Serif SC", serif';
 
-    // 统一处理节点颜色：有 external link 的浅绿色，无 link 的叶子浅灰色
-    (function colorNodes(nodes) {
+    // 统一处理节点样式：有 external link 的文字用绿色，无 link 的用默认色
+    (function styleNodes(nodes) {
       nodes.forEach(function (n) {
         if (n.external && n.link) {
-          // 有外部链接 → 浅绿色边框 + 浅绿填充（不透明）
-          n.itemStyle = n.itemStyle || {};
-          n.itemStyle.borderColor = accent;
-          n.itemStyle.color = '#d4e2c8'; // 浅绿不透明
-          n.itemStyle.borderWidth = 2;
-        } else if (!n.children || !n.children.length) {
-          // 无链接的叶子 → 浅灰色（不透明）
-          n.itemStyle = n.itemStyle || {};
-          n.itemStyle.borderColor = muted;
-          n.itemStyle.color = '#e8e4dc'; // 浅灰不透明
-          n.itemStyle.borderWidth = 1.5;
+          // 有外部链接 → 文字用绿色（可跳转标识）
+          n.label = n.label || {};
+          n.label.color = accent;
+          n.label.fontWeight = 'bold';
         }
-        if (n.children && n.children.length) colorNodes(n.children);
+        if (n.children && n.children.length) styleNodes(n.children);
       });
     })(window.__xhwyTreeData);
 
