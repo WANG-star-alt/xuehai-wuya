@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.5 · 大语言模型 · LLM 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-three-circles.html">第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.5</span>
+    </div>
+    <a href="./02-three-circles.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.5 · Sub-chapter</div>
+    <h1>大语言模型 · LLM 篇</h1>
+    <div class="cn">Large Language Model</div>
+  </header>
+
+  <p class="lead">
+    大语言模型（LLM）是生成式 AI 里<mark class="key">最当红的一支</mark>——ChatGPT、Claude、DeepSeek、通义、Kimi、豆包，你天天在用的这些"AI 对话产品"，背后都是一个 LLM。这一篇讲清楚它是什么、有多大、以及"大"到底大在哪。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📚 一个读完整个互联网的"学徒"</div>
+    <p>想象一个学徒，从小把人类整个互联网的文本都读了一遍——维基百科、小说、论坛、代码、论文、新闻。<br/>
+    读完之后，你问他任何一个问题，他都能"接得上话"——因为在过去的阅读里，他见过无数相似的问答模式。<br/>
+    这就是 LLM。它不是"知道答案"，是<strong>"熟悉语言的下一个词该是什么"</strong>。</p>
+  </div>
+
+  <h3>三个字：大 · 语言 · 模型</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">大 · Large</div>
+      <h4>规模巨大</h4>
+      <p>参数从几十亿到几万亿；训练数据从数千亿到十几万亿 token；训练用的 GPU 从几百张到上万张。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">语言 · Language</div>
+      <h4>专攻文本</h4>
+      <p>核心任务是"预测下一个词"——所以它是文本生成的天然选手。多模态（图/音/视频）是在此基础上扩展的。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">模型 · Model</div>
+      <h4>一个大函数</h4>
+      <p>本质是"输入若干 token，输出下一个 token 的概率分布"的函数。所有的"神奇能力"都来自这个函数的复杂度。</p>
+    </div>
+  </div>
+
+  <h3>规模一览（截至 2026）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>档位</th><th>参数量</th><th>训练成本估算</th><th>代表模型</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>小</td><td>&lt; 10 亿</td><td>几万美元</td><td>Qwen-0.5B、Phi-3</td></tr>
+        <tr><td>中</td><td>7B–70B</td><td>几十万美元</td><td>Llama-7B/70B、Mistral</td></tr>
+        <tr><td>大</td><td>百亿到千亿</td><td>数百万美元</td><td>DeepSeek-V3、Claude 3.5</td></tr>
+        <tr><td>超大 (MoE)</td><td>万亿级</td><td>几千万美元</td><td>GPT-4o、Gemini 1.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 大 = 深 × 广 × 通用</span>
+    <p>"大"不是营销词，它对应真实的三层扩展：<br/>
+    · <strong>深</strong>——网络层数变多（从几十层到上百层）；<br/>
+    · <strong>广</strong>——每层的参数变多（从上万到上亿）；<br/>
+    · <strong>通用</strong>——训练数据从单一领域扩展到"人类整个数字文明"。<br/>
+    三者一起放大，才有了今天让人震惊的表现。</p>
+  </div>
+
+  <h3>LLM 是怎么"学会说话"的</h3>
+  <p>训练一个 LLM 主要分三阶段（第 6 章"训练三部曲"会详讲）：</p>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 预训练 · Pre-training</h4>
+      <p>喂海量文本（几万亿字），让它学会"预测下一个词"。这一步做完，它已经知道很多，但还不太会"聊天"。</p>
+    </div>
+    <div class="step">
+      <h4>2. 指令微调 · SFT</h4>
+      <p>给它示范"人类问答对"——你问什么、应该怎么答。它开始像 ChatGPT 那样对话。</p>
+    </div>
+    <div class="step">
+      <h4>3. 对齐 · RLHF / DPO</h4>
+      <p>用人类偏好反馈教它"哪种回答更有用、更礼貌、更安全"。这一步让它变得"讨人喜欢"。</p>
+    </div>
+  </div>
+
+  <h3>为什么 LLM 会"看似聪明"</h3>
+  <ul class="keylist">
+    <li><span class="k">语言即知识</span><span class="v">人类几乎所有知识都用语言承载——学会"接下一个词"，等价于学会了大量隐含的世界规律。</span></li>
+    <li><span class="k">规模涌现</span><span class="v">当参数量到达某条阈值线，一些能力（推理、抽象、多步计算）会"突然"出现——这就是"涌现"。</span></li>
+    <li><span class="k">上下文学习</span><span class="v">你在对话里给几个例子（few-shot），它就能马上"学会"新任务——不需要重新训练。</span></li>
+  </ul>
+
+  <h3>LLM 的三大"坑"</h3>
+  <ul class="keylist">
+    <li><span class="k">幻觉</span><span class="v">它是在"猜下一个词"，不是"查事实"。凡是事实、人名、数字、引用，都必须复核。</span></li>
+    <li><span class="k">上下文限制</span><span class="v">它一次能看的 token 是有限的（今天主流 128K–1M）；再长就会忘前面。</span></li>
+    <li><span class="k">时效性</span><span class="v">训练数据有截止日期。问它最新新闻，除非开了"联网搜索"，否则会瞎编。</span></li>
+  </ul>
+
+  <h3>今天你能接触到的主流 LLM</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>阵营</th><th>代表</th><th>特色</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>OpenAI</td><td>GPT-4o / o3 / o4</td><td>综合能力最强，推理和多模态领先</td></tr>
+        <tr><td>Anthropic</td><td>Claude 系列</td><td>长文本、安全性、写作水平顶尖</td></tr>
+        <tr><td>Google</td><td>Gemini 1.5 / 2.0</td><td>超长上下文（百万 token）、多模态强</td></tr>
+        <tr><td>Meta</td><td>Llama</td><td>开源旗手，可本地部署</td></tr>
+        <tr><td>DeepSeek</td><td>V3 / R1</td><td>高性价比、推理见长，开源</td></tr>
+        <tr><td>阿里</td><td>Qwen · 通义千问</td><td>开源生态强，中文表现好</td></tr>
+        <tr><td>字节</td><td>豆包 / Doubao</td><td>用户量最大，快速迭代</td></tr>
+        <tr><td>月之暗面</td><td>Kimi</td><td>超长文本擅长</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>大语言模型是<strong>过去 5 年 AI 最重要的一个词</strong>。往里看它是<mark class="key">"深度学习 + Transformer + 海量语料 + 巨额算力"</mark>四件事的组合；往外看它是我们和 AI 对话的入口。从这一篇开始，后面的所有章节都会围绕它展开。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-4-genai.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 2.4 · 生成式 AI · GenAI 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 3 章 · 简史篇（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 2.5 · LLM</div>
+
+</article>
+</body>
+</html>

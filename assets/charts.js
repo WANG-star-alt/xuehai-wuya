@@ -507,10 +507,13 @@
           { name: '超级 AI · ASI 篇',  link: 'chapters/ai/01-3-asi.html',       external: true },
           { name: '四种能力篇 · 感知 / 理解 / 决策 / 生成', link: 'chapters/ai/01-4-abilities.html', external: true }
         ] },
-      { name: '第 2 章 · 三个圈', link: 'a-02',
+      { name: '第 2 章 · 三个圈', link: 'chapters/ai/02-three-circles.html', external: true,
         children: [
-          { name: 'AI' }, { name: '机器学习 ML' }, { name: '深度学习 DL' },
-          { name: '生成式 AI · GenAI' }, { name: '大语言模型 LLM' }
+          { name: '人工智能 · AI 篇',      link: 'chapters/ai/02-1-ai.html',    external: true },
+          { name: '机器学习 · ML 篇',      link: 'chapters/ai/02-2-ml.html',    external: true },
+          { name: '深度学习 · DL 篇',      link: 'chapters/ai/02-3-dl.html',    external: true },
+          { name: '生成式 AI · GenAI 篇',  link: 'chapters/ai/02-4-genai.html', external: true },
+          { name: '大语言模型 · LLM 篇',   link: 'chapters/ai/02-5-llm.html',   external: true }
         ] },
       { name: '第 3 章 · 简史', link: 'a-03',
         children: [
