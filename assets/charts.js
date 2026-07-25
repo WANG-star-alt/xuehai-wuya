@@ -977,10 +977,10 @@
       tooltip: {
         trigger: 'item',
         triggerOn: 'mousemove',
-        backgroundColor: '#faf7f2',
-        borderColor: rule,
+        backgroundColor: 'rgba(43,42,38,0.92)',
+        borderColor: 'rgba(226,220,207,0.3)',
         borderWidth: 1,
-        textStyle: { color: ink, fontFamily: bodyFont, fontSize: 12 },
+        textStyle: { color: '#faf7f2', fontFamily: bodyFont, fontSize: 12 },
         formatter: function (p) {
           return '<b>' + (p.data && p.data.name ? p.data.name : '') + '</b>';
         }
@@ -1006,7 +1006,7 @@
         itemStyle: {
           borderColor: ink,
           borderWidth: 1.2,
-          color: '#faf7f2'
+          color: 'rgba(250,247,242,0.9)'
         },
         cursor: 'pointer',
         // 非叶子（有子节点、可以展开的）——标签放在圆点上方，避开进入的连线
@@ -1018,10 +1018,7 @@
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 6,
-          backgroundColor: 'rgba(250,247,242,0.92)',
-          padding: [2, 5, 2, 5],
-          borderRadius: 3
+          distance: 6
         },
         // 叶子（最末端节点）——标签放右侧
         leaves: {
@@ -1031,10 +1028,7 @@
             align: 'left',
             distance: 8,
             color: muted,
-            fontSize: isMobile ? 9 : 11,
-            backgroundColor: 'rgba(250,247,242,0.85)',
-            padding: [1, 3, 1, 3],
-            borderRadius: 3
+            fontSize: isMobile ? 9 : 11
           }
         },
         emphasis: {
@@ -1042,8 +1036,7 @@
           itemStyle: { shadowBlur: 6, shadowColor: 'rgba(85,107,61,.35)' },
           label: {
             fontWeight: 'bold',
-            color: accent2,
-            backgroundColor: 'rgba(250,247,242,1)'
+            color: accent2
           }
         },
         expandAndCollapse: false,
