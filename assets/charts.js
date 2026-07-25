@@ -389,20 +389,9 @@
         ] },
       { name: '第 2 章 · 分层模型', link: 'chapters/network/02-layered-models.html', external: true,
         children: [
-          { name: 'OSI 7 层',
-            children: [
-              { name: '§ 2.1 · OSI 七层模型篇', link: 'chapters/network/02-1-osi.html', external: true },
-              { name: '物理层' }, { name: '数据链路层' }, { name: '网络层' },
-              { name: '传输层' }, { name: '会话层' }, { name: '表示层' }, { name: '应用层' }
-            ] },
-          { name: 'TCP/IP 4 层',
-            children: [
-              { name: '§ 2.2 · TCP/IP 四层模型篇', link: 'chapters/network/02-2-tcpip.html', external: true }
-            ] },
-          { name: '每层职责一览',
-            children: [
-              { name: '§ 2.3 · 分层实战篇', link: 'chapters/network/02-3-layers-in-action.html', external: true }
-            ] }
+          { name: '§ 2.1 · OSI 七层模型篇', link: 'chapters/network/02-1-osi.html', external: true },
+          { name: '§ 2.2 · TCP/IP 四层模型篇', link: 'chapters/network/02-2-tcpip.html', external: true },
+          { name: '§ 2.3 · 分层实战篇', link: 'chapters/network/02-3-layers-in-action.html', external: true }
         ] },
       { name: '第 3 章 · 关键协议', link: 'chapters/network/03-protocols.html', external: true,
         children: [
@@ -543,14 +532,7 @@
           { name: '生成式 AI · GenAI 篇',  link: 'chapters/ai/02-4-genai.html', external: true },
           { name: '大语言模型 · LLM 篇',   link: 'chapters/ai/02-5-llm.html',   external: true }
         ] },
-      { name: '第 3 章 · 简史', link: 'chapters/ai/03-history.html', external: true,
-        children: [
-          { name: '1950 图灵测试' }, { name: '1956 达特茅斯会议' },
-          { name: '1980s 专家系统' }, { name: '1997 深蓝' },
-          { name: '2012 AlexNet' }, { name: '2016 AlphaGo' },
-          { name: '2017 Transformer' }, { name: '2022 ChatGPT' },
-          { name: '2025 推理模型 & Agent' }
-        ] },
+      { name: '第 3 章 · 简史', link: 'chapters/ai/03-history.html', external: true },
       { name: '第 4 章 · 机器学习', link: 'chapters/ai/04-machine-learning.html', external: true,
         children: [
           { name: '§ 4.1 · 监督学习篇',      link: 'chapters/ai/04-1-supervised.html',      external: true },
