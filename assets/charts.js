@@ -615,15 +615,295 @@
         children: [ { name: '需求分析' }, { name: '交互设计' }, { name: 'A/B 测试' }, { name: '数据驱动' } ] }
     ];
 
+    // ==============================================================
+    // 组装：把上面细化的三个分支挂进整棵人类知识大树
+    // 网络 / Git / AI 都是"信息与计算科学"分支下面的叶子
+    // ==============================================================
+    var C_HUM  = '#8a6d4a'; // 人文 · 木色
+    var C_SOC  = '#a07c56'; // 社科 · 黄土
+    var C_NAT  = '#6a8b5b'; // 自然 · 苔绿
+    var C_FRM  = '#5a7d8c'; // 形式 · 石青
+    var C_ENG  = '#a55a3c'; // 工程 · 秋橙
+    var C_MED  = '#8b5a6a'; // 医学 · 樱茜
+    var C_ART  = '#7f6b8f'; // 艺术 · 藤紫
+    var C_LIFE = '#7a7960'; // 生活 · 米棕
+
+    var branchHumanities = {
+      name: '人文学科', itemStyle: { color: C_HUM }, collapsed: true,
+      children: [
+        { name: '哲学', children: [
+          { name: '西方哲学', children: [
+            { name: '古希腊 · 苏 / 柏 / 亚' }, { name: '经院哲学' },
+            { name: '近代理性主义' }, { name: '近代经验主义' },
+            { name: '德国古典哲学' }, { name: '现象学' }, { name: '分析哲学' }, { name: '存在主义' }
+          ] },
+          { name: '中国哲学', children: [
+            { name: '儒家' }, { name: '道家' }, { name: '墨家' }, { name: '法家' },
+            { name: '宋明理学' }, { name: '心学' }
+          ] },
+          { name: '印度 · 佛教哲学' },
+          { name: '伦理学' }, { name: '逻辑学' }, { name: '形而上学' }, { name: '认识论' }
+        ] },
+        { name: '文学', children: [
+          { name: '诗歌' }, { name: '小说' }, { name: '戏剧' }, { name: '散文' },
+          { name: '中国古典' }, { name: '现当代文学' },
+          { name: '欧洲文学' }, { name: '美洲文学' }, { name: '日本 · 俳句 / 物语' }
+        ] },
+        { name: '历史学', children: [
+          { name: '中国史', children: [
+            { name: '先秦' }, { name: '秦汉' }, { name: '魏晋南北朝' },
+            { name: '隋唐' }, { name: '宋元' }, { name: '明清' }, { name: '近现代' }
+          ] },
+          { name: '世界史', children: [
+            { name: '古埃及 / 两河' }, { name: '古希腊罗马' },
+            { name: '中世纪欧洲' }, { name: '大航海' },
+            { name: '工业革命' }, { name: '两次世界大战' }, { name: '冷战与全球化' }
+          ] },
+          { name: '考古学' }, { name: '史学方法' }
+        ] },
+        { name: '语言学', children: [
+          { name: '语音学' }, { name: '语法学' }, { name: '语义学' }, { name: '语用学' },
+          { name: '社会语言学' }, { name: '历史语言学' }
+        ] },
+        { name: '宗教学', children: [
+          { name: '佛教' }, { name: '基督教' }, { name: '伊斯兰教' }, { name: '道教' }, { name: '印度教' }
+        ] }
+      ]
+    };
+
+    var branchSocial = {
+      name: '社会科学', itemStyle: { color: C_SOC }, collapsed: true,
+      children: [
+        { name: '经济学', children: [
+          { name: '微观经济学' }, { name: '宏观经济学' },
+          { name: '货币与金融' }, { name: '国际贸易' },
+          { name: '行为经济学' }, { name: '发展经济学' }
+        ] },
+        { name: '政治学', children: [
+          { name: '政治哲学' }, { name: '比较政治' }, { name: '国际关系' }, { name: '公共政策' }
+        ] },
+        { name: '法学', children: [
+          { name: '宪法' }, { name: '民法' }, { name: '刑法' },
+          { name: '商法 / 公司法' }, { name: '国际法' }, { name: '知识产权' }
+        ] },
+        { name: '社会学', children: [
+          { name: '社会分层' }, { name: '家庭与人口' },
+          { name: '城市社会学' }, { name: '网络社会学' }
+        ] },
+        { name: '心理学', children: [
+          { name: '认知心理' }, { name: '发展心理' },
+          { name: '社会心理' }, { name: '临床心理' }, { name: '神经心理' }
+        ] },
+        { name: '管理学', children: [
+          { name: '战略管理' }, { name: '市场营销' }, { name: '人力资源' },
+          { name: '组织行为' }, { name: '运营管理' }
+        ] },
+        { name: '教育学', children: [
+          { name: '教育心理' }, { name: '课程与教学' }, { name: '教育技术' }
+        ] },
+        { name: '传播学', children: [
+          { name: '大众传播' }, { name: '新媒体' }, { name: '广告学' }
+        ] },
+        { name: '人类学 · 地理学' }
+      ]
+    };
+
+    var branchNatural = {
+      name: '自然科学', itemStyle: { color: C_NAT }, collapsed: true,
+      children: [
+        { name: '物理学', children: [
+          { name: '经典力学' }, { name: '电磁学' }, { name: '热力学 · 统计力学' },
+          { name: '光学' }, { name: '相对论' }, { name: '量子力学' },
+          { name: '粒子物理' }, { name: '凝聚态物理' }, { name: '天体物理' }
+        ] },
+        { name: '化学', children: [
+          { name: '无机化学' }, { name: '有机化学' },
+          { name: '分析化学' }, { name: '物理化学' }, { name: '生物化学' }
+        ] },
+        { name: '生物学', children: [
+          { name: '细胞生物' }, { name: '遗传学' },
+          { name: '分子生物' }, { name: '进化论' },
+          { name: '生态学' }, { name: '神经科学' }, { name: '合成生物' }
+        ] },
+        { name: '地球科学', children: [
+          { name: '地质学' }, { name: '气象学' },
+          { name: '海洋学' }, { name: '大气科学' }, { name: '地理信息 GIS' }
+        ] },
+        { name: '天文学 · 宇宙学', children: [
+          { name: '太阳系' }, { name: '恒星与星系' },
+          { name: '黑洞与引力波' }, { name: '宇宙大爆炸' }
+        ] }
+      ]
+    };
+
+    var branchFormal = {
+      name: '形式科学', itemStyle: { color: C_FRM },
+      children: [
+        { name: '数学', collapsed: true, children: [
+          { name: '算术 · 初等代数' },
+          { name: '几何', children: [
+            { name: '平面几何' }, { name: '解析几何' }, { name: '微分几何' }, { name: '拓扑' }
+          ] },
+          { name: '代数', children: [
+            { name: '线性代数' }, { name: '抽象代数' }, { name: '数论' }
+          ] },
+          { name: '分析', children: [
+            { name: '微积分' }, { name: '实分析' }, { name: '复分析' }, { name: '泛函分析' }
+          ] },
+          { name: '概率与统计', children: [
+            { name: '概率论' }, { name: '数理统计' }, { name: '贝叶斯统计' }
+          ] },
+          { name: '离散数学', children: [
+            { name: '组合数学' }, { name: '图论' }
+          ] },
+          { name: '运筹与优化' }
+        ] },
+        { name: '逻辑学', children: [
+          { name: '命题逻辑' }, { name: '一阶逻辑' },
+          { name: '模态逻辑' }, { name: '数理逻辑' }
+        ] },
+        { name: '信息与计算科学', children: [
+          { name: '计算理论', children: [
+            { name: '图灵机' }, { name: '可计算性' }, { name: '复杂度 P/NP' }
+          ] },
+          { name: '数据结构与算法', children: [
+            { name: '数组 / 链表' }, { name: '栈 / 队列' },
+            { name: '树 / 图' }, { name: '哈希表' },
+            { name: '排序 / 搜索' }, { name: '动态规划' }, { name: '贪心 / 分治' }
+          ] },
+          { name: '编程范式', children: [
+            { name: '命令式' }, { name: '面向对象' },
+            { name: '函数式' }, { name: '并发编程' }
+          ] },
+          { name: '编程语言', children: [
+            { name: 'Python' }, { name: 'JavaScript / TypeScript' },
+            { name: 'Java · C#' }, { name: 'C / C++' },
+            { name: 'Go · Rust' }, { name: 'SQL' }
+          ] },
+          { name: '操作系统', children: [
+            { name: '进程 / 线程' }, { name: '内存管理' },
+            { name: '文件系统' }, { name: '并发 / 锁' }, { name: 'Linux · Shell' }
+          ] },
+          { name: '数据库', children: [
+            { name: '关系型 SQL' }, { name: 'NoSQL' },
+            { name: '事务与索引' }, { name: '向量数据库' }
+          ] },
+          { name: '计算机网络', itemStyle: { color: VOL_NET }, children: netChildren },
+          { name: 'Web 与前端', children: [
+            { name: 'HTML / CSS' }, { name: 'React / Vue' },
+            { name: '响应式设计' }, { name: '性能优化' }
+          ] },
+          { name: '版本控制 · Git', itemStyle: { color: VOL_GIT }, children: gitChildren },
+          { name: '云与 DevOps', children: [
+            { name: 'Docker' }, { name: 'Kubernetes' },
+            { name: 'CI/CD' }, { name: '监控与日志' }
+          ] },
+          { name: '信息安全', children: [
+            { name: '密码学基础' }, { name: 'Web 安全' },
+            { name: '渗透测试' }, { name: '零信任' }
+          ] },
+          { name: '人工智能 AI', itemStyle: { color: VOL_AI }, children: aiChildren },
+          { name: '人机交互 HCI' }
+        ] },
+        { name: '系统科学 · 控制论' }
+      ]
+    };
+
+    var branchEngineering = {
+      name: '工程与技术', itemStyle: { color: C_ENG }, collapsed: true,
+      children: [
+        { name: '机械工程', children: [
+          { name: '机械设计' }, { name: '制造工艺' }, { name: '机器人学' }
+        ] },
+        { name: '电子与电气', children: [
+          { name: '模拟电路' }, { name: '数字电路' },
+          { name: '芯片设计' }, { name: '嵌入式系统' }
+        ] },
+        { name: '土木与建筑', children: [
+          { name: '结构工程' }, { name: '建筑设计' }, { name: '城市规划' }
+        ] },
+        { name: '材料科学', children: [
+          { name: '金属材料' }, { name: '高分子' }, { name: '半导体材料' }
+        ] },
+        { name: '航空航天' }, { name: '能源工程' },
+        { name: '化学工程' }, { name: '交通运输' }
+      ]
+    };
+
+    var branchMedicine = {
+      name: '医学与健康', itemStyle: { color: C_MED }, collapsed: true,
+      children: [
+        { name: '基础医学', children: [
+          { name: '解剖学' }, { name: '生理学' },
+          { name: '病理学' }, { name: '药理学' }, { name: '免疫学' }
+        ] },
+        { name: '临床医学', children: [
+          { name: '内科' }, { name: '外科' },
+          { name: '妇产 · 儿科' }, { name: '精神医学' }, { name: '急诊 · ICU' }
+        ] },
+        { name: '中医学', children: [
+          { name: '中医基础理论' }, { name: '针灸 · 推拿' }, { name: '中药与方剂' }
+        ] },
+        { name: '公共卫生 · 流行病学' },
+        { name: '营养与运动', children: [
+          { name: '宏量营养素' }, { name: '微量元素' }, { name: '运动生理' }, { name: '力量训练 · 有氧' }
+        ] },
+        { name: '心理健康' }
+      ]
+    };
+
+    var branchArts = {
+      name: '艺术与设计', itemStyle: { color: C_ART }, collapsed: true,
+      children: [
+        { name: '视觉艺术', children: [
+          { name: '绘画' }, { name: '雕塑' }, { name: '书法' }, { name: '摄影' }
+        ] },
+        { name: '音乐', children: [
+          { name: '乐理' }, { name: '古典音乐' }, { name: '爵士 / 流行' }, { name: '电子音乐' }
+        ] },
+        { name: '影视', children: [
+          { name: '电影史' }, { name: '导演 · 编剧' },
+          { name: '摄影 · 剪辑' }, { name: '动画' }
+        ] },
+        { name: '戏剧 · 舞蹈' },
+        { name: '设计', children: [
+          { name: '平面设计' }, { name: 'UI / UX' },
+          { name: '工业设计' }, { name: '室内设计' }
+        ] },
+        { name: '建筑艺术' }
+      ]
+    };
+
+    var branchLife = {
+      name: '生活技艺', itemStyle: { color: C_LIFE }, collapsed: true,
+      children: [
+        { name: '烹饪', children: [
+          { name: '中餐' }, { name: '西餐' }, { name: '烘焙' }, { name: '刀工与火候' }
+        ] },
+        { name: '茶 · 咖啡 · 酒' },
+        { name: '园艺 · 植物' }, { name: '手工艺 · 木工 / 缝纫' },
+        { name: '摄影与视频' }, { name: '旅行' },
+        { name: '理财', children: [
+          { name: '储蓄 · 记账' }, { name: '基金 · 股票' },
+          { name: '保险' }, { name: '税务基础' }
+        ] },
+        { name: '沟通与写作' }, { name: '时间管理' }
+      ]
+    };
+
     var treeData = [{
-      name: '学海无涯',
+      name: '知识',
       itemStyle: { color: ROOT_C },
       symbolSize: 22,
       children: [
-        { name: '网络篇',   itemStyle: { color: VOL_NET }, symbolSize: 16, children: netChildren    },
-        { name: 'Git 篇',   itemStyle: { color: VOL_GIT }, symbolSize: 16, children: gitChildren    },
-        { name: 'AI 篇',    itemStyle: { color: VOL_AI  }, symbolSize: 16, children: aiChildren     },
-        { name: '未完待续 · 计划中', itemStyle: { color: VOL_FUT }, symbolSize: 16, collapsed: true, children: futureChildren }
+        branchHumanities,
+        branchSocial,
+        branchNatural,
+        branchFormal,
+        branchEngineering,
+        branchMedicine,
+        branchArts,
+        branchLife
       ]
     }];
 
@@ -686,7 +966,7 @@
         symbol: 'circle',
         symbolSize: 7,
         roam: true,
-        initialTreeDepth: 2,
+        initialTreeDepth: 3,
         lineStyle: {
           color: rule,
           width: 1,
