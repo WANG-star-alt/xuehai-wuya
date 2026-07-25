@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 4.4 · 自监督学习篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./04-machine-learning.html">第 4 章</a>
+      <span class="sep">›</span>
+      <span>§ 4.4</span>
+    </div>
+    <a href="./04-machine-learning.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.4 · Sub-chapter</div>
+    <h1>自监督学习篇</h1>
+    <div class="cn">Self-Supervised Learning</div>
+  </header>
+
+  <p class="lead">
+    监督学习要"人工标答案"，成本高到天花板。<mark class="key">自监督学习的关键洞察</mark>——<strong>数据本身就藏着答案，让机器自己造问题来考自己</strong>。这就是今天所有大语言模型（GPT、Claude、DeepSeek）的训练方式。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📖 老师让你"自己出题考自己"</div>
+    <p>你有一本小说，老师不给你出题，让你"把小说里的句子挖掉一个词，自己填回去"。<br/>
+    原句："今天天气真____，我们去公园吧。"<br/>
+    你遮住"好"字，再问自己："这里应该是什么？" 答："好。"<br/>
+    这样练 100 万次，你不仅记住了所有词，还潜移默化理解了"什么词通常出现在什么语境"。<br/>
+    你不需要老师标答案——<strong>原文本身就是答案</strong>。</p>
+  </div>
+
+  <h3>监督 / 无监督 / 自监督 · 一张图说清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方法</th><th>答案来自哪</th><th>需要人标注？</th><th>典型应用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>监督学习</td><td>人工标注</td><td>必须</td><td>垃圾邮件识别、医疗影像</td></tr>
+        <tr><td>无监督学习</td><td>没有答案</td><td>不需要</td><td>用户聚类、降维</td></tr>
+        <tr><td>自监督学习</td><td>数据本身</td><td>不需要</td><td>大语言模型预训练</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>自监督的三大经典任务</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">01</div>
+      <h4>掩码预测 · Masked</h4>
+      <p>把句子里一个词挖掉，让模型猜。<br/>
+      例："人工智能是计算机科学的一个____。"<br/>
+      BERT 就是这么训的。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02</div>
+      <h4>下一词预测 · Next Token</h4>
+      <p>给前 N 个词，猜下一个。<br/>
+      例："今天天气真" → 下一个词大概率是"好"。<br/>
+      GPT 系列就是这么训的。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">03</div>
+      <h4>对比学习 · Contrastive</h4>
+      <p>给两张图，判断"是不是同一个东西"。<br/>
+      同一只猫的两张照片 vs 猫和狗的照片。<br/>
+      图片搜索、人脸识别常用。</p>
+    </div>
+  </div>
+
+  <h3>大语言模型是怎么"自监督"出来的</h3>
+  <p>GPT-4、Claude、DeepSeek 这些大模型，预训练阶段用的是<strong>下一词预测</strong>：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>1. 准备数据</h4>
+      <p>把互联网上所有文本（网页、书籍、代码、论文）都爬下来，几万亿字。</p>
+    </div>
+    <div class="step">
+      <h4>2. 把文本切成 token</h4>
+      <p>"今天天气真好" 切成 ["今天", "天气", "真", "好"] 这样的小单元。</p>
+    </div>
+    <div class="step">
+      <h4>3. 喂给模型，让它预测下一个 token</h4>
+      <p>给 "今天天气真"，模型输出"好"的概率分布。</p>
+    </div>
+    <div class="step">
+      <h4>4. 跟真实下一个 token 对比</h4>
+      <p>如果模型预测对，奖励；预测错，惩罚。模型不断调整参数。</p>
+    </div>
+    <div class="step">
+      <h4>5. 重复几万亿次</h4>
+      <p>模型在几万亿次"猜下一个词"的练习后，不仅学会了语言规律，还<strong>顺带学到了世界知识</strong>——因为文本里包含了人类的全部知识。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 读完整个图书馆</span>
+    <p>一个人类小孩，如果从小把图书馆的书都读一遍，他不需要老师教他"什么是苹果、什么是爱情、什么是相对论"——他自己就从书里学出来了。<br/>
+    大语言模型就是那个"读完全部互联网"的小孩。<strong>没有老师，但它读得太多了</strong>——这就是自监督的威力。</p>
+  </div>
+
+  <h3>为什么自监督是"大模型的命门"</h3>
+  <ul class="keylist">
+    <li><span class="k">不需要人工标注</span><span class="v">互联网文本无穷无尽，直接拿过来用——训练数据的天花板被打开了。</span></li>
+    <li><span class="k">语言即知识</span><span class="v">人类几乎所有知识都用语言承载——学会"接下一个词"，等价于学会了大量隐含的世界规律。</span></li>
+    <li><span class="k">可以无限扩展</span><span class="v">只要算力够，就能用更大的模型、更多的数据——这就是 GPT-3 → GPT-4 → GPT-5 的演进路径。</span></li>
+  </ul>
+
+  <h3>自监督 + 微调 · 今天的标准配方</h3>
+  <p>今天训练一个 AI 产品，几乎都是这两步：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>第一步 · 自监督预训练</h4>
+      <p>用海量无标注数据（几万亿字），让模型学"世界通用知识"——花几周、花几百万美元。</p>
+    </div>
+    <div class="step">
+      <h4>第二步 · 监督微调 / RLHF</h4>
+      <p>用少量标注数据（几万条问答对），让模型学"怎么聊天、怎么礼貌、怎么安全"——花几天、花几十万美元。</p>
+    </div>
+  </div>
+
+  <p>第一步是"打地基"，第二步是"装修"。没有第一步，第二步无从谈起。</p>
+
+  <h3>自监督学习的局限</h3>
+  <ul class="keylist">
+    <li><span class="k">它只学"统计规律"</span><span class="v">模型学到的是"苹果后面通常跟'好吃'"，但它没吃过苹果，不知道苹果到底啥味道。</span></li>
+    <li><span class="k">数据决定天花板</span><span class="v">训练数据里没有的知识，模型不会知道；训练数据里的偏见，模型会原封不动学进去。</span></li>
+    <li><span class="k">幻觉的根源</span><span class="v">因为模型学的是"什么词后面该接什么词"，而不是"什么是真的"——所以它会一本正经地编造看似合理但错误的内容。</span></li>
+  </ul>
+
+  <h3>自监督 vs 人类学习</h3>
+  <p>人类学习其实也很"自监督"——小孩不需要老师告诉他"这是桌子、这是椅子"，他自己观察世界就懂了。<br/>
+  但人类比 AI 强的地方在于：<strong>人类有身体，能摸、能尝、能跌倒</strong>——这就是"具身智能"（Embodied AI）想补的课。今天的大模型只有"读"的能力，没有"体验"的能力。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>自监督学习 = <mark class="key">"让数据自己教自己"</mark>。它是 2018 年之后最重要的范式突破——没有它，就没有 GPT、没有 ChatGPT、没有今天的大模型时代。<br/>
+    下一篇我们看 ML 的三个基础概念——<strong>特征、标签、过拟合</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-3-reinforcement.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 4.3 · 强化学习篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-5-overfitting.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 4.5 · 特征 / 标签 / 过拟合篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 4.4 · Self-Supervised Learning</div>
+
+</article>
+</body>
+</html>

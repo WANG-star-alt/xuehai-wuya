@@ -539,11 +539,13 @@
           { name: '2017 Transformer' }, { name: '2022 ChatGPT' },
           { name: '2025 推理模型 & Agent' }
         ] },
-      { name: '第 4 章 · 机器学习', link: 'a-04',
+      { name: '第 4 章 · 机器学习', link: 'chapters/ai/04-machine-learning.html', external: true,
         children: [
-          { name: '监督学习' }, { name: '无监督学习' },
-          { name: '强化学习' }, { name: '自监督学习' },
-          { name: '特征 / 标签 / 过拟合' }
+          { name: '§ 4.1 · 监督学习篇',      link: 'chapters/ai/04-1-supervised.html',      external: true },
+          { name: '§ 4.2 · 无监督学习篇',    link: 'chapters/ai/04-2-unsupervised.html',    external: true },
+          { name: '§ 4.3 · 强化学习篇',      link: 'chapters/ai/04-3-reinforcement.html',   external: true },
+          { name: '§ 4.4 · 自监督学习篇',    link: 'chapters/ai/04-4-self-supervised.html', external: true },
+          { name: '§ 4.5 · 特征/标签/过拟合篇', link: 'chapters/ai/04-5-overfitting.html',    external: true }
         ] },
       { name: '第 5 章 · 神经网络', link: 'a-05',
         children: [

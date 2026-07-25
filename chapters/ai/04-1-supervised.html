@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 4.1 · 监督学习篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./04-machine-learning.html">第 4 章</a>
+      <span class="sep">›</span>
+      <span>§ 4.1</span>
+    </div>
+    <a href="./04-machine-learning.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.1 · Sub-chapter</div>
+    <h1>监督学习篇</h1>
+    <div class="cn">Supervised Learning</div>
+  </header>
+
+  <p class="lead">
+    监督学习是<mark class="key">今天工业界用得最多</mark>的机器学习方法——你给它"数据 + 标准答案"，它学"输入 → 输出"的映射。它占所有 ML 应用的 80% 以上。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">👩‍🏫 老师批改你的作业</div>
+    <p>想象一个 5 岁小孩学认字。<br/>
+    老师指着图片"苹果"——小孩说"梨"；老师摇头："这是苹果。"<br/>
+    老师指着下一张图"梨"——小孩说"苹果"；老师摇头："这是梨。"<br/>
+    这样反复教 100 次——小孩慢慢就能自己看图说出"苹果"和"梨"。<br/>
+    关键是：<strong>每次小孩答题，老师都立刻告诉他对不对</strong>——这就是"监督"的含义。</p>
+  </div>
+
+  <h3>监督学习的输入与输出</h3>
+  <p>监督学习的数据集，每一份样本都是一对 <strong>(x, y)</strong>——x 是输入（特征），y 是答案（标签）。模型要学的就是从 x 到 y 的映射。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>输入 x（特征）</th><th>输出 y（标签）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>垃圾邮件识别</td><td>邮件内容、发件人、关键词</td><td>垃圾 / 正常</td></tr>
+        <tr><td>房价预测</td><td>面积、地段、楼层、学区</td><td>价格（万元）</td></tr>
+        <tr><td>猫狗识别</td><td>图片的像素</td><td>猫 / 狗</td></tr>
+        <tr><td>信用评分</td><td>收入、年龄、还款记录</td><td>该放贷吗（0~1）</td></tr>
+        <tr><td>医学影像</td><td>CT 图像</td><td>良性 / 恶性</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>两大类任务 · 分类 vs 回归</h3>
+  <p>监督学习做的事，根据"y 是什么样"分两种：</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">01</div>
+      <h4>分类 · Classification</h4>
+      <p>y 是<strong>离散的类别</strong>——猫/狗、垃圾/正常、是/否。<br/>
+      例：判断一封邮件是不是垃圾邮件。<br/>
+      输出：概率（"95% 是垃圾"）。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02</div>
+      <h4>回归 · Regression</h4>
+      <p>y 是<strong>连续的数值</strong>——价格、温度、销量、股价。<br/>
+      例：预测一套房的价格。<br/>
+      输出：具体数字（"约 412 万"）。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 判断题 vs 填空题</span>
+    <p><strong>分类</strong> = 判断题——"这是猫吗？" 只有是/否；<br/>
+    <strong>回归</strong> = 填空题——"这套房多少钱？" 答案是任意数字。<br/>
+    两类问题的算法、损失函数都不同，但训练套路一样。</p>
+  </div>
+
+  <h3>主流算法速览</h3>
+  <p>监督学习经过几十年沉淀，攒下一批"经典选手"，今天仍在大量使用：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>算法</th><th>擅长</th><th>一句话理解</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>线性回归</td><td>简单预测（回归）</td><td>画一条直线"穿过"所有数据点</td></tr>
+        <tr><td>逻辑回归</td><td>简单分类</td><td>把直线弯成 S 形，输出 0~1 概率</td></tr>
+        <tr><td>决策树</td><td>可解释分类</td><td>一层一层"如果是 X 就走这边"</td></tr>
+        <tr><td>随机森林</td><td>稳定分类</td><td>很多决策树投票，少数服从多数</td></tr>
+        <tr><td>SVM 支持向量机</td><td>中等规模分类</td><td>找一条"最宽的边界"分开两类</td></tr>
+        <tr><td>KNN 近邻</td><td>小数据集</td><td>"离我最近的 K 个邻居属于啥我就属于啥"</td></tr>
+        <tr><td>XGBoost / LightGBM</td><td>结构化数据王者</td><td>一棵一棵地种决策树，每棵纠正前一棵的错误</td></tr>
+        <tr><td>神经网络</td><td>复杂模式（图像/语音/文本）</td><td>层层抽象，最深最强大但最难解释</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>训练的过程到底在干嘛</h3>
+  <p>拿"房价预测"举例——你手里有 1000 套房的数据（面积 + 价格），想让模型学到"面积 → 价格"的关系：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>1. 假设一个"带参数的公式"</h4>
+      <p>比如 <code>价格 = w × 面积 + b</code>。w 和 b 是模型要学的参数，初始时随机给个值。</p>
+    </div>
+    <div class="step">
+      <h4>2. 用当前公式算一遍</h4>
+      <p>对每套房：用公式预测价格，跟真实价格对比——差距就是"损失"（Loss）。</p>
+    </div>
+    <div class="step">
+      <h4>3. 调整 w 和 b，让损失更小</h4>
+      <p>这一步叫"梯度下降"——往损失减少的方向，把 w 和 b 微调一点点。</p>
+    </div>
+    <div class="step">
+      <h4>4. 重复 2-3 几千次</h4>
+      <p>每次都让损失更小一点。最终 w 和 b 稳定下来——模型训练好了。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 射箭调准星</span>
+    <p>你打靶——第一枪打在 7 环，偏左上。<br/>
+    教练说："枪往右下挪一点。" 你调整，第二枪打在 8 环，还是偏一点点。<br/>
+    再调、再调——直到命中靶心。<br/>
+    机器学习做的就是这个：<strong>用误差指导调整，重复一千次，直到命中</strong>。</p>
+  </div>
+
+  <h3>训练集 / 验证集 / 测试集</h3>
+  <p>监督学习的数据必须分三份，缺一份都会翻车：</p>
+  <ul class="keylist">
+    <li><span class="k">训练集（70%）</span><span class="v">模型"学"用的——模型在这上面不断调整参数。</span></li>
+    <li><span class="k">验证集（15%）</span><span class="v">"模拟考试"——训练中途用来看效果，决定什么时候停。</span></li>
+    <li><span class="k">测试集（15%）</span><span class="v">"期末大考"——只在最后用一次，看模型真实水平。</span></li>
+  </ul>
+
+  <h3>监督学习的痛点</h3>
+  <ul class="keylist">
+    <li><span class="k">标注成本高</span><span class="v">"答案"要靠人来标——医疗影像要资深医生标一张几块钱；自动驾驶要人工框每一帧的行人车辆。</span></li>
+    <li><span class="k">标注可能错</span><span class="v">人会犯错——错标的数据会让模型学歪。</span></li>
+    <li><span class="k">标注覆盖不全</span><span class="v">现实场景太多，标不完——所以模型遇到没见过的场景就翻车。</span></li>
+  </ul>
+
+  <p>这就是为什么大模型时代要转向<strong>自监督学习</strong>（§ 4.4）——不再依赖人工标注。</p>
+
+  <h3>监督学习在你生活中的样子</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你做的事</th><th>背后的监督学习</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>用脸解锁手机</td><td>模型学过你的脸（分类：是/不是）</td></tr>
+        <tr><td>相机自动识别"人像模式"</td><td>模型学过"什么是人"（分割）</td></tr>
+        <tr><td>抖音推荐下一个视频</td><td>模型学过"看过 X 的人也喜欢 Y"（回归：停留时长）</td></tr>
+        <tr><td>邮箱自动过滤垃圾邮件</td><td>模型学过"垃圾邮件的特征"（分类）</td></tr>
+        <tr><td>输入法联想下一个词</td><td>模型学过"什么词后面通常跟什么"（分类）</td></tr>
+        <tr><td>导航预估到达时间</td><td>模型学过"历史通行数据"（回归）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>监督学习 = <mark class="key">"老师一边教一边打分"</mark>。它是工业界最成熟、最常用的方法，但需要大量"标注好的数据"。<br/>
+    下一篇我们看"没有老师"的学习——<strong>无监督学习</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-machine-learning.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">第 4 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-2-unsupervised.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 4.2 · 无监督学习篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 4.1 · Supervised Learning</div>
+
+</article>
+</body>
+</html>

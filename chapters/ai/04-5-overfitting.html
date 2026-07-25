@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 4.5 · 特征 / 标签 / 过拟合篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./04-machine-learning.html">第 4 章</a>
+      <span class="sep">›</span>
+      <span>§ 4.5</span>
+    </div>
+    <a href="./04-machine-learning.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.5 · Sub-chapter</div>
+    <h1>特征 / 标签 / 过拟合篇</h1>
+    <div class="cn">Features, Labels &amp; Overfitting</div>
+  </header>
+
+  <p class="lead">
+    机器学习的三个最基础术语——<mark class="key">特征、标签、过拟合</mark>——理解了它们，你就理解了 ML 的"地基"。这一篇不讲故事，直接拆概念。
+  </p>
+
+  <h3>特征 · Feature</h3>
+  <p><strong>特征</strong>是喂给模型的"输入维度"——每个样本用一组数字来描述。挑西瓜时"响声、颜色、瓜蒂"就是三个特征。</p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏥 体检报告</div>
+    <p>你去医院体检，报告上有：身高、体重、血压、血糖、胆固醇、心率、白细胞……<br/>
+    每一项就是一个<strong>特征</strong>。医生根据这些特征判断你"健康 / 亚健康 / 有病"。<br/>
+    机器学习也一样——每个样本用一组特征描述，模型根据特征做判断。</p>
+  </div>
+
+  <h3>特征工程 · 最难也最重要的事</h3>
+  <p><strong>特征工程</strong>（Feature Engineering）是"从原始数据里提取有用特征"的过程。传统 ML 时代，80% 的工作量在特征工程上。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>原始数据</th><th>提取的特征</th><th>为什么有用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>用户注册时间</td><td>注册距今多少天</td><td>新用户和老用户行为不同</td></tr>
+        <tr><td>交易时间戳</td><td>是否周末、是否凌晨</td><td>盗刷多在凌晨</td></tr>
+        <tr><td>一段文本</td><td>长度、感叹号数量、关键词</td><td>垃圾邮件通常很长、很多感叹号</td></tr>
+        <tr><td>一张图片</td><td>颜色直方图、边缘密度</td><td>猫和狗的纹理不同</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 做菜 vs 吃菜</span>
+    <p><strong>特征工程</strong> = 做菜——你把生食材（原始数据）切成丝、片、丁（特征），厨师（模型）才能炒出好菜。<br/>
+    <strong>深度学习</strong> = 自动做菜——你直接把整只鸡扔进锅，神经网络自己学会"怎么切"。<br/>
+    这就是深度学习最大的突破：<strong>它把特征工程自动化了</strong>。</p>
+  </div>
+
+  <h3>标签 · Label</h3>
+  <p><strong>标签</strong>是你希望模型学到的"正确答案"。监督学习里，每个样本必须带标签。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>任务</th><th>标签长什么样</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>分类</td><td>"猫" / "狗" / "垃圾" / "正常"</td></tr>
+        <tr><td>回归</td><td>412.5（万元）/ 23.7（℃）/ 156（ms）</td></tr>
+        <tr><td>目标检测</td><td>每个物体的类别 + 位置框</td></tr>
+        <tr><td>语义分割</td><td>每个像素的类别</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>标签的成本</h3>
+  <p>标注是 ML 最贵的环节之一。一张医疗影像要资深医生标，一张 5 块钱；一辆自动驾驶汽车的路测数据，要人工框出每一帧的行人、车辆、红绿灯——一帧几毛钱，一天几十万帧。</p>
+
+  <p>这就是为什么自监督学习（§ 4.4）这么火——<strong>它绕开了标注</strong>。</p>
+
+  <h3>过拟合 · Overfitting</h3>
+  <p><strong>过拟合</strong>是 ML 里最经典、最致命的问题——<mark class="key">模型在训练集上表现完美，遇到新数据就傻</mark>。</p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📝 只会做他做过的题</div>
+    <p>一个学生，你把过去 10 年的高考题给他背。他背得滚瓜烂熟，你随便抽一道他都能默写出答案。<br/>
+    你很开心，觉得他数学满分稳了。<br/>
+    结果高考那天，题目稍微变了个形式——他一道都不会。<br/>
+    他不是"学会了数学"，他是"背会了那 100 道题"。<br/>
+    这就是过拟合。</p>
+  </div>
+
+  <h3>过拟合 vs 欠拟合</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>欠拟合 · Underfit</th><th>过拟合 · Overfit</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>训练集表现</td><td>差</td><td>完美</td></tr>
+        <tr><td>测试集表现</td><td>差</td><td>差</td></tr>
+        <tr><td>原因</td><td>模型太简单，学不到规律</td><td>模型太复杂，把噪音当规律</td></tr>
+        <tr><td>类比</td><td>学生没复习，考砸了</td><td>学生只背题，换题就傻</td></tr>
+        <tr><td>解决</td><td>加特征、换复杂模型</td><td>加数据、减复杂度、正则化</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>怎么判断过拟合了</h3>
+  <p>训练过程中画两条曲线——<strong>训练误差</strong>和<strong>验证误差</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">训练误差 ↓ 验证误差 ↓</span><span class="v">正常——模型在学真规律。</span></li>
+    <li><span class="k">训练误差 ↓ 验证误差 ↑</span><span class="v">过拟合了——模型在"背"训练集。</span></li>
+    <li><span class="k">两条都高</span><span class="v">欠拟合——模型太简单。</span></li>
+  </ul>
+
+  <h3>怎么防止过拟合</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">01</div>
+      <h4>更多数据</h4>
+      <p>数据多了，模型没法"全背下来"——被迫学真规律。这是最根本的方法。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02</div>
+      <h4>正则化 · Regularization</h4>
+      <p>给模型参数加"惩罚"，不让它变得太极端。L1 / L2 是经典方法。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">03</div>
+      <h4>Dropout</h4>
+      <p>训练时随机"关掉"一部分神经元——强迫模型不依赖单一路径。深度学习标配。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">04</div>
+      <h4>早停 · Early Stopping</h4>
+      <p>验证误差开始上升就停——不让模型继续"背"下去。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 防过拟合 = 防死记硬背</span>
+    <p>老师防学生死记硬背的方法：<br/>
+    ① <strong>出更多题</strong>（更多数据）——题量大了背不完；<br/>
+    ② <strong>出变形题</strong>（数据增强）——换个角度考，背题就失效；<br/>
+    ③ <strong>限时交卷</strong>（早停）——不给你无限时间磨；<br/>
+    ④ <strong>随机抽查</strong>（Dropout）——不知道考哪题，必须全会。</p>
+  </div>
+
+  <h3>三个术语的关系</h3>
+  <p>把这三个词串起来，就是 ML 的完整工作流：</p>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 收集数据</h4>
+      <p>每个样本 = <strong>特征</strong>（输入）+ <strong>标签</strong>（答案）。</p>
+    </div>
+    <div class="step">
+      <h4>2. 选模型、训练</h4>
+      <p>模型从特征里学规律，尽量预测对标签。</p>
+    </div>
+    <div class="step">
+      <h4>3. 评估</h4>
+      <p>在没见过的数据上测试——如果表现差，可能是<strong>过拟合</strong>了。</p>
+    </div>
+    <div class="step">
+      <h4>4. 调优</h4>
+      <p>加数据 / 减复杂度 / 正则化——直到模型在训练集和测试集上都表现好。</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>特征</strong>是输入，<strong>标签</strong>是答案，<strong>过拟合</strong>是"背题不学真"。<mark class="key">这三个词是 ML 的 ABC——后面所有章节都会用到</mark>。<br/>
+    第 4 章 · 机器学习篇到此结束。下一章我们进入"神经网络"——深度学习的心脏。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-4-self-supervised.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 4.4 · 自监督学习篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 5 章 · 神经网络篇（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 4.5 · Features, Labels &amp; Overfitting</div>
+
+</article>
+</body>
+</html>

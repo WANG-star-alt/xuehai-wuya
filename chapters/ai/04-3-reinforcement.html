@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 4.3 · 强化学习篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./04-machine-learning.html">第 4 章</a>
+      <span class="sep">›</span>
+      <span>§ 4.3</span>
+    </div>
+    <a href="./04-machine-learning.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.3 · Sub-chapter</div>
+    <h1>强化学习篇</h1>
+    <div class="cn">Reinforcement Learning</div>
+  </header>
+
+  <p class="lead">
+    监督学习需要"标准答案"，无监督学习需要"数据结构"。强化学习走的是<mark class="key">第三条路</mark>——不给答案，也不给现成数据，只给你一个"环境"和"奖励规则"，<strong>让你自己摸索怎么赢</strong>。这是下棋 AI、自动驾驶、机器人走路用的方法。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🐶 训练一只小狗学"坐下"</div>
+    <p>你说"坐下"——小狗不知道啥意思，乱动。<br/>
+    它偶然屁股着地——你立刻给一块零食。<br/>
+    反复几次，小狗慢慢明白：坐下 = 有零食吃。下次你一喊"坐下"，它立刻坐。<br/>
+    小狗并没有"学过坐下的标准动作"——它是<strong>通过"奖励 / 没奖励"的信号，自己总结出了"什么动作能得奖励"</strong>。<br/>
+    这就是强化学习的核心逻辑。</p>
+  </div>
+
+  <h3>强化学习的五个角色</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>概念</th><th>中文</th><th>例子（训练小狗）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Agent</td><td>智能体</td><td>小狗</td></tr>
+        <tr><td>Environment</td><td>环境</td><td>你家客厅 + 你</td></tr>
+        <tr><td>State</td><td>状态</td><td>小狗当前站着 / 趴着 / 歪头</td></tr>
+        <tr><td>Action</td><td>动作</td><td>坐下、趴下、摇尾巴、汪汪叫</td></tr>
+        <tr><td>Reward</td><td>奖励</td><td>给零食 +1 / 没零食 0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>核心循环</h3>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 智能体观察环境</h4>
+      <p>小狗看到你说"坐下"。当前状态 = "站着，主人发指令了"。</p>
+    </div>
+    <div class="step">
+      <h4>2. 选一个动作</h4>
+      <p>小狗根据它"当前的策略"选个动作——早期是乱选，慢慢有偏好。</p>
+    </div>
+    <div class="step">
+      <h4>3. 环境给反馈</h4>
+      <p>你给零食（正奖励）或没反应（零奖励）。</p>
+    </div>
+    <div class="step">
+      <h4>4. 智能体更新策略</h4>
+      <p>小狗记下"刚才这个动作得了奖励"——下次类似状态再选这个动作的概率提高。</p>
+    </div>
+    <div class="step">
+      <h4>5. 重复一万次</h4>
+      <p>策略越来越好，小狗变成"听话的小狗"。</p>
+    </div>
+  </div>
+
+  <h3>和监督学习的关键区别</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>监督学习</th><th>强化学习</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>反馈类型</td><td>标准答案（立即、精确）</td><td>奖励信号（可能延迟、模糊）</td></tr>
+        <tr><td>目标</td><td>预测正确</td><td>累计奖励最大</td></tr>
+        <tr><td>数据</td><td>人工标注</td><td>自己探索产生</td></tr>
+        <tr><td>影响</td><td>一次预测，互不影响</td><td>当前动作影响后续状态</td></tr>
+        <tr><td>典型应用</td><td>识别、分类、预测</td><td>下棋、机器人、自动驾驶</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>探索 vs 利用 · 一对永恒矛盾</h3>
+  <p>强化学习里有一对经典矛盾——<strong>探索（Exploration）和利用（Exploitation）</strong>：</p>
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">探索</div>
+      <h4>试试新动作</h4>
+      <p>小狗偶尔试试"歪头"——也许主人更喜欢？也许更差？不试不知道。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">利用</div>
+      <h4>用已验证的动作</h4>
+      <p>小狗坐下拿过零食——那就一直坐下，稳妥拿零食。</p>
+    </div>
+  </div>
+  <p>只探索，永远在乱试，学不会；只利用，可能陷入局部最优，错过更好的策略。<mark class="key">好的强化学习算法要在两者之间平衡</mark>——常见做法：早期多探索，后期多利用。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 你点外卖的策略</span>
+    <p>你到新城市——是每天试一家新店（探索），还是只吃你已经觉得好吃的那家（利用）？<br/>
+    只试新店：可能踩雷无数次。<br/>
+    只吃老店：可能错过更惊艳的味道。<br/>
+    最好的策略：先多试，找到几家不错的，再轮换着吃。</p>
+  </div>
+
+  <h3>强化学习的经典案例</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>年份</th><th>系统</th><th>成就</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2013</td><td>DQN (DeepMind)</td><td>让 AI 自己学会玩 49 种 Atari 老游戏，部分超过人类</td></tr>
+        <tr><td>2016</td><td>AlphaGo</td><td>击败李世石，围棋被攻陷</td></tr>
+        <tr><td>2017</td><td>AlphaZero</td><td>不看任何人类棋谱，纯自我对弈，4 小时从零到超越 AlphaGo</td></tr>
+        <tr><td>2019</td><td>AlphaStar</td><td>星际争霸 II 击败顶级职业选手</td></tr>
+        <tr><td>2022</td><td>ChatGPT (RLHF)</td><td>用人类反馈强化学习让大模型"更懂人心"</td></tr>
+        <tr><td>2024</td><td>o1 / R1</td><td>用强化学习让大模型学会"停下来多想几步"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>强化学习 + 大模型 · 2024 年的新故事</h3>
+  <p>2024 年之后，强化学习重新火起来——不是因为新游戏，而是因为它让大模型"会思考"。<strong>推理模型（OpenAI o1、DeepSeek-R1）</strong>的核心就是：</p>
+
+  <ul class="keylist">
+    <li><span class="k">环境</span><span class="v">一道数学题 / 编程题</span></li>
+    <li><span class="k">状态</span><span class="v">模型目前已经"想到"的中间步骤</span></li>
+    <li><span class="k">动作</span><span class="v">生成下一个"想法"</span></li>
+    <li><span class="k">奖励</span><span class="v">最终答案对不对</span></li>
+  </ul>
+
+  <p>模型不停尝试不同的"思考路径"——得到正确答案的奖励高，错误答案的奖励低。训练几万次之后，模型就学会了"先列条件、再分步推理、最后给答案"的好习惯。<mark class="key">这是强化学习 2024 年之后最重要的应用。</mark></p>
+
+  <h3>强化学习的挑战</h3>
+  <ul class="keylist">
+    <li><span class="k">样本效率低</span><span class="v">要"玩"几十万次才能学会——自动驾驶在真实世界试错代价太高，所以都在模拟器里训。</span></li>
+    <li><span class="k">奖励难设计</span><span class="v">如果奖励设计错了，AI 会"钻空子"——比如让 AI 玩赛车游戏，结果它发现"撞墙卡住"也能拿分，就一直撞。</span></li>
+    <li><span class="k">训练不稳定</span><span class="v">同样的代码跑两次，结果可能完全不同。调参非常玄学。</span></li>
+    <li><span class="k">难以迁移</span><span class="v">在模拟器里学会的机器人走路，到真实世界可能完全不行——这叫"模拟到现实的鸿沟"（Sim-to-Real Gap）。</span></li>
+  </ul>
+
+  <h3>强化学习在你生活中</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>应用</th><th>强化学习在做什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>自动驾驶</td><td>环境 = 路况；动作 = 油门刹车转向；奖励 = 安全高效</td></tr>
+        <tr><td>推荐系统</td><td>环境 = 用户行为；动作 = 推哪条内容；奖励 = 用户停留/点击</td></tr>
+        <tr><td>仓库机器人</td><td>环境 = 仓库布局；动作 = 移动/抓取；奖励 = 取货速度</td></tr>
+        <tr><td>游戏 AI</td><td>DOTA、星际、围棋、扑克——大量突破都靠 RL</td></tr>
+        <tr><td>大模型对齐</td><td>RLHF——让 AI 的回答更"讨人喜欢"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>强化学习 = <mark class="key">"用奖励信号引导学习"</mark>。它是 AI 学会"做决策"的主要方式，跟监督学习"学映射"、无监督学习"找结构"并列，构成机器学习的三大流派。<br/>
+    下一篇我们看 2024 年之后最重要的范式——<strong>自监督学习</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-2-unsupervised.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 4.2 · 无监督学习篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-4-self-supervised.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 4.4 · 自监督学习篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 4.3 · Reinforcement Learning</div>
+
+</article>
+</body>
+</html>
