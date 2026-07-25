@@ -378,12 +378,12 @@
 
     // ---------- 网络篇 ----------
     var netChildren = [
-      { name: '网络是什么',
+      { name: '第 1 章 · 网络是什么',
         children: [
           { name: '主机 Host' }, { name: '协议 Protocol' }, { name: '地址 Address' },
           { name: '客户端 / 服务器' }, { name: '数据包 Packet' }, { name: '带宽 / 时延 / 丢包' }
         ] },
-      { name: '分层模型',
+      { name: '第 2 章 · 分层模型',
         children: [
           { name: 'OSI 7 层',
             children: [
@@ -393,7 +393,7 @@
           { name: 'TCP/IP 4 层' },
           { name: '每层职责一览' }
         ] },
-      { name: '关键协议',
+      { name: '第 3 章 · 关键协议',
         children: [
           { name: 'HTTP / HTTPS',
             children: [
@@ -420,31 +420,43 @@
               { name: 'ARP' }, { name: 'ICMP · ping' }, { name: 'DHCP' }, { name: 'SSH / FTP / SMTP' }
             ] }
         ] },
-      { name: '一次访问的旅程',
+      { name: '第 4 章 · 一次访问的旅程',
         children: [
           { name: '输入网址' }, { name: 'DNS 查询' }, { name: '建立 TCP' },
           { name: 'TLS 握手' }, { name: '发送 HTTP 请求' }, { name: '服务器响应' },
           { name: '浏览器渲染' }
         ] },
-      { name: '网络设备',
+      { name: '第 5 章 · 网络设备',
         children: [
           { name: '路由器 Router' }, { name: '交换机 Switch' },
           { name: '网关 Gateway' }, { name: '防火墙 Firewall' },
-          { name: '负载均衡 LB' }
+          { name: '负载均衡 LB' }, { name: '光猫 · 光纤' }
         ] },
-      { name: '无线与移动',
-        children: [ { name: 'WiFi 6/7' }, { name: '蓝牙' }, { name: '4G / 5G' } ] },
-      { name: '云与边缘',
-        children: [ { name: 'CDN' }, { name: '云网络 VPC' }, { name: '边缘节点' }, { name: '容器网络' } ] },
-      { name: '安全',
+      { name: '第 6 章 · 无线与移动',
+        children: [
+          { name: 'WiFi 6/7' }, { name: '蓝牙' }, { name: 'NFC' },
+          { name: '4G / 5G / 6G' }, { name: '卫星互联网' }
+        ] },
+      { name: '第 7 章 · 云与边缘',
+        children: [
+          { name: 'CDN' }, { name: '云网络 VPC' }, { name: '边缘节点' },
+          { name: '容器网络 · K8s' }, { name: 'Serverless' }
+        ] },
+      { name: '第 8 章 · 网络安全',
         children: [
           { name: '对称加密' }, { name: '非对称加密' }, { name: '数字证书 CA' },
-          { name: 'XSS / CSRF / SQL 注入' }, { name: 'DDoS' }, { name: 'VPN / 代理' }
+          { name: 'XSS / CSRF / SQL 注入' }, { name: 'DDoS' },
+          { name: 'VPN / 代理' }, { name: '零信任 · Zero Trust' }
         ] },
-      { name: '排错工具箱',
+      { name: '第 9 章 · 排错工具箱',
         children: [
           { name: 'ping' }, { name: 'traceroute' }, { name: 'nslookup / dig' },
           { name: 'curl / wget' }, { name: 'netstat / ss' }, { name: 'Wireshark 抓包' }
+        ] },
+      { name: '第 10 章 · 现代协议演进',
+        children: [
+          { name: 'HTTP/3 · QUIC' }, { name: 'IPv6 全面部署' },
+          { name: 'DoH · DoT · 加密 DNS' }, { name: 'BBR 拥塞控制' }
         ] }
     ];
 
@@ -896,11 +908,29 @@
       ]
     };
 
-    var treeData = [{
-      name: '人工智能',
-      itemStyle: { color: VOL_AI },
-      symbolSize: 22,
+    // ---------- 组装：智能 & 网络 两大平级分支 ----------
+    var VOL_NET_C = accent;       // 网络篇 · 松苔绿
+    var VOL_AI_C  = '#4a6d8c';    // 智能篇 · 深墨蓝
+
+    var branchIntelligence = {
+      name: '智能篇 · Intelligence',
+      itemStyle: { color: VOL_AI_C },
+      symbolSize: 18,
       children: aiChildren
+    };
+
+    var branchNetwork = {
+      name: '网络篇 · Network',
+      itemStyle: { color: VOL_NET_C },
+      symbolSize: 18,
+      children: netChildren
+    };
+
+    var treeData = [{
+      name: '学海',
+      itemStyle: { color: ink },
+      symbolSize: 24,
+      children: [ branchIntelligence, branchNetwork ]
     }];
 
     window.__xhwyTreeData = treeData;
@@ -1037,6 +1067,48 @@
           }
         }
       }
+    });
+
+    // ===============================
+    // 控制按钮：展开 / 收起 / 放大 / 缩小
+    // ===============================
+    function walk(node, cb) {
+      cb(node);
+      if (node.children) node.children.forEach(function (c) { walk(c, cb); });
+    }
+    function setAllCollapsed(collapsed) {
+      var roots = window.__xhwyTreeData;
+      roots.forEach(function (r) {
+        walk(r, function (n) {
+          if (n.children && n.children.length) n.collapsed = collapsed;
+        });
+      });
+      // 根始终展开，避免"全部收起"后只剩一个孤点
+      if (collapsed) {
+        roots.forEach(function (r) { r.collapsed = false; });
+      }
+      chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
+    }
+    function zoom(factor) {
+      var opt = chart.getOption();
+      var s = opt.series && opt.series[0];
+      var current = (s && s.zoom) || 1;
+      var next = Math.max(0.3, Math.min(4, current * factor));
+      chart.setOption({ series: [{ zoom: next }] });
+    }
+
+    var btnExpand   = document.getElementById('kmap-expand');
+    var btnCollapse = document.getElementById('kmap-collapse');
+    var btnZoomIn   = document.getElementById('kmap-zoom-in');
+    var btnZoomOut  = document.getElementById('kmap-zoom-out');
+    var btnReset    = document.getElementById('kmap-reset');
+
+    if (btnExpand)   btnExpand.addEventListener('click',   function () { setAllCollapsed(false); });
+    if (btnCollapse) btnCollapse.addEventListener('click', function () { setAllCollapsed(true);  });
+    if (btnZoomIn)   btnZoomIn.addEventListener('click',   function () { zoom(1.25); });
+    if (btnZoomOut)  btnZoomOut.addEventListener('click',  function () { zoom(0.8);  });
+    if (btnReset)    btnReset.addEventListener('click',    function () {
+      chart.setOption({ series: [{ zoom: 1, center: null }] });
     });
   }
 

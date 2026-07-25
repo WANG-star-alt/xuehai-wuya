@@ -113,6 +113,45 @@
       text-align: right;
       padding: 0.4rem 0.4rem 0;
     }
+
+    /* 控制按钮 */
+    .kmap-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0 0.2rem 0.6rem;
+      align-items: center;
+    }
+    .kmap-controls .group {
+      display: inline-flex;
+      gap: 0.35rem;
+    }
+    .kmap-controls .spacer { flex: 1 1 auto; }
+    .kmap-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--bg3);
+      border: 1px solid var(--rule);
+      color: var(--ink-soft);
+      padding: 0.32rem 0.7rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .kmap-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .kmap-btn .ic {
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      line-height: 1;
+    }
     #chart-knowledge-map {
       width: 100%;
       height: 820px;
@@ -270,8 +309,20 @@
     <!-- ======= Knowledge Map ======= -->
     <section class="kmap" aria-label="人工智能 · 知识树">
       <div class="kmap-head">
-        <div class="title">人工智能 · 知识树</div>
-        <div class="sub">AI Knowledge Map</div>
+        <div class="title">学海 · 知识树</div>
+        <div class="sub">Knowledge Map</div>
+      </div>
+      <div class="kmap-controls">
+        <div class="group">
+          <button type="button" class="kmap-btn" id="kmap-expand"   title="展开全部分支"><span class="ic">⊞</span>全部展开</button>
+          <button type="button" class="kmap-btn" id="kmap-collapse" title="仅保留根节点"><span class="ic">⊟</span>全部收起</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="group">
+          <button type="button" class="kmap-btn" id="kmap-zoom-in"  title="放大"><span class="ic">＋</span>放大</button>
+          <button type="button" class="kmap-btn" id="kmap-zoom-out" title="缩小"><span class="ic">−</span>缩小</button>
+          <button type="button" class="kmap-btn" id="kmap-reset"    title="还原视图"><span class="ic">⟳</span>还原</button>
+        </div>
       </div>
       <div id="chart-knowledge-map"></div>
       <div class="kmap-tip">↕ 滚轮缩放 · 拖拽平移 · <strong>点章节节点跳到对应篇</strong></div>
@@ -406,6 +457,6 @@
   </article>
 
   <script src="./_shared/js/echarts.min.js"></script>
-  <script src="./assets/charts.js?v=kmap-12"></script>
+  <script src="./assets/charts.js?v=kmap-13"></script>
 </body>
 </html>
