@@ -988,16 +988,16 @@
     (function colorNodes(nodes) {
       nodes.forEach(function (n) {
         if (n.external && n.link) {
-          // 有外部链接 → 浅绿色边框 + 浅绿填充
+          // 有外部链接 → 浅绿色边框 + 浅绿填充（不透明）
           n.itemStyle = n.itemStyle || {};
           n.itemStyle.borderColor = accent;
-          n.itemStyle.color = 'rgba(85,107,61,0.15)';
+          n.itemStyle.color = '#d4e2c8'; // 浅绿不透明
           n.itemStyle.borderWidth = 2;
         } else if (!n.children || !n.children.length) {
-          // 无链接的叶子 → 浅灰色
+          // 无链接的叶子 → 浅灰色（不透明）
           n.itemStyle = n.itemStyle || {};
           n.itemStyle.borderColor = muted;
-          n.itemStyle.color = 'rgba(138,133,121,0.15)';
+          n.itemStyle.color = '#e8e4dc'; // 浅灰不透明
           n.itemStyle.borderWidth = 1.5;
         }
         if (n.children && n.children.length) colorNodes(n.children);
@@ -1041,7 +1041,7 @@
         itemStyle: {
           borderColor: ink,
           borderWidth: 2,
-          color: 'rgba(250,247,242,0.9)'
+          color: '#faf7f2' // 不透明米黄
         },
         cursor: 'pointer',
         // 非叶子（有子节点、可以展开的）——标签放在圆点上方，避开进入的连线
@@ -1053,7 +1053,19 @@
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 6
+          distance: 6,
+          formatter: function (params) {
+            // 有子节点且当前折叠 → 显示 [+]
+            var real = findNodeByName(params.name);
+            if (real && real.children && real.children.length && real.collapsed) {
+              return params.name + ' [+]';
+            }
+            // 有子节点且当前展开 → 显示 [-]
+            if (real && real.children && real.children.length && !real.collapsed) {
+              return params.name + ' [-]';
+            }
+            return params.name;
+          }
         },
         // 叶子（最末端节点）——标签放右侧
         leaves: {
