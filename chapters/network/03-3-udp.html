@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 3.3 · UDP 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./03-protocols.html">网络篇 · 第 3 章</a>
+      <span class="sep">›</span>
+      <span>§ 3.3</span>
+    </div>
+    <a href="./03-protocols.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 3.3 · Sub-chapter</div>
+    <h1>UDP 篇</h1>
+    <div class="cn">User Datagram Protocol</div>
+  </header>
+
+  <p class="lead">
+    UDP 是 TCP 的"反面"——<mark class="key">不保证到达、不保证顺序、不建立连接，但快得飞起</mark>。视频通话、直播、在线游戏、语音聊天，这些"要快不要全"的场景，全是 UDP 的地盘。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📢 大喇叭广播 vs 打电话</div>
+    <p>TCP 像打电话——先确认对方在，再说事，说完确认对方听清了。<br/>
+    UDP 像大喇叭广播——你站在村口喊一嗓子"开会了！"，听到的人来，没听到的就算了。<br/>
+    你不确认每个人是否听到，也不重喊——<strong>快，但可能有人没听到</strong>。<br/>
+    视频通话就是这样——画面偶尔卡一下、花一下，没关系，重要的是"现在"的画面能实时传过去。</p>
+  </div>
+
+  <h3>UDP 的特点</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>特点</th><th>TCP</th><th>UDP</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>连接</td><td>要先建立连接（三次握手）</td><td>不用连接，直接发</td></tr>
+        <tr><td>可靠性</td><td>保证到达、按序、不重</td><td>不保证——可能丢、可能乱序</td></tr>
+        <tr><td>速度</td><td>慢（确认、重传、排序都要时间）</td><td>快（发完就不管）</td></tr>
+        <tr><td>头部开销</td><td>20 字节</td><td>8 字节</td></tr>
+        <tr><td>流量控制</td><td>有（滑动窗口、拥塞控制）</td><td>没有——想发多快发多快</td></tr>
+        <tr><td>适用场景</td><td>网页、文件、邮件</td><td>视频、语音、游戏、直播</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>UDP 为什么快</h3>
+  <p>UDP 快的原因就三个字：<strong>不操心</strong>。</p>
+
+  <ul class="keylist">
+    <li><span class="k">不握手</span><span class="v">不用先"喂？听得到吗？"——直接说事。</span></li>
+    <li><span class="k">不确认</span><span class="v">发完就忘——不等对方说"我收到了"。</span></li>
+    <li><span class="k">不重传</span><span class="v">丢了就丢了——不补发。</span></li>
+    <li><span class="k">不排序</span><span class="v">不按顺序到？那也不管——先到先用。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 泼水 vs 递水杯</span>
+    <p>TCP 像<strong>递水杯</strong>——一杯一杯递，每杯都确认对方接住了，没接住就再递一次。<br/>
+    UDP 像<strong>泼水</strong>——你拿盆一泼，水洒出去，接到多少算多少。<br/>
+    泼水当然快——但地上会湿（丢包）。</p>
+  </div>
+
+  <h3>UDP 在你生活中的样子</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>应用</th><th>为什么用 UDP</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>微信视频通话</td><td>画面偶尔卡一下你能忍，但"现在"的画面必须实时到</td></tr>
+        <tr><td>抖音直播</td><td>观众容忍花屏 0.5 秒，不能容忍延迟 3 秒</td></tr>
+        <tr><td>王者荣耀</td><td>英雄位置必须实时同步，偶尔丢一帧无所谓</td></tr>
+        <tr><td>语音消息</td><td>声音流必须连续，偶尔爆音没关系</td></tr>
+        <tr><td>DNS 查询</td><td>一次问答搞定，不用建立连接</td></tr>
+        <tr><td>在线会议（Zoom/腾讯会议）</td><td>多人实时视频，延迟敏感</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>UDP 的"伪可靠性"</h3>
+  <p>UDP 本身不保证可靠，但<strong>应用层可以自己加</strong>——很多基于 UDP 的协议，在 UDP 之上自己实现了"确认、重传、排序"：</p>
+
+  <ul class="keylist">
+    <li><span class="k">QUIC（HTTP/3）</span><span class="v">Google 搞的，基于 UDP，但自己实现了 TCP 的可靠性 + 更快的握手——现在 Cloudflare、Google 都在用。</span></li>
+    <li><span class="k">RTP（实时传输协议）</span><span class="v">视频通话用的——UDP 之上加了时间戳和序号，让接收方能"拼"出连续画面。</span></li>
+    <li><span class="k">游戏自定义协议</span><span class="v">王者荣耀、原神自己定义的——关键操作（放技能）用"可靠 UDP"重传，普通移动用"普通 UDP"。</span></li>
+  </ul>
+
+  <h3>什么时候绝对不能用 UDP</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">01</div>
+      <h4>文件下载</h4>
+      <p>文件必须 100% 完整——少一个字节都打不开。必须用 TCP。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02</div>
+      <h4>网页浏览</h4>
+      <p>HTML 错一个字可能整页乱码。必须用 TCP（或基于 UDP 但带可靠性的 QUIC）。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">03</div>
+      <h4>银行转账</h4>
+      <p>数据必须准确无误，还要防篡改。必须用 TCP + TLS。</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>UDP = <mark class="key">"泼出去的水"</mark>——快、简单、不保证。适合"实时但容错"的场景：视频、语音、游戏、直播。<br/>
+    TCP 和 UDP 不是"谁好谁坏"——是<strong>不同场景的不同选择</strong>。理解它们的取舍，你就理解了网络设计的核心思想：<strong>没有银弹，只有权衡</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-2-tcp.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 3.2 · TCP 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./03-4-dns.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 3.4 · DNS 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 3.3 · UDP</div>
+
+</article>
+</body>
+</html>

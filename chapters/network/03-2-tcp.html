@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 3.2 · TCP 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./03-protocols.html">网络篇 · 第 3 章</a>
+      <span class="sep">›</span>
+      <span>§ 3.2</span>
+    </div>
+    <a href="./03-protocols.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 3.2 · Sub-chapter</div>
+    <h1>TCP 篇</h1>
+    <div class="cn">Transmission Control Protocol</div>
+  </header>
+
+  <p class="lead">
+    TCP 是<mark class="key">互联网最"靠谱"的协议</mark>——它保证你发的数据<strong>不丢、不重、按顺序到达</strong>。微信聊天、文件下载、网页浏览，背后都是 TCP 在保驾护航。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📞 打电话 vs 发微信语音</div>
+    <p>你打电话——先拨号，对方接起"喂？"，你说"听得到吗？"，对方说"听得到"——然后才开始说正事。<br/>
+    说完你说"我说完了"，对方说"好的"，你再说"拜拜"，对方也说"拜拜"——挂断。<br/>
+    这个过程就是 TCP 的"三次握手"和"四次挥手"——<strong>先确认对方在，再说事，说完确认双方都听清了，再挂断</strong>。</p>
+  </div>
+
+  <h3>三次握手 · 建立连接</h3>
+  <p>TCP 通信前，双方必须先"握手"确认：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>① 客户端：SYN</h4>
+      <p>"我想和你建立连接，我的初始序号是 X。"——客户端发一个 SYN 包。</p>
+    </div>
+    <div class="step">
+      <h4>② 服务器：SYN + ACK</h4>
+      <p>"我收到了你的 SYN（确认号 X+1），我也想建立连接，我的初始序号是 Y。"——服务器一次说两件事。</p>
+    </div>
+    <div class="step">
+      <h4>③ 客户端：ACK</h4>
+      <p>"我收到了你的 SYN（确认号 Y+1）。"——三次握手完成，连接建立。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 为什么必须三次</span>
+    <p>两次行不行？不行——<br/>
+    客户端说"我要连你"（第一次），服务器说"好"（第二次）——但<strong>服务器不知道客户端有没有收到它的"好"</strong>。如果客户端没收到，服务器就傻等着。<br/>
+    第三次客户端说"我收到了你的好"——服务器才确定"客户端真的在"。<br/>
+    三次之后，<strong>双方都确认对方听到了自己</strong>。</p>
+  </div>
+
+  <h3>四次挥手 · 断开连接</h3>
+  <p>说完事要断开，TCP 用"四次挥手"：</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>① 客户端：FIN</h4>
+      <p>"我说完了，准备断开。"</p>
+    </div>
+    <div class="step">
+      <h4>② 服务器：ACK</h4>
+      <p>"我知道你说完了。"——但服务器可能还有数据没发完，所以先确认，不断开。</p>
+    </div>
+    <div class="step">
+      <h4>③ 服务器：FIN</h4>
+      <p>服务器发完剩余数据后，说"我也说完了。"</p>
+    </div>
+    <div class="step">
+      <h4>④ 客户端：ACK</h4>
+      <p>"我知道了。"——客户端等一小会（防止 ACK 丢失），然后彻底断开。</p>
+    </div>
+  </div>
+
+  <h3>TCP 怎么保证"不丢"</h3>
+  <p>核心机制：<strong>序号 + 确认 + 重传</strong>。</p>
+
+  <ul class="keylist">
+    <li><span class="k">序号</span><span class="v">每个字节都编一个号——1, 2, 3, 4... 接收方按号排序。</span></li>
+    <li><span class="k">确认</span><span class="v">接收方定期告诉发送方"我收到 1-1000 号了"——叫 ACK。</span></li>
+    <li><span class="k">超时重传</span><span class="v">发送方发现"1001-1500 号"迟迟没收到确认——自动重发。</span></li>
+    <li><span class="k">快速重传</span><span class="v">接收方发现"1001 号没到，但 1002 到了"——立刻告诉发送方"缺 1001"，不用等超时。</span></li>
+  </ul>
+
+  <h3>TCP 怎么保证"不重复"</h3>
+  <p>接收方按序号排序——如果收到重复的号，直接丢弃。就像你收到两封一样的快递，拆一封，另一封扔掉。</p>
+
+  <h3>TCP 怎么"控速"</h3>
+  <p>网络会堵——TCP 有两个机制防止"把路堵死"：</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-num">01</div>
+      <h4>滑动窗口 · Flow Control</h4>
+      <p>接收方告诉发送方"我缓冲区还有多大"——发送方不超过这个量发。<br/>防止"你发太快，我处理不过来"。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02</div>
+      <h4>拥塞控制 · Congestion Control</h4>
+      <p>TCP 会"试探"网络有多堵——慢慢加速，发现丢包就减速。<br/>防止"大家都猛发，把路堵死"。</p>
+    </div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 开车上高速</span>
+    <p><strong>滑动窗口</strong> = 你跟副驾说"我胃里还能吃三碗饭"——副驾就最多给你盛三碗。<br/>
+    <strong>拥塞控制</strong> = 你上高速先慢慢开，发现不堵就加速，发现刹车灯亮就减速——TCP 也是这么"试探"网络的。</p>
+  </div>
+
+  <h3>TCP 的"粘包"问题</h3>
+  <p>TCP 是"流式"协议——数据像水一样连续流，没有边界。你发两条消息"Hello"和"World"，接收方可能一次收到"HelloWorld"——这叫<strong>粘包</strong>。</p>
+
+  <p>解决办法：应用层自己定边界——比如每条消息前加长度，或用特殊字符分隔（HTTP 用 \r\n\r\n 分隔头部和 body）。</p>
+
+  <h3>TCP vs UDP · 什么时候用哪个</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>用 TCP 还是 UDP</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>网页浏览</td><td>TCP</td><td>网页内容不能错一个字</td></tr>
+        <tr><td>文件下载</td><td>TCP</td><td>文件必须完整</td></tr>
+        <tr><td>微信文字聊天</td><td>TCP</td><td>消息不能丢</td></tr>
+        <tr><td>视频通话</td><td>UDP</td><td>偶尔卡一下没关系，但延迟不能高</td></tr>
+        <tr><td>直播</td><td>UDP</td><td>观众容忍花屏，不能容忍延迟</td></tr>
+        <tr><td>在线游戏</td><td>UDP 为主</td><td>位置同步要实时，偶尔丢包无所谓</td></tr>
+        <tr><td>DNS 查询</td><td>UDP 为主</td><td>查询简单，一次问答搞定</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>TCP = <mark class="key">"靠谱的快递"</mark>——三次握手确认身份，序号+确认+重传保证不丢，滑动窗口+拥塞控制防止堵路。<br/>
+    代价是<strong>慢一点、复杂一点</strong>——所以视频、直播、游戏这些"要快不要全"的场景，会用 UDP（下一篇讲）。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-1-http.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 3.1 · HTTP / HTTPS 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./03-3-udp.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 3.3 · UDP 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 3.2 · TCP</div>
+
+</article>
+</body>
+</html>
