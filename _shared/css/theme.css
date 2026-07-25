@@ -253,7 +253,7 @@ td { color: var(--ink-soft); }
 .journey .step h4 { margin: 0 0 0.3rem; font-size: 0.98rem; }
 .journey .step p { margin: 0; font-size: 0.92rem; }
 
-/* 底部翻页导航 */
+/* 底部翻页导航（默认显示在文章末尾） */
 .pager {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -316,6 +316,94 @@ td { color: var(--ink-soft); }
   transition: background .15s;
 }
 .pager .home:hover { background: var(--accent2); color: var(--bg); }
+
+/* ====== 悬浮翻页条（固定在屏幕底部，随时可见） ====== */
+.pager-float {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(250,247,242,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--rule);
+  padding: 0.55rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  box-shadow: 0 -2px 12px rgba(43,42,38,0.08);
+}
+.pager-float .btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.5rem 0.85rem;
+  background: var(--bg3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: all .15s;
+  min-height: 52px;
+}
+.pager-float .btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.pager-float .btn .dir {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 0.1rem;
+}
+.pager-float .btn .title {
+  font-family: var(--font-serif);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pager-float .btn.prev { text-align: left; }
+.pager-float .btn.next { text-align: right; }
+.pager-float .btn.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.pager-float .home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  min-height: 52px;
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.pager-float .home:hover { background: var(--accent2); color: var(--bg); }
+
+/* 给页面底部留白，避免被悬浮条遮住 */
+body.has-float-pager { padding-bottom: 90px; }
+
+@media (max-width: 720px) {
+  .pager-float { padding: 0.4rem 0.6rem; gap: 0.5rem; }
+  .pager-float .btn { padding: 0.4rem 0.6rem; min-height: 48px; }
+  .pager-float .btn .title { font-size: 0.8rem; }
+  .pager-float .home { padding: 0 0.7rem; min-height: 48px; font-size: 0.62rem; }
+  body.has-float-pager { padding-bottom: 75px; }
+}
 
 /* Footer */
 .page-foot {
