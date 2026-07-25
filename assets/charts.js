@@ -984,11 +984,11 @@
     var rule    = (style.getPropertyValue('--rule')    || '#e2dccf').trim();
     var bodyFont = 'Lora, "Noto Serif SC", serif';
 
-    // 统一处理节点颜色：有 link 的浅绿色，无 link 的浅灰色
+    // 统一处理节点颜色：有 external link 的浅绿色，无 link 的叶子浅灰色
     (function colorNodes(nodes) {
       nodes.forEach(function (n) {
-        if (n.link) {
-          // 有链接 → 浅绿色边框 + 浅绿填充
+        if (n.external && n.link) {
+          // 有外部链接 → 浅绿色边框 + 浅绿填充
           n.itemStyle = n.itemStyle || {};
           n.itemStyle.borderColor = accent;
           n.itemStyle.color = 'rgba(85,107,61,0.15)';
@@ -1096,48 +1096,30 @@
       chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
     })();
 
-    // 通过 treePathInfo 找到数据源里对应的原节点（保持 collapsed 状态跟数据同步）
-    function findNodeByPath(pathInfo) {
-      if (!pathInfo || !pathInfo.length) return null;
-      var roots = window.__xhwyTreeData;
-      // pathInfo[0] 是根节点，从 roots 里按 name 找
-      var node = null;
-      for (var i = 0; i < roots.length; i++) {
-        if (roots[i].name === pathInfo[0].name) { node = roots[i]; break; }
-      }
-      if (!node) return null;
-      for (var j = 1; j < pathInfo.length; j++) {
-        if (!node.children) return null;
-        var found = null;
-        for (var k = 0; k < node.children.length; k++) {
-          if (node.children[k].name === pathInfo[j].name) { found = node.children[k]; break; }
+    // 通过 name 在整棵树里搜索节点（比 treePathInfo 更可靠）
+    function findNodeByName(name) {
+      var found = null;
+      function walk(nodes) {
+        if (found) return;
+        for (var i = 0; i < nodes.length; i++) {
+          if (nodes[i].name === name) { found = nodes[i]; return; }
+          if (nodes[i].children) walk(nodes[i].children);
         }
-        if (!found) return null;
-        node = found;
       }
-      return node;
+      walk(window.__xhwyTreeData);
+      return found;
     }
 
-    // 点击节点：有 link 跳转，无 link 展开/收起
+    // 点击节点：有 external link 跳转，无 link 但有子节点 → 展开/收起
     chart.on('click', function (params) {
-      // 找到数据源里的真实节点
-      var real = findNodeByPath(params.treePathInfo || []);
+      if (!params.data || !params.data.name) return;
+      var real = findNodeByName(params.data.name);
       if (!real) return;
 
-      // 1) 有 link → 跳转
-      if (real.link) {
-        if (real.external) {
-          window.location.href = real.link;
-          return;
-        }
-        var target = document.getElementById(real.link);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          if (history && history.replaceState) {
-            history.replaceState(null, '', '#' + real.link);
-          }
-          return;
-        }
+      // 1) 有 external link → 跳转
+      if (real.external && real.link) {
+        window.location.href = real.link;
+        return;
       }
 
       // 2) 无 link 但有子节点 → 展开/收起

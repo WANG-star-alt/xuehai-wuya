@@ -120,8 +120,9 @@ xuehai-wuya/
 - 标签无背景色（黑暗模式友好）
 - 控制按钮: 全部展开 / 全部收起 / 一级 / 二级 / 放大 / 缩小 / 还原
 - **圆点要大要明显**: `symbolSize: 14`, `borderWidth: 2`
-- **圆点颜色区分**: 有 link 的节点浅绿色（`accent` 边框 + 浅绿填充），无 link 的叶子节点浅灰色（`muted` 边框 + 浅灰填充）
-- **点击节点**: 有 link → 跳转，无 link 但有子节点 → 展开/收起（不再区分圆点/文字，简化交互）
+- **圆点颜色区分**: 有 `external: true` + `link` 的节点浅绿色（`accent` 边框 + 浅绿填充），无 link 的叶子节点浅灰色（`muted` 边框 + 浅灰填充）
+- **点击节点**: 有 `external: true` + `link` → 跳转，无 link 但有子节点 → 展开/收起
+- **节点查找**: 用 `findNodeByName` 在整棵树里按 name 搜索（比 `treePathInfo` 更可靠，不受折叠影响）
 
 ### 4. 主页卡片规范
 
