@@ -892,19 +892,10 @@
     };
 
     var treeData = [{
-      name: '知识',
-      itemStyle: { color: ROOT_C },
+      name: '人工智能',
+      itemStyle: { color: VOL_AI },
       symbolSize: 22,
-      children: [
-        branchHumanities,
-        branchSocial,
-        branchNatural,
-        branchFormal,
-        branchEngineering,
-        branchMedicine,
-        branchArts,
-        branchLife
-      ]
+      children: aiChildren
     }];
 
     window.__xhwyTreeData = treeData;
@@ -967,7 +958,7 @@
         symbol: 'emptyCircle',
         symbolSize: 7,
         roam: true,
-        initialTreeDepth: 1,
+        initialTreeDepth: 2,
         lineStyle: {
           color: rule,
           width: 1,
