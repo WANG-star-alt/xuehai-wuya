@@ -498,19 +498,19 @@
         ] }
     ];
 
-    // ---------- AI 篇 ----------
+    // ---------- AI 篇（14 章 · 带锚点） ----------
     var aiChildren = [
-      { name: 'AI 是什么',
+      { name: '第 1 章 · AI 是什么', link: 'a-01',
         children: [
           { name: '弱 AI · ANI' }, { name: '通用 AI · AGI' }, { name: '超级 AI · ASI' },
           { name: '四种能力: 感知 / 理解 / 决策 / 生成' }
         ] },
-      { name: '三个圈',
+      { name: '第 2 章 · 三个圈', link: 'a-02',
         children: [
           { name: 'AI' }, { name: '机器学习 ML' }, { name: '深度学习 DL' },
           { name: '生成式 AI · GenAI' }, { name: '大语言模型 LLM' }
         ] },
-      { name: '简史',
+      { name: '第 3 章 · 简史', link: 'a-03',
         children: [
           { name: '1950 图灵测试' }, { name: '1956 达特茅斯会议' },
           { name: '1980s 专家系统' }, { name: '1997 深蓝' },
@@ -518,27 +518,27 @@
           { name: '2017 Transformer' }, { name: '2022 ChatGPT' },
           { name: '2025 推理模型 & Agent' }
         ] },
-      { name: '机器学习',
+      { name: '第 4 章 · 机器学习', link: 'a-04',
         children: [
           { name: '监督学习' }, { name: '无监督学习' },
           { name: '强化学习' }, { name: '自监督学习' },
           { name: '特征 / 标签 / 过拟合' }
         ] },
-      { name: '神经网络',
+      { name: '第 5 章 · 神经网络', link: 'a-05',
         children: [
           { name: '神经元 Neuron' }, { name: '权重 / 偏置 / 激活' },
           { name: '前向传播' }, { name: '反向传播' },
           { name: 'CNN 图像' }, { name: 'RNN / LSTM' },
           { name: 'GAN 对抗' }, { name: 'Diffusion 扩散' }
         ] },
-      { name: '训练三部曲',
+      { name: '第 6 章 · 训练三部曲', link: 'a-06',
         children: [
           { name: '数据 · Dataset' }, { name: '模型 · Model' },
           { name: '损失 · Loss' }, { name: '梯度下降' },
           { name: '预训练 Pre-train' }, { name: 'SFT 指令微调' },
           { name: 'RLHF / DPO 对齐' }, { name: 'RL 推理训练' }
         ] },
-      { name: 'Transformer',
+      { name: '第 7 章 · Transformer', link: 'a-07',
         children: [
           { name: 'Attention 注意力' },
           { name: 'Query / Key / Value' },
@@ -547,33 +547,33 @@
           { name: 'Decoder-only · GPT' },
           { name: 'MoE 专家混合' }
         ] },
-      { name: '大语言模型 LLM',
+      { name: '第 8 章 · 大语言模型 LLM', link: 'a-08',
         children: [
           { name: 'Token 分词' }, { name: '自回归生成' },
           { name: 'Context Window' }, { name: 'Temperature / Top-p' },
           { name: 'System Prompt' }, { name: '思维链 CoT' },
           { name: '推理模型 o1 / R1' }
         ] },
-      { name: '多模态',
+      { name: '第 9 章 · 多模态', link: 'a-09',
         children: [
           { name: '文 · Text' }, { name: '图 · Image' },
           { name: '视频 · Video' }, { name: '语音 · Audio' },
           { name: 'Embedding 向量' }, { name: 'CLIP 跨模态对齐' }
         ] },
-      { name: '提示词工程',
+      { name: '第 10 章 · 提示词工程', link: 'a-10',
         children: [
           { name: '角色 Role' }, { name: '任务 Task' },
           { name: '示例 Few-shot' }, { name: '一步步想 CoT' },
           { name: '输出格式' }, { name: '迭代对话' }
         ] },
-      { name: 'AI 智能体 Agent',
+      { name: '第 11 章 · AI 智能体 Agent', link: 'a-11',
         children: [
           { name: '大脑 LLM' }, { name: '记忆 Memory' },
           { name: '工具 Tools' }, { name: 'ReAct 循环' },
           { name: 'RAG 检索增强' }, { name: 'MCP 协议' },
           { name: 'Multi-Agent 协作' }
         ] },
-      { name: '生态地图',
+      { name: '第 12 章 · 生态地图', link: 'a-12',
         children: [
           { name: '芯片: NVIDIA · 华为' },
           { name: '基础模型: OpenAI · Anthropic · Google' },
@@ -582,13 +582,13 @@
           { name: '工具: Cursor · TRAE · Ollama' },
           { name: '应用: ChatGPT · Claude · Perplexity · Midjourney · Sora' }
         ] },
-      { name: '局限与风险',
+      { name: '第 13 章 · 局限与风险', link: 'a-13',
         children: [
           { name: '幻觉 Hallucination' }, { name: '偏见 Bias' },
           { name: '时效性 Cut-off' }, { name: '隐私 / 版权' },
           { name: '深度伪造' }, { name: 'Prompt 注入' }
         ] },
-      { name: '与 AI 共处',
+      { name: '第 14 章 · 与 AI 共处', link: 'a-14',
         children: [
           { name: '学习助手' }, { name: '写作 / 编程 / 研究' },
           { name: '批判性思维' }, { name: '保留人类判断' }
@@ -969,6 +969,7 @@
           borderWidth: 1.2,
           color: '#faf7f2'
         },
+        cursor: 'pointer',
         // 非叶子（有子节点、可以展开的）——标签放在圆点上方，避开进入的连线
         label: {
           position: 'top',
@@ -976,10 +977,11 @@
           align: 'center',
           fontFamily: bodyFont,
           fontSize: isMobile ? 10 : 12,
+          fontWeight: 'bold',
           color: ink,
           distance: 6,
           backgroundColor: 'rgba(250,247,242,0.92)',
-          padding: [2, 4, 2, 4],
+          padding: [2, 5, 2, 5],
           borderRadius: 3
         },
         // 叶子（最末端节点）——标签放右侧
@@ -1013,6 +1015,19 @@
 
     console.log('[kmap] rendered OK');
     window.addEventListener('resize', function () { chart.resize(); });
+
+    // 点击带 link 字段的章节节点 → 平滑滚动到对应正文
+    chart.on('click', function (params) {
+      if (params && params.data && params.data.link) {
+        var target = document.getElementById(params.data.link);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (history && history.replaceState) {
+            history.replaceState(null, '', '#' + params.data.link);
+          }
+        }
+      }
+    });
   }
 
   if (document.readyState === 'loading') {
