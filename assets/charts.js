@@ -1089,6 +1089,21 @@
       }
       chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
     }
+    // 按深度展开：depth = 显示到第几层（根 = 0）
+    // depth = 1 → 只看到根的直接孩子（一级分支）
+    // depth = 2 → 展开到孙子（二级分支）
+    function expandToDepth(depth) {
+      var roots = window.__xhwyTreeData;
+      function walkD(node, d) {
+        if (node.children && node.children.length) {
+          // 该节点在深度 d 以内 → 展开；超过 → 折叠
+          node.collapsed = (d >= depth);
+          node.children.forEach(function (c) { walkD(c, d + 1); });
+        }
+      }
+      roots.forEach(function (r) { walkD(r, 0); });
+      chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
+    }
     function zoom(factor) {
       var opt = chart.getOption();
       var s = opt.series && opt.series[0];
@@ -1099,12 +1114,16 @@
 
     var btnExpand   = document.getElementById('kmap-expand');
     var btnCollapse = document.getElementById('kmap-collapse');
+    var btnLevel1   = document.getElementById('kmap-level-1');
+    var btnLevel2   = document.getElementById('kmap-level-2');
     var btnZoomIn   = document.getElementById('kmap-zoom-in');
     var btnZoomOut  = document.getElementById('kmap-zoom-out');
     var btnReset    = document.getElementById('kmap-reset');
 
     if (btnExpand)   btnExpand.addEventListener('click',   function () { setAllCollapsed(false); });
     if (btnCollapse) btnCollapse.addEventListener('click', function () { setAllCollapsed(true);  });
+    if (btnLevel1)   btnLevel1.addEventListener('click',   function () { expandToDepth(1); });
+    if (btnLevel2)   btnLevel2.addEventListener('click',   function () { expandToDepth(2); });
     if (btnZoomIn)   btnZoomIn.addEventListener('click',   function () { zoom(1.25); });
     if (btnZoomOut)  btnZoomOut.addEventListener('click',  function () { zoom(0.8);  });
     if (btnReset)    btnReset.addEventListener('click',    function () {
