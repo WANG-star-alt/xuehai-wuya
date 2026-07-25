@@ -532,7 +532,14 @@
           { name: '生成式 AI · GenAI 篇',  link: 'chapters/ai/02-4-genai.html', external: true },
           { name: '大语言模型 · LLM 篇',   link: 'chapters/ai/02-5-llm.html',   external: true }
         ] },
-      { name: '第 3 章 · 简史', link: 'chapters/ai/03-history.html', external: true },
+      { name: '第 3 章 · 简史', link: 'chapters/ai/03-history.html', external: true,
+        children: [
+          { name: '早期探索 · 1943-1956', link: 'chapters/ai/03-history.html#early', external: true },
+          { name: '专家系统与寒冬 · 1969-1993', link: 'chapters/ai/03-history.html#expert-winter', external: true },
+          { name: '深度学习革命 · 1997-2017', link: 'chapters/ai/03-history.html#dl-revolution', external: true },
+          { name: '大模型时代 · 2018-2026', link: 'chapters/ai/03-history.html#llm-era', external: true },
+          { name: '历史启示', link: 'chapters/ai/03-history.html#lessons', external: true }
+        ] },
       { name: '第 4 章 · 机器学习', link: 'chapters/ai/04-machine-learning.html', external: true,
         children: [
           { name: '§ 4.1 · 监督学习篇',      link: 'chapters/ai/04-1-supervised.html',      external: true },
