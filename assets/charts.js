@@ -991,13 +991,13 @@
         type: 'tree',
         data: window.__xhwyTreeData,
         layout: 'orthogonal',
-        orient: 'LR',
+        orient: 'TB', // 从上到下展开（Top-Bottom）
         top: 20,
         bottom: 20,
-        left: '12%',
-        right: '20%',
-        symbol: 'none',
-        symbolSize: 14,
+        left: '5%',
+        right: '5%',
+        symbol: 'emptyCircle',
+        symbolSize: 10,
         roam: true,
         initialTreeDepth: 2,
         lineStyle: {
@@ -1011,24 +1011,24 @@
           color: '#faf7f2'
         },
         cursor: 'pointer',
-        // 文字直接显示在节点位置（无圆圈），连线从文字边缘出发
+        // 文字放在节点下方（从上到下布局），连线从文字上方出发
         label: {
-          position: 'inside',
-          verticalAlign: 'middle',
+          position: 'bottom',
+          verticalAlign: 'top',
           align: 'center',
           fontFamily: bodyFont,
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 0
+          distance: 4
         },
-        // 叶子（最末端节点）——标签放右侧
+        // 叶子（最末端节点）——标签也放下方（保持统一）
         leaves: {
           label: {
-            position: 'right',
-            verticalAlign: 'middle',
-            align: 'left',
-            distance: 8,
+            position: 'bottom',
+            verticalAlign: 'top',
+            align: 'center',
+            distance: 4,
             color: muted,
             fontSize: isMobile ? 9 : 11
           }
