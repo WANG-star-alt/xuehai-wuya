@@ -260,7 +260,7 @@
     }
     .ch-card.ready .badge { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
 
-    /* === Volume divider === */
+    /* === Volume divider (小分卷) === */
     .vol-divider {
       font-family: var(--font-mono);
       font-size: 0.7rem;
@@ -280,6 +280,76 @@
       background: var(--rule);
       vertical-align: middle;
       margin: 0 0.8rem;
+    }
+
+    /* === Big Volume Banner (大篇横幅) === */
+    .vol-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin: 3.5rem 0 1.5rem;
+      padding: 1.3rem 1.5rem;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+      color: var(--bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .vol-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 12px,
+        rgba(255,255,255,0.05) 12px,
+        rgba(255,255,255,0.05) 24px
+      );
+      pointer-events: none;
+    }
+    .vol-banner:first-of-type { margin-top: 0.5rem; }
+    .vol-banner .no {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.3em;
+      opacity: 0.85;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+    }
+    .vol-banner h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.4rem, 4vw, 1.9rem);
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      color: var(--bg);
+      margin: 0;
+    }
+    .vol-banner .en {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      opacity: 0.75;
+      text-transform: uppercase;
+      margin-top: 0.3rem;
+    }
+    .vol-banner .side {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      opacity: 0.85;
+    }
+    .vol-banner .side .count { font-size: 1.5rem; font-family: var(--font-serif); }
+    /* 网络篇横幅换个色系 */
+    .vol-banner.net {
+      background: linear-gradient(90deg, #4a6d8c 0%, #6a8b5b 100%);
+    }
+    @media (max-width: 720px) {
+      .vol-banner { padding: 1rem 1.1rem; }
+      .vol-banner .side { font-size: 0.66rem; }
     }
 
     /* === Footer === */
@@ -302,8 +372,8 @@
     <!-- ======= Cover ======= -->
     <header class="cover">
       <div class="brand">Xue Hai Wu Ya · 学 · 海 · 无 · 涯</div>
-      <h1>人 <span class="sep">·</span> 工 <span class="sep">·</span> 智 <span class="sep">·</span> 能</h1>
-      <div class="subtitle">从"AI 是什么"到"与 AI 共处"——14 章一次讲透</div>
+      <h1>学 <span class="sep">·</span> 海 <span class="sep">·</span> 无 <span class="sep">·</span> 涯</h1>
+      <div class="subtitle">智能篇 · 网络篇 —— 一份可以随时展开的知识地图</div>
     </header>
 
     <!-- ======= Knowledge Map ======= -->
@@ -330,13 +400,20 @@
       <div class="kmap-tip">↕ 滚轮缩放 · 拖拽平移 · <strong>点章节节点跳到对应篇</strong></div>
     </section>
 
-    <!-- ======= 14 章模块 ======= -->
-    <div class="sec-title">
-      <h2>十四章 · 十四篇</h2>
-      <div class="sub">Chapter Index</div>
+    <!-- ======= 智能篇 ======= -->
+    <div class="vol-banner">
+      <div>
+        <div class="no">Volume · 01</div>
+        <h2>智 能 篇</h2>
+        <div class="en">Intelligence · 14 Chapters</div>
+      </div>
+      <div class="side">
+        <div class="count">14</div>
+        <div>Chapters</div>
+      </div>
     </div>
 
-    <div class="vol-divider">卷一 · 基础篇 · What is AI</div>
+    <div class="vol-divider">卷一 · 基础 · What is AI</div>
     <div class="chapters">
       <a class="ch-card ready" href="./chapters/ai/01-what-is-ai.html">
         <span class="badge">已上线</span>
@@ -361,7 +438,7 @@
       </a>
     </div>
 
-    <div class="vol-divider">卷二 · 原理篇 · How Machines Learn</div>
+    <div class="vol-divider">卷二 · 原理 · How Machines Learn</div>
     <div class="chapters">
       <a class="ch-card wip" href="#">
         <span class="badge">建设中</span>
@@ -386,7 +463,7 @@
       </a>
     </div>
 
-    <div class="vol-divider">卷三 · 大模型篇 · The Era of LLM</div>
+    <div class="vol-divider">卷三 · 大模型 · The Era of LLM</div>
     <div class="chapters">
       <a class="ch-card wip" href="#">
         <span class="badge">建设中</span>
@@ -411,7 +488,7 @@
       </a>
     </div>
 
-    <div class="vol-divider">卷四 · 应用篇 · Using AI Well</div>
+    <div class="vol-divider">卷四 · 应用 · Using AI Well</div>
     <div class="chapters">
       <a class="ch-card wip" href="#">
         <span class="badge">建设中</span>
@@ -436,7 +513,7 @@
       </a>
     </div>
 
-    <div class="vol-divider">卷五 · 反思篇 · Limits &amp; Ethics</div>
+    <div class="vol-divider">卷五 · 反思 · Limits &amp; Ethics</div>
     <div class="chapters">
       <a class="ch-card wip" href="#">
         <span class="badge">建设中</span>
@@ -454,7 +531,106 @@
       </a>
     </div>
 
-    <div class="page-foot">Xue Hai Wu Ya · Artificial Intelligence · 2026</div>
+    <!-- ======= 网络篇 ======= -->
+    <div class="vol-banner net">
+      <div>
+        <div class="no">Volume · 02</div>
+        <h2>网 络 篇</h2>
+        <div class="en">Network · 10 Chapters</div>
+      </div>
+      <div class="side">
+        <div class="count">10</div>
+        <div>Chapters</div>
+      </div>
+    </div>
+
+    <div class="vol-divider">卷一 · 基础 · The Foundations</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 01</div>
+        <h3>网络是什么篇</h3>
+        <div class="en">What is a Network</div>
+        <p>主机、协议、地址、数据包——建立对网络最基础的认识。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 02</div>
+        <h3>分层模型篇</h3>
+        <div class="en">Layered Models</div>
+        <p>OSI 7 层 vs TCP/IP 4 层——每层职责一目了然。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 03</div>
+        <h3>关键协议篇</h3>
+        <div class="en">Core Protocols</div>
+        <p>HTTP、TCP、UDP、DNS、IP——一次讲清最常听到的协议。</p>
+      </a>
+    </div>
+
+    <div class="vol-divider">卷二 · 旅程 · From URL to Page</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 04</div>
+        <h3>一次访问的旅程篇</h3>
+        <div class="en">The Journey</div>
+        <p>输入网址 → DNS → TCP → TLS → HTTP → 渲染，七步走完。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 05</div>
+        <h3>网络设备篇</h3>
+        <div class="en">Network Devices</div>
+        <p>路由器、交换机、网关、防火墙、负载均衡——数据的驿站。</p>
+      </a>
+    </div>
+
+    <div class="vol-divider">卷三 · 现代 · Modern &amp; Wireless</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 06</div>
+        <h3>无线与移动篇</h3>
+        <div class="en">Wireless</div>
+        <p>WiFi 6/7、蓝牙、4G / 5G / 6G、卫星互联网。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 07</div>
+        <h3>云与边缘篇</h3>
+        <div class="en">Cloud &amp; Edge</div>
+        <p>CDN、VPC、边缘节点、容器网络、Serverless。</p>
+      </a>
+    </div>
+
+    <div class="vol-divider">卷四 · 安全与排错 · Security &amp; Ops</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 08</div>
+        <h3>网络安全篇</h3>
+        <div class="en">Security</div>
+        <p>加密、证书、常见威胁、VPN、零信任。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 09</div>
+        <h3>排错工具箱篇</h3>
+        <div class="en">Troubleshooting</div>
+        <p>ping / traceroute / dig / curl / Wireshark——五个救急命令。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 10</div>
+        <h3>现代协议演进篇</h3>
+        <div class="en">Modern Protocols</div>
+        <p>HTTP/3、QUIC、IPv6、加密 DNS、BBR——网络的明天。</p>
+      </a>
+    </div>
+
+    <div class="page-foot">Xue Hai Wu Ya · Intelligence &amp; Network · 2026</div>
 
   </article>
 
