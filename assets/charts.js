@@ -960,46 +960,59 @@
         data: window.__xhwyTreeData,
         layout: 'orthogonal',
         orient: 'LR',
-        top: '2%',
-        bottom: '2%',
-        left: '8%',
-        right: '18%',
+        top: 20,
+        bottom: 20,
+        left: '12%',
+        right: '20%',
         symbol: 'emptyCircle',
-        symbolSize: 8,
+        symbolSize: 7,
         roam: true,
         initialTreeDepth: 1,
         lineStyle: {
           color: rule,
-          width: 1.2,
-          curveness: 0.5
+          width: 1,
+          curveness: 0.55
         },
         itemStyle: {
           borderColor: ink,
           borderWidth: 1.2,
           color: '#faf7f2'
         },
+        // 非叶子（有子节点、可以展开的）——标签放在圆点上方，避开进入的连线
         label: {
-          position: 'left',
-          verticalAlign: 'middle',
-          align: 'right',
+          position: 'top',
+          verticalAlign: 'bottom',
+          align: 'center',
           fontFamily: bodyFont,
-          fontSize: isMobile ? 11 : 13,
+          fontSize: isMobile ? 10 : 12,
           color: ink,
-          distance: 6
+          distance: 6,
+          backgroundColor: 'rgba(250,247,242,0.92)',
+          padding: [2, 4, 2, 4],
+          borderRadius: 3
         },
+        // 叶子（最末端节点）——标签放右侧
         leaves: {
           label: {
             position: 'right',
             verticalAlign: 'middle',
             align: 'left',
+            distance: 8,
             color: muted,
-            fontSize: isMobile ? 10 : 12
+            fontSize: isMobile ? 9 : 11,
+            backgroundColor: 'rgba(250,247,242,0.85)',
+            padding: [1, 3, 1, 3],
+            borderRadius: 3
           }
         },
         emphasis: {
-          focus: 'descendant',
+          focus: 'relative',
           itemStyle: { shadowBlur: 6, shadowColor: 'rgba(85,107,61,.35)' },
-          label: { fontWeight: 'bold', color: accent2 }
+          label: {
+            fontWeight: 'bold',
+            color: accent2,
+            backgroundColor: 'rgba(250,247,242,1)'
+          }
         },
         expandAndCollapse: true,
         animationDuration: 500,
