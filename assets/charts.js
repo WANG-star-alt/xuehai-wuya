@@ -395,35 +395,12 @@
         ] },
       { name: '第 3 章 · 关键协议', link: 'chapters/network/03-protocols.html', external: true,
         children: [
-          { name: 'HTTP / HTTPS',
-            children: [
-              { name: '§ 3.1 · HTTP / HTTPS 篇', link: 'chapters/network/03-1-http.html', external: true },
-              { name: '请求方法 GET/POST' }, { name: '状态码 2xx-5xx' },
-              { name: 'Header / Cookie' }, { name: 'TLS 握手' }, { name: 'HTTP/2 · HTTP/3' }
-            ] },
-          { name: 'TCP',
-            children: [
-              { name: '§ 3.2 · TCP 篇', link: 'chapters/network/03-2-tcp.html', external: true },
-              { name: '三次握手' }, { name: '四次挥手' },
-              { name: '流量控制' }, { name: '拥塞控制' }
-            ] },
-          { name: 'UDP',
-            children: [
-              { name: '§ 3.3 · UDP 篇', link: 'chapters/network/03-3-udp.html', external: true }
-            ] },
-          { name: 'DNS',
-            children: [
-              { name: '根 / 顶级 / 权威' }, { name: '递归 vs 迭代' }, { name: 'DNS 污染 / DoH' }
-            ] },
-          { name: 'IP',
-            children: [
-              { name: 'IPv4 / IPv6' }, { name: '公网 IP / 私网 IP' },
-              { name: '子网与 CIDR' }, { name: 'NAT / 端口转发' }
-            ] },
-          { name: '其他',
-            children: [
-              { name: 'ARP' }, { name: 'ICMP · ping' }, { name: 'DHCP' }, { name: 'SSH / FTP / SMTP' }
-            ] }
+          { name: '§ 3.1 · HTTP / HTTPS 篇', link: 'chapters/network/03-1-http.html', external: true },
+          { name: '§ 3.2 · TCP 篇', link: 'chapters/network/03-2-tcp.html', external: true },
+          { name: '§ 3.3 · UDP 篇', link: 'chapters/network/03-3-udp.html', external: true },
+          { name: 'DNS（未上线）' },
+          { name: 'IP（未上线）' },
+          { name: '其他协议（未上线）' }
         ] },
       { name: '第 4 章 · 一次访问的旅程',
         children: [
