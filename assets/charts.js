@@ -1055,6 +1055,19 @@
     console.log('[kmap] rendered OK');
     window.addEventListener('resize', function () { chart.resize(); });
 
+    // 默认强制展开到二级（覆盖 initialTreeDepth，确保生效）
+    (function forceExpandToDepth2() {
+      var roots = window.__xhwyTreeData;
+      function walkD(node, d) {
+        if (node.children && node.children.length) {
+          node.collapsed = (d >= 2);
+          node.children.forEach(function (c) { walkD(c, d + 1); });
+        }
+      }
+      roots.forEach(function (r) { walkD(r, 0); });
+      chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
+    })();
+
     // 通过 treePathInfo 找到数据源里对应的原节点（保持 collapsed 状态跟数据同步）
     function findNodeByPath(pathInfo) {
       if (!pathInfo || !pathInfo.length) return null;
