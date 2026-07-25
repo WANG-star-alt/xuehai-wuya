@@ -1011,7 +1011,7 @@
           color: '#faf7f2'
         },
         cursor: 'pointer',
-        // 文字放在节点下方（从上到下布局），连线从文字上方出发
+        // 文字放在节点下方（径向布局），强制水平显示不旋转
         label: {
           position: 'bottom',
           verticalAlign: 'top',
@@ -1020,7 +1020,8 @@
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 4
+          distance: 4,
+          rotate: 0 // 强制文字不旋转，始终水平
         },
         // 叶子（最末端节点）——标签也放下方（保持统一）
         leaves: {
@@ -1030,7 +1031,8 @@
             align: 'center',
             distance: 4,
             color: muted,
-            fontSize: isMobile ? 9 : 11
+            fontSize: isMobile ? 9 : 11,
+            rotate: 0 // 强制文字不旋转，始终水平
           }
         },
         emphasis: {
