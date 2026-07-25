@@ -1019,6 +1019,7 @@
         },
         cursor: 'pointer',
         // 所有节点标签统一放在圆点右侧——展开/收起时位置稳定，不会错位
+        // textBorderColor 给文字加描边，让连线被"遮断"，视觉上从文字尾部开始
         label: {
           position: 'right',
           verticalAlign: 'middle',
@@ -1027,7 +1028,9 @@
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 8
+          distance: 8,
+          textBorderColor: '#faf7f2',
+          textBorderWidth: 3
         },
         // 叶子（最末端节点）——标签放右侧（与非叶子一致，保持统一）
         leaves: {
@@ -1037,7 +1040,9 @@
             align: 'left',
             distance: 8,
             color: muted,
-            fontSize: isMobile ? 9 : 11
+            fontSize: isMobile ? 9 : 11,
+            textBorderColor: '#faf7f2',
+            textBorderWidth: 3
           }
         },
         emphasis: {
