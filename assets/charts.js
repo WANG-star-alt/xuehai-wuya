@@ -1003,7 +1003,7 @@
         bottom: 20,
         left: '12%',
         right: '20%',
-        symbol: 'emptyCircle',
+        symbol: 'none',
         symbolSize: 14,
         roam: true,
         initialTreeDepth: 2,
@@ -1015,24 +1015,21 @@
         itemStyle: {
           borderColor: ink,
           borderWidth: 2,
-          color: '#faf7f2' // 不透明米黄
+          color: '#faf7f2'
         },
         cursor: 'pointer',
-        // 所有节点标签统一放在圆点右侧——展开/收起时位置稳定，不会错位
-        // textBorderColor 给文字加描边，让连线被"遮断"，视觉上从文字尾部开始
+        // 文字直接显示在节点位置（无圆圈），连线从文字边缘出发
         label: {
-          position: 'right',
+          position: 'inside',
           verticalAlign: 'middle',
-          align: 'left',
+          align: 'center',
           fontFamily: bodyFont,
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 8,
-          textBorderColor: '#faf7f2',
-          textBorderWidth: 3
+          distance: 0
         },
-        // 叶子（最末端节点）——标签放右侧（与非叶子一致，保持统一）
+        // 叶子（最末端节点）——标签放右侧
         leaves: {
           label: {
             position: 'right',
@@ -1040,9 +1037,7 @@
             align: 'left',
             distance: 8,
             color: muted,
-            fontSize: isMobile ? 9 : 11,
-            textBorderColor: '#faf7f2',
-            textBorderWidth: 3
+            fontSize: isMobile ? 9 : 11
           }
         },
         emphasis: {
