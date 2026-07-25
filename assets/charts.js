@@ -502,8 +502,10 @@
     var aiChildren = [
       { name: '第 1 章 · AI 是什么', link: 'a-01',
         children: [
-          { name: '弱 AI · ANI' }, { name: '通用 AI · AGI' }, { name: '超级 AI · ASI' },
-          { name: '四种能力: 感知 / 理解 / 决策 / 生成' }
+          { name: '弱 AI · ANI 篇',    link: 'a-01-1' },
+          { name: '通用 AI · AGI 篇',  link: 'a-01-2' },
+          { name: '超级 AI · ASI 篇',  link: 'a-01-3' },
+          { name: '四种能力篇 · 感知 / 理解 / 决策 / 生成', link: 'a-01-4' }
         ] },
       { name: '第 2 章 · 三个圈', link: 'a-02',
         children: [

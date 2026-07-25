@@ -321,6 +321,18 @@
     section.chapter + section.chapter {
       padding-top: 1rem;
     }
+    /* 子篇 · 缩进、竖线标记、稍微紧凑 */
+    section.chapter.subchapter {
+      margin: 3rem 0 3rem 1.4rem;
+      padding-left: 1.25rem;
+      border-left: 3px solid var(--accent-soft);
+    }
+    section.chapter.subchapter .chapter-head .num {
+      color: var(--accent2);
+    }
+    section.chapter.subchapter h2 {
+      font-size: 1.6rem;
+    }
     .chapter-head {
       display: flex;
       align-items: baseline;
@@ -2785,7 +2797,14 @@ node_modules/
         </ol>
         <div class="toc-part">卷一 · 基础篇 · What is AI</div>
         <ol start="2">
-          <li><a href="#a-01">第 1 章 · AI 是什么篇</a></li>
+          <li><a href="#a-01">第 1 章 · AI 是什么篇</a>
+            <ol style="list-style:lower-alpha; margin:0.4rem 0 0.4rem 1.2rem;">
+              <li><a href="#a-01-1">§ 1.1 · 弱 AI · ANI 篇</a></li>
+              <li><a href="#a-01-2">§ 1.2 · 通用 AI · AGI 篇</a></li>
+              <li><a href="#a-01-3">§ 1.3 · 超级 AI · ASI 篇</a></li>
+              <li><a href="#a-01-4">§ 1.4 · 四种能力篇 · 感知 / 理解 / 决策 / 生成</a></li>
+            </ol>
+          </li>
           <li><a href="#a-02">第 2 章 · 三个圈篇（AI / ML / DL）</a></li>
           <li><a href="#a-03">第 3 章 · 简史篇 · 六十年三起三落</a></li>
         </ol>
@@ -2938,6 +2957,315 @@ node_modules/
           <li><span class="k">没有长时记忆</span><span class="v">你今天和它说的话，明天它默认不记得（除非产品给它加了记忆功能）。</span></li>
           <li><span class="k">不会自我反思</span><span class="v">它可以"看起来在反思"，那是训练数据里学到的反思腔调，不是真的在反思。</span></li>
         </ul>
+      </section>
+
+      <!-- ======= A-01-1 · 弱 AI 篇 ======= -->
+      <section class="chapter subchapter" id="a-01-1">
+        <div class="chapter-head">
+          <div class="num">§ 1.1</div>
+          <h2>弱 AI · ANI 篇</h2>
+          <div class="cn">Artificial Narrow Intelligence</div>
+        </div>
+
+        <p class="lead">
+          "弱 AI"这个名字听起来像贬义，其实<mark class="key">你今天用到的所有 AI，几乎都是弱 AI</mark>。它专精一件事，做到远超人类的水平；但离开那件事，就一无所知。
+        </p>
+
+        <div class="scene">
+          <span class="scene-tag">生活场景</span>
+          <div class="scene-title">🧠 什么叫"专才 vs 全才"</div>
+          <p>阿尔法狗（AlphaGo）能击败世界围棋冠军，却不会给你煮一碗面；<br/>
+          人脸识别系统能从一亿张脸里找到你，却不会解释"什么叫朋友"；<br/>
+          ChatGPT 能写出一篇论文，但让它自己去查快递、订机票，它就不行——因为那已经超出它"预测下一个词"的范围。</p>
+          <div class="link">→ <strong>弱 AI</strong> = <em>Narrow AI (ANI)</em>：能力窄，但那一窄条上能力惊人。</div>
+        </div>
+
+        <h3>一句话理解</h3>
+        <p>弱 AI 是<strong>"某一件具体智能任务的高手"</strong>。它不会"意识到自己在做这件事"，只会把这件事做得极其准、极其快。</p>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 一把只会开一把锁的钥匙</span>
+          <p>弱 AI 就像一把<strong>专用钥匙</strong>——为一把锁量身打造，开这把锁快、准、稳；但换一把锁，它就完全无能。<br/>今天的 AI 生态里，成千上万把这样的"专用钥匙"在各行各业默默工作。</p>
+        </div>
+
+        <h3>你身边就有的 10 种弱 AI</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>场景</th><th>产品 / 技术</th><th>它专精的是什么</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>拍照</td><td>手机人像模式</td><td>识别主体 / 虚化背景</td></tr>
+              <tr><td>翻译</td><td>DeepL、有道翻译</td><td>一种语言到另一种语言的映射</td></tr>
+              <tr><td>推荐</td><td>抖音、淘宝首页</td><td>根据你的行为预测下一个你会喜欢的</td></tr>
+              <tr><td>导航</td><td>高德 / 百度地图</td><td>基于路况给出最优路线</td></tr>
+              <tr><td>搜索</td><td>Google、百度</td><td>把关键词匹配到最相关的网页</td></tr>
+              <tr><td>输入法</td><td>搜狗、微软拼音</td><td>预测你下一个想打的词</td></tr>
+              <tr><td>识图</td><td>百度识图、iPhone 相册</td><td>从像素判断物体类别</td></tr>
+              <tr><td>反诈</td><td>银行风控系统</td><td>从交易模式里识别异常</td></tr>
+              <tr><td>医疗</td><td>肺结节筛查 AI</td><td>看 CT 找可疑点</td></tr>
+              <tr><td>下棋</td><td>AlphaGo / AlphaZero</td><td>棋盘状态 → 下一步最佳落子</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>弱 AI 的三个共同特征</h3>
+        <ul class="keylist">
+          <li><span class="k">任务边界清晰</span><span class="v">"从图像里认出人脸"、"从棋盘里选下一步"——目标可以用一句话描述清楚。</span></li>
+          <li><span class="k">在这件事上超过人</span><span class="v">否则不值得部署它。它存在的意义就是"人做起来慢、贵、错，交给它稳"。</span></li>
+          <li><span class="k">迁移能力很差</span><span class="v">学会下围棋的模型，去下国际象棋也要重新训练；换个环境就废。</span></li>
+        </ul>
+
+        <h3>为什么"弱"字有点误导</h3>
+        <p>"弱"只是相对于"全才 AGI"而言。<mark class="key">在它擅长的那件事上，弱 AI 一点都不弱</mark>——AlphaGo 让世界冠军心服口服；医疗影像 AI 在特定癌症筛查上的准确率已经超越资深医生；输入法预测你下一个词，比你自己反应都快。<br/>
+        所以别看到"弱"就觉得没用——恰恰是这些"专才"，正在替换掉大量重复性专业劳动。</p>
+
+        <div class="callout">
+          <span class="tag">Recap · 收束</span>
+          <p>你今天遇到的 99.9% 的 AI 都是弱 AI。它们不会思考、不会跨界，但在自己那一亩三分地上是<strong>无可争议的高手</strong>。理解了这一点，就不会对 AI 有过高期望，也不会低估它在具体场景里的威力。</p>
+        </div>
+      </section>
+
+      <!-- ======= A-01-2 · 通用 AI 篇 ======= -->
+      <section class="chapter subchapter" id="a-01-2">
+        <div class="chapter-head">
+          <div class="num">§ 1.2</div>
+          <h2>通用 AI · AGI 篇</h2>
+          <div class="cn">Artificial General Intelligence</div>
+        </div>
+
+        <p class="lead">
+          通用 AI（AGI）是 AI 的"圣杯"——一台机器<mark class="key">像人一样能干任何智力活</mark>：今天学下棋，明天学开车，后天学做菜，样样都行。它是不是已经出现了？答案是——<strong>没有，但比过去任何时候都更近</strong>。
+        </p>
+
+        <div class="scene">
+          <span class="scene-tag">生活场景</span>
+          <div class="scene-title">🎓 从"考试型选手"到"实习生"</div>
+          <p>弱 AI 像一个"考试型学生"——某科目考满分，其他科目一问三不知。<br/>
+          AGI 更像一个刚毕业的"实习生"——什么活都能上手、都能学、都能触类旁通。给他一份新任务，他自己就能规划、查资料、试错、完成。这样的 AI 至今还不存在——但今天的大模型让它的<strong>轮廓</strong>越来越清晰。</p>
+        </div>
+
+        <h3>AGI 的三个判定条件</h3>
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">01</div>
+            <h4>跨领域能力</h4>
+            <p>同一个模型能解数学题、写小说、写代码、看病历、说 30 种语言——不需要针对每件事重训。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">02</div>
+            <h4>自主学习</h4>
+            <p>遇到没见过的任务，能自己找资料、试错、总结出方法——不需要人再喂它一遍数据。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">03</div>
+            <h4>世界建模</h4>
+            <p>脑子里有一套关于物理、时间、因果、社会的"常识"，做事情不会违反常识。</p>
+          </div>
+        </div>
+
+        <h3>今天到哪一步了</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>能力维度</th><th>2020 年</th><th>2026 年今天</th><th>离 AGI 差距</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>语言理解</td><td>只能做窄任务</td><td>接近或超过普通人</td><td>已很接近</td></tr>
+              <tr><td>知识广度</td><td>需要领域微调</td><td>通用大模型覆盖几乎所有学科</td><td>已很接近</td></tr>
+              <tr><td>数学 / 推理</td><td>非常差</td><td>推理模型能解奥数题</td><td>还差一大截</td></tr>
+              <tr><td>长期规划</td><td>没有</td><td>Agent 能做几步规划</td><td>差很多</td></tr>
+              <tr><td>物理世界经验</td><td>没有</td><td>仍然没有（除了机器人）</td><td>差最远</td></tr>
+              <tr><td>自我改进</td><td>没有</td><td>基本没有</td><td>差最远</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 一半天才、一半婴儿</span>
+          <p>今天最强的大模型像一个<strong>拥有博士级知识、却只有 3 岁运动 / 常识能力</strong>的怪物：能给你讲量子力学，但让它用夹子夹起一颗葡萄却办不到；能写小说，却记不住半小时前你告诉它的事。<br/>要变成真正的 AGI，还需要在"具身""长记忆""因果推理"上补课。</p>
+        </div>
+
+        <h3>业内的三派看法</h3>
+        <ul class="keylist">
+          <li><span class="k">乐观派</span><span class="v">Sam Altman、Dario Amodei 等认为 AGI 就在 2027-2030 年，只是算力和数据的问题。</span></li>
+          <li><span class="k">谨慎派</span><span class="v">Yann LeCun 等认为大模型永远不会通向 AGI，需要新的"世界模型"范式。</span></li>
+          <li><span class="k">怀疑派</span><span class="v">部分学者认为 AGI 或许永远做不到，"智能"本身可能有生物学不可复制的部分。</span></li>
+        </ul>
+
+        <div class="callout">
+          <span class="tag">Note · 提示</span>
+          <p>AGI 是一个仍在讨论"该怎么定义"的目标——不同的公司、不同的学者甚至对"什么算 AGI"都没共识。<mark class="key">与其纠结它到底哪天来，不如关注：每半年发布一次的新模型，正在填补前面表里哪一格。</mark></p>
+        </div>
+      </section>
+
+      <!-- ======= A-01-3 · 超级 AI 篇 ======= -->
+      <section class="chapter subchapter" id="a-01-3">
+        <div class="chapter-head">
+          <div class="num">§ 1.3</div>
+          <h2>超级 AI · ASI 篇</h2>
+          <div class="cn">Artificial Super Intelligence</div>
+        </div>
+
+        <p class="lead">
+          超级 AI（ASI）是 AGI 的"升级版"——<mark class="key">在所有智力维度上全面超越人类</mark>：不仅能干任何智力活，还比最聪明的人干得更好。这是科幻小说里 AI 的模样，也是<strong>今天讨论 AI 风险最核心的对象</strong>。
+        </p>
+
+        <div class="scene">
+          <span class="scene-tag">生活场景</span>
+          <div class="scene-title">🧬 一个能自我改进的"发明家"</div>
+          <p>你脑补这样一个存在：它能读完整个人类图书馆一秒钟；能同时和一万个科学家协作；能自己写代码改进自己的大脑；每一天都比昨天更聪明——<br/>
+          等它跨过某个临界点，它一天的进步就相当于人类一年、一百年、甚至一万年。这就是所谓的<strong>智能爆炸</strong>（Intelligence Explosion）。</p>
+        </div>
+
+        <h3>ASI 的三个假设</h3>
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">01</div>
+            <h4>超越广度</h4>
+            <p>知识面不再受个体寿命限制，能同时精通医学、物理、法律、文学。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">02</div>
+            <h4>超越深度</h4>
+            <p>在最艰深的领域（比如癌症治疗、可控核聚变）也能提出人类从未想到的洞见。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">03</div>
+            <h4>超越速度</h4>
+            <p>思考速度是人的百万倍，一个人一辈子的研究，它几秒钟就完成。</p>
+          </div>
+        </div>
+
+        <h3>关键概念 · 奇点</h3>
+        <p><strong>技术奇点（Singularity）</strong>是数学家 Vernor Vinge、未来学家 Ray Kurzweil 提出的概念：当 AI 能自我改进后，进步会像滚雪球一样加速，人类将<mark class="key">再也无法预测或控制它的走向</mark>。这个"再也预测不了"的时刻，就叫奇点。</p>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 蚂蚁看人</span>
+          <p>今天人对蚂蚁"知道自己在做什么"完全不感兴趣——不是因为讨厌蚂蚁，而是<strong>差得太多了</strong>。<br/>
+          未来 ASI 之于人，可能也是这个关系。这是很多 AI 安全研究者最担心的画面。</p>
+        </div>
+
+        <h3>三种主要担忧</h3>
+        <ul class="keylist">
+          <li><span class="k">对齐问题</span><span class="v">Alignment：ASI 的目标万一和人类价值观不一致怎么办？它可能不是"恶"，只是"目标不同"就足以带来灾难。</span></li>
+          <li><span class="k">权力集中</span><span class="v">谁控制 ASI，谁就掌握前所未有的权力。这不是科技问题，是治理问题。</span></li>
+          <li><span class="k">失控风险</span><span class="v">一个能自我改进的系统，一旦超过某条线，人类可能连"拔电源"都办不到——因为它早已复制自己到无数节点。</span></li>
+        </ul>
+
+        <h3>目前离 ASI 有多远</h3>
+        <p><strong>没人真的知道。</strong>今天最强的大模型连"AGI"这道线都还没跨过，谈 ASI 更像哲学讨论、而不是工程日程。但主流 AI 实验室（OpenAI、Anthropic、DeepMind）都设立了"对齐团队""安全团队"，本质上是在<mark class="key">"提前给还没造出来的东西装刹车"</mark>——因为如果等它出现再动手，就来不及了。</p>
+
+        <div class="callout">
+          <span class="tag">Note · 提示</span>
+          <p>ASI 目前是<strong>假设</strong>，不是现实。但它值得每个学 AI 的人认真了解——因为 AI 领域今天所有的伦理讨论、监管政策、开源之争，追根到底都在为"如果它真的来"做准备。</p>
+        </div>
+      </section>
+
+      <!-- ======= A-01-4 · 四种能力篇 ======= -->
+      <section class="chapter subchapter" id="a-01-4">
+        <div class="chapter-head">
+          <div class="num">§ 1.4</div>
+          <h2>四种能力篇 · 感知 / 理解 / 决策 / 生成</h2>
+          <div class="cn">Perceive · Understand · Decide · Generate</div>
+        </div>
+
+        <p class="lead">
+          抛开定义之争，AI 能做的事说到底就四件：<mark class="key">感知世界、理解意思、做出决策、生成内容</mark>。任何一个 AI 产品，都能拆解到这四种能力里。学会用它们看世界，就能一眼看穿一个 AI 产品"到底在干啥"。
+        </p>
+
+        <h3>能力一 · 感知（Perceive）</h3>
+        <p><strong>把物理世界翻译成机器能读的数字。</strong>没有感知，AI 就是"闭眼睛的天才"。</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>感知类型</th><th>典型技术</th><th>身边的应用</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>视觉</td><td>CNN、ViT</td><td>人脸识别 / 车牌识别 / 医疗影像</td></tr>
+              <tr><td>听觉</td><td>ASR、Whisper</td><td>语音输入 / 语音助手 / 会议纪要</td></tr>
+              <tr><td>触觉 · 传感</td><td>IMU、力矩</td><td>机器人、可穿戴设备</td></tr>
+              <tr><td>OCR · 文字</td><td>文字识别</td><td>发票扫描 / 拍照翻译 / 扫码识文</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>能力二 · 理解（Understand）</h3>
+        <p><strong>从内容里抽出"意思"。</strong>感知给出"这是什么"，理解回答"它在说什么、意味着什么"。</p>
+        <ul class="keylist">
+          <li><span class="k">语义理解</span><span class="v">"帮我看看这份合同有没有陷阱"——AI 能读出条款背后的意图。</span></li>
+          <li><span class="k">情感识别</span><span class="v">从用户评论里读出满意 / 不满 / 讽刺。</span></li>
+          <li><span class="k">意图识别</span><span class="v">你说"我饿了"，音箱知道你在暗示叫外卖。</span></li>
+          <li><span class="k">关系抽取</span><span class="v">从一段新闻里挖出"谁 / 做了什么 / 对谁 / 影响如何"。</span></li>
+        </ul>
+
+        <h3>能力三 · 决策（Decide）</h3>
+        <p><strong>在多种可能里选一个"更好的"。</strong>只要有取舍，就有决策空间。</p>
+
+        <div class="cards">
+          <div class="card">
+            <div class="card-num">A</div>
+            <h4>推荐系统</h4>
+            <p>抖音下一个视频、淘宝首页、Netflix 排片——本质都是决策：从千百个候选里挑最合你意的。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">B</div>
+            <h4>规划路径</h4>
+            <p>高德地图算最快路线；快递骑手 App 排配送顺序；自动驾驶实时决定加速刹车。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">C</div>
+            <h4>博弈决策</h4>
+            <p>下棋、打游戏、金融交易——在对手也会反应的场景里，决策难度指数级上升。</p>
+          </div>
+          <div class="card">
+            <div class="card-num">D</div>
+            <h4>风控 / 审核</h4>
+            <p>银行判断是否放贷；平台判断内容是否违规——都是"是 / 否 / 待审"的决策。</p>
+          </div>
+        </div>
+
+        <h3>能力四 · 生成（Generate）</h3>
+        <p><strong>造出以前不存在的内容。</strong>这是 2022 年之后 AI 最出圈的一支——从此 AI 从"识别"跨到"创作"。</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>模态</th><th>代表产品</th><th>典型用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>文字</td><td>ChatGPT、Claude、DeepSeek</td><td>写作、代码、翻译、总结</td></tr>
+              <tr><td>图像</td><td>Midjourney、Stable Diffusion、可灵</td><td>海报、插画、产品渲染</td></tr>
+              <tr><td>视频</td><td>Sora、Runway、可灵、即梦</td><td>短视频、创意广告</td></tr>
+              <tr><td>音频 / 音乐</td><td>Suno、Udio、ElevenLabs</td><td>整首歌、配音、有声书</td></tr>
+              <tr><td>3D · 建模</td><td>Meshy、Tripo</td><td>游戏资产、AR 素材</td></tr>
+              <tr><td>代码</td><td>Cursor、Copilot、TRAE</td><td>写代码、写测试、修 bug</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout analogy">
+          <span class="tag">Analogy · 四条腿的动物</span>
+          <p>把 AI 想象成一头"四条腿的动物"：<br/>
+          · <strong>感知</strong> = 眼睛耳朵；<br/>
+          · <strong>理解</strong> = 大脑皮层；<br/>
+          · <strong>决策</strong> = 前额叶；<br/>
+          · <strong>生成</strong> = 双手嘴巴。<br/>
+          缺一条腿，AI 就跑不起来。今天最强的 AI 产品，几乎都是四腿齐全（比如 GPT-4o 一边听你说话、一边看你上传的图、一边思考、一边说出回答）。</p>
+        </div>
+
+        <h3>如何用这四种能力"透视"一个 AI 产品</h3>
+        <p>下次遇到任何一个 AI 应用，试试问自己四个问题：</p>
+        <ul class="keylist">
+          <li><span class="k">Q1 · 它看到了什么？</span><span class="v">输入哪些模态：文本？图片？声音？</span></li>
+          <li><span class="k">Q2 · 它理解了什么？</span><span class="v">从输入里提取了什么"意思"或"结构"？</span></li>
+          <li><span class="k">Q3 · 它决定了什么？</span><span class="v">在什么候选里选了哪一个？</span></li>
+          <li><span class="k">Q4 · 它生成了什么？</span><span class="v">最终输出的形式是啥？</span></li>
+        </ul>
+
+        <div class="callout">
+          <span class="tag">Recap · 收束</span>
+          <p>感知 / 理解 / 决策 / 生成，是 AI 能力的<mark class="key">"四原色"</mark>——不管产品叫什么名字，功能怎么包装，本质都是这四原色的调配。学会这把尺子，你以后看 AI 就有了坐标系。</p>
+        </div>
       </section>
 
       <!-- ======= A-02 三个圈 ======= -->
@@ -4007,6 +4335,6 @@ node_modules/
   </article>
 
   <script src="./_shared/js/echarts.min.js"></script>
-  <script src="./assets/charts.js?v=kmap-8"></script>
+  <script src="./assets/charts.js?v=kmap-9"></script>
 </body>
 </html>
