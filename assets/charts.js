@@ -1091,13 +1091,11 @@
           return;
         }
       }
-      // 2) 有子节点 → 切换 collapsed
-      if (params && params.data && params.data.children && params.data.children.length) {
-        var real = findNodeByPath(params.treePathInfo || []);
-        if (real) {
-          real.collapsed = !real.collapsed;
-          chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
-        }
+      // 2) 找到数据源里的真实节点（无论是否折叠都能拿到），有子节点 → 切换 collapsed
+      var real = findNodeByPath(params.treePathInfo || []);
+      if (real && real.children && real.children.length) {
+        real.collapsed = !real.collapsed;
+        chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
       }
     });
 
