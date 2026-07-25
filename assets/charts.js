@@ -1017,7 +1017,15 @@
         borderWidth: 1,
         textStyle: { color: '#faf7f2', fontFamily: bodyFont, fontSize: 12 },
         formatter: function (p) {
-          return '<b>' + (p.data && p.data.name ? p.data.name : '') + '</b>';
+          var name = p.data && p.data.name ? p.data.name : '';
+          var real = findNodeByName(name);
+          if (real && real.external && real.link) {
+            return '<b>' + name + '</b><br/><span style="font-size:0.85em;color:#d4e2c8">双击跳转</span>';
+          }
+          if (real && real.children && real.children.length) {
+            return '<b>' + name + '</b><br/><span style="font-size:0.85em;color:#e8e4dc">单击展开/收起</span>';
+          }
+          return '<b>' + name + '</b>';
         }
       },
       series: [{
@@ -1053,19 +1061,7 @@
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 6,
-          formatter: function (params) {
-            // 有子节点且当前折叠 → 显示 [+]
-            var real = findNodeByName(params.name);
-            if (real && real.children && real.children.length && real.collapsed) {
-              return params.name + ' [+]';
-            }
-            // 有子节点且当前展开 → 显示 [-]
-            if (real && real.children && real.children.length && !real.collapsed) {
-              return params.name + ' [-]';
-            }
-            return params.name;
-          }
+          distance: 6
         },
         // 叶子（最末端节点）——标签放右侧
         leaves: {
@@ -1122,22 +1118,27 @@
       return found;
     }
 
-    // 点击节点：有 external link 跳转，无 link 但有子节点 → 展开/收起
+    // 单击：展开/收起（所有节点）
     chart.on('click', function (params) {
       if (!params.data || !params.data.name) return;
       var real = findNodeByName(params.data.name);
       if (!real) return;
 
-      // 1) 有 external link → 跳转
-      if (real.external && real.link) {
-        window.location.href = real.link;
-        return;
-      }
-
-      // 2) 无 link 但有子节点 → 展开/收起
+      // 有子节点 → 展开/收起
       if (real.children && real.children.length) {
         real.collapsed = !real.collapsed;
         chart.setOption({ series: [{ data: window.__xhwyTreeData }] });
+      }
+    });
+
+    // 双击：跳转（有 external link 的节点）
+    chart.on('dblclick', function (params) {
+      if (!params.data || !params.data.name) return;
+      var real = findNodeByName(params.data.name);
+      if (!real) return;
+
+      if (real.external && real.link) {
+        window.location.href = real.link;
       }
     });
 
