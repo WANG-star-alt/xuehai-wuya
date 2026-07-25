@@ -1018,18 +1018,18 @@
           color: '#faf7f2' // 不透明米黄
         },
         cursor: 'pointer',
-        // 非叶子（有子节点、可以展开的）——标签放在圆点上方，避开进入的连线
+        // 所有节点标签统一放在圆点右侧——展开/收起时位置稳定，不会错位
         label: {
-          position: 'top',
-          verticalAlign: 'bottom',
-          align: 'center',
+          position: 'right',
+          verticalAlign: 'middle',
+          align: 'left',
           fontFamily: bodyFont,
           fontSize: isMobile ? 10 : 12,
           fontWeight: 'bold',
           color: ink,
-          distance: 6
+          distance: 8
         },
-        // 叶子（最末端节点）——标签放右侧
+        // 叶子（最末端节点）——标签放右侧（与非叶子一致，保持统一）
         leaves: {
           label: {
             position: 'right',
