@@ -634,82 +634,95 @@
 // Knowledge Map Renderer (在数据准备好后单独渲染)
 // ==============================================================
 (function () {
-  if (typeof echarts === 'undefined') return;
-  var el = document.getElementById('chart-knowledge-map');
-  if (!el || !window.__xhwyTreeData) return;
+  function init() {
+    if (typeof echarts === 'undefined') {
+      console.warn('[kmap] echarts not loaded');
+      return;
+    }
+    var el = document.getElementById('chart-knowledge-map');
+    if (!el) {
+      console.warn('[kmap] container #chart-knowledge-map not found');
+      return;
+    }
+    if (!window.__xhwyTreeData) {
+      console.warn('[kmap] tree data not ready, retry in 100ms');
+      setTimeout(init, 100);
+      return;
+    }
 
-  var style = getComputedStyle(document.documentElement);
-  var accent  = (style.getPropertyValue('--accent')  || '#556b3d').trim();
-  var accent2 = (style.getPropertyValue('--accent2') || '#a05a2c').trim();
-  var ink     = (style.getPropertyValue('--ink')     || '#2b2a26').trim();
-  var muted   = (style.getPropertyValue('--muted')   || '#8a8579').trim();
-  var rule    = (style.getPropertyValue('--rule')    || '#e2dccf').trim();
-  var bodyFont = 'Lora, "Noto Serif SC", serif';
+    var style = getComputedStyle(document.documentElement);
+    var accent2 = (style.getPropertyValue('--accent2') || '#a05a2c').trim();
+    var ink     = (style.getPropertyValue('--ink')     || '#2b2a26').trim();
+    var muted   = (style.getPropertyValue('--muted')   || '#8a8579').trim();
+    var rule    = (style.getPropertyValue('--rule')    || '#e2dccf').trim();
+    var bodyFont = 'Lora, "Noto Serif SC", serif';
 
-  var chart = echarts.init(el, null, { renderer: 'canvas' });
+    var chart = echarts.init(el, null, { renderer: 'svg' });
+    var isMobile = window.innerWidth <= 720;
 
-  var isMobile = window.matchMedia('(max-width: 720px)').matches;
-
-  chart.setOption({
-    animation: true,
-    animationDuration: 550,
-    animationEasing: 'cubicOut',
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      triggerOn: 'mousemove',
-      backgroundColor: '#faf7f2',
-      borderColor: rule,
-      borderWidth: 1,
-      textStyle: { color: ink, fontFamily: bodyFont, fontSize: 12 },
-      formatter: function (p) {
-        var path = [];
-        var n = p.data;
-        // ECharts tree tooltip 只给节点，我们只显示节点名
-        return '<b style="letter-spacing:.05em;">' + (n.name || '') + '</b>';
-      }
-    },
-    series: [{
-      type: 'tree',
-      data: window.__xhwyTreeData,
-      layout: 'radial',
-      symbol: 'circle',
-      symbolSize: 8,
-      roam: true,
-      initialTreeDepth: 2,
-      lineStyle: {
-        color: rule,
-        width: 1,
-        curveness: 0.5
-      },
-      itemStyle: {
-        borderColor: '#faf7f2',
-        borderWidth: 1
-      },
-      label: {
-        position: 'right',
-        rotate: 0,
-        distance: 6,
-        fontFamily: bodyFont,
-        fontSize: isMobile ? 10 : 12,
-        color: ink,
-        overflow: 'truncate',
-        formatter: '{b}'
-      },
-      leaves: {
-        label: {
-          color: muted,
-          fontSize: isMobile ? 9 : 11
+    chart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        triggerOn: 'mousemove',
+        backgroundColor: '#faf7f2',
+        borderColor: rule,
+        borderWidth: 1,
+        textStyle: { color: ink, fontFamily: bodyFont, fontSize: 12 },
+        formatter: function (p) {
+          return '<b>' + (p.data && p.data.name ? p.data.name : '') + '</b>';
         }
       },
-      emphasis: {
-        focus: 'ancestor',
-        itemStyle: { shadowBlur: 6, shadowColor: 'rgba(85,107,61,.35)' },
-        label: { fontWeight: 'bold', color: accent2 }
-      },
-      expandAndCollapse: true
-    }]
-  });
+      series: [{
+        type: 'tree',
+        data: window.__xhwyTreeData,
+        layout: 'radial',
+        top: '5%',
+        bottom: '5%',
+        left: '10%',
+        right: '10%',
+        symbol: 'circle',
+        symbolSize: 7,
+        roam: true,
+        initialTreeDepth: 2,
+        lineStyle: {
+          color: rule,
+          width: 1,
+          curveness: 0.5
+        },
+        itemStyle: {
+          borderColor: '#faf7f2',
+          borderWidth: 1
+        },
+        label: {
+          fontFamily: bodyFont,
+          fontSize: isMobile ? 10 : 11,
+          color: ink
+        },
+        leaves: {
+          label: {
+            color: muted,
+            fontSize: isMobile ? 9 : 10
+          }
+        },
+        emphasis: {
+          focus: 'ancestor',
+          itemStyle: { shadowBlur: 6, shadowColor: 'rgba(85,107,61,.35)' },
+          label: { fontWeight: 'bold', color: accent2 }
+        },
+        expandAndCollapse: true,
+        animationDuration: 550,
+        animationDurationUpdate: 500
+      }]
+    });
 
-  window.addEventListener('resize', function () { chart.resize(); });
+    console.log('[kmap] rendered OK');
+    window.addEventListener('resize', function () { chart.resize(); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
