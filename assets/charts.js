@@ -361,4 +361,355 @@
     window.addEventListener('resize', function () { chart.resize(); });
   })();
 
+  // ==============================================================
+  // Chart 7: 学海无涯 · 知识树状图（径向可折叠树）
+  // ==============================================================
+  (function () {
+    var el = document.getElementById('chart-knowledge-map');
+    if (!el) return;
+
+    var VOL_NET = accent;
+    var VOL_GIT = accent2;
+    var VOL_AI  = '#4a6d8c';
+    var VOL_FUT = muted;
+    var ROOT_C  = ink;
+
+    // ---------- 网络篇 ----------
+    var netChildren = [
+      { name: '网络是什么',
+        children: [
+          { name: '主机 Host' }, { name: '协议 Protocol' }, { name: '地址 Address' },
+          { name: '客户端 / 服务器' }, { name: '数据包 Packet' }, { name: '带宽 / 时延 / 丢包' }
+        ] },
+      { name: '分层模型',
+        children: [
+          { name: 'OSI 7 层',
+            children: [
+              { name: '物理层' }, { name: '数据链路层' }, { name: '网络层' },
+              { name: '传输层' }, { name: '会话层' }, { name: '表示层' }, { name: '应用层' }
+            ] },
+          { name: 'TCP/IP 4 层' },
+          { name: '每层职责一览' }
+        ] },
+      { name: '关键协议',
+        children: [
+          { name: 'HTTP / HTTPS',
+            children: [
+              { name: '请求方法 GET/POST' }, { name: '状态码 2xx-5xx' },
+              { name: 'Header / Cookie' }, { name: 'TLS 握手' }, { name: 'HTTP/2 · HTTP/3' }
+            ] },
+          { name: 'TCP',
+            children: [
+              { name: '三次握手' }, { name: '四次挥手' },
+              { name: '流量控制' }, { name: '拥塞控制' }
+            ] },
+          { name: 'UDP' },
+          { name: 'DNS',
+            children: [
+              { name: '根 / 顶级 / 权威' }, { name: '递归 vs 迭代' }, { name: 'DNS 污染 / DoH' }
+            ] },
+          { name: 'IP',
+            children: [
+              { name: 'IPv4 / IPv6' }, { name: '公网 IP / 私网 IP' },
+              { name: '子网与 CIDR' }, { name: 'NAT / 端口转发' }
+            ] },
+          { name: '其他',
+            children: [
+              { name: 'ARP' }, { name: 'ICMP · ping' }, { name: 'DHCP' }, { name: 'SSH / FTP / SMTP' }
+            ] }
+        ] },
+      { name: '一次访问的旅程',
+        children: [
+          { name: '输入网址' }, { name: 'DNS 查询' }, { name: '建立 TCP' },
+          { name: 'TLS 握手' }, { name: '发送 HTTP 请求' }, { name: '服务器响应' },
+          { name: '浏览器渲染' }
+        ] },
+      { name: '网络设备',
+        children: [
+          { name: '路由器 Router' }, { name: '交换机 Switch' },
+          { name: '网关 Gateway' }, { name: '防火墙 Firewall' },
+          { name: '负载均衡 LB' }
+        ] },
+      { name: '无线与移动',
+        children: [ { name: 'WiFi 6/7' }, { name: '蓝牙' }, { name: '4G / 5G' } ] },
+      { name: '云与边缘',
+        children: [ { name: 'CDN' }, { name: '云网络 VPC' }, { name: '边缘节点' }, { name: '容器网络' } ] },
+      { name: '安全',
+        children: [
+          { name: '对称加密' }, { name: '非对称加密' }, { name: '数字证书 CA' },
+          { name: 'XSS / CSRF / SQL 注入' }, { name: 'DDoS' }, { name: 'VPN / 代理' }
+        ] },
+      { name: '排错工具箱',
+        children: [
+          { name: 'ping' }, { name: 'traceroute' }, { name: 'nslookup / dig' },
+          { name: 'curl / wget' }, { name: 'netstat / ss' }, { name: 'Wireshark 抓包' }
+        ] }
+    ];
+
+    // ---------- Git 篇 ----------
+    var gitChildren = [
+      { name: 'Git vs GitHub',
+        children: [
+          { name: 'Git = 本地工具' }, { name: 'GitHub = 云端仓库' },
+          { name: 'GitLab / Gitee / Bitbucket' }
+        ] },
+      { name: '概念地图',
+        children: [
+          { name: '工作区 Working' }, { name: '暂存区 Staging' },
+          { name: '本地仓库 Local' }, { name: '远程仓库 Remote' },
+          { name: '.git 目录' }, { name: 'HEAD 指针' }
+        ] },
+      { name: '日常十条命令',
+        children: [
+          { name: 'git init / clone' }, { name: 'git status' },
+          { name: 'git add' }, { name: 'git commit -m' },
+          { name: 'git log' }, { name: 'git diff' },
+          { name: 'git push / pull' }, { name: 'git fetch' },
+          { name: 'git branch' }, { name: 'git checkout / switch' }
+        ] },
+      { name: '分支与合并',
+        children: [
+          { name: 'branch 创建 / 切换' }, { name: 'merge 合并' },
+          { name: 'rebase 变基' }, { name: 'cherry-pick' },
+          { name: '冲突解决' }, { name: 'fast-forward' }
+        ] },
+      { name: '时光机 · 撤销',
+        children: [
+          { name: 'git reset --soft / hard' }, { name: 'git revert' },
+          { name: 'git stash' }, { name: 'git reflog 救命' }
+        ] },
+      { name: '协作工作流',
+        children: [
+          { name: 'Fork · Pull Request' }, { name: 'Code Review' },
+          { name: 'Git Flow' }, { name: 'GitHub Flow' }, { name: 'Trunk-based' }
+        ] },
+      { name: '认证与远程',
+        children: [
+          { name: 'HTTPS + Token' }, { name: 'SSH Key' },
+          { name: 'origin / upstream' }, { name: '多远程管理' }
+        ] },
+      { name: '生态与进阶',
+        children: [
+          { name: '.gitignore' }, { name: 'submodule' }, { name: 'LFS 大文件' },
+          { name: 'GitHub Actions CI/CD' }, { name: 'Cloudflare Pages 部署' },
+          { name: 'GUI: VS Code / Fork / SourceTree' }
+        ] }
+    ];
+
+    // ---------- AI 篇 ----------
+    var aiChildren = [
+      { name: 'AI 是什么',
+        children: [
+          { name: '弱 AI · ANI' }, { name: '通用 AI · AGI' }, { name: '超级 AI · ASI' },
+          { name: '四种能力: 感知 / 理解 / 决策 / 生成' }
+        ] },
+      { name: '三个圈',
+        children: [
+          { name: 'AI' }, { name: '机器学习 ML' }, { name: '深度学习 DL' },
+          { name: '生成式 AI · GenAI' }, { name: '大语言模型 LLM' }
+        ] },
+      { name: '简史',
+        children: [
+          { name: '1950 图灵测试' }, { name: '1956 达特茅斯会议' },
+          { name: '1980s 专家系统' }, { name: '1997 深蓝' },
+          { name: '2012 AlexNet' }, { name: '2016 AlphaGo' },
+          { name: '2017 Transformer' }, { name: '2022 ChatGPT' },
+          { name: '2025 推理模型 & Agent' }
+        ] },
+      { name: '机器学习',
+        children: [
+          { name: '监督学习' }, { name: '无监督学习' },
+          { name: '强化学习' }, { name: '自监督学习' },
+          { name: '特征 / 标签 / 过拟合' }
+        ] },
+      { name: '神经网络',
+        children: [
+          { name: '神经元 Neuron' }, { name: '权重 / 偏置 / 激活' },
+          { name: '前向传播' }, { name: '反向传播' },
+          { name: 'CNN 图像' }, { name: 'RNN / LSTM' },
+          { name: 'GAN 对抗' }, { name: 'Diffusion 扩散' }
+        ] },
+      { name: '训练三部曲',
+        children: [
+          { name: '数据 · Dataset' }, { name: '模型 · Model' },
+          { name: '损失 · Loss' }, { name: '梯度下降' },
+          { name: '预训练 Pre-train' }, { name: 'SFT 指令微调' },
+          { name: 'RLHF / DPO 对齐' }, { name: 'RL 推理训练' }
+        ] },
+      { name: 'Transformer',
+        children: [
+          { name: 'Attention 注意力' },
+          { name: 'Query / Key / Value' },
+          { name: 'Multi-head 多头' },
+          { name: 'Encoder-only · BERT' },
+          { name: 'Decoder-only · GPT' },
+          { name: 'MoE 专家混合' }
+        ] },
+      { name: '大语言模型 LLM',
+        children: [
+          { name: 'Token 分词' }, { name: '自回归生成' },
+          { name: 'Context Window' }, { name: 'Temperature / Top-p' },
+          { name: 'System Prompt' }, { name: '思维链 CoT' },
+          { name: '推理模型 o1 / R1' }
+        ] },
+      { name: '多模态',
+        children: [
+          { name: '文 · Text' }, { name: '图 · Image' },
+          { name: '视频 · Video' }, { name: '语音 · Audio' },
+          { name: 'Embedding 向量' }, { name: 'CLIP 跨模态对齐' }
+        ] },
+      { name: '提示词工程',
+        children: [
+          { name: '角色 Role' }, { name: '任务 Task' },
+          { name: '示例 Few-shot' }, { name: '一步步想 CoT' },
+          { name: '输出格式' }, { name: '迭代对话' }
+        ] },
+      { name: 'AI 智能体 Agent',
+        children: [
+          { name: '大脑 LLM' }, { name: '记忆 Memory' },
+          { name: '工具 Tools' }, { name: 'ReAct 循环' },
+          { name: 'RAG 检索增强' }, { name: 'MCP 协议' },
+          { name: 'Multi-Agent 协作' }
+        ] },
+      { name: '生态地图',
+        children: [
+          { name: '芯片: NVIDIA · 华为' },
+          { name: '基础模型: OpenAI · Anthropic · Google' },
+          { name: '中国阵营: DeepSeek · Qwen · 豆包 · Kimi · GLM' },
+          { name: '开源: Llama · Mistral · Hugging Face' },
+          { name: '工具: Cursor · TRAE · Ollama' },
+          { name: '应用: ChatGPT · Claude · Perplexity · Midjourney · Sora' }
+        ] },
+      { name: '局限与风险',
+        children: [
+          { name: '幻觉 Hallucination' }, { name: '偏见 Bias' },
+          { name: '时效性 Cut-off' }, { name: '隐私 / 版权' },
+          { name: '深度伪造' }, { name: 'Prompt 注入' }
+        ] },
+      { name: '与 AI 共处',
+        children: [
+          { name: '学习助手' }, { name: '写作 / 编程 / 研究' },
+          { name: '批判性思维' }, { name: '保留人类判断' }
+        ] }
+    ];
+
+    // ---------- 未来篇 · 预留 ----------
+    var futureChildren = [
+      { name: '数据结构与算法',
+        children: [ { name: '数组 / 链表' }, { name: '树 / 图' }, { name: '排序 / 搜索' }, { name: '动态规划' } ] },
+      { name: '操作系统',
+        children: [ { name: '进程 / 线程' }, { name: '内存管理' }, { name: '文件系统' }, { name: '并发 / 锁' } ] },
+      { name: '数据库',
+        children: [ { name: 'SQL 基础' }, { name: '索引 / 事务' }, { name: 'NoSQL' }, { name: '向量数据库' } ] },
+      { name: '编程语言',
+        children: [ { name: 'Python' }, { name: 'JavaScript' }, { name: 'Go / Rust' }, { name: 'C / C++' } ] },
+      { name: 'Web 与前端',
+        children: [ { name: 'HTML / CSS' }, { name: 'JavaScript' }, { name: 'React / Vue' }, { name: '响应式设计' } ] },
+      { name: '云与 DevOps',
+        children: [ { name: 'Docker' }, { name: 'K8s' }, { name: 'CI/CD' }, { name: '监控 / 日志' } ] },
+      { name: '安全篇',
+        children: [ { name: '密码学基础' }, { name: 'Web 安全' }, { name: '渗透测试' }, { name: '零信任' } ] },
+      { name: '产品与设计',
+        children: [ { name: '需求分析' }, { name: '交互设计' }, { name: 'A/B 测试' }, { name: '数据驱动' } ] }
+    ];
+
+    var treeData = [{
+      name: '学海无涯',
+      itemStyle: { color: ROOT_C },
+      symbolSize: 22,
+      children: [
+        { name: '网络篇',   itemStyle: { color: VOL_NET }, symbolSize: 16, children: netChildren    },
+        { name: 'Git 篇',   itemStyle: { color: VOL_GIT }, symbolSize: 16, children: gitChildren    },
+        { name: 'AI 篇',    itemStyle: { color: VOL_AI  }, symbolSize: 16, children: aiChildren     },
+        { name: '未完待续 · 计划中', itemStyle: { color: VOL_FUT }, symbolSize: 16, collapsed: true, children: futureChildren }
+      ]
+    }];
+
+    window.__xhwyTreeData = treeData;
+  })();
+
+})();
+
+// ==============================================================
+// Knowledge Map Renderer (在数据准备好后单独渲染)
+// ==============================================================
+(function () {
+  if (typeof echarts === 'undefined') return;
+  var el = document.getElementById('chart-knowledge-map');
+  if (!el || !window.__xhwyTreeData) return;
+
+  var style = getComputedStyle(document.documentElement);
+  var accent  = (style.getPropertyValue('--accent')  || '#556b3d').trim();
+  var accent2 = (style.getPropertyValue('--accent2') || '#a05a2c').trim();
+  var ink     = (style.getPropertyValue('--ink')     || '#2b2a26').trim();
+  var muted   = (style.getPropertyValue('--muted')   || '#8a8579').trim();
+  var rule    = (style.getPropertyValue('--rule')    || '#e2dccf').trim();
+  var bodyFont = 'Lora, "Noto Serif SC", serif';
+
+  var chart = echarts.init(el, null, { renderer: 'canvas' });
+
+  var isMobile = window.matchMedia('(max-width: 720px)').matches;
+
+  chart.setOption({
+    animation: true,
+    animationDuration: 550,
+    animationEasing: 'cubicOut',
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      triggerOn: 'mousemove',
+      backgroundColor: '#faf7f2',
+      borderColor: rule,
+      borderWidth: 1,
+      textStyle: { color: ink, fontFamily: bodyFont, fontSize: 12 },
+      formatter: function (p) {
+        var path = [];
+        var n = p.data;
+        // ECharts tree tooltip 只给节点，我们只显示节点名
+        return '<b style="letter-spacing:.05em;">' + (n.name || '') + '</b>';
+      }
+    },
+    series: [{
+      type: 'tree',
+      data: window.__xhwyTreeData,
+      layout: 'radial',
+      symbol: 'circle',
+      symbolSize: 8,
+      roam: true,
+      initialTreeDepth: 2,
+      lineStyle: {
+        color: rule,
+        width: 1,
+        curveness: 0.5
+      },
+      itemStyle: {
+        borderColor: '#faf7f2',
+        borderWidth: 1
+      },
+      label: {
+        position: 'right',
+        rotate: 0,
+        distance: 6,
+        fontFamily: bodyFont,
+        fontSize: isMobile ? 10 : 12,
+        color: ink,
+        overflow: 'truncate',
+        formatter: '{b}'
+      },
+      leaves: {
+        label: {
+          color: muted,
+          fontSize: isMobile ? 9 : 11
+        }
+      },
+      emphasis: {
+        focus: 'ancestor',
+        itemStyle: { shadowBlur: 6, shadowColor: 'rgba(85,107,61,.35)' },
+        label: { fontWeight: 'bold', color: accent2 }
+      },
+      expandAndCollapse: true
+    }]
+  });
+
+  window.addEventListener('resize', function () { chart.resize(); });
 })();

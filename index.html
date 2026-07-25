@@ -905,6 +905,56 @@
       .keylist li { grid-template-columns: 1fr; gap: 0.15rem; }
       .status-grid { grid-template-columns: 1fr; }
     }
+
+    /* === Knowledge Map === */
+    .kmap {
+      background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 1.5rem 1rem 1rem;
+      margin: 0 0 2.5rem;
+      box-shadow: var(--shadow);
+    }
+    .kmap-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0 0.5rem 0.6rem;
+      border-bottom: 1px dashed var(--rule);
+      margin-bottom: 0.75rem;
+    }
+    .kmap-head .title {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ink);
+    }
+    .kmap-head .sub {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .kmap-tip {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-align: right;
+      padding: 0.4rem 0.5rem 0;
+    }
+    #chart-knowledge-map {
+      width: 100%;
+      height: 640px;
+    }
+    @media (max-width: 720px) {
+      #chart-knowledge-map { height: 520px; }
+      .kmap { padding: 1rem 0.4rem 0.6rem; }
+    }
   </style>
 </head>
 <body>
@@ -919,6 +969,16 @@
         <span>2026</span><span>·</span><span>持续增补</span><span>·</span><span>xuehai-wuya.pages.dev</span>
       </div>
     </header>
+
+    <!-- ======= Knowledge Map ======= -->
+    <section class="kmap" aria-label="学海无涯 · 知识树状图">
+      <div class="kmap-head">
+        <div class="title">学海无涯 · 知识树</div>
+        <div class="sub">Knowledge Map · A Growing Tree</div>
+      </div>
+      <div id="chart-knowledge-map"></div>
+      <div class="kmap-tip">↕ 滚轮缩放 · 拖拽平移 · 点击节点可折叠 / 展开</div>
+    </section>
 
     <!-- ======= Volumes Nav ======= -->
     <nav class="vols" aria-label="篇目导航">
