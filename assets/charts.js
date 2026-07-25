@@ -990,8 +990,8 @@
       series: [{
         type: 'tree',
         data: window.__xhwyTreeData,
-        layout: 'orthogonal',
-        orient: 'TB', // 从上到下展开（Top-Bottom）
+        layout: 'radial', // 径向布局——根在中心，向外辐射，节点自然错落
+        orient: 'TB',
         top: 20,
         bottom: 20,
         left: '5%',
@@ -1003,7 +1003,7 @@
         lineStyle: {
           color: rule,
           width: 1,
-          curveness: 0.55
+          curveness: 0.5
         },
         itemStyle: {
           borderColor: ink,
