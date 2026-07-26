@@ -63,9 +63,9 @@
         ],
         { href: 'chapters/ai/04-machine-learning.html' }
       ),
-      createNode('ai-05', '第 5 章 · 神经网络', '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。', '约 4 小时', []),
-      createNode('ai-06', '第 6 章 · 训练三部曲', '数据、模型、损失——训练一个 AI 到底在干什么。', '约 3 小时', []),
-      createNode('ai-07', '第 7 章 · Transformer', 'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。', '约 3 小时', []),
+      createNode('ai-05', '第 5 章 · 神经网络', '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。', '约 4 小时', [], { href: 'chapters/ai/05-neural-network.html' }),
+      createNode('ai-06', '第 6 章 · 训练三部曲', '数据、模型、损失——训练一个 AI 到底在干什么；预训练/SFT/RLHF/DPO 全解。', '约 3 小时', [], { href: 'chapters/ai/06-training-trilogy.html' }),
+      createNode('ai-07', '第 7 章 · Transformer', 'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。', '约 3 小时', [], { href: 'chapters/ai/07-transformer.html' }),
       createNode('ai-08', '第 8 章 · 大语言模型 LLM', 'Token、上下文窗口、Temperature、CoT、推理模型 o1/R1。', '约 3 小时', []),
       createNode('ai-09', '第 9 章 · 多模态', '文/图/视频/语音——AI 打破单一模态边界。', '约 2 小时', []),
       createNode('ai-10', '第 10 章 · 提示词工程', '角色、任务、Few-shot、CoT——怎么问 AI 才能拿到好答案。', '约 2 小时', []),
