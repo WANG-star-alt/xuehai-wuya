@@ -233,12 +233,14 @@
 
     drawNode(visible);
 
-    // 更新画布尺寸
+    // 更新画布尺寸——SVG viewBox 用 canvas 像素尺寸（1:1），让 scene transform 完全掌控缩放
     const canvas = document.getElementById('tree-canvas');
     if (canvas) {
       const svgEl = canvas.querySelector('svg');
       if (svgEl) {
-        svgEl.setAttribute('viewBox', `0 0 ${worldW} ${worldH}`);
+        const cw = canvas.clientWidth || 800;
+        const ch = canvas.clientHeight || 600;
+        svgEl.setAttribute('viewBox', `0 0 ${cw} ${ch}`);
         svgEl.dataset.worldW = worldW;
         svgEl.dataset.worldH = worldH;
       }
@@ -358,8 +360,10 @@
     if (!svgEl) return;
     const worldW = parseFloat(svgEl.dataset.worldW) || 1000;
     const worldH = parseFloat(svgEl.dataset.worldH) || 800;
-    const availW = canvas.clientWidth;
-    const availH = canvas.clientHeight;
+    const availW = canvas.clientWidth || 800;
+    const availH = canvas.clientHeight || 600;
+    // 更新 viewBox 到当前画布像素尺寸，保证 scene transform 是 1:1 像素坐标
+    svgEl.setAttribute('viewBox', `0 0 ${availW} ${availH}`);
     // 留 5% 内边距，避免树贴边
     const padding = 0.95;
     const sx = (availW * padding) / worldW;
@@ -371,6 +375,7 @@
     translateX = (availW - worldW * scale) / 2;
     translateY = (availH - worldH * scale) / 2;
     applyTransform();
+    console.log('[cognition-tree] fitCanvas:', { availW, availH, worldW, worldH, scale });
   }
 
   function zoom(delta) {
