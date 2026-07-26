@@ -192,29 +192,37 @@
   pointer-events: none;
 }
 
-.node .toggle {
-  fill: rgba(85, 107, 61, 0.1);
-  stroke: rgba(85, 107, 61, 0.5);
-  stroke-width: 1.2;
+.node .status-dot {
+  stroke-width: 1.5;
   transition: all 0.15s;
 }
 
-.node .toggle-text {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  font-weight: 700;
+/* 深绿色 · 可跳转（有 href） */
+.node .status-dot.has-link {
   fill: #556b3d;
-  pointer-events: none;
+  stroke: #3f5030;
+}
+
+/* 浅绿色 · 可展开（无 href 但有子节点） */
+.node .status-dot.expandable {
+  fill: #d4e2c8;
+  stroke: #a5b98d;
+}
+
+.node:hover .status-dot.has-link {
+  fill: #a05a2c;
+  stroke: #7a4520;
+}
+
+.node:hover .status-dot.expandable {
+  fill: #b5cba2;
+  stroke: #556b3d;
 }
 
 .node:hover .node-bg {
   stroke: #556b3d;
   stroke-width: 2;
   fill: #fff;
-}
-
-.node:hover .toggle {
-  fill: rgba(85, 107, 61, 0.2);
 }
 
 .node.selected .node-bg {

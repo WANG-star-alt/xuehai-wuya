@@ -210,24 +210,16 @@
       meta.textContent = metaText;
       g.appendChild(meta);
 
-      // 展开/收起按钮（仅非叶子节点）
-      if (hasChildren) {
-        const toggle = svg('circle', {
-          class: 'toggle',
+      // 状态指示圆点（右侧）：深绿=可跳转 / 浅绿=可展开 / 无=叶子
+      const hasHref = !!realNode.href;
+      if (hasChildren || hasHref) {
+        const dot = svg('circle', {
+          class: hasHref ? 'status-dot has-link' : 'status-dot expandable',
           cx: NODE_W - 16,
           cy: NODE_H / 2,
-          r: 11
+          r: 7
         });
-        g.appendChild(toggle);
-        const toggleText = svg('text', {
-          class: 'toggle-text',
-          x: NODE_W - 16,
-          y: NODE_H / 2 + 1,
-          'text-anchor': 'middle',
-          'dominant-baseline': 'middle'
-        });
-        toggleText.textContent = isCollapsed ? '+' : '−';
-        g.appendChild(toggleText);
+        g.appendChild(dot);
       }
 
       // 事件
