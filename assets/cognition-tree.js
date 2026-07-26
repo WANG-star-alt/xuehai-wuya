@@ -16,7 +16,7 @@
   const PAD_TOP = 40;
   const PAD_RIGHT = 40;
   const PAD_BOTTOM = 40;
-  const MIN_SCALE = 0.4;
+  const MIN_SCALE = 0.55;
   const MAX_SCALE = 2.5;
   const NODE_LABEL_MAX = 16; // 节点显示最多字符数
 
@@ -360,10 +360,14 @@
     const worldH = parseFloat(svgEl.dataset.worldH) || 800;
     const availW = canvas.clientWidth;
     const availH = canvas.clientHeight;
-    const sx = availW / worldW;
-    const sy = availH / worldH;
-    scale = Math.min(sx, sy, 1);
+    // 留 5% 内边距，避免树贴边
+    const padding = 0.95;
+    const sx = (availW * padding) / worldW;
+    const sy = (availH * padding) / worldH;
+    // 取较小的缩放（保证完整可见），允许放大到 1.4x（小树也能填满画布）
+    scale = Math.min(sx, sy, 1.4);
     scale = Math.max(scale, MIN_SCALE);
+    // 居中
     translateX = (availW - worldW * scale) / 2;
     translateY = (availH - worldH * scale) / 2;
     applyTransform();
@@ -517,7 +521,12 @@
 
     bindEvents();
     render();
-    setTimeout(fitCanvas, 100);
+    // 用 requestAnimationFrame 确保 SVG 已经布局完成再计算缩放
+    requestAnimationFrame(() => {
+      requestAnimationFrame(fitCanvas);
+    });
+    // 额外兜底：200ms 后再 fit 一次（应对慢速加载）
+    setTimeout(fitCanvas, 200);
   }
 
   if (document.readyState === 'loading') {
