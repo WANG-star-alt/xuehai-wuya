@@ -192,6 +192,39 @@
   pointer-events: none;
 }
 
+.node .branch-dot {
+  stroke-width: 1.5;
+  transition: all 0.15s;
+}
+
+/* 深绿色 · 可跳转（有 href） */
+.node .branch-dot.has-link {
+  fill: #556b3d;
+  stroke: #3f5030;
+}
+
+/* 浅绿色 · 可展开（无 href 但有子节点） */
+.node .branch-dot.expandable {
+  fill: #d4e2c8;
+  stroke: #a5b98d;
+}
+
+/* 浅灰色 · 叶子节点 */
+.node .branch-dot.leaf {
+  fill: #d8d4cb;
+  stroke: #a8a49b;
+}
+
+.node:hover .branch-dot.has-link {
+  fill: #a05a2c;
+  stroke: #7a4520;
+}
+
+.node:hover .branch-dot.expandable {
+  fill: #b5cba2;
+  stroke: #556b3d;
+}
+
 .node .status-dot {
   stroke-width: 1.5;
   transition: all 0.15s;

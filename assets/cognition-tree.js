@@ -178,13 +178,17 @@
         ry: 10
       }));
 
-      // 分支色圆点
+      // 前面的状态圆点：深绿=可跳转 / 浅绿=可展开 / 浅灰=叶子
+      const hasHref = !!realNode.href;
+      let dotClass = 'branch-dot leaf';
+      if (hasHref) dotClass = 'branch-dot has-link';
+      else if (hasChildren) dotClass = 'branch-dot expandable';
+
       g.appendChild(svg('circle', {
-        class: 'branch-dot',
+        class: dotClass,
         cx: 14,
         cy: NODE_H / 2,
-        r: 5,
-        fill: branchColor
+        r: 6
       }));
 
       // 节点名称
@@ -210,17 +214,7 @@
       meta.textContent = metaText;
       g.appendChild(meta);
 
-      // 状态指示圆点（右侧）：深绿=可跳转 / 浅绿=可展开 / 无=叶子
-      const hasHref = !!realNode.href;
-      if (hasChildren || hasHref) {
-        const dot = svg('circle', {
-          class: hasHref ? 'status-dot has-link' : 'status-dot expandable',
-          cx: NODE_W - 16,
-          cy: NODE_H / 2,
-          r: 7
-        });
-        g.appendChild(dot);
-      }
+      // 后面不再显示状态圆点（前面的圆点已经区分了）
 
       // 事件
       g.addEventListener('click', (e) => {
