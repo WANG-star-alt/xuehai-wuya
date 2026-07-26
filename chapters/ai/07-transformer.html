@@ -49,7 +49,7 @@
 
   <p>Transformer 一次性解决了这两个问题——<mark class="key">所有词并行计算，每个词都能"直接看到"任意其他词</mark>。这是它爆火的根本原因。</p>
 
-  <h3>Attention · 注意力机制</h3>
+  <h3 id="attention">Attention · 注意力机制</h3>
   <p>Attention 的核心思想：<strong>给序列里每个词，算出它对当前词的"重要度"</strong>，然后按重要度加权。</p>
 
   <div class="callout analogy">
@@ -61,7 +61,7 @@
     Attention 就是这个过程——<strong>用 Query 匹配所有 Key，找到相关的 Value 加权返回</strong>。</p>
   </div>
 
-  <h3>QKV · Query、Key、Value 三兄弟</h3>
+  <h3 id="qkv">QKV · Query、Key、Value 三兄弟</h3>
   <p>Transformer 里，每个词的向量会被拆成三份：Q（查询）、K（键）、V（值）。计算 Attention 的步骤：</p>
 
   <div class="journey">
@@ -85,7 +85,7 @@
 
   <p>公式一句话：<code>Attention(Q, K, V) = softmax(QKᵀ/√d) × V</code></p>
 
-  <h3>Multi-head Attention · 多头注意力</h3>
+  <h3 id="multihead">Multi-head Attention · 多头注意力</h3>
   <p>只用一组 QKV 太单薄——Transformer 让<mark class="key">多组 QKV 并行工作</mark>，每组关注不同类型的信息。</p>
 
   <ul class="keylist">
@@ -128,7 +128,7 @@
     <li><span class="k">2024 后</span><span class="v">ALiBi、YaRN 等——支持更长上下文（100 万 token）</span></li>
   </ul>
 
-  <h3>Encoder-only vs Decoder-only vs Encoder-Decoder</h3>
+  <h3 id="variants">Encoder-only vs Decoder-only vs Encoder-Decoder</h3>
   <p>Transformer 有三种"派系"，各有专长：</p>
 
   <div class="cards">
@@ -163,7 +163,7 @@
     现代大模型（ChatGPT、Claude、DeepSeek）几乎清一色是 <strong>Decoder-only</strong>——因为它最灵活，能通过"续写"完成几乎所有任务。</p>
   </div>
 
-  <h3>MoE · 专家混合模型（Mixture of Experts）</h3>
+  <h3 id="moe">MoE · 专家混合模型（Mixture of Experts）</h3>
   <p>2024 年后爆火的架构——<strong>让不同的"专家小组"处理不同的输入</strong>，大大降低推理成本。</p>
 
   <ul class="keylist">

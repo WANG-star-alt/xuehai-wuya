@@ -41,7 +41,7 @@
     训练一个 AI，跟培养一个考生的思路一模一样。</p>
   </div>
 
-  <h3>第一部分 · 数据（Dataset）</h3>
+  <h3 id="dataset">第一部分 · 数据（Dataset）</h3>
   <p><strong>数据是 AI 的教材</strong>——ChatGPT 之所以什么都懂，因为它读过几十 T 的文本；Stable Diffusion 能画各种风格，因为它看过 20 亿张图。<mark class="key">没有数据，就没有 AI</mark>。</p>
 
   <ul class="keylist">
@@ -60,7 +60,7 @@
     <strong>三者必须严格隔离</strong>——否则你以为模型考了 95 分，实际上是它偷看过真题。</p>
   </div>
 
-  <h3>第二部分 · 模型（Model）</h3>
+  <h3 id="model">第二部分 · 模型（Model）</h3>
   <p><strong>模型就是"待训练的神经网络"</strong>——它有一堆权重（几十亿到几千亿），初始都是随机值。训练的目标就是<mark class="key">把这些权重调到"能预测正确"的状态</mark>。</p>
 
   <ul class="keylist">
@@ -70,7 +70,7 @@
     <li><span class="k">超参数</span><span class="v">学习率、批大小、层数、隐藏维度——需要人工调</span></li>
   </ul>
 
-  <h3>第三部分 · 损失（Loss）</h3>
+  <h3 id="loss">第三部分 · 损失（Loss）</h3>
   <p><strong>损失函数 = "模型答错了多少"的量化打分</strong>。训练的本质就是<mark class="key">让损失越来越小</mark>——每次迭代都朝"更少犯错"的方向前进。</p>
 
   <div class="table-wrap">
@@ -103,7 +103,7 @@
     <li><span class="k">AdamW</span><span class="v">Adam 的改进版——大模型标配</span></li>
   </ul>
 
-  <h3>现代大模型的三段式训练法</h3>
+  <h3 id="pretrain">现代大模型的三段式训练法</h3>
   <p>ChatGPT 这样的大语言模型，训练分三个阶段——每个阶段目标不同、数据不同、成本不同。</p>
 
   <div class="cards">
@@ -142,7 +142,7 @@
 
   <p>模型学会的不只是"内容"，还有"格式"和"语气"。SFT 数据的质量比数量重要——几千条精心写的数据，好过几百万条低质量数据。</p>
 
-  <h3>RLHF · 人类反馈强化学习</h3>
+  <h3 id="rlhf">RLHF · 人类反馈强化学习</h3>
   <p>SFT 之后，模型已经会说话了。但它可能：说一半、跑题、乱编事实、语气冷冰冰。<strong>RLHF（Reinforcement Learning from Human Feedback）</strong>就是让人类给模型"打分"，让它学会"讨人喜欢"。</p>
 
   <div class="journey">

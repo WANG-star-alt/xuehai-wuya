@@ -63,9 +63,43 @@
         ],
         { href: 'chapters/ai/04-machine-learning.html' }
       ),
-      createNode('ai-05', '第 5 章 · 神经网络', '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。', '约 4 小时', [], { href: 'chapters/ai/05-neural-network.html' }),
-      createNode('ai-06', '第 6 章 · 训练三部曲', '数据、模型、损失——训练一个 AI 到底在干什么；预训练/SFT/RLHF/DPO 全解。', '约 3 小时', [], { href: 'chapters/ai/06-training-trilogy.html' }),
-      createNode('ai-07', '第 7 章 · Transformer', 'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。', '约 3 小时', [], { href: 'chapters/ai/07-transformer.html' }),
+      createNode('ai-05', '第 5 章 · 神经网络',
+        '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。',
+        '约 4 小时',
+        [
+          createNode('ai-05-neuron', '神经元 · 最小单元', '加权求和 + 激活 + 输出——一个神经元的全部。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#neuron' }),
+          createNode('ai-05-forward', '前向 & 反向传播', '数据流动 + 反向调参——神经网络学习的核心引擎。', '40 min', [], { href: 'chapters/ai/05-neural-network.html#forward' }),
+          createNode('ai-05-cnn', 'CNN · 卷积网络', '图像专家——从 AlexNet 到 YOLO，看图靠它。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#cnn' }),
+          createNode('ai-05-rnn', 'RNN / LSTM', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#rnn' }),
+          createNode('ai-05-gan', 'GAN · 生成对抗网络', '假币贩子 vs 警察——两个网络互相较量学会造假。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#gan' }),
+          createNode('ai-05-diffusion', 'Diffusion · 扩散模型', 'Midjourney / Sora 背后——从噪声一步步生成图像。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#diffusion' })
+        ],
+        { href: 'chapters/ai/05-neural-network.html' }
+      ),
+      createNode('ai-06', '第 6 章 · 训练三部曲',
+        '数据、模型、损失——训练一个 AI 到底在干什么；预训练/SFT/RLHF/DPO 全解。',
+        '约 3 小时',
+        [
+          createNode('ai-06-data', '数据 · Dataset', '训练/验证/测试三集分离，规模+质量+多样性缺一不可。', '30 min', [], { href: 'chapters/ai/06-training-trilogy.html#dataset' }),
+          createNode('ai-06-model', '模型 · Model', '参数量、架构、初始化、超参数——待训练的神经网络。', '20 min', [], { href: 'chapters/ai/06-training-trilogy.html#model' }),
+          createNode('ai-06-loss', '损失 · Loss + 梯度下降', '交叉熵/MSE + 蒙眼下山——让损失越来越小。', '30 min', [], { href: 'chapters/ai/06-training-trilogy.html#loss' }),
+          createNode('ai-06-pretrain', '预训练 · Pre-training', '几十T 语料预测下一词——基座模型的诞生。', '20 min', [], { href: 'chapters/ai/06-training-trilogy.html#pretrain' }),
+          createNode('ai-06-rlhf', 'RLHF / DPO 对齐', '让模型讨人喜欢——SFT → 奖励模型 → PPO/DPO。', '30 min', [], { href: 'chapters/ai/06-training-trilogy.html#rlhf' })
+        ],
+        { href: 'chapters/ai/06-training-trilogy.html' }
+      ),
+      createNode('ai-07', '第 7 章 · Transformer',
+        'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。',
+        '约 3 小时',
+        [
+          createNode('ai-07-attention', 'Attention · 注意力机制', '每个词都能"看到"其他所有词——图书馆查资料式加权。', '30 min', [], { href: 'chapters/ai/07-transformer.html#attention' }),
+          createNode('ai-07-qkv', 'QKV · 查询/键/值', '打分 → Softmax → 加权求和——Attention 的完整公式。', '30 min', [], { href: 'chapters/ai/07-transformer.html#qkv' }),
+          createNode('ai-07-multihead', 'Multi-head 多头', '多组 QKV 并行——像多个专家同时会诊。', '20 min', [], { href: 'chapters/ai/07-transformer.html#multihead' }),
+          createNode('ai-07-variants', 'Encoder / Decoder 派系', 'BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。', '30 min', [], { href: 'chapters/ai/07-transformer.html#variants' }),
+          createNode('ai-07-moe', 'MoE · 专家混合', '万亿参数只激活一小部分——DeepSeek 的降本秘籍。', '20 min', [], { href: 'chapters/ai/07-transformer.html#moe' })
+        ],
+        { href: 'chapters/ai/07-transformer.html' }
+      ),
       createNode('ai-08', '第 8 章 · 大语言模型 LLM', 'Token、上下文窗口、Temperature、CoT、推理模型 o1/R1。', '约 3 小时', []),
       createNode('ai-09', '第 9 章 · 多模态', '文/图/视频/语音——AI 打破单一模态边界。', '约 2 小时', []),
       createNode('ai-10', '第 10 章 · 提示词工程', '角色、任务、Few-shot、CoT——怎么问 AI 才能拿到好答案。', '约 2 小时', []),

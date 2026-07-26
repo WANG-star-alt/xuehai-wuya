@@ -37,7 +37,7 @@
     <strong>每个神经元只做一件小事，但一层层堆起来，就能识别复杂的东西。</strong>神经网络就是照着这个思路做的——只不过每个"神经元"是一段简单的数学公式而已。</p>
   </div>
 
-  <h3>神经元 · 最小的计算单元</h3>
+  <h3 id="neuron">神经元 · 最小的计算单元</h3>
   <p>一个"人工神经元"就是三步：<mark class="key">加权求和 → 激活 → 输出</mark>。</p>
 
   <ul class="keylist">
@@ -74,7 +74,7 @@
     </table>
   </div>
 
-  <h3>前向传播 · 从输入到答案</h3>
+  <h3 id="forward">前向传播 · 从输入到答案</h3>
   <p><strong>前向传播（Forward Pass）</strong> = 数据从输入层流到输出层，一层层被计算：</p>
 
   <div class="journey">
@@ -115,7 +115,7 @@
     <p>反向传播就像老师批改试卷——不仅告诉你"错了 5 分"，还告诉你"这道题是因为公式 A 记错了、公式 B 用反了"。有了这个反馈，你才能针对性改错。</p>
   </div>
 
-  <h3>CNN · 卷积神经网络（图像专家）</h3>
+  <h3 id="cnn">CNN · 卷积神经网络（图像专家）</h3>
   <p><strong>CNN（Convolutional Neural Network）</strong>是给"图像"设计的神经网络。它的核心思想：<mark class="key">图像的局部特征比整体重要</mark>——一只猫无论在图片的左边、右边、上下，都还是猫。</p>
 
   <ul class="keylist">
@@ -125,7 +125,7 @@
     <li><span class="k">代表作</span><span class="v">2012 AlexNet、2015 ResNet、2016 YOLO 目标检测</span></li>
   </ul>
 
-  <h3>RNN / LSTM · 循环神经网络（序列专家）</h3>
+  <h3 id="rnn">RNN / LSTM · 循环神经网络（序列专家）</h3>
   <p><strong>RNN（Recurrent Neural Network）</strong>是给"序列数据"（文字、语音、时间序列）设计的。它的核心：<mark class="key">当前的输出取决于当前输入 + 之前所有输入</mark>——就像人读文章时脑子里有"记忆"。</p>
 
   <ul class="keylist">
@@ -136,7 +136,7 @@
     <li><span class="k">现状</span><span class="v">2017 年 Transformer 出现后，RNN 在 NLP 领域基本被淘汰，但在时间序列预测等场景还在用</span></li>
   </ul>
 
-  <h3>GAN · 生成对抗网络（造假高手）</h3>
+  <h3 id="gan">GAN · 生成对抗网络（造假高手）</h3>
   <p><strong>GAN（Generative Adversarial Network）</strong>是 2014 年 Ian Goodfellow 发明的——两个神经网络"互相打架"，最终一个学会造假、一个学会打假。</p>
 
   <div class="callout analogy">
@@ -152,7 +152,7 @@
     <li><span class="k">缺点</span><span class="v">训练不稳定，容易"模式崩溃"（老是生成同一张脸）</span></li>
   </ul>
 
-  <h3>Diffusion · 扩散模型（当前最火）</h3>
+  <h3 id="diffusion">Diffusion · 扩散模型（当前最火）</h3>
   <p><strong>Diffusion Model 扩散模型</strong>是 2020 年后爆火的图像生成技术——Midjourney、Stable Diffusion、Sora 全靠它。核心思想反直觉：<mark class="key">先教网络"如何一步步把清晰图片变成噪声"，再让它反过来"从噪声一步步还原成图片"</mark>。</p>
 
   <div class="journey">
