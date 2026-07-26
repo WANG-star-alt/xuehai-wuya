@@ -11,23 +11,28 @@ description: "学海无涯网站开发规范。当用户要求记住、整理、
 - **域名**: https://xuehai-wuya.pages.dev
 - **仓库**: github.com/WANG-star-alt/xuehai-wuya
 - **部署**: Cloudflare Pages (自动部署 main 分支)
-- **技术栈**: 纯 HTML/CSS/JS, ECharts, 无框架
+- **技术栈**: 纯 HTML/CSS/JS，**数据驱动 SVG 自绘知识树**（已放弃 ECharts）
 
 ## 目录结构
 
 ```
 xuehai-wuya/
-├── index.html                 # 主页（封面 + 知识树 + 章节卡片）
-├── assets/charts.js           # 知识树数据 + 渲染 + 交互
+├── index.html                       # 主页（封面 + 认知树 + 章节卡片）
+├── assets/
+│   ├── tree-data.js                 # 认知树节点数据（id/label/desc/time/children/href/color）
+│   ├── cognition-tree.js            # 认知树渲染引擎（SVG 自绘 + 交互）
+│   ├── cognition-tree.css           # 认知树样式（磨砂玻璃 + 节点卡片）
+│   └── charts.js                    # 【已废弃】旧 ECharts 版，未使用
 ├── _shared/
-│   ├── css/theme.css          # 所有子页面共享样式
-│   ├── js/float-pager.js      # 悬浮翻页岛（自动克隆 .pager）
-│   └── js/echarts.min.js      # ECharts 库
-├── chapters/                  # 所有章节内容
-│   ├── ai/                    # 智能篇 14 章
-│   └── network/               # 网络篇 10 章
-└── .trae/skills/              # 本 skill 存放处
+│   ├── css/theme.css                # 所有子页面共享样式
+│   └── js/float-pager.js            # 悬浮翻页岛
+├── chapters/                        # 所有章节内容
+│   ├── ai/                          # 智能篇 14 章
+│   └── network/                     # 网络篇 10 章
+└── .trae/skills/                    # 本 skill 存放处
 ```
+
+**参考规范**: 遵循 `COGNITION_TREE_FORMAT_SPEC.md`（用户提供的知识树设计规范）
 
 ## 核心开发规范（每次必须遵守）
 
@@ -89,46 +94,80 @@ xuehai-wuya/
 - [ ] 页面引入了 `../../_shared/js/float-pager.js`
 - [ ] 浏览器测试：滚动时悬浮岛始终可见
 
-### 3. 知识树规范
+### 3. 认知知识树规范（当前实现 · SVG 自绘）
 
-**数据位置**: `assets/charts.js` → `window.__xhwyTreeData`
+**数据位置**: `assets/tree-data.js` → `window.__cognitionTreeData`
+
+**节点数据结构**（严格按 COGNITION_TREE_FORMAT_SPEC）:
+```javascript
+{
+  id: "唯一稳定英文ID",        // 必填
+  label: "节点显示名称",        // 必填
+  desc: "节点简要说明",         // 必填
+  time: "建议投入时间",         // 必填
+  children: [],                // 必填（叶子节点空数组）
+  href: "chapters/xxx.html",   // 可选：跳转链接
+  color: "#4a6d8c"             // 可选：仅顶层分支设置，后代继承
+}
+```
 
 **树结构**:
 ```
-学海 (根)
-├── 智能篇 · Intelligence (color: #4a6d8c)
-│   ├── 第 1 章 · AI 是什么 (link: 'chapters/ai/01-what-is-ai.html', external: true)
-│   │   ├── § 1.1 · 弱 AI · ANI 篇 (link: 'chapters/ai/01-1-ani.html', external: true)
-│   │   └── ...
-│   └── ... 共 14 章
-│
-└── 网络篇 · Network (color: #556b3d)
-    ├── 第 1 章 · 网络是什么 (link: 'chapters/network/01-what-is-network.html', external: true)
-    │   ├── § 1.1 · 主机 Host 篇 (link: 'chapters/network/01-1-host.html', external: true)
-    │   └── ...
-    └── ... 共 10 章
+学海无涯 (root)
+├── 智能篇 (color: #4a6d8c)
+│   └── 第 1-14 章
+└── 网络篇 (color: #556b3d)
+    └── 第 1-10 章
 ```
 
 **节点规范**:
-- **节点规范**:
-- 每个可点击节点必须有 `link` 字段（相对路径）
-- 每个有 `link` 的节点必须有 `external: true`
-- 子篇章（§ X.Y）必须有 `link` + `external: true`
-- 未上线章节不加 `link`（显示为灰色/建设中）
-- **如果子篇章内容已合并成一篇完整文章，树上只保留一个链接节点，不要拆成多个无链接子节点**（如 OSI 七层都写在 § 2.1 一篇里，树上只保留 § 2.1 一个节点）
-- **禁止五级嵌套**：树最多四级（根 → 篇 → 章 → 子篇），不要把"主题关键词"作为无链接的五级节点挂在子篇下面
-- **例外**：如果文章很长、有清晰的时代/主题分段，可以给文章加锚点（`#section-id`），树上拆成多个子节点分别跳转（如简史拆成 5 个时代节点）
+- ID 全树唯一，只用英文/数字/连字符
+- 叶子节点必须有空 `children: []`
+- 有内容的节点填 `href`，无内容的不填（视觉自动区分）
+- 禁止五级嵌套：最多 4 级（root → 篇 → 章 → 子篇）
+- 若子篇章已合并成一篇文章，树上只保留一个链接节点
+- 例外：文章有清晰分段时可加锚点 `#section-id`，拆成多个子节点（如简史 5 个时代节点）
 
-**渲染规范**:
-- 默认展开到二级: `expandToDepth(2)` 在渲染后强制执行
-- 标签无背景色（黑暗模式友好）
-- 控制按钮: 全部展开 / 全部收起 / 一级 / 二级 / 放大 / 缩小 / 还原
-- **圆点要大要明显**: `symbolSize: 14`, `borderWidth: 2`
-- **圆点颜色区分**: 有 `external: true` + `link` 的节点浅绿色（`#d4e2c8` 不透明填充），无 link 的叶子节点浅灰色（`#e8e4dc` 不透明填充）
-- **圆点必须不透明**: 不能透过圆点看到后面的线条，填充色一律用不透明的十六进制色值
-- **交互方式**: 单击 → 展开/收起（所有节点），双击 → 跳转（有 `external: true` + `link` 的节点）
-- **Tooltip 提示**: hover 时显示"单击展开/收起"或"双击跳转"
-- **节点查找**: 用 `findNodeByName` 在整棵树里按 name 搜索（比 `treePathInfo` 更可靠，不受折叠影响）
+**视觉规范**:
+- **文字前圆点颜色**（唯一状态标识）：
+  - **深绿** `#556b3d` = 可跳转（有 `href`）
+  - **浅绿** `#d4e2c8` = 可展开（无 `href` 但有子节点）
+  - **浅灰** `#d8d4cb` = 叶子节点
+- **不显示** `[+]/[-]` 加号按钮、右侧状态圆点、下划线等其他标识
+- 节点卡片：184×54 圆角矩形，磨砂玻璃背景
+- 连接线：真实 SVG 三次贝塞尔曲线，`<g class="edges">` 先绘制，`<g class="nodes">` 后绘制
+- 三区结构：工具栏 + 树画布（磨砂玻璃）+ 详情面板（磨砂玻璃）
+
+**交互规范**:
+- **单击节点** → 若有子节点则展开/收起，同时更新详情面板
+- **详情面板"打开完整学习章节"按钮** → 跳转 `href`
+- **搜索** → 匹配 label + desc，只展开祖先路径，不展开后代
+- **缩放**：滚轮、`＋/−` 按钮，范围 `0.55x ~ 2.5x`
+- **拖动**：只在画布空白处拖动，不拖节点
+- **展开层级**：Ⅰ 一级 / Ⅱ 二级 / Ⅲ 三级 / ⊟ 收起
+
+**默认缩放规范**（重要）:
+- **`fitCanvas()` 必须让树"正好装下"画布**，不能太小
+- 上限 `1.4x`（小树自动放大填充画布），下限 `MIN_SCALE=0.55`
+- 留 5% 内边距（`padding = 0.95`），不贴边
+- SVG `viewBox` **必须用画布像素尺寸**（`0 0 clientW clientH`），不能用 world 尺寸——否则 SVG 自动缩放会和 `scene transform` 叠加，导致我的 scale 失效
+- 初始化时用 `requestAnimationFrame × 2 + setTimeout 200ms 兜底`，确保 SVG 布局完成再计算
+- window resize 时自动重新 fit
+
+**索引系统**（初始化时构建）:
+```javascript
+const nodeIndex = new Map();     // id → node
+const parentIndex = new Map();   // id → parent node
+const depthIndex = new Map();    // id → depth
+const branchIndex = new Map();   // id → 顶层分支节点（含 color）
+```
+
+**状态管理**:
+```javascript
+const collapsedNodes = new Set();  // 唯一的展开状态来源
+let selectedNodeId;
+let scale, translateX, translateY;
+```
 
 ### 4. 主页卡片规范
 
@@ -174,13 +213,15 @@ xuehai-wuya/
 
 ### 7. 缓存规范
 
-**每次修改 charts.js 或 index.html 后，必须更新缓存号**:
+**每次修改 `tree-data.js` / `cognition-tree.js` / `cognition-tree.css` / `index.html` 后，必须更新缓存号**:
 
 ```html
-<script src="./assets/charts.js?v=kmap-XX"></script>
+<link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-N" />
+<script src="./assets/tree-data.js?v=ct-N"></script>
+<script src="./assets/cognition-tree.js?v=ct-N"></script>
 ```
 
-XX 递增（当前 kmap-22）。
+`N` 递增（当前 `ct-5`）。旧版 `kmap-XX` 已废弃。
 
 ### 8. 推送规范
 
@@ -213,6 +254,10 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 **原因**: `initialTreeDepth` 被数据中的 `collapsed: true` 覆盖。
 **修复**: 渲染后强制执行 `expandToDepth(2)`。
 
+### Bug 5: 认知树默认缩放太小
+**原因**: SVG 有两层缩放叠加——`viewBox="0 0 worldW worldH"` 让 SVG 自动缩放内容，同时 `scene transform: scale(x)` 又缩放一次，两者叠加导致我的 scale 失效。
+**修复**: SVG `viewBox` 改用**画布像素尺寸** (`0 0 clientW clientH`)，让 `scene transform` 完全掌控缩放。同时初始化用 `requestAnimationFrame × 2 + setTimeout 200ms 兜底`，确保 SVG 布局完成。
+
 ## 用户特殊要求记录
 
 - **2026-07-26**: 知识树标签不要白色背景方块（黑暗模式友好）
@@ -230,6 +275,7 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 - **2026-07-26**: **重大重构**——放弃 ECharts，改用数据驱动的 SVG 自绘认知树，遵循 COGNITION_TREE_FORMAT_SPEC 规范。数据在 `assets/tree-data.js`（node: id/label/desc/time/children/href/color），渲染在 `assets/cognition-tree.js`，样式在 `assets/cognition-tree.css`。三区结构：工具栏 + 树画布 + 详情面板。
 - **2026-07-26**: 节点右侧状态圆点——**深绿色**（`#556b3d`）= 可跳转（有 href），**浅绿色**（`#d4e2c8`）= 可展开（无 href 但有子节点），无圆点 = 叶子节点。不再用 `[+]/[-]` 加号按钮。
 - **2026-07-26**: 最终方案——只保留**文字前面**的圆点（`.branch-dot`），颜色区分：**深绿**（`#556b3d`）= 可跳转 / **浅绿**（`#d4e2c8`）= 可展开 / **浅灰**（`#d8d4cb`）= 叶子。文字后面的 `.status-dot` 不再显示。
+- **2026-07-26**: 认知树默认缩放必须"正好装下"画布——`fitCanvas` 允许放大到 1.4x，留 5% 边距，SVG viewBox 用画布像素尺寸（避免和 scene transform 叠加缩放）
 
 ## 待办事项
 
