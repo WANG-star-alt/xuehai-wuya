@@ -13,7 +13,7 @@
     <div class="breadcrumb">
       <a href="../../index.html">学海无涯</a>
       <span class="sep">›</span>
-      <a href="./05-neural-network.html">智能篇 · 第 5 章</a>
+      <a href="../../index.html#vol-ai">人工智能</a>
       <span class="sep">›</span>
       <span>第 6 章</span>
     </div>
@@ -21,176 +21,73 @@
   </nav>
 
   <header class="chapter-head">
-    <div class="num">Intelligence · Chapter 06</div>
+    <div class="num">Chapter · 06</div>
     <h1>第 6 章 · 训练三部曲</h1>
-    <div class="cn">Training Trilogy · 数据 / 模型 / 损失</div>
+    <div class="cn">Training Trilogy · 数据 · 模型 · 损失</div>
   </header>
 
   <p class="lead">
-    上一章讲了神经网络的骨架，但骨架不会自己学。让 AI 真正"学会"，需要三个东西：<mark class="key">数据（教材）、模型（大脑）、损失（考卷分数）</mark>。这一章带你走完一个 AI 从"新手"到"会做题"的完整训练流程——以及现代大模型的三段式训练法：预训练 → SFT → RLHF。
+    上一章讲了神经网络的骨架，但骨架不会自己学。让 AI 真正"学会"，需要<mark class="key">数据（教材）、模型（大脑）、损失（考卷分数）</mark>三样东西。这一章分五个子篇讲清楚：一个 AI 从"新手"到"会做题"的完整训练流程——以及现代大模型的三段式训练法。
   </p>
 
-  <div class="scene">
-    <span class="scene-tag">生活场景</span>
-    <div class="scene-title">🎓 培养一个考试冠军</div>
-    <p>你要培养一个高考状元，需要什么？<br/>
-    <strong>教材</strong>（数据）—— 越多越全越好。<br/>
-    <strong>大脑</strong>（模型）—— 天赋高、记忆力强。<br/>
-    <strong>考试反馈</strong>（损失）—— 每次考试都告诉他"错了几道、错在哪"。<br/>
-    <strong>反复练习</strong>（梯度下降）—— 每次考完针对错题改进。<br/>
-    训练一个 AI，跟培养一个考生的思路一模一样。</p>
-  </div>
-
-  <h3 id="dataset">第一部分 · 数据（Dataset）</h3>
-  <p><strong>数据是 AI 的教材</strong>——ChatGPT 之所以什么都懂，因为它读过几十 T 的文本；Stable Diffusion 能画各种风格，因为它看过 20 亿张图。<mark class="key">没有数据，就没有 AI</mark>。</p>
-
-  <ul class="keylist">
-    <li><span class="k">数据规模</span><span class="v">越大越好——GPT-4 训练用了约 13 万亿 token（约 10 万亿汉字）</span></li>
-    <li><span class="k">数据质量</span><span class="v">垃圾进 → 垃圾出。清洗、去重、过滤有害内容是关键</span></li>
-    <li><span class="k">数据多样性</span><span class="v">语言/领域/风格越丰富，模型越"通用"</span></li>
-    <li><span class="k">数据划分</span><span class="v">训练集（80%）+ 验证集（10%）+ 测试集（10%）——绝不能用测试集训练</span></li>
-    <li><span class="k">数据标注</span><span class="v">监督学习需要"答案"，几万到几百万条人工标注是常见规模</span></li>
-  </ul>
+  <h3>本章要回答什么</h3>
+  <p>训练 AI 到底在训练什么？为什么数据要分训练/验证/测试三份？<strong>梯度下降</strong>为什么能让百亿参数一步步收敛？<strong>预训练 → SFT → RLHF/DPO</strong> 三阶段各自解决什么问题？看完这五篇，你就能看懂"某某公司预训练了 XXB 参数模型"这类新闻背后到底发生了什么。</p>
 
   <div class="callout analogy">
-    <span class="tag">Analogy · 高考真题</span>
-    <p>训练集 = 平时练习题（可以反复做）<br/>
-    验证集 = 期末模拟考（用来调参、防止过拟合）<br/>
-    测试集 = 高考真题（考试前不能看，否则就是作弊）<br/>
-    <strong>三者必须严格隔离</strong>——否则你以为模型考了 95 分，实际上是它偷看过真题。</p>
+    <span class="tag">Analogy · 譬喻</span>
+    <p>训练一个 AI 就像<strong>培养一个高考状元</strong>——教材（数据）越多越全越好，大脑（模型）天赋越高越强，考试反馈（损失）越及时越准越好。反复练习、针对错题改进——这就是<strong>梯度下降</strong>；从"填鸭式"记忆到"讨老师喜欢"，则是三段式训练法要走完的路。</p>
   </div>
 
-  <h3 id="model">第二部分 · 模型（Model）</h3>
-  <p><strong>模型就是"待训练的神经网络"</strong>——它有一堆权重（几十亿到几千亿），初始都是随机值。训练的目标就是<mark class="key">把这些权重调到"能预测正确"的状态</mark>。</p>
-
-  <ul class="keylist">
-    <li><span class="k">参数量</span><span class="v">GPT-3 = 175B，GPT-4 估算 &gt;1000B，Llama 3 有 8B/70B/405B 三档</span></li>
-    <li><span class="k">架构</span><span class="v">现代 LLM 几乎清一色 Transformer（下一章讲）</span></li>
-    <li><span class="k">初始化</span><span class="v">权重不能全是 0，也不能太大——用 Xavier / He 初始化让训练更稳</span></li>
-    <li><span class="k">超参数</span><span class="v">学习率、批大小、层数、隐藏维度——需要人工调</span></li>
-  </ul>
-
-  <h3 id="loss">第三部分 · 损失（Loss）</h3>
-  <p><strong>损失函数 = "模型答错了多少"的量化打分</strong>。训练的本质就是<mark class="key">让损失越来越小</mark>——每次迭代都朝"更少犯错"的方向前进。</p>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>任务类型</th><th>常用损失</th><th>说明</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>分类（识别猫狗）</td><td>Cross-Entropy 交叉熵</td><td>预测概率和真实标签的差距</td></tr>
-        <tr><td>回归（预测房价）</td><td>MSE 均方误差</td><td>预测值和真实值的平方差</td></tr>
-        <tr><td>语言模型（预测下一个词）</td><td>Cross-Entropy</td><td>预测 token 分布 vs 真实 token</td></tr>
-        <tr><td>图像生成</td><td>Reconstruction / KL / Diffusion Loss</td><td>看具体架构</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <h3>梯度下降 · 让损失变小的算法</h3>
-  <p>知道错在哪之后，怎么改？<strong>梯度下降（Gradient Descent）</strong>——沿着"损失下降最快的方向"调整权重。</p>
-
-  <div class="callout analogy">
-    <span class="tag">Analogy · 蒙眼下山</span>
-    <p>你在山顶被蒙上眼睛，要走到山谷（损失最小值）。你不能看地图，只能用脚感觉<strong>脚下哪个方向最陡</strong>——朝那个方向迈一小步。反复迈——总能走到山谷附近。<br/>
-    <strong>梯度</strong> = "最陡的方向"；<strong>学习率</strong> = "一步迈多大"。学习率太大 → 跨过山谷；太小 → 走一辈子。</p>
-  </div>
-
-  <ul class="keylist">
-    <li><span class="k">SGD · 随机梯度下降</span><span class="v">每次只用一批数据算梯度——快但抖动大</span></li>
-    <li><span class="k">Momentum</span><span class="v">加入"惯性"——像滚下山的球，能冲过小坑</span></li>
-    <li><span class="k">Adam</span><span class="v">自适应学习率，是目前最主流的优化器</span></li>
-    <li><span class="k">AdamW</span><span class="v">Adam 的改进版——大模型标配</span></li>
-  </ul>
-
-  <h3 id="pretrain">现代大模型的三段式训练法</h3>
-  <p>ChatGPT 这样的大语言模型，训练分三个阶段——每个阶段目标不同、数据不同、成本不同。</p>
-
+  <h3>本章的五个子篇</h3>
   <div class="cards">
-    <div class="card">
-      <div class="card-num">Stage 1</div>
-      <h4>预训练 · Pre-training</h4>
-      <p>"让模型学会人类语言"。用几十 T 的互联网文本，让模型预测"下一个词"。<br/>
-      <strong>成本</strong>: 数千万到数亿美元<br/>
-      <strong>产物</strong>: 基座模型（Base Model）——会说话但不会聊天</p>
-    </div>
-    <div class="card">
-      <div class="card-num">Stage 2</div>
-      <h4>SFT · 监督微调</h4>
-      <p>"让模型学会对话格式"。用几万到几十万条高质量的"问答对"，教模型怎么回答问题。<br/>
-      <strong>成本</strong>: 数万到数十万美元<br/>
-      <strong>产物</strong>: 聊天模型（Chat Model）——能对话但不一定符合人类偏好</p>
-    </div>
-    <div class="card">
-      <div class="card-num">Stage 3</div>
-      <h4>RLHF · 人类反馈强化学习</h4>
-      <p>"让模型学会讨人喜欢"。人类给多个回答打分，用强化学习让模型倾向于"高分"回答。<br/>
-      <strong>成本</strong>: 数十万美元<br/>
-      <strong>产物</strong>: 对齐模型（Aligned Model）——ChatGPT、Claude 都在这一步之后</p>
-    </div>
+    <a class="card" href="./06-1-dataset.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 6.1</div>
+      <h4>数据 · Dataset 篇</h4>
+      <p>规模 / 质量 / 多样性 / 训练验证测试三集分离。</p>
+    </a>
+    <a class="card" href="./06-2-model.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 6.2</div>
+      <h4>模型 · Model 篇</h4>
+      <p>参数量、架构、初始化、超参数——待训练的神经网络长啥样。</p>
+    </a>
+    <a class="card" href="./06-3-loss.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 6.3</div>
+      <h4>损失 & 梯度下降篇</h4>
+      <p>交叉熵/MSE + 蒙眼下山——让损失越来越小的核心算法。</p>
+    </a>
+    <a class="card" href="./06-4-pretrain.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 6.4</div>
+      <h4>预训练 · Pre-training 篇</h4>
+      <p>几十 T 语料预测下一词——基座大模型是这么烧出来的。</p>
+    </a>
+    <a class="card" href="./06-5-rlhf.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 6.5</div>
+      <h4>SFT · RLHF · DPO 对齐篇</h4>
+      <p>三步走：学对话 → 学人类偏好 → 让模型"讨人喜欢"。</p>
+    </a>
   </div>
 
-  <h3>SFT · 监督微调详解</h3>
-  <p><strong>Supervised Fine-Tuning</strong>——用人工写的"高质量对话"教模型。数据长这样：</p>
-
-  <div class="callout">
-    <span class="tag">SFT 数据示例</span>
-    <p><strong>用户</strong>: 帮我写一封辞职信，语气要礼貌。<br/>
-    <strong>助手</strong>: 尊敬的领导：<br/>
-    &emsp;&emsp;经过慎重考虑，我决定离开公司……（完整、礼貌、格式正确的答复）</p>
-  </div>
-
-  <p>模型学会的不只是"内容"，还有"格式"和"语气"。SFT 数据的质量比数量重要——几千条精心写的数据，好过几百万条低质量数据。</p>
-
-  <h3 id="rlhf">RLHF · 人类反馈强化学习</h3>
-  <p>SFT 之后，模型已经会说话了。但它可能：说一半、跑题、乱编事实、语气冷冰冰。<strong>RLHF（Reinforcement Learning from Human Feedback）</strong>就是让人类给模型"打分"，让它学会"讨人喜欢"。</p>
-
-  <div class="journey">
-    <div class="step">
-      <h4>Step 1 · 收集偏好数据</h4>
-      <p>让模型对同一个问题生成 4 个回答，人工排序：A &gt; B &gt; D &gt; C。收几万条这样的排序。</p>
-    </div>
-    <div class="step">
-      <h4>Step 2 · 训练奖励模型</h4>
-      <p>用这些排序数据训练一个"打分模型"（Reward Model）——它看到一个回答就能给出 0-100 分。</p>
-    </div>
-    <div class="step">
-      <h4>Step 3 · 强化学习</h4>
-      <p>让主模型生成回答，奖励模型打分，用强化学习（PPO）让主模型朝"高分方向"调整。</p>
-    </div>
-    <div class="step">
-      <h4>结果</h4>
-      <p>模型学会"人类偏好的回答风格"——礼貌、准确、有帮助、不冒犯。</p>
-    </div>
-  </div>
-
-  <h3>2024-2026 · 新趋势：DPO 和 RL 推理训练</h3>
+  <h3>学之前先记住这一点</h3>
   <ul class="keylist">
-    <li><span class="k">DPO · 直接偏好优化</span><span class="v">跳过奖励模型，直接用偏好数据训练——更简单、更稳定，2024 年后成主流</span></li>
-    <li><span class="k">RL 推理训练</span><span class="v">OpenAI o1、DeepSeek R1 的核心——用强化学习让模型"学会一步步思考"</span></li>
-    <li><span class="k">RLAIF</span><span class="v">用 AI 反馈代替人类反馈，降低成本</span></li>
+    <li><span class="k">训练 = 调权重</span><span class="v">模型里几十亿到几千亿的数，一点点调到"能预测对"的状态——本质是数学优化。</span></li>
+    <li><span class="k">数据质量比数量更重要</span><span class="v">垃圾进、垃圾出——同样的模型架构，好数据能训出好几倍效果。</span></li>
+    <li><span class="k">三段式训练是现代标配</span><span class="v">预训练砸算力、SFT 学对话、RLHF/DPO 学讨喜欢——ChatGPT/Claude/DeepSeek 都是这条路。</span></li>
+    <li><span class="k">2024 后新趋势</span><span class="v">DPO 简化 RLHF，RL 推理训练让 o1/R1 学会"一步步想"。</span></li>
   </ul>
-
-  <div class="callout">
-    <span class="tag">Recap · 收束</span>
-    <p>训练三部曲 = <mark class="key">数据（教材）+ 模型（大脑）+ 损失（评分）</mark>。<br/>
-    大模型完整流程：<strong>预训练</strong>（学语言）→ <strong>SFT</strong>（学对话）→ <strong>RLHF/DPO</strong>（学讨喜欢）。<br/>
-    最新前沿：<strong>RL 推理训练</strong>——让 AI 学会"一步一步思考"，o1、R1、DeepSeek 都是这条路。</p>
-  </div>
 
   <div class="pager">
-    <a class="btn prev" href="./05-neural-network.html">
-      <span class="dir">← 上一章</span>
-      <span class="title">第 5 章 · 神经网络</span>
+    <a class="btn prev" href="./05-6-diffusion.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 5.6 · Diffusion 篇</span>
     </a>
     <a class="home" href="../../index.html">☰ 主页</a>
-    <a class="btn next" href="./07-transformer.html">
-      <span class="dir">下一章 →</span>
-      <span class="title">第 7 章 · Transformer</span>
+    <a class="btn next" href="./06-1-dataset.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 6.1 · 数据 Dataset 篇</span>
     </a>
   </div>
 
-  <div class="page-foot">Xue Hai Wu Ya · Intelligence · Chapter 06</div>
+  <div class="page-foot">Xue Hai Wu Ya · Vol.03 AI · Chapter 06</div>
 
 </article>
   <script src="../../_shared/js/float-pager.js"></script>

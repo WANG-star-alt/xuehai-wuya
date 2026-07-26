@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 7.4 · Encoder / Decoder 派系篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./07-transformer.html">第 7 章</a>
+      <span class="sep">›</span>
+      <span>§ 7.4</span>
+    </div>
+    <a href="./07-transformer.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 7.4 · Sub-chapter</div>
+    <h1>Encoder / Decoder · 三大派系篇</h1>
+    <div class="cn">BERT vs GPT vs T5</div>
+  </header>
+
+  <p class="lead">
+    2017 年原版 Transformer 是一个"左脑 + 右脑"的结构——左边 <strong>Encoder</strong>（编码器）负责读懂，右边 <strong>Decoder</strong>（解码器）负责生成。它是为翻译任务量身打造的。但后来的研究者们发现：<mark class="key">这两半脑其实可以拆开单独用</mark>——于是分化出三大派系：BERT（只用左脑）、GPT（只用右脑）、T5（左右并用）。今天你用的所有 LLM，都属于其中一派。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎬 翻译一部电影字幕的两个角色</div>
+    <p>想象你正在做一部英文电影的中文字幕：<br/>
+    有一个人负责<strong>看英文原文</strong>——从头到尾读完、反复看，把每句话的意思、语气、隐含意图都吃透。他是"<em>阅读理解型选手</em>"，可以自由地前后翻阅，不必按顺序。<br/>
+    另一个人负责<strong>写中文译文</strong>——他一边参考理解者的笔记，一边一个字一个字地把中文写出来。写下一个字的时候，只能看已经写过的字，不能"偷看"后面还没写的。他是"<em>顺序输出型选手</em>"。<br/>
+    这两个角色，分别对应 Transformer 里的 <strong>Encoder（编码器）</strong> 和 <strong>Decoder（解码器）</strong>。</p>
+    <div class="link">→ <strong>Encoder</strong> = 双向理解者；<strong>Decoder</strong> = 单向生成者；<strong>Encoder-Decoder</strong> = 二者协作。</div>
+  </div>
+
+  <h3>先辨清一个关键区别 · 双向 vs 单向</h3>
+  <p>Encoder 和 Decoder 都由多层 Multi-Head Attention 堆成，但它们的 Attention <strong>能看的范围</strong>不一样——这一点差异，决定了两种架构的不同用途。</p>
+  <ul class="keylist">
+    <li><span class="k">Encoder · 双向 Attention</span><span class="v">每个词可以同时看到句子里<em>所有位置</em>的其他词——包括自己前面的和后面的。适合"理解"，因为理解一个词经常需要看它后面的上下文。</span></li>
+    <li><span class="k">Decoder · 掩码单向 Attention</span><span class="v">每个词只能看<em>自己和前面</em>的词，不能偷看后面还没生成的词。适合"生成"，因为写字的时候你还不知道后面要写什么。</span></li>
+  </ul>
+  <p>那个"不能偷看"的机制有个专业名字叫 <strong>Causal Mask</strong>（因果掩码）——在 Attention 打分矩阵里，把"未来位置"的分数强行设成负无穷，softmax 之后就变成 0，模型就"看不见未来"了。这个简单的技巧，让 Transformer 能干"逐字生成"的活儿。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 阅卷 vs 答题</span>
+    <p><strong>Encoder</strong> = 阅卷老师——他手里已经是一份写完的答卷，可以自由地前后翻阅、对照检查、综合理解。<br/>
+    <strong>Decoder</strong> = 考生答题——他在写第 100 字时，只能回头看已经写的 99 个字，不能偷看第 101 字（因为还没写呢）。<br/>
+    这就是为什么"理解型任务"要 Encoder、"生成型任务"要 Decoder。</p>
+  </div>
+
+  <h3>派系一 · Encoder-only · BERT 家族</h3>
+  <p>2018 年，Google 发布 <strong>BERT</strong>（Bidirectional Encoder Representations from Transformers）——名字里就写着两个关键词：<em>Bidirectional（双向）+ Encoder</em>。它做的选择是：<mark class="key">砍掉 Decoder，只保留 Encoder，堆很多层，做"理解型 AI"</mark>。</p>
+  <p>BERT 的训练方法叫 <strong>Masked Language Model（MLM）</strong>——随机遮住句子里 15% 的词，让模型根据前后文猜出被遮的词是什么。因为它可以看到<em>前后所有词</em>（双向），这个任务对它来说就是"完形填空"。做几千亿次完形填空之后，它对语言的理解力惊人。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>典型应用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>文本分类</td><td>情感分析、垃圾邮件判定、意图识别</td></tr>
+        <tr><td>命名实体识别</td><td>从文本里抽取人名、地名、公司名</td></tr>
+        <tr><td>问答（抽取式）</td><td>从一段文字里找出答案所在的位置</td></tr>
+        <tr><td>相似度判断</td><td>两句话意思相不相近</td></tr>
+        <tr><td>语义搜索</td><td>把文档变成向量，做向量检索（RAG 的核心）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>但 BERT 不会"写"</strong>——它没有 Decoder，无法生成连贯的一段话。你不能让它给你写一篇作文，它只能<em>理解</em>你写的作文。这个短板决定了它在 ChatGPT 时代之后逐渐让位。<br/>
+  代表：<em>BERT、RoBERTa、DeBERTa、ALBERT、ELECTRA、中文的 ERNIE / MacBERT</em>。今天它们仍在<mark class="key">搜索引擎、语义检索、RAG 系统</mark>里大量使用——因为这些场景不需要生成、只需要理解。</p>
+
+  <h3>派系二 · Decoder-only · GPT 家族</h3>
+  <p>OpenAI 走了另一条路：<mark class="key">砍掉 Encoder，只保留 Decoder，堆很多层，做"生成型 AI"</mark>。这就是 GPT（Generative Pre-trained Transformer）系列——从 GPT-1 到 GPT-4、再到 ChatGPT。</p>
+  <p>GPT 的训练方法叫 <strong>Causal Language Model（CLM）</strong>——给它一段话的前半截，让它<em>预测下一个词</em>。这么简单的任务，就是它的全部训练目标。奇迹在于——当参数规模够大、数据够多，光靠"预测下一个词"这个任务，模型就<mark class="key">涌现出对话、翻译、编程、推理、写代码</mark>等一大批能力。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>典型应用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>对话</td><td>ChatGPT、Claude、豆包、DeepSeek Chat</td></tr>
+        <tr><td>代码生成</td><td>Copilot、Cursor、Trae</td></tr>
+        <tr><td>创意写作</td><td>写小说、写文案、写邮件</td></tr>
+        <tr><td>推理 / 数学</td><td>o1、DeepSeek-R1、Claude Sonnet Thinking</td></tr>
+        <tr><td>指令跟随</td><td>翻译、总结、改写、格式转换</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Decoder-only 的最大优势——<strong>极其通用</strong>。任何任务只要能表达成"输入一段文字、输出一段文字"，就能用同一个模型做。<em>翻译？"把下面这句英文翻成中文：..."</em>；<em>总结？"把下面这段总结成三句话：..."</em>；<em>写代码？"用 Python 写一个快速排序：..."</em>——统统是"续写"。这种"一个模型打天下"的通用性，让 Decoder-only 成了 <strong>2023 年后所有大模型的默认选择</strong>。<br/>
+  代表：<em>GPT-3、GPT-4、Claude、LLaMA、Qwen、DeepSeek、Kimi、豆包</em> 全部都是 Decoder-only。</p>
+
+  <h3>派系三 · Encoder-Decoder · T5/BART 家族</h3>
+  <p>还有一批模型保留了原版 Transformer 的"完整双脑"结构，代表是 Google 的 <strong>T5</strong>（Text-to-Text Transfer Transformer）和 Facebook 的 <strong>BART</strong>。它们的思路是：<mark class="key">Encoder 先读懂输入，Decoder 再基于理解生成输出</mark>——两阶段清晰分工。</p>
+  <p>这种结构天然适合<strong>"输入 → 输出"是两段不同文本</strong>的任务：</p>
+  <ul class="keylist">
+    <li><span class="k">机器翻译</span><span class="v">Encoder 读英文，Decoder 写中文——原版 Transformer 就是干这个的。</span></li>
+    <li><span class="k">文本摘要</span><span class="v">Encoder 读长文，Decoder 写短摘要。</span></li>
+    <li><span class="k">问答生成</span><span class="v">Encoder 读文档 + 问题，Decoder 写答案。</span></li>
+    <li><span class="k">语音识别</span><span class="v">Encoder 读音频特征，Decoder 写文本（Whisper 就是这种）。</span></li>
+  </ul>
+  <p>Encoder 和 Decoder 之间通过一种叫 <strong>Cross-Attention</strong> 的机制沟通——Decoder 在生成每一个词时，不仅看自己已经生成的部分（Self-Attention），还额外看一眼 Encoder 输出的全部内容（Cross-Attention）。像考生答题时不断翻回原文找依据。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 同声传译现场</span>
+    <p>Encoder-Decoder 就像同声传译——<br/>
+    <strong>Encoder</strong>：戴耳机专注听源语言（英文），构建对整句意思的完整理解；<br/>
+    <strong>Cross-Attention</strong>：翻译时随时"闪回"看一眼刚才听懂的原文点，确认没漏；<br/>
+    <strong>Decoder</strong>：用目标语言（中文）一个词一个词流畅地讲出来。<br/>
+    这个流水线在专门做"翻译/摘要"这类任务时非常自然，但通用对话反而不是它的强项——多了一层结构，反而不如 Decoder-only 灵活。</p>
+  </div>
+
+  <h3>三派对比总表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>Encoder-only</th><th>Decoder-only</th><th>Encoder-Decoder</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Attention 方向</td><td>双向</td><td>单向（掩码）</td><td>Encoder 双向 + Decoder 单向</td></tr>
+        <tr><td>核心训练目标</td><td>完形填空 (MLM)</td><td>预测下一个词 (CLM)</td><td>掩码片段填空 / 去噪</td></tr>
+        <tr><td>擅长</td><td>理解 / 分类 / 抽取</td><td>生成 / 对话 / 创作</td><td>翻译 / 摘要 / 转写</td></tr>
+        <tr><td>不擅长</td><td>写连贯长文</td><td>纯理解任务（大材小用）</td><td>灵活性略差</td></tr>
+        <tr><td>代表</td><td>BERT / RoBERTa / DeBERTa</td><td>GPT / Claude / LLaMA / Qwen / DeepSeek</td><td>T5 / BART / Whisper / mT5</td></tr>
+        <tr><td>参数规模</td><td>1 亿 ~ 10 亿</td><td>10 亿 ~ 万亿</td><td>1 亿 ~ 百亿</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>为什么现代 LLM 全是 Decoder-only</h3>
+  <p>你可能会好奇——既然 Encoder-Decoder 结构"更全面"，为什么反而是精简版的 <strong>Decoder-only</strong> 一统天下？答案有三个层面：</p>
+  <ul class="keylist">
+    <li><span class="k">通用性最强</span><span class="v">任何任务都能用"一段文本进、一段文本出"表达——Prompt 就是万能接口。分类可以问它"这是正面还是负面"，翻译可以问它"翻成中文"——一个模型什么都能干。</span></li>
+    <li><span class="k">规模化最容易</span><span class="v">结构简单（只有一半的模块），意味着扩到万亿参数时工程复杂度低。BERT 那种双向结构在超大规模下反而不稳定。</span></li>
+    <li><span class="k">In-Context Learning 涌现</span><span class="v">GPT-3 论文最惊人的发现——大到一定程度后，Decoder-only 模型不需要重新训练，只要在 prompt 里给几个例子，它就能学会新任务。这是<mark class="key">"少样本学习"能力</mark>，Encoder-only 和 Encoder-Decoder 都没这么强。</span></li>
+  </ul>
+  <p>所以从 2020 年 GPT-3 之后，几乎所有主流大模型都是 Decoder-only——OpenAI、Anthropic、Meta（LLaMA）、Google（Gemini 后期）、阿里（Qwen）、深度求索（DeepSeek）、字节（豆包/Doubao）、月之暗面（Kimi）……<em>清一色 Decoder-only</em>。<br/>
+  Encoder-only 退居"语义搜索、向量库"的幕后战场；Encoder-Decoder 主要用在专门的翻译、语音识别、摘要任务上，规模也不大。<strong>Decoder-only 就是当代 AI 的"事实标准"</strong>。</p>
+
+  <h3>一个有趣的问题 · Decoder-only 能理解吗</h3>
+  <p>有人会问：既然 BERT 用双向 Attention 才能好好理解，那 GPT 这种只能看前不能看后的架构，为什么理解能力也这么强？<br/>
+  答案藏在<strong>规模</strong>里——参数一大，Decoder-only 内部就能"迂回"完成理解。它虽然每个位置只能看前面，但它<em>预测每个下一个词</em>时，都在综合前面所有信息做判断——训练久了，每个词的内部表示就已经承载了对整句话的深度理解。<br/>
+  更妙的是：Decoder-only 生成到某个位置时，可以<mark class="key">先生成一段"思考文本"（Chain-of-Thought），再生成最终答案</mark>——相当于把"理解"这一步也变成了"生成"的一部分。这就是 2024 年 o1、DeepSeek-R1 这批推理模型的秘密。<em>用生成模拟理解</em>——一个模型解决所有问题。</p>
+
+  <h3>Encoder-only 会消失吗？· 不会，但退居幕后</h3>
+  <p>虽然大模型潮流是 Decoder-only，但 Encoder-only 并没有消失——它退居到了一个非常关键的位置：<strong>向量嵌入</strong>。<br/>
+  今天 RAG（Retrieval-Augmented Generation）系统、向量数据库、搜索引擎、推荐系统里，都需要把一段文本变成一个高质量的向量——这个活儿 Encoder 最擅长。因为它双向、专注理解、模型小、推理快，正好符合"高频、低延迟、只做理解"的场景。<br/>
+  代表：OpenAI 的 <em>text-embedding-3</em>、BAAI 的 <em>bge</em> 系列、Qwen 的 <em>gte</em> 系列——底层都是 BERT-style 的 Encoder-only。所以别以为 Encoder 死了——<mark class="key">它只是从台前走到了幕后，成了向量检索基础设施的隐形冠军</mark>。</p>
+
+  <h3>三派系一句话总结</h3>
+  <ul class="keylist">
+    <li><span class="k">Encoder-only（BERT）</span><span class="v">看得清楚、说不出来——用在"分类、抽取、搜索、嵌入"。</span></li>
+    <li><span class="k">Decoder-only（GPT）</span><span class="v">边看边说、能说会道——用在"对话、生成、推理、编程"。</span></li>
+    <li><span class="k">Encoder-Decoder（T5）</span><span class="v">先看再说、专业转写——用在"翻译、摘要、语音识别"。</span></li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>Transformer 的"左右脑"可以拆开单独用，于是有了三大派系：<mark class="key">Encoder-only 懂、Decoder-only 写、Encoder-Decoder 翻</mark>。今天的 LLM 战场，Decoder-only 一家独大——因为它足够通用、足够易扩展、还能涌现出上下文学习能力。<br/>
+    但当模型规模冲上万亿，另一个问题来了——<strong>参数越大，训练和推理成本越贵</strong>。有没有办法让"参数很多、但每次只用一小部分"？下一篇，我们看看 2024 年最火的架构——<strong>MoE 专家混合</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./07-3-multihead.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 7.3 · Multi-head 多头篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./07-5-moe.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 7.5 · MoE 专家混合篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 7.4 · Variants</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 6.2 · 模型 · Model 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./06-training-trilogy.html">第 6 章</a>
+      <span class="sep">›</span>
+      <span>§ 6.2</span>
+    </div>
+    <a href="./06-training-trilogy.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 6.2 · Sub-chapter</div>
+    <h1>模型 · Model 篇</h1>
+    <div class="cn">Model · The Brain Waiting to Be Trained</div>
+  </header>
+
+  <p class="lead">
+    数据是教材，那学生本人呢？<mark class="key">模型就是那个等着被训练的"大脑"</mark>——它长什么样、有多少神经元、初始状态如何、以什么节奏学习，全部要在动手训练之前定下来。这些选择合起来，就是一个模型的"先天条件"。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧬 挑一个"要培养的孩子"</div>
+    <p>假设你是育儿专家，一次要培养一个天才少年，摆在你面前的选择有：<br/>
+    <strong>脑容量</strong>——8B 参数？70B？还是 405B？大脑越大越聪明，但也越贵、越挑食；<br/>
+    <strong>大脑结构</strong>——是标准的 Transformer 骨架，还是 MoE 稀疏专家，还是 Mamba 状态空间？<br/>
+    <strong>初始状态</strong>——出生时神经连接是随机杂乱，还是遵循某种"黄金比例"？<br/>
+    <strong>学习节奏</strong>——每天学多少小时？学多快？多久换一批新题？<br/>
+    这些决定合起来，就叫"选架构 + 调超参"。</p>
+    <div class="link">→ 模型是<strong>先天配置</strong>；训练则是<strong>后天塑造</strong>。</div>
+  </div>
+
+  <h3>一、参数量：模型的"脑容量"</h3>
+  <p><strong>参数</strong>是神经网络里的可训练权重——每一根神经元之间的连接强度。参数量越大，理论上模型能表达的函数越复杂、能记住的知识越多。看看这几年的军备竞赛：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>参数量</th><th>发布时间</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-2</td><td>15 亿 (1.5B)</td><td>2019</td><td>当时惊为天人</td></tr>
+        <tr><td>GPT-3</td><td>1750 亿 (175B)</td><td>2020</td><td>第一次涌现</td></tr>
+        <tr><td>GPT-4</td><td>据传 1.8T (MoE)</td><td>2023</td><td>官方从未公布</td></tr>
+        <tr><td>Llama 3</td><td>8B / 70B / 405B</td><td>2024</td><td>开源天花板</td></tr>
+        <tr><td>DeepSeek-V3</td><td>671B (MoE, 37B 激活)</td><td>2024</td><td>中国开源标杆</td></tr>
+        <tr><td>Claude / Gemini</td><td>未公布</td><td>-</td><td>推测数百 B 到 T 级</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>参数量决定了模型的"知识容量上限"。但请注意：<mark class="key">参数量不是越大越好，而是要跟数据量匹配</mark>——DeepMind 提出的 Chinchilla 缩放定律指出，最优的参数/数据比例大约是 <strong>1 : 20</strong>：8B 参数最好搭配 160B token 训练；175B 参数最好用 3.5T token；否则要么"营养过剩"要么"营养不良"。</p>
+
+  <h3>二、架构选型：Transformer 一统江湖</h3>
+  <p>模型的"骨架"叫<strong>架构（architecture）</strong>。从 2017 年 Transformer 论文之后，几乎所有主流大模型都是 Transformer 变体：</p>
+  <ul class="keylist">
+    <li><span class="k">Decoder-Only</span><span class="v">GPT 系列、Llama、Claude、Gemini——最主流，专攻生成任务。</span></li>
+    <li><span class="k">Encoder-Only</span><span class="v">BERT 系列——擅长理解和分类，但已经被取代得差不多。</span></li>
+    <li><span class="k">Encoder-Decoder</span><span class="v">T5、Flan-T5——机器翻译、摘要任务的经典结构。</span></li>
+    <li><span class="k">MoE 稀疏专家</span><span class="v">Mixtral、DeepSeek-V3、GPT-4——总参数超大，但每次只激活一小部分，性价比高。</span></li>
+    <li><span class="k">Mamba / SSM</span><span class="v">2024 新势力——试图挑战 Transformer 的长序列瓶颈，但尚未成主流。</span></li>
+  </ul>
+  <p>为什么架构选型这么重要？因为不同架构对同样的数据，学到的东西完全不同。就像让同一个孩子分别用"死记硬背"和"理解推导"两种方法学数学，最终的能力差别巨大。<strong>Transformer 之所以赢，就是因为它的"注意力机制"特别适合语言这种长距离依赖的数据</strong>——这个我们下一章会详细讲。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 模型架构 = 楼房结构</span>
+    <p>如果说训练数据是砖头，那模型架构就是<strong>建筑蓝图</strong>。同样一堆砖，你按四合院图纸盖，就是四合院；按摩天大楼图纸盖，就是 100 层高楼。Transformer 就是当代 AI 世界里"最靠谱的摩天大楼蓝图"——扎实、可扩展、几乎所有名楼都照它盖。</p>
+  </div>
+
+  <h3>三、权重初始化：出生时的"起点"</h3>
+  <p>模型架构定了，参数量定了——但每一个参数的初始值该设成多少？全设成 0 行不行？答案是：<strong>绝对不行</strong>。如果所有参数都是 0，那所有神经元的输出都相同，反向传播的梯度也都相同——网络永远学不出任何有意义的东西，这叫"对称性问题"。</p>
+  <p>那随机初始化行不行？可以，但也有讲究：如果初始值太大，激活函数会饱和（sigmoid、tanh），梯度消失；如果太小，信号一层层传下去就淹没了。所以业界发明了几种精心设计的初始化方法：</p>
+  <ul class="keylist">
+    <li><span class="k">Xavier / Glorot 初始化</span><span class="v">适合 tanh / sigmoid 激活函数，让每层输入输出的方差保持一致。</span></li>
+    <li><span class="k">He / Kaiming 初始化</span><span class="v">适合 ReLU 系列，是现代深度网络的默认选择。</span></li>
+    <li><span class="k">正态 / 均匀分布</span><span class="v">两种采样方式，配合上面的方差控制。</span></li>
+  </ul>
+  <p>本质上，好的初始化就是给模型一个<strong>"不偏不倚的起点"</strong>——像跑步比赛前所有选手站在同一条起跑线，谁也不比谁多占一步。</p>
+
+  <h3>四、超参数：训练前的"作息表"</h3>
+  <p>还有一堆参数不属于模型本身，但决定训练的过程，叫<strong>超参数（hyperparameters）</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>超参数</th><th>含义</th><th>典型值</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>学习率 Learning Rate</td><td>每步权重更新的步长</td><td>1e-5 ~ 1e-3</td></tr>
+        <tr><td>批大小 Batch Size</td><td>每次训练用多少条样本</td><td>32 ~ 4096（大模型上百万）</td></tr>
+        <tr><td>训练轮数 Epochs</td><td>整个数据集过几遍</td><td>大模型通常只过 1-3 遍</td></tr>
+        <tr><td>层数 Layers</td><td>Transformer 的深度</td><td>12 (GPT-2) ~ 126 (Llama 405B)</td></tr>
+        <tr><td>隐藏维度 Hidden Size</td><td>每层的"宽度"</td><td>768 ~ 16384</td></tr>
+        <tr><td>注意力头数 Heads</td><td>并行的注意力子空间数</td><td>12 ~ 128</td></tr>
+        <tr><td>Dropout</td><td>训练时随机丢弃的比例</td><td>0 ~ 0.1</td></tr>
+        <tr><td>Warmup Steps</td><td>学习率从 0 慢慢升起的步数</td><td>数百到数千</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>超参数为什么重要？举一个真实故事：<mark class="key">同一个模型架构，同一份数据，学习率从 3e-4 改到 3e-5，最终效果可能相差 5 个 MMLU 百分点</mark>。这就是为什么大模型团队要花几百万美元跑"超参搜索"——每一次实验都是烧钱，但值得。</p>
+
+  <h3>五、层数 vs 宽度：深还是宽</h3>
+  <p>一个有趣的问题：给定同样的参数预算（比如 10B），是把网络堆得更深（100 层每层 1000 维），还是更宽（20 层每层 5000 维）？经验规律是：<strong>先增宽、再增深</strong>——太深会梯度消失、训练不稳定；太宽会计算不高效。Llama 3 8B 是 32 层 × 4096 维；70B 是 80 层 × 8192 维——你能看出比例上的讲究。</p>
+
+  <h3>六、"配置一个模型"的完整清单</h3>
+  <p>把上面这些放在一起，训练一个大模型前，工程师要在一张 yaml 配置里定义大概这些东西：</p>
+  <ul class="keylist">
+    <li><span class="k">架构选择</span><span class="v">Decoder-only / MoE / 是否 RoPE / 是否 GQA</span></li>
+    <li><span class="k">规模三要素</span><span class="v">层数、隐藏维度、注意力头数</span></li>
+    <li><span class="k">初始化方案</span><span class="v">He / Xavier / 自定义</span></li>
+    <li><span class="k">优化器</span><span class="v">AdamW / Adafactor（下一篇讲）</span></li>
+    <li><span class="k">学习率调度</span><span class="v">Warmup + Cosine Decay</span></li>
+    <li><span class="k">分布式策略</span><span class="v">数据并行 / Tensor 并行 / Pipeline 并行</span></li>
+    <li><span class="k">精度</span><span class="v">FP32 / BF16 / FP8——影响速度和显存</span></li>
+  </ul>
+  <p>这张配置表，就是这个"待培养的天才少年"的完整先天档案。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>模型是训练开始之前，就要决定的一切"先天"——多少参数、什么架构、如何初始化、怎么调节奏。这些配置里的每一个数字，都可能让最终效果相差几个百分点。<mark class="key">好的模型 = 合适的架构 × 匹配的参数量 × 合理的初始化 × 精调的超参数</mark>。做完这些，你才拥有了一个"值得砸算力去训练"的胚子。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./06-1-dataset.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 6.1 · 数据 Dataset 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./06-3-loss.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 6.3 · 损失 & 梯度下降篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 6.2 · Model</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

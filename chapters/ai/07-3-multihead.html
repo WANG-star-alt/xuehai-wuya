@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 7.3 · Multi-head 多头篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./07-transformer.html">第 7 章</a>
+      <span class="sep">›</span>
+      <span>§ 7.3</span>
+    </div>
+    <a href="./07-transformer.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 7.3 · Sub-chapter</div>
+    <h1>Multi-head · 多头注意力篇</h1>
+    <div class="cn">Multi-Head Attention</div>
+  </header>
+
+  <p class="lead">
+    上一篇我们讲清楚了 QKV——一组"提问、展示、贡献"就能完成一次注意力运算。但一组 QKV 只能同时看<em>一种</em>相关性；而语言里同时并存的相关性有好多种。于是 Transformer 采用了一个简单粗暴又极其有效的办法——<mark class="key">"一组不够，就并行搞很多组"</mark>。这就是 Multi-Head Attention，多头注意力。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">👨‍⚕️ 医院里的"多科室会诊"</div>
+    <p>一个复杂病人被送进医院，主治医生看不太准——怎么办？<strong>叫多科室会诊</strong>。<br/>
+    心内科医生看心电图、看血压；<br/>
+    神经科医生看脑 CT、看反射；<br/>
+    内分泌科医生看血糖、看激素；<br/>
+    影像科医生看片子、看结构异常……<br/>
+    <em>同一个病人，几个专家从不同角度各看一遍</em>——每个人只看自己擅长的那一面，最后主治医生把所有意见汇总，得出一个综合诊断。<br/>
+    Multi-Head Attention 就是这场会诊——每个"头"是一个不同角度的专家。</p>
+    <div class="link">→ <strong>多头 = 多个 Attention 并行</strong>，每个头看句子的<em>不同侧面</em>，最后综合起来。</div>
+  </div>
+
+  <h3>为什么一组 QKV 不够</h3>
+  <p>回想一下上一篇的例子——"猫追球"里的"追"，通过一次 QKV 运算融合了"猫"和"球"两个词的信息。但仔细想想，语言里的相关性其实是<strong>多层次并存</strong>的：</p>
+  <ul class="keylist">
+    <li><span class="k">语法关系</span><span class="v">"追"和"猫"是主谓关系、"追"和"球"是动宾关系。谁是主语、谁是宾语，是纯语法层面的。</span></li>
+    <li><span class="k">语义关系</span><span class="v">"追"是一个动作动词，通常伴随"运动"、"目标"、"猎捕"——这是语义层面的联想。</span></li>
+    <li><span class="k">指代关系</span><span class="v">如果句子里有"它"，就要判断"它"指谁——这是指代消解层面的。</span></li>
+    <li><span class="k">情感/风格关系</span><span class="v">"追"这个动作出现在恐怖故事和萌宠故事里，语气完全不同——这是情感层面的。</span></li>
+  </ul>
+  <p>一组 QKV 的<code>W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub></code>矩阵，训练完之后只能学会<em>一种</em>"看法"——比如可能主要学到了语法关系。如果你希望模型同时懂语义、指代、情感……<mark class="key">你就需要好几组独立的 QKV，让它们各自学一个侧面</mark>。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一双眼睛 vs 复眼</span>
+    <p>一组 QKV 就像一双人眼——只有一个焦点，只能同时清晰地看一个东西。<br/>
+    多头 Attention 就像蜻蜓的<strong>复眼</strong>——几百个小眼同时看，每个小眼捕捉一个角度，最后合成一个全方位的视野。<br/>
+    机器要理解人类语言的复杂性，需要的正是这种<em>"复眼式"的注意力</em>——同时看语法、语义、指代、情感、语气……</p>
+  </div>
+
+  <h3>多头是怎么做的 · 三步走</h3>
+  <p>假设向量维度是 <code>d = 512</code>，我们想要 <code>h = 8</code> 个头。Multi-Head Attention 的运作是这样的：</p>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 切分维度 · 512 → 8×64</h4>
+      <p>每个头分到一份属于自己的"小视野"——总维度 512 切成 8 份，每份 64 维。<br/>
+      每个头有自己的一套 <code>W<sub>Q</sub><sup>i</sup>, W<sub>K</sub><sup>i</sup>, W<sub>V</sub><sup>i</sup></code>——独立训练、独立学习。</p>
+    </div>
+    <div class="step">
+      <h4>2. 并行做 8 次 Attention</h4>
+      <p>每个头拿自己的 QKV 独立跑一遍完整的 <em>softmax(QKᵀ/√d)·V</em>——各自得到一个 64 维的输出。<br/>
+      注意：这 8 次运算是<strong>完全并行</strong>的，不互相干扰、不互相等待。</p>
+    </div>
+    <div class="step">
+      <h4>3. Concat + 线性投影</h4>
+      <p>把 8 个 64 维的输出<strong>拼接（Concat）</strong>回一个 512 维向量。<br/>
+      再乘以一个可学习的输出矩阵 <code>W<sub>O</sub></code>——做一次"融合"，把 8 个头看到的东西综合成一个统一的表示。<br/>
+      这就是 Multi-Head 的最终输出。</p>
+    </div>
+  </div>
+
+  <p>公式化写下来是这样：</p>
+  <div class="callout">
+    <span class="tag">公式 · Multi-Head Attention</span>
+    <p style="text-align:center;font-size:1.05em;"><strong>MultiHead(Q, K, V) = Concat(head<sub>1</sub>, ..., head<sub>h</sub>) · W<sub>O</sub></strong><br/>
+    其中 <em>head<sub>i</sub> = Attention(Q·W<sub>Q</sub><sup>i</sup>, K·W<sub>K</sub><sup>i</sup>, V·W<sub>V</sub><sup>i</sup>)</em></p>
+    <p>翻译成人话：<em>每个头做一次独立的注意力 → 全部拼起来 → 再用一个线性层融合</em>。</p>
+  </div>
+
+  <h3>每个头到底在关注什么 · 可视化告诉你</h3>
+  <p>2017 年论文发表后，研究者们做了大量 Attention 权重的可视化实验，得到的结论非常有意思——<strong>不同的头，真的自动学会了看不同的东西</strong>，而且这完全是<em>模型自己学出来的</em>，没有人告诉它"你这个头去看语法"。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>头的类型</th><th>典型学到的模式</th><th>例子</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>指代头</td><td>把"它/他/她/this/that"连到前文的具体名词</td><td>"猫追球，<em>它</em>抓到了"——"它"→"猫"</td></tr>
+        <tr><td>语法头</td><td>把动词连到它的主语和宾语</td><td>"我吃苹果"——"吃"→"我"、"吃"→"苹果"</td></tr>
+        <tr><td>位置头</td><td>关注邻近词（左右一两个）</td><td>形成局部 N-gram 特征</td></tr>
+        <tr><td>语义头</td><td>把语义相似的词联结起来</td><td>"医生"←→"护士"、"手术"、"病人"</td></tr>
+        <tr><td>停用词头</td><td>盯着"the/a/of/的/了"这些高频功能词</td><td>用于构造句法骨架</td></tr>
+        <tr><td>句末头</td><td>都把注意力扔到句末标点</td><td>作为"默认锚点"，是一种冗余保护</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>让人惊讶的是：<em>这些分工完全是训练过程中自发涌现出来的</em>。研究者们只是把 8 组 QKV 并排放在一起、扔给梯度下降，结果它们就自动分化出了明确的"专业身份"——像一个自组织的小型专家团队。</p>
+
+  <h3>典型配置 · GPT/BERT/DeepSeek 用多少头</h3>
+  <p>现代大模型的头数已经远远超过 2017 年论文里的 8 个。看一下几个代表模型的配置：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>层数</th><th>每层的头数</th><th>每头维度</th><th>总参数量</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Transformer 原论文</td><td>6 (Enc)+6 (Dec)</td><td>8</td><td>64</td><td>~65M</td></tr>
+        <tr><td>BERT-base</td><td>12</td><td>12</td><td>64</td><td>110M</td></tr>
+        <tr><td>BERT-large</td><td>24</td><td>16</td><td>64</td><td>340M</td></tr>
+        <tr><td>GPT-2</td><td>48</td><td>25</td><td>64</td><td>1.5B</td></tr>
+        <tr><td>GPT-3</td><td>96</td><td><strong>96</strong></td><td>128</td><td>175B</td></tr>
+        <tr><td>LLaMA-2 70B</td><td>80</td><td>64</td><td>128</td><td>70B</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>GPT-3 那个 <strong>"96 层 × 96 头"</strong>的怪兽——你可以想象一下：每个词都要经过 96 层，每层同时有 96 位"专家"从不同角度看它。而且这 96 层的头数各自不同、独立学习——最终形成了一个<mark class="key">近乎万人规模的隐性专家团队</mark>，共同解读你输入的每一个 Token。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 会诊团队规模</span>
+    <p>1 个头 = 一个全科医生看诊；<br/>
+    8 个头 = 一支小型医疗组（原论文规模）；<br/>
+    96 个头（GPT-3） = 一家<strong>三甲医院整个专家团</strong>齐上——心内、神内、内分泌、影像、检验、外科……全都并行看你这一份病历。<br/>
+    每层结束后，主治医生（W<sub>O</sub>）把各科室的意见综合成一份诊断，然后送进下一层继续<em>再一轮 96 科室会诊</em>——一共 96 层。<br/>
+    这就是为什么 GPT-3 能"什么都懂一点"——它内部就是几千个隐性专家的联合运算。</p>
+  </div>
+
+  <h3>多头带来的三个好处</h3>
+  <ul class="keylist">
+    <li><span class="k">表达能力翻倍</span><span class="v">同一个词能被同时"多角度"编码——语法、语义、指代、情感一起进入表示。</span></li>
+    <li><span class="k">冗余容错</span><span class="v">一个头没学好没关系，其他头能补上——训练更稳定。</span></li>
+    <li><span class="k">几乎不加成本</span><span class="v">因为总维度不变（512 = 8×64），多头的计算量和一头几乎一样——只是把矩阵重塑一下而已，GPU 并行照跑不误。</span></li>
+  </ul>
+
+  <h3>一个常见误解 · 头越多越好？</h3>
+  <p>不一定。研究者们做过消融实验：<strong>头数并不是越多越好</strong>——头数太多时，很多头会变成"冗余的、可以直接砍掉"。实际上很多论文（Voita 等 2019）发现：<em>把 BERT 里 80% 的头剪掉，模型效果几乎不变</em>。<br/>
+  这说明当代大模型的多头设计里有大量"备胎"——它们没有学到独特的模式，只是训练时的随机产物。<mark class="key">真正做事的核心头，可能只有那么十几个</mark>。这个现象也推动了后来一系列"注意力头剪枝"、"稀疏 Attention"的研究方向。</p>
+
+  <h3>MQA 和 GQA · 现代大模型的多头新变体</h3>
+  <p>2023 年之后，研究者又发现了多头设计的一个新问题——<strong>推理时 K/V 缓存太大</strong>。生成型任务（GPT 那种）在推理时，会把之前所有 Token 的 K 和 V 保存下来，供后面每一步查询——这就是所谓的 <em>KV Cache</em>。头数一多、序列一长，KV Cache 就爆炸——一次对话动辄占几十 GB 显存。</p>
+  <p>解决方案是让多头共享 K/V：</p>
+  <ul class="keylist">
+    <li><span class="k">MHA（原始多头）</span><span class="v">每个头有自己的 Q、K、V——最灵活也最占显存。</span></li>
+    <li><span class="k">MQA · Multi-Query Attention</span><span class="v">所有头共用一套 K、V，只有 Q 各自独立——显存占用直接降到 1/头数。<em>PaLM、Falcon 使用</em>。</span></li>
+    <li><span class="k">GQA · Grouped-Query Attention</span><span class="v">折中方案——把头分成几组，每组共用一套 K、V。<em>LLaMA-2、Qwen、DeepSeek 广泛使用</em>——是当前的事实标准。</span></li>
+    <li><span class="k">MLA · Multi-head Latent Attention</span><span class="v">DeepSeek-V2/V3 提出的更激进方案——把 KV 压缩到一个低秩隐空间，进一步降低显存占用。</span></li>
+  </ul>
+  <p>这些变体不改变多头 Attention 的核心思想——<mark class="key">多角度并行看句子</mark>——但都在共享程度上做了取舍，用少量效果损失换取巨大的推理效率提升。这就是为什么今天的 LLM 能在一张卡上跑 128K 的上下文。</p>
+
+  <h3>直观感受一下 · 三个真实注意力头</h3>
+  <p>放一段 BERT 论文附录里可视化的例子——句子是"<em>I went to the store to buy some milk</em>"，看看不同头都在做什么：</p>
+  <ul class="keylist">
+    <li><span class="k">头 A（介词头）</span><span class="v">"to" 强烈关注 "went"、"store"、"buy" ——把介词跟它连接的动词、名词绑定。</span></li>
+    <li><span class="k">头 B（宾语头）</span><span class="v">"buy" 强烈关注 "milk"——把动词跟它的宾语连起来，形成动宾结构。</span></li>
+    <li><span class="k">头 C（主语头）</span><span class="v">"went"、"buy" 都强烈关注 "I" ——把动作跟主语连起来。</span></li>
+  </ul>
+  <p>你看，这三个头之间的分工非常清晰——各管一个语法层面。而这一切都是<em>训练时自动涌现</em>的，没有任何人写过"你这个头去学介词连接"这样的规则。<strong>多头 Attention 的自组织能力，是 Transformer 最迷人的性质之一</strong>。</p>
+
+  <h3>Multi-Head 是一种"廉价的多样性"</h3>
+  <p>回过头来审视 Multi-Head 的设计——你会发现它是深度学习史上少见的"<strong>零成本换效果</strong>"的巧妙设计。<br/>
+  想想看：如果你要让模型学会关注多种关系，直觉上应该给模型加更多参数、加更多层、加更多计算。但 Multi-Head 做的事却是——<mark class="key">在不增加计算量的前提下，让参数"分工"</mark>。总维度 512，无论切成 1 头还是 8 头，矩阵乘法的总量是一样的；但切成 8 头之后，模型的"表达角度"翻了 8 倍。<br/>
+  这种"用同样的钱办 8 倍的事"，在工程上极其罕见——它是 Transformer 能在 2017 年一夜爆红的关键之一。<em>没有 Multi-Head，Attention 的表达能力会大打折扣，也就没有后来的 GPT 和 BERT</em>。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>Multi-Head 是 Attention 的"复眼版本"——<mark class="key">把一组 QKV 变成多组并行，每组各看一个侧面，最后拼接融合</mark>。它让 Transformer 具备了同时理解语法、语义、指代、情感的能力，而计算成本却几乎不变。<br/>
+    到这里，你已经拿下了 Transformer 的核心运算模块——QKV、缩放、Softmax、多头、拼接投影。下一篇，我们不再谈单层运算，而是把镜头拉远，看看整个 Transformer 分化出了哪<strong>三大派系</strong>——BERT、GPT、T5。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./07-2-qkv.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 7.2 · QKV 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./07-4-variants.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 7.4 · Encoder / Decoder 派系篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 7.3 · Multi-Head</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

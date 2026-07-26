@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 6.1 · 数据 · Dataset 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./06-training-trilogy.html">第 6 章</a>
+      <span class="sep">›</span>
+      <span>§ 6.1</span>
+    </div>
+    <a href="./06-training-trilogy.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 6.1 · Sub-chapter</div>
+    <h1>数据 · Dataset 篇</h1>
+    <div class="cn">Dataset · The Textbook of AI</div>
+  </header>
+
+  <p class="lead">
+    如果说训练一个 AI 是"培养一个学生"，那么<mark class="key">数据集就是这个学生的所有教材、习题册和高考真题</mark>。教材有多厚、多好、多全，直接决定了这个学生能考到什么水平——GPT-4 之所以是 GPT-4，一半功劳要归于它读过的 13 万亿 token 文本。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📚 两个小孩谁能考上清华</div>
+    <p>小 A 家里只有一本破旧的《新华字典》，翻来覆去读了十年；<br/>
+    小 B 家里有整整一屋子藏书——从《红楼梦》到《费曼物理》，从《史记》到《三体》，还包括十年份的高考真题与错题本。<br/>
+    十年后高考，你猜谁分数更高？<br/>
+    再想想：如果小 B 那屋子书里，混进了 30% 的乱码和错别字，他还能不能考出好成绩？</p>
+    <div class="link">→ 训练 AI 的数据也一样：<strong>规模、质量、多样性</strong>缺一不可。</div>
+  </div>
+
+  <h3>一、规模（Scale）：为什么大模型需要 T 级 token</h3>
+  <p>先建立一个直观感受：<strong>1 token ≈ 0.75 个英文单词 ≈ 1.5 个中文汉字</strong>。GPT-3 训练用了大约 3000 亿 token；GPT-4 据传用了 13 万亿 token；Llama 3 405B 用了 15 万亿 token。这是什么概念？把维基百科所有语言的所有版本加起来，也只有几百亿 token 而已——现代大模型读过的文字量，是维基百科的<strong>几百倍</strong>。</p>
+  <p>为什么需要这么多？因为语言里的模式极其稀疏。"苹果掉在地上"这样的句子出现几百万次，模型就学会了；但"用 Rust 写一个支持并发的 Web 服务器并处理 SIGTERM"这样的组合，可能整个互联网上只有几百个真实样本——模型必须见过足够多的"边角料"，才能在真正遇到冷门问题时不至于胡编乱造。<mark class="key">数据规模上去了，模型才可能"见多识广"</mark>。</p>
+
+  <h3>二、质量（Quality）：垃圾进，垃圾出</h3>
+  <p>但规模不是万能的。原始互联网数据里充斥着广告、乱码、机翻、色情、暴力、无意义的重复段落——如果不做清洗直接喂给模型，训出来的东西也会是"网络垃圾生成器"。所以现代大模型的数据流水线里，<strong>清洗（cleaning）</strong>和<strong>去重（deduplication）</strong>是最关键的两步。</p>
+  <p>清洗一般包括：语言识别（把非目标语言剔除）、去 HTML 标签、正则过滤脏话、启发式规则去广告、用一个"质量分类器"打分并筛掉低分文本。去重则更精细——如果同一段文字在数据集里出现了 1000 次（比如"cookie 政策"），模型会过度记忆它，反而伤害泛化能力。业界的共识是：<strong>10T 的干净数据，胜过 100T 的垃圾数据</strong>。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 米其林大厨与食材</span>
+    <p>训练 AI 就像做米其林菜。同样一位大厨（模型架构），给他一堆烂菜叶子（脏数据），做出来是黑暗料理；给他新鲜有机食材（干净数据），做出来是艺术品。<strong>数据清洗工程师，是大模型时代真正的"选菜师"</strong>——工资高、活儿累、成果隐形，但决定了最终的味道。</p>
+  </div>
+
+  <h3>三、多样性（Diversity）：偏科的模型没未来</h3>
+  <p>规模够、质量高，还不够——数据的<strong>分布</strong>也很重要。如果 90% 的数据都是英文新闻，那模型的中文能力会很差；如果全是维基百科式的严肃说明文，那模型写诗、聊天、编代码就会显得很生硬。所以数据配比是一门玄学：Llama 3 论文里透露，代码数据占比约 17%、数学数据占比约 6%、多语言占比约 8%——每一份的多少，都是团队反复实验调出来的。</p>
+  <p>多样性还体现在<strong>领域覆盖</strong>上。现代大模型的数据一般包含：网页（Common Crawl）、书籍（图书馆扫描）、代码（GitHub）、学术论文（arXiv、PubMed）、对话（Reddit、论坛）、维基类知识库、多语言语料——每一类给模型带来不同的能力。<mark class="key">代码数据尤其重要</mark>——研究发现，加入代码语料后，模型的逻辑推理能力会显著上升，即使问题本身跟代码无关。</p>
+
+  <h3>四、训练集 / 验证集 / 测试集：为什么要一分为三</h3>
+  <p>手上有 1000 万条数据，绝不能全拿来训练——必须切成三份：</p>
+  <ul class="keylist">
+    <li><span class="k">训练集 Training Set</span><span class="v">约 90-98%，模型每天"上课"用的教材，直接用来调整权重。</span></li>
+    <li><span class="k">验证集 Validation Set</span><span class="v">约 1-5%，模型看不到但工程师看得到——用来调超参数、判断"要不要停止训练"。类似月考。</span></li>
+    <li><span class="k">测试集 Test Set</span><span class="v">约 1-5%，训练完成后<strong>只用一次</strong>——评估最终能力。类似真正的高考。</span></li>
+  </ul>
+  <p>为什么要严格分开？因为如果模型"提前看过高考题"，考出的分就没意义了——这叫<strong>数据泄漏（data leakage）</strong>，是机器学习里最忌讳的错误。想象一下：如果一个学生的期末考试题目他早就练过 100 遍，那 100 分不能证明他真的学会了。</p>
+
+  <h3>五、数据标注（Annotation）：人工在幕后</h3>
+  <p>预训练用的是海量无标签文本，但到了 SFT 和 RLHF 阶段（下一章讲），就需要<strong>人工标注</strong>了——需要真人写出"好的回答"，或者对两个回答做偏好选择。OpenAI、Anthropic、Meta 都雇佣了成千上万的标注员，其中很多是博士、律师、医生——因为要标注专业问题的高质量答案，必须请专业人士。</p>
+  <p>标注是<strong>数据金字塔的顶端</strong>：数量最少（可能只有几万到几十万条），单价最高（一条好答案可能要 10 美元），但对模型效果的影响巨大。业界普遍认为，从 GPT-3.5 到 GPT-4 的飞跃，一半在于预训练规模，另一半就在于对齐数据的质量。</p>
+
+  <h3>六、常见公开数据集速览</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>数据集</th><th>规模</th><th>用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Common Crawl</td><td>PB 级网页</td><td>预训练主力</td></tr>
+        <tr><td>C4 / RefinedWeb</td><td>数百 GB 清洗后网页</td><td>Google/Falcon 用</td></tr>
+        <tr><td>The Pile</td><td>825 GB 多领域文本</td><td>开源预训练</td></tr>
+        <tr><td>RedPajama</td><td>30T token</td><td>Llama 类模型</td></tr>
+        <tr><td>Wikipedia</td><td>各语言 GB 级</td><td>知识来源</td></tr>
+        <tr><td>GitHub / The Stack</td><td>数 TB 代码</td><td>代码能力</td></tr>
+        <tr><td>ImageNet</td><td>1400 万张图片</td><td>视觉基准</td></tr>
+        <tr><td>LAION-5B</td><td>50 亿图文对</td><td>Stable Diffusion 训练</td></tr>
+        <tr><td>MMLU</td><td>1.6 万道题</td><td>学科能力评测</td></tr>
+        <tr><td>HumanEval</td><td>164 道编程题</td><td>代码能力评测</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>七、数据的未来：合成数据崛起</h3>
+  <p>2024 年之后，一个明显趋势是<strong>合成数据（synthetic data）</strong>比重上升。真人写的高质量文本毕竟有限，而已有的强模型（如 GPT-4）可以"产出"大量高质量文本，再用来训练下一代模型——Phi-3、Llama 3.1、DeepSeek-V3 都大量使用了合成数据。这有点像"武学门派的秘籍能自动生成新的招式"，也带来一个哲学问题：<mark class="key">当模型开始靠自己产生的数据训练自己，进步会不会有天花板？</mark>这是接下来几年 AI 领域最有趣的问题之一。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>数据是 AI 的教材。<strong>规模决定见识、质量决定品味、多样性决定通才</strong>。训练集用来学、验证集用来调、测试集用来考——一分为三是铁律。到了对齐阶段，人工标注的每一条数据都价值千金。别再迷信"模型越大越强"，真正的秘密在于——<strong>你喂给它的是什么</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./06-training-trilogy.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">第 6 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./06-2-model.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 6.2 · 模型 · Model 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 6.1 · Dataset</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

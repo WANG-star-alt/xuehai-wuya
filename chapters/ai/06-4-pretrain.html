@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 6.4 · 预训练 · Pre-training 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./06-training-trilogy.html">第 6 章</a>
+      <span class="sep">›</span>
+      <span>§ 6.4</span>
+    </div>
+    <a href="./06-training-trilogy.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 6.4 · Sub-chapter</div>
+    <h1>预训练 · Pre-training 篇</h1>
+    <div class="cn">Pre-training · Burning Compute Into a Base Model</div>
+  </header>
+
+  <p class="lead">
+    数据准备好了、模型架构定了、损失和梯度机器也搭起来了——现在轮到<mark class="key">"烧算力"环节</mark>。所谓预训练，就是让一个刚出生的模型，狂读几十万亿 token 的文本，练成一个"什么都懂一点"的通才基座。这一步单次成本从数千万美元到数亿美元不等——不夸张地说，它是人类史上最贵的一项数学运算。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔥 让一个婴儿读完全人类的书</div>
+    <p>想象一下：把整个互联网印成书，堆起来能到月球那么高；<br/>
+    你抓来一个刚出生的婴儿，把这些书全塞给他读——不问理解、不考中心思想、不要求写作文；<br/>
+    只有一个游戏规则：<strong>看到一段话，猜下一个字是什么</strong>——猜对给糖，猜错打手心。<br/>
+    读完几十万亿字后，这个婴儿虽然还不会"聊天"，但对语言、事实、常识、代码、数学，都建立了一种朦胧的直觉。<br/>
+    这就是"预训练"要干的事——把整个数字世界压缩进几百 GB 的参数里。</p>
+    <div class="link">→ 预训练 = <strong>大量无监督学习</strong> + <strong>预测下一个 token</strong>。</div>
+  </div>
+
+  <h3>一、预训练的目标：预测下一个 token</h3>
+  <p>整个大语言模型的预训练，本质上只做<strong>一件事</strong>：给定一段前文，预测下一个 token 是什么。这个任务学名叫 <strong>Next Token Prediction（NTP）</strong>，或者<strong>自回归语言建模</strong>。听起来很朴素，但威力惊人——因为要"猜对下一个字"，模型必须理解语法、常识、事实、逻辑、风格、乃至于一定程度的推理。</p>
+  <p>举个例子。要猜出"<em>爱因斯坦提出的著名理论叫 ___</em>"里的"相对论"，模型必须<strong>知道爱因斯坦是谁</strong>；要猜出"<em>2 + 3 × 4 = ___</em>"里的 14，模型必须<strong>会数学的运算优先级</strong>；要猜出"<em>用 Python 写一个快排：def quicksort(arr): if len(arr) <= 1: return ___</em>"里的 arr，模型必须<strong>懂递归和边界条件</strong>。<mark class="key">"预测下一个字"这个游戏，把无数种能力都逼了出来</mark>。</p>
+
+  <h3>二、掩码语言模型（MLM）：BERT 的另一条路</h3>
+  <p>除了预测下一个 token，还有另一种预训练目标：<strong>掩码语言模型（Masked Language Model）</strong>——BERT 用的就是这种。做法是：从一句话里随机遮住 15% 的词，让模型来"填空"。比如"我 今天 吃了 [MASK]，很好吃"——模型要猜 [MASK] 是"苹果"、"面条"还是"火锅"。</p>
+  <p>MLM 的优势是"看得到左右两边的上下文"，理解任务更强；NTP 的优势是天然适合"生成"任务，能写出流畅文本。所以：<strong>BERT 家族擅长理解、GPT 家族擅长生成</strong>——最终生成任务的经济价值更大，NTP 一派赢下了大模型时代。</p>
+
+  <h3>三、数据准备：从 PB 级到干净 token</h3>
+  <p>预训练的第一步不是模型，而是<strong>做数据流水线</strong>。以 Llama 3 为例，团队从数十 PB 的 Common Crawl 原始网页起步，经过下面这一整套流程，才得到最终的 15T token 训练集：</p>
+  <ul class="keylist">
+    <li><span class="k">1. 语言过滤</span><span class="v">用语言分类器保留目标语言（英文 + 少量多语）。</span></li>
+    <li><span class="k">2. 质量分类</span><span class="v">训一个"高质量文本判别器"，只保留优质页面。</span></li>
+    <li><span class="k">3. 去重</span><span class="v">从字符级到文档级的多层去重——重复内容严重伤害模型。</span></li>
+    <li><span class="k">4. 内容过滤</span><span class="v">去除色情、暴力、涉隐私、涉版权的内容。</span></li>
+    <li><span class="k">5. 分词</span><span class="v">用 BPE / SentencePiece 把文本切成 token。</span></li>
+    <li><span class="k">6. 混合配比</span><span class="v">按预设比例混合网页、代码、书籍、数学、多语言等。</span></li>
+    <li><span class="k">7. 打包 shard</span><span class="v">切成便于分布式读取的固定大小分片。</span></li>
+  </ul>
+  <p>整个流水线常常需要一支专门的数据团队，用几个月的时间跑几千张 CPU 完成——<strong>数据这一环，就已经是几百万美元的投入</strong>。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 烧钱级别的"人类高考"</span>
+    <p>如果说 SFT 是"给学生额外补 3 个月课"，那么预训练就是"从零把一个婴儿养到高考完"。前者一次几万到几十万美元；后者一次几千万到几亿美元。<strong>为什么这么贵？</strong>——因为要租下上万张顶级 GPU 卡（H100 一张 3-4 万美元），连续跑几个月，电费本身就是天文数字。GPT-4 训练成本据估计 <strong>1 亿美元级</strong>；Gemini Ultra 传闻 <strong>1.9 亿美元</strong>；Llama 3.1 405B 花了 <strong>16000 张 H100 跑了 54 天</strong>——粗略折算电费加卡钱 2-4 亿美元。</p>
+  </div>
+
+  <h3>四、算力成本：现代 AI 军备竞赛的门票</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>训练算力</th><th>估计成本</th><th>训练时间</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-3 (2020)</td><td>3.14 × 10²³ FLOPs</td><td>~ 400 万美元</td><td>数月</td></tr>
+        <tr><td>PaLM (2022)</td><td>2.5 × 10²⁴ FLOPs</td><td>~ 1000+ 万美元</td><td>数月</td></tr>
+        <tr><td>GPT-4 (2023)</td><td>~ 2 × 10²⁵ FLOPs</td><td>~ 1 亿美元</td><td>~ 3 月</td></tr>
+        <tr><td>Gemini Ultra (2023)</td><td>~ 5 × 10²⁵ FLOPs</td><td>~ 1.9 亿美元</td><td>数月</td></tr>
+        <tr><td>Llama 3.1 405B (2024)</td><td>3.8 × 10²⁵ FLOPs</td><td>~ 数亿美元</td><td>54 天 × 16000 H100</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么算力这么贵？因为一次预训练要跑<strong>几百万亿次浮点运算</strong>——每算完一个 batch，还要在几万张卡之间做梯度同步、参数更新。加上电费、水冷、场地、工程师工资，一个前沿大模型团队一年的开销轻松突破 10 亿美元。这就是为什么真正能"从零训基座模型"的公司全球不超过 20 家——它是<strong>科技公司里最贵的一张门票</strong>。</p>
+
+  <h3>五、涌现能力（Emergent Abilities）：量变到质变</h3>
+  <p>预训练最神奇的现象叫<strong>涌现（emergence）</strong>——某些能力在小模型上完全没有，但当模型规模跨过某个阈值，能力"突然"出现了。这不是渐进上升，而是几乎从 0 跳到 1。已经观察到的涌现能力包括：</p>
+  <ul class="keylist">
+    <li><span class="k">Few-shot 学习</span><span class="v">给几个例子，模型就能仿写——小模型完全做不到，175B 突然会了。</span></li>
+    <li><span class="k">链式推理（CoT）</span><span class="v">让模型"一步步想"，答对率暴涨——小模型没这个能力。</span></li>
+    <li><span class="k">指令遵循</span><span class="v">"用韩语回复"、"写成 markdown"——大模型能听懂，小模型不理你。</span></li>
+    <li><span class="k">代码生成</span><span class="v">写完整函数、修 bug——需要跨过某个参数量阈值才涌现。</span></li>
+    <li><span class="k">数学推理</span><span class="v">解应用题、做证明——只有足够大的模型才能稳定做到。</span></li>
+  </ul>
+  <p>为什么会涌现？至今没有完全定论。一种理解是：<strong>某种能力需要模型内部形成足够复杂的"电路"（circuit），而这些电路只有当参数量、数据量、算力都跨过某条线时才会稳定成型</strong>。这也是为什么 AI 公司愿意持续砸钱做更大的模型——你不知道下一个涌现能力会在什么时候出现，但一旦出现，就是产品级的护城河。</p>
+
+  <h3>六、预训练完成后：你得到了什么</h3>
+  <p>预训练跑完，你会得到一个<strong>Base Model（基座模型）</strong>——它已经"读过全人类的书"，知识渊博，但性格古怪：你问它问题，它可能不回答，而是给你续写；你让它讲笑话，它可能给你一段严肃论文；它不会礼貌、不会拒绝、不懂"对话"的规则。<mark class="key">Base 模型是一个"没被驯化的天才怪物"</mark>。</p>
+  <p>要让它变成能对话、有用、安全的助手，还需要下一篇要讲的 <strong>SFT → RLHF/DPO</strong> 三段式对齐。但基座已经准备好——所有能力都在参数里，只是需要被"唤醒"和"驯化"。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>预训练 = 让模型玩几万亿次"猜下一个字"的游戏。<strong>数据要海量、算力要顶级、耐心要充足</strong>——单次几千万到几亿美元的成本，换来一个通晓万物的基座模型。涌现能力是这场军备竞赛最诱人的奖赏——你不知道更大的模型会突然学会什么，但只要它学会了，那就是护城河。<mark class="key">预训练完，基座是怪物；接下来的对齐，才让它变成"人"</mark>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./06-3-loss.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 6.3 · 损失 & 梯度下降篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./06-5-rlhf.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 6.5 · SFT · RLHF · DPO 对齐篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 6.4 · Pre-training</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

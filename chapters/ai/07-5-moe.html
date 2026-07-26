@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 7.5 · MoE · 专家混合篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./07-transformer.html">第 7 章</a>
+      <span class="sep">›</span>
+      <span>§ 7.5</span>
+    </div>
+    <a href="./07-transformer.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 7.5 · Sub-chapter</div>
+    <h1>MoE · 专家混合篇</h1>
+    <div class="cn">Mixture of Experts</div>
+  </header>
+
+  <p class="lead">
+    2024 年 AI 圈最火的一个词，除了"推理模型"，就是 <strong>MoE</strong>。DeepSeek-V3 用 6710 亿参数，却只激活 370 亿；Mixtral 有 8 位专家、每次只用 2 位；Qwen-MoE、豆包大模型、GPT-4 传言也是……<mark class="key">"参数很多，每次只用一小撮"</mark>——这就是 MoE 的核心逻辑。它让"万亿参数"从奢侈品变成了消费品。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏥 大医院的"分诊台"</div>
+    <p>你感冒发烧，走进一家三甲医院。医院有 50 个科室、几百位专家——但你不需要每个专家都给你看一遍病。<br/>
+    <strong>分诊台护士</strong>看你一眼：喉咙红肿、发烧咳嗽——"呼吸科二楼"。<br/>
+    你直接去呼吸科，医生看诊。整个过程里，那 50 个科室里<em>只有 1 个被"激活"了</em>——皮肤科、骨科、眼科的医生此刻在休息、在看别的病人，你的诊断跟他们无关。<br/>
+    但如果病情复杂——比如老年人合并糖尿病——护士可能会说"呼吸科 + 内分泌科都看看"，就激活了 2 个科室。<br/>
+    MoE 就是这套逻辑：<strong>模型有很多"专家"，但每次输入只激活其中最相关的几个</strong>。</p>
+    <div class="link">→ <strong>分诊台 = Router 路由器</strong>；<strong>科室 = Expert 专家</strong>；<strong>激活 1 或 2 个 = Top-K 稀疏激活</strong>。</div>
+  </div>
+
+  <h3>为什么需要 MoE · 大模型太贵</h3>
+  <p>2020 年 GPT-3 出来的时候，175B（1750 亿）参数已经把整个行业震住了——训练一次要几千张 A100，成本上亿美元。但两年后大家发现——<strong>要继续变强，参数还得继续涨</strong>。GPT-4 传言是万亿级别，Google 的 PaLM 是 5400 亿……继续这样堆下去，会撞上三堵墙：</p>
+  <ul class="keylist">
+    <li><span class="k">显存墙</span><span class="v">1 万亿参数光加载就要 2TB 显存——单张 GPU 只有 80GB，得几十张卡拼起来才能跑一次推理。</span></li>
+    <li><span class="k">算力墙</span><span class="v">生成一个 Token 就要过一遍整个模型——参数越多，每个 Token 越慢，用户等不起。</span></li>
+    <li><span class="k">电费墙</span><span class="v">训练一次万亿密集模型的电费能买一栋楼——微软和 OpenAI 都在痛苦地扩数据中心。</span></li>
+  </ul>
+  <p>于是 Google 从 2017 年就开始琢磨的一个老想法——<strong>MoE</strong>——被翻出来重新扛旗：<mark class="key">参数放着不用没关系，关键是每次前向传播只激活一小撮</mark>。这样模型"看起来"很大（容量足），但每次推理只花"小模型"的成本。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 图书馆 vs 你的书桌</span>
+    <p>一座图书馆有 100 万册书（相当于"总参数量"）；<br/>
+    但你写论文时，桌上同时只摊开 3 本书（相当于"激活参数量"）。<br/>
+    你的<em>知识存量</em>是 100 万册的量级，但<em>此刻的工作量</em>只有 3 本书的重量。<br/>
+    MoE 让 AI 模型也拥有这种"图书馆式"的效率——存海量参数，用起来却只调最相关的那部分。</p>
+  </div>
+
+  <h3>MoE 结构 · 把 FFN 层换成一堆专家</h3>
+  <p>标准 Transformer 每一层有两个子模块：<strong>Attention</strong> + <strong>FFN</strong>（前馈网络）。FFN 是每层里参数最多的部分——占整个模型 60%~70% 的参数。<br/>
+  MoE 的做法是：<mark class="key">把 FFN 从"一个大 FFN"换成"很多个小 FFN"</mark>——每个小 FFN 就是一位"专家"。同时新增一个叫 <strong>Router（路由器）</strong>的小神经网络，决定"这个 Token 该交给哪几位专家处理"。</p>
+  <div class="journey">
+    <div class="step">
+      <h4>1. Token 进入 MoE 层</h4>
+      <p>每个 Token（词）先过完 Attention，然后进入 MoE 层。此时它的向量已经融合了上下文信息。</p>
+    </div>
+    <div class="step">
+      <h4>2. Router 打分选专家</h4>
+      <p>Router 是一个小 MLP——输入 Token 的向量，输出 N 个分数（N = 专家数量）。<br/>
+      比如 8 个专家，Router 输出 8 个分数：[0.05, 0.62, 0.03, 0.08, 0.15, 0.02, 0.04, 0.01]。</p>
+    </div>
+    <div class="step">
+      <h4>3. Top-K 稀疏激活</h4>
+      <p>只挑分数最高的 <em>K</em> 个专家（通常 K=2）——例子里就是第 2 位（0.62）和第 5 位（0.15）。<br/>
+      <strong>其他 6 位专家这次不干活</strong>——它们的参数放在显存里睡觉。</p>
+    </div>
+    <div class="step">
+      <h4>4. 加权合并输出</h4>
+      <p>Token 分别送进第 2 和第 5 号专家，各得一个输出向量；<br/>
+      按 Router 给的权重（重新归一化后）加权相加，作为这一层的最终输出。</p>
+    </div>
+  </div>
+
+  <h3>核心概念 · 总参数 vs 激活参数</h3>
+  <p>MoE 让"参数量"这个词一分为二，需要一次说清：</p>
+  <ul class="keylist">
+    <li><span class="k">总参数（Total Params）</span><span class="v">模型全部权重的规模——决定"模型有多大的知识容量"。DeepSeek-V3 是 6710 亿。</span></li>
+    <li><span class="k">激活参数（Active Params）</span><span class="v">处理一个 Token 时<em>实际参与计算</em>的参数量——决定"每次生成有多贵"。DeepSeek-V3 是 370 亿。</span></li>
+  </ul>
+  <p>DeepSeek-V3 的经济学秘密就在这两个数字的比例——<strong>6710B ÷ 370B ≈ 18 倍</strong>——它拥有 671B 密集模型的知识容量，但推理成本只有 37B 密集模型的水平。这就是为什么 DeepSeek 定价能做到 GPT-4 的几十分之一。</p>
+
+  <h3>代表模型 · MoE 家族</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>总参数</th><th>激活参数</th><th>专家数 / Top-K</th><th>发布时间</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GShard (Google)</td><td>600B</td><td>~几十亿</td><td>2048 / 2</td><td>2020</td></tr>
+        <tr><td>Switch Transformer</td><td>1.6T</td><td>7B</td><td>2048 / <strong>1</strong></td><td>2021</td></tr>
+        <tr><td>Mixtral 8x7B</td><td>47B</td><td>13B</td><td>8 / 2</td><td>2023.12</td></tr>
+        <tr><td>Mixtral 8x22B</td><td>141B</td><td>39B</td><td>8 / 2</td><td>2024.4</td></tr>
+        <tr><td>Qwen1.5-MoE-A2.7B</td><td>14.3B</td><td>2.7B</td><td>60 / 4</td><td>2024.3</td></tr>
+        <tr><td>DeepSeek-V2</td><td>236B</td><td>21B</td><td>160 / 6 + 2 shared</td><td>2024.5</td></tr>
+        <tr><td>DeepSeek-V3</td><td><strong>671B</strong></td><td><strong>37B</strong></td><td>256 / 8 + 1 shared</td><td>2024.12</td></tr>
+        <tr><td>Grok-1 (xAI)</td><td>314B</td><td>~86B</td><td>8 / 2</td><td>2024.3</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>你看得出趋势——<strong>专家数量在快速上升</strong>，从最早的 8 个逐渐增加到 256 个甚至几千个。专家越细分，每个"更专业"，模型的知识密度就越高。DeepSeek-V3 的 256 位专家已经接近一支"综合科研院"的规模。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 从社区诊所到三甲医院</span>
+    <p>Mixtral 8x7B 有 8 位专家——像一家<em>社区诊所</em>：内、外、妇、儿……分工粗，几位老大夫覆盖大部分场景。<br/>
+    DeepSeek-V3 有 256 位专家——像一家<em>大型综合医院</em>：不仅有心内科，还细分成心律失常科、心脏介入科、心衰科；不仅有神内，还有帕金森专科、癫痫专科、脑卒中专科……<br/>
+    专家越细分，每位专家越精，路由器（分诊台）也越难做——但服务上限就越高。这就是 MoE 规模化的路径。</p>
+  </div>
+
+  <h3>关键难题 · 路由平衡问题</h3>
+  <p>MoE 听起来完美，但工程上有个头疼的问题——<strong>路由塌方</strong>（Routing Collapse）。<br/>
+  想象一下：如果 Router 学着学着，发现"送到 3 号专家总是效果不错"，就干脆一直把所有 Token 都送去 3 号——这样 3 号累死，其他 255 位专家没活干、参数白占显存。整个 MoE 退化成了一个密集小模型。</p>
+  <p>解决路由平衡问题，是 MoE 训练的核心工程挑战。常见手段：</p>
+  <ul class="keylist">
+    <li><span class="k">负载均衡损失（Load Balancing Loss）</span><span class="v">额外加一个损失项，惩罚"某位专家被过度使用"——强制路由把工作量均摊。</span></li>
+    <li><span class="k">容量因子（Capacity Factor）</span><span class="v">给每位专家设一个"每 batch 最多处理多少 Token"的上限——超了就丢给次优专家。</span></li>
+    <li><span class="k">共享专家（Shared Expert）</span><span class="v">DeepSeek 的创新——留 1 位"什么 Token 都过一遍"的专家，处理通用知识；其他专家专攻细分领域。</span></li>
+    <li><span class="k">Expert Parallelism</span><span class="v">工程层面把不同专家放在不同 GPU 上，让路由能真的跨设备分发——这是训练超大 MoE 的硬件基础。</span></li>
+  </ul>
+
+  <h3>MoE 的优点与代价</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>MoE 的优势</th><th>MoE 的代价</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>推理成本</td><td>只激活一小部分——比同容量密集模型便宜 5~20 倍</td><td>但显存占用仍然是"总参数"——所以还是很吃卡</td></tr>
+        <tr><td>训练效率</td><td>相同算力下能训练更大的模型</td><td>路由不稳定，训练调参更难</td></tr>
+        <tr><td>模型能力</td><td>知识容量大，泛化面广</td><td>专家之间信息不共享，可能导致"割裂"</td></tr>
+        <tr><td>部署难度</td><td>——</td><td>需要专门的 MoE 推理引擎（vLLM、SGLang 都在跟进）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>但总的来说，MoE 是<strong>大模型进入"万亿时代"的经济学解药</strong>——没有 MoE，普通企业根本用不起万亿模型；有了 MoE，DeepSeek 才能把 API 价格打到白菜价。</p>
+
+  <h3>MoE 的历史 · 从 1991 到 2024</h3>
+  <p>MoE 不是什么新概念——早在<strong>1991 年</strong>，Hinton 的学生 Jacobs 就提出了"Mixtures of Experts"的原型思想，用在传统神经网络里。但直到深度学习时代它才真正大放异彩：</p>
+  <ul class="keylist">
+    <li><span class="k">2017 · Sparsely-Gated MoE</span><span class="v">Google 的 Noam Shazeer 团队第一次把 MoE 融进大规模神经网络——用稀疏门控让专家"轮流上工"，参数量突破 1000 亿。</span></li>
+    <li><span class="k">2020 · GShard</span><span class="v">Google 首个真正的超大 MoE 语言模型——2048 个专家、600B 参数——但训练不稳定、路由问题严重。</span></li>
+    <li><span class="k">2021 · Switch Transformer</span><span class="v">进一步简化路由——Top-1 激活（每个 Token 只走 1 位专家），把参数扩到 1.6 万亿。</span></li>
+    <li><span class="k">2023 · Mixtral 8x7B</span><span class="v">Mistral AI 开源了第一个"人人可用"的 MoE 大模型——8 位专家 Top-2 激活——一夜之间让 MoE 从"实验室玩具"变成"生产力工具"。</span></li>
+    <li><span class="k">2024 · DeepSeek-V3</span><span class="v">中国团队把 MoE 玩到极致——671B 总参、37B 激活、256 专家 Top-8 + 共享专家——训练成本只有 GPT-4 的 1/10。彻底改写了"大模型经济学"。</span></li>
+  </ul>
+
+  <h3>Dense vs MoE · 什么时候该选 MoE</h3>
+  <p>并不是所有模型都适合 MoE——它有自己的"甜蜜区"。什么时候该考虑 MoE？</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>Dense 更好</th><th>MoE 更好</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>参数 &lt; 10B</td><td>✓ 简单直接</td><td>路由开销不值</td></tr>
+        <tr><td>参数 10B~100B</td><td>还行</td><td>✓ 开始有优势</td></tr>
+        <tr><td>参数 &gt; 100B</td><td>推理太贵</td><td>✓ 唯一选择</td></tr>
+        <tr><td>端侧部署（手机）</td><td>✓ 内存友好</td><td>显存占用不划算</td></tr>
+        <tr><td>API 云服务</td><td>成本高</td><td>✓ 大幅省电</td></tr>
+        <tr><td>训练资源紧</td><td>参数少省事</td><td>✓ 相同算力更强</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>所以你看到市场上——<strong>端侧模型（Phi-3、Qwen-3B、Llama-3.2-1B）继续走 Dense 路线，云端旗舰模型（DeepSeek-V3、Mixtral、Kimi K2）全线转向 MoE</strong>。两条路线各有用武之地，谁也没吃掉谁。</p>
+
+  <h3>更远的未来 · 稀疏之外还有什么</h3>
+  <p>MoE 只是"稀疏化"这个大方向的一个具体形态。围绕"参数很多但每次只激活一部分"这个思想，学术界还在探索更激进的方案：</p>
+  <ul class="keylist">
+    <li><span class="k">Fine-grained Expert</span><span class="v">专家做得越来越小、越来越多——DeepSeek 用 256 位小专家取代 8 位大专家，知识密度更高。</span></li>
+    <li><span class="k">Shared Expert Isolation</span><span class="v">留一部分专家永远激活（处理通用能力），其他专家做细分领域——DeepSeek-V3 的关键创新。</span></li>
+    <li><span class="k">MoE + MLA + MTP</span><span class="v">DeepSeek-V3 三大创新的组合——把 MoE 和多头低秩、多 Token 预测结合，训练效率再翻倍。</span></li>
+    <li><span class="k">Conditional Computation</span><span class="v">终极目标——不只是 FFN 稀疏，Attention 层、每层深度都根据输入动态决定要不要用。目前还在研究阶段。</span></li>
+  </ul>
+  <p>2025 年之后，我们大概率会看到<mark class="key">"万亿参数、百亿激活"</mark>成为主流大模型的默认配置——就像 2020 年"千亿参数"从奢侈变常态那样。</p>
+
+  <h3>MoE 会不会让每位专家"专精一门"</h3>
+  <p>很多人第一次听 MoE 会想：那 256 位专家是不是一位管数学、一位管代码、一位管诗歌、一位管医学？——<strong>实际情况没那么整齐</strong>。<br/>
+  研究者对 Mixtral 和 DeepSeek 做了大量可视化分析，发现专家的分工是<em>相当抽象</em>的——它们不是按"话题"分，而是按更底层的"语言模式"分。有的专家专门处理数字类 Token，有的专家专门处理动词，有的专家专门处理句尾结构，有的专家专门处理代码里的括号缩进……<mark class="key">分工存在，但不是我们直觉里那种"学科式分工"</mark>。<br/>
+  这也解释了为什么单看某位专家没什么规律可言——它们是训练动态中自组织涌现的产物，不是人类概念体系的镜像。让专家真正"每人一门学科"是一条研究方向，但目前的主流 MoE 都还处于"隐性分工"阶段。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>MoE 的口诀只有一句——<mark class="key">"参数很多，激活很少"</mark>。它把 Transformer 里那个又大又贵的 FFN 层，换成了一堆专家 + 一个分诊台。总参数量可以疯狂堆到万亿，激活参数量却只有几百亿，成本大幅下降。<br/>
+    <strong>DeepSeek-V3、Mixtral、Qwen-MoE</strong> 三大代表证明了这条路——2025 年之后，几乎所有超大模型都会走 MoE。<br/>
+    到这里，第 7 章 Transformer 的五个核心概念——<em>Attention、QKV、Multi-Head、Encoder/Decoder 派系、MoE</em>——就全部讲完了。下一章我们会走进它最著名的应用场景：<strong>大语言模型（LLM）</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./07-4-variants.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 7.4 · Encoder / Decoder 派系篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled" aria-disabled="true">
+      <span class="dir">下一篇 →</span>
+      <span class="title">第 8 章 · 大语言模型（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 7.5 · MoE</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

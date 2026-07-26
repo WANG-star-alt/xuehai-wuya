@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 5.3 · CNN 卷积网络篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./05-neural-network.html">第 5 章</a>
+      <span class="sep">›</span>
+      <span>§ 5.3</span>
+    </div>
+    <a href="./05-neural-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 5.3 · Sub-chapter</div>
+    <h1>CNN · 卷积网络篇</h1>
+    <div class="cn">Convolutional Neural Networks</div>
+  </header>
+
+  <p class="lead">
+    卷积神经网络（CNN）是深度学习"看得懂图片"的头号功臣。从 2012 年 AlexNet 一战成名，到今天的人脸识别、医疗影像、自动驾驶——<mark class="key">凡是"识图"任务，几乎都绕不开 CNN</mark>。它的秘诀，是模仿人眼一小块一小块看世界的方式。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎬 你在人群里认出老朋友</div>
+    <p>你在拥挤的地铁站里，一眼看到十米外一位老朋友的背影——你其实并没有把整个地铁站"逐像素"扫描一遍。你的眼睛是这样工作的：<br/>
+    先扫到"一头熟悉的卷发"（局部特征）——你顺着往下看，发现"熟悉的红外套 + 熟悉的走路姿势"——把这几个局部拼起来，脑子里蹦出"是她！"<br/>
+    <strong>你识别一个人，靠的是几个具有代表性的"局部特征"</strong>，而不是记全身每个像素。CNN 抄的就是你这套"看局部、再组合"的策略。</p>
+    <div class="link">→ <strong>局部感知 + 层层组合 + 位置无关</strong> = CNN 的核心思想。</div>
+  </div>
+
+  <h3>卷积核：一块能滑动的小放大镜</h3>
+  <p>CNN 里最关键的零件叫<strong>卷积核（Kernel / Filter）</strong>，通俗理解就是一块很小的"侦探放大镜"——比如 3×3 或 5×5 那么大。这个小放大镜在整张图片上从左到右、从上到下慢慢滑，每滑一步就把当前覆盖的一小块像素做一次加权求和，输出一个数字。<br/>
+  滑完整张图，就得到一张新的"特征图"（feature map）——这张图告诉你："在原图的每一个位置，是不是含有我这块放大镜想找的那种花纹？"<br/>
+  <mark class="key">同一块卷积核，走遍整张图</mark>——这个"共享"是 CNN 相比全连接网络的一大杀器：全连接每个像素都独立学一套权重，CNN 只用一小组权重扫全图，参数量少上百倍还学得更快。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 老师在批卷子上盖印章</span>
+    <p>卷积操作就像老师<strong>用同一个印章去批全班的卷子</strong>：印章上刻着"正确"、"错误"或者"漂亮的一个字"。老师在每份卷子上都盖一遍，看哪里最匹配。CNN 的卷积核也一样——同一个"花纹探测器"在整张图上到处扫，扫到匹配处就在特征图上打个高分。<strong>这就是所谓的"参数共享"</strong>。</p>
+  </div>
+
+  <h3>为什么"局部"就够用</h3>
+  <p>识别一只猫，你不需要知道图片左上角和右下角像素的关系——你只要能识别出"耳朵"、"胡须"、"眼睛"这些局部特征，再判断它们的空间关系就够了。CNN 假设"<strong>近的像素之间关系强、远的关系弱</strong>"——所以每个卷积核只看一小块局部。<br/>
+  这个假设在图像上惊人地好用，因为图片本身就是"空间局部相关"的：一只眼睛的所有像素通常聚在一小块区域。语言、声音也有类似的"局部相关性"，所以卷积后来也被用到 NLP 和音频。</p>
+
+  <h3>池化：把细节压缩，让特征稳定</h3>
+  <p>卷积核算完之后，图像通常会加一层<strong>池化（Pooling）</strong>——最常见的是"最大池化"（Max Pooling），从 2×2 的小窗里挑最大的那个数字留下。池化干两件事：<mark class="key">缩小图像尺寸、让识别对位置变化不敏感</mark>。<br/>
+  你的猫在图片正中央和往左偏 5 像素，都应该被认成同一只猫——这就是"位置无关性"（平移不变性）。池化通过粗粒化，把"这个位置附近有耳朵"变成"这块区域里有耳朵"，识别就更皮实。</p>
+
+  <h3>层层堆叠：从边缘到语义的抽象阶梯</h3>
+  <ul class="keylist">
+    <li><span class="k">第 1~2 层</span><span class="v">学到最基础的"边缘、斑点、颜色变化"——像画素描时先勾轮廓。</span></li>
+    <li><span class="k">第 3~5 层</span><span class="v">开始出现"眼角、耳缘、条纹"这类中级零件——像画肖像时开始勾五官。</span></li>
+    <li><span class="k">第 6~10 层</span><span class="v">拼出"完整的脸、爪子、身体"——像画肖像时把五官组装成整张脸。</span></li>
+    <li><span class="k">最后几层</span><span class="v">直接判断"这是猫 / 狗 / 老虎"的类别概率——像老师看完整幅画后说"这画的是猫"。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一层层剥洋葱</span>
+    <p>CNN 的层级抽象就像<strong>反过来剥洋葱</strong>：从外面最细的皮（像素）开始，一层层裹上更粗的组织（边缘、纹理），再裹上器官（五官），最后裹成整颗洋葱（一张脸）。<strong>浅层学得杂而细，深层学得少而抽象</strong>。这套结构不是人设计的规则，而是训练数据"逼"出来的自然分工。</p>
+  </div>
+
+  <h3>CNN 家族的几张里程碑名片</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>年份</th><th>模型</th><th>贡献</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1998</td><td>LeNet-5</td><td>Yann LeCun 用它读手写邮政编码，CNN 概念雏形。</td></tr>
+        <tr><td>2012</td><td>AlexNet</td><td>ImageNet 大赛暴力碾压对手，深度学习复兴的第一枪。</td></tr>
+        <tr><td>2014</td><td>VGGNet</td><td>把网络堆到 16-19 层，证明"深"就是硬道理。</td></tr>
+        <tr><td>2014</td><td>GoogLeNet</td><td>提出 Inception 结构，一层里并联多种卷积核。</td></tr>
+        <tr><td>2015</td><td>ResNet</td><td>残差连接搞定"训练 100 层网络"的世纪难题。</td></tr>
+        <tr><td>2016~</td><td>YOLO / Faster-RCNN</td><td>不仅识别"是什么"，还能标出"在哪里"——目标检测大爆发。</td></tr>
+        <tr><td>2020~</td><td>ViT / ConvNeXt</td><td>Transformer 反攻图像领域，CNN 也在吸收注意力机制。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>CNN 今天在哪儿？</h3>
+  <p>你解锁手机的人脸识别、微信里的图像搜索、抖音的美颜滤镜、医院的 CT 结节筛查、特斯拉的车道识别、菜鸟的快递面单 OCR……<mark class="key">背后几乎都有 CNN 或它的变体在跑</mark>。这些年虽然 Transformer 强势入侵图像领域（ViT），但 CNN 依然是"识图"最省算力、最容易部署、工程上最成熟的方案，尤其在手机端、边缘设备上仍是主流。</p>
+
+  <h3>为什么 CNN 是 2012 年那场革命的主角</h3>
+  <p>ImageNet 是 2010 年代前后计算机视觉界最重要的比赛——一百万张图、一千个类别，让各家算法比拼图像分类准确率。2010、2011 年冠军还在用手工设计特征加 SVM 的老套路，错误率高达 25%。2012 年 Hinton 的学生 Alex Krizhevsky 带着 AlexNet 参赛——一张 8 层的卷积网络，用两块 GTX 580 显卡训练了 6 天——直接把错误率砍到 15.3%，把第二名甩开近 10 个百分点。<br/>
+  这一战让整个学界瞬间清醒：<strong>手工特征时代结束了，深度学习时代开始了</strong>。之后的 VGG、GoogLeNet、ResNet 每一年都把准确率再刷一遍，2015 年 ResNet 的错误率已经低到 3.57%，第一次超过人类平均水平。可以说，<mark class="key">CNN 一手把整个"AI 复兴"这场大戏拉开帷幕</mark>。这背后除了算法，还有两个基础条件：ImageNet 这样的大规模标注数据集，以及 GPU 提供的并行算力。</p>
+
+  <h3>卷积、步长、填充：几个你会一直听到的术语</h3>
+  <p><strong>步长（stride）</strong>是"卷积核每次滑多远"——步长 1 表示逐像素移动，特征图和原图差不多大；步长 2 表示跳一格移动，特征图立刻缩小一半。<strong>填充（padding）</strong>是"要不要在图片边缘补零"——不补零，卷积后图像会一点点缩小；补零就能维持尺寸不变。<strong>通道（channel）</strong>是"每个像素有几个数字"——彩色图片有 R/G/B 三个通道，卷积核也要相应有 3 个厚度。这些看似繁琐的细节，就是 CNN 工程实现里最日常的调节旋钮，理解它们你才能真正会用 PyTorch 或 TensorFlow 搭出一个 CNN。</p>
+
+  <h3>ResNet：让"深"这个字终于合法</h3>
+  <p>2012 年 AlexNet 只有 8 层，2014 年 VGG 到了 19 层，人们以为一路堆下去就好——结果 20 层之后训练开始出问题：更深的网络反而误差更高。这不是过拟合（连训练误差都上升）——它是"退化问题"：随着层数增加，梯度消失和优化难度呈指数级上升。<br/>
+  2015 年何恺明团队提出的 <strong>ResNet</strong> 想出了一个天才的办法——<strong>残差连接（skip connection）</strong>：每两层的输入直接"抄近道"跳到输出上加起来。这样即使中间层学得再差，网络起码还有一条"直通车"能把信息传下去。加上残差连接的 ResNet 一口气训到 152 层，一举把 ImageNet 错误率打到 3.57%，第一次超过人类。<mark class="key">今天 Transformer 里最核心的"残差连接"，就是从 ResNet 借来的</mark>——可以说没有 ResNet，就没有 GPT。</p>
+
+  <h3>目标检测与分割：CNN 的下一步</h3>
+  <p>"识图"其实分几个层次：<strong>图像分类</strong>只需要说"这是猫还是狗"；<strong>目标检测</strong>要标出"猫在这个矩形框里"；<strong>语义分割</strong>要精细到"每个像素是猫还是背景"；<strong>实例分割</strong>更进一步——"这两只都是猫，但是两只不同的猫"。CNN 的家族分别对应这些任务：<strong>YOLO / SSD / Faster-RCNN</strong> 做目标检测，<strong>U-Net / FCN</strong> 做语义分割，<strong>Mask R-CNN</strong> 做实例分割。<br/>
+  这些技术直接决定了今天你手机相册"按人物分组"、微信里"识别二维码"、抖音里"抠图换背景"、特斯拉自动驾驶"识别车辆行人"这些功能背后的工程实现。<mark class="key">CNN 让计算机不但能"认出画面"，还能"知道东西在哪、有多大、是不是同一个"</mark>——这才是它真正强大的地方。</p>
+
+  <h3>CNN 与 ViT：卷积会不会被淘汰</h3>
+  <p>2020 年之后，Transformer 的图像变种 <strong>ViT（Vision Transformer）</strong> 横空出世，一举把 ImageNet 的最好成绩再往上推——很多人开始担心 CNN 是不是要被淘汰了？其实并没有。<br/>
+  ViT 在数据量足够大（几亿张图以上）时确实更强，但在中小规模数据（几十万张）上，CNN 反而效果更稳、训练更快、部署更省。原因是 CNN 天生带有"平移不变性"、"局部性"这两个先验，等于给了模型一份"物理规律作业"；而 ViT 什么都不假设，全靠数据从零学起——数据不够就学不好。<br/>
+  今天工程里最常见的组合是<strong>混合架构</strong>：底层用 CNN 提局部特征，高层用 Transformer 做全局理解，各取所长。<mark class="key">CNN 没死，它更多是变成了"识图"这道大菜里的关键调料，而不是主菜</mark>。手机端跑的模型、边缘设备上的模型、实时视频推理，CNN 依然是首选——因为它算得快、模型小、耗电低。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>CNN 的三大心法——<strong>局部感知（一小块一小块看）、参数共享（同一个滤镜扫全图）、层级抽象（浅层看纹理、深层看语义）</strong>。它把"识图"从"要写复杂规则"变成"喂数据 + 训网络"，从此让计算机真正"看得见"。今天你手机里的绝大多数视觉功能，功劳簿上都得记 CNN 一大笔。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./05-2-propagation.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 5.2 · 前向&反向传播篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./05-4-rnn.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 5.4 · RNN / LSTM 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 5.3 · CNN</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

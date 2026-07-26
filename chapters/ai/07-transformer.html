@@ -13,7 +13,7 @@
     <div class="breadcrumb">
       <a href="../../index.html">学海无涯</a>
       <span class="sep">›</span>
-      <a href="./06-training-trilogy.html">智能篇 · 第 6 章</a>
+      <a href="../../index.html#vol-ai">人工智能</a>
       <span class="sep">›</span>
       <span>第 7 章</span>
     </div>
@@ -21,195 +21,73 @@
   </nav>
 
   <header class="chapter-head">
-    <div class="num">Intelligence · Chapter 07</div>
+    <div class="num">Chapter · 07</div>
     <h1>第 7 章 · Transformer</h1>
     <div class="cn">Attention is All You Need · 现代 AI 的基石</div>
   </header>
 
   <p class="lead">
-    2017 年 6 月，Google 一篇论文《<em>Attention is All You Need</em>》改变了整个 AI 领域。这篇论文提出的 <mark class="key">Transformer 架构</mark>，成了后来 BERT、GPT、ChatGPT、Sora、Claude、DeepSeek 的共同基石。这一章带你从"Attention 是什么"讲到"Encoder / Decoder / MoE"，把现代大模型的心脏拆给你看。
+    2017 年 6 月，Google 一篇《<em>Attention is All You Need</em>》改变了整个 AI 领域。这篇论文提出的 <mark class="key">Transformer 架构</mark>，成了后来 BERT、GPT、ChatGPT、Sora、Claude、DeepSeek 的共同基石。这一章分五个子篇，把 Transformer 的心脏拆给你看。
   </p>
 
-  <div class="scene">
-    <span class="scene-tag">生活场景</span>
-    <div class="scene-title">👀 读一句话，你的眼睛会"跳"</div>
-    <p>你读这句话："<em>那只猫追着球跑，最后它抓到了。</em>"<br/>
-    读到"<strong>它</strong>"的时候，你的眼睛会本能地<strong>跳回去看"猫"</strong>——判断"它"指的是猫，不是球。<br/>
-    <strong>这个"跳回去关注前面某个词"的能力，就是 Attention（注意力）</strong>。<br/>
-    Transformer 之所以强，是因为它给了每个词一个"随时看整句话所有其他词"的超能力。</p>
-  </div>
-
-  <h3>为什么需要 Transformer？RNN 出了什么问题？</h3>
-  <p>2017 年之前，处理文字用的是 <strong>RNN / LSTM</strong>（上一章讲的循环神经网络）。RNN 有两个致命缺点：</p>
-
-  <ul class="keylist">
-    <li><span class="k">1. 顺序处理，慢</span><span class="v">必须一个词一个词往前算，无法并行——训练超慢</span></li>
-    <li><span class="k">2. 长距离依赖差</span><span class="v">句子太长时，前面的信息传到后面就"淡忘"了（梯度消失）</span></li>
-  </ul>
-
-  <p>Transformer 一次性解决了这两个问题——<mark class="key">所有词并行计算，每个词都能"直接看到"任意其他词</mark>。这是它爆火的根本原因。</p>
-
-  <h3 id="attention">Attention · 注意力机制</h3>
-  <p>Attention 的核心思想：<strong>给序列里每个词，算出它对当前词的"重要度"</strong>，然后按重要度加权。</p>
+  <h3>本章要回答什么</h3>
+  <p>2017 年之前，为什么 RNN 走进了死胡同？<strong>Attention 注意力机制</strong>是什么魔法，让每个词都能"看到"整句话的其他词？<strong>QKV、多头、Encoder/Decoder、MoE</strong> 这几个词你听过很多遍——它们到底是什么？看完这五篇，你就掌握了 2017 年至今整个大模型革命的技术底座。</p>
 
   <div class="callout analogy">
-    <span class="tag">Analogy · 图书馆查资料</span>
-    <p>你在写论文，需要一个概念的定义。你走进图书馆——<br/>
-    <strong>Query（问题）</strong>: 你手里的"我要查什么"（比如"Transformer 是什么"）。<br/>
-    <strong>Key（书名索引）</strong>: 每本书的目录关键词——你拿 Query 去对比每本书的 Key，看哪本相关。<br/>
-    <strong>Value（书里内容）</strong>: 匹配上的书，里面的实际内容就是你要的答案。<br/>
-    Attention 就是这个过程——<strong>用 Query 匹配所有 Key，找到相关的 Value 加权返回</strong>。</p>
+    <span class="tag">Analogy · 譬喻</span>
+    <p>读一句话"那只猫追着球跑，最后它抓到了"，你的眼睛会本能地跳回去看"猫"——判断"它"指谁。<strong>这个"跳回去关注前面某个词"的能力，就是 Attention</strong>。Transformer 给了每个词一个"随时看整句话所有其他词"的超能力——这就是它爆火的根本原因。</p>
   </div>
 
-  <h3 id="qkv">QKV · Query、Key、Value 三兄弟</h3>
-  <p>Transformer 里，每个词的向量会被拆成三份：Q（查询）、K（键）、V（值）。计算 Attention 的步骤：</p>
-
-  <div class="journey">
-    <div class="step">
-      <h4>Step 1 · 打分</h4>
-      <p>用当前词的 Q 去和所有词的 K 做点积——得到"当前词对每个其他词的相关度分数"。</p>
-    </div>
-    <div class="step">
-      <h4>Step 2 · Softmax 归一化</h4>
-      <p>把分数变成概率分布——所有分数加起来 = 1。相关度高的词获得高权重。</p>
-    </div>
-    <div class="step">
-      <h4>Step 3 · 加权求和</h4>
-      <p>用这些权重对所有词的 V 加权求和——得到当前词的"上下文向量"。</p>
-    </div>
-    <div class="step">
-      <h4>Step 4 · 输出</h4>
-      <p>这个上下文向量已经融合了整句话的相关信息——比 RNN 强多了。</p>
-    </div>
-  </div>
-
-  <p>公式一句话：<code>Attention(Q, K, V) = softmax(QKᵀ/√d) × V</code></p>
-
-  <h3 id="multihead">Multi-head Attention · 多头注意力</h3>
-  <p>只用一组 QKV 太单薄——Transformer 让<mark class="key">多组 QKV 并行工作</mark>，每组关注不同类型的信息。</p>
-
-  <ul class="keylist">
-    <li><span class="k">头 1</span><span class="v">可能专注"语法关系"——主谓宾</span></li>
-    <li><span class="k">头 2</span><span class="v">可能专注"指代关系"——"它"指谁</span></li>
-    <li><span class="k">头 3</span><span class="v">可能专注"语义相似"——"猫"和"喵"</span></li>
-    <li><span class="k">典型配置</span><span class="v">GPT-3 有 96 个头，GPT-4 更多</span></li>
-  </ul>
-
-  <div class="callout">
-    <span class="tag">Note · 类比</span>
-    <p>多头注意力就像"多个专家小组同时会诊"——法律专家、医学专家、心理专家分别给意见，最后综合。<strong>每个头看到的角度不同，合起来信息更丰富。</strong></p>
-  </div>
-
-  <h3>Transformer 的完整结构</h3>
-  <p>一个 Transformer 层的标准配方：</p>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>组件</th><th>作用</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Multi-head Attention</td><td>让每个词"看到"其他所有词</td></tr>
-        <tr><td>Add &amp; Norm</td><td>残差连接 + 层归一化——让训练稳定</td></tr>
-        <tr><td>Feed-Forward Network</td><td>两层全连接——增加模型容量</td></tr>
-        <tr><td>Add &amp; Norm</td><td>又一次残差 + 归一化</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <p>把这样的层<strong>堆几十层</strong>（GPT-3 有 96 层，GPT-4 估算更多），就是一个完整的 Transformer 模型。</p>
-
-  <h3>Positional Encoding · 位置编码</h3>
-  <p>Attention 一次看所有词——但"我打你"和"你打我"意思完全不同！Transformer 用<strong>位置编码</strong>告诉模型每个词的位置：</p>
-
-  <ul class="keylist">
-    <li><span class="k">早期</span><span class="v">正弦余弦函数（原论文方案）</span></li>
-    <li><span class="k">现代</span><span class="v">RoPE 旋转位置编码——LLaMA、Qwen 都在用</span></li>
-    <li><span class="k">2024 后</span><span class="v">ALiBi、YaRN 等——支持更长上下文（100 万 token）</span></li>
-  </ul>
-
-  <h3 id="variants">Encoder-only vs Decoder-only vs Encoder-Decoder</h3>
-  <p>Transformer 有三种"派系"，各有专长：</p>
-
+  <h3>本章的五个子篇</h3>
   <div class="cards">
-    <div class="card">
-      <div class="card-num">Encoder-only</div>
-      <h4>BERT 家族</h4>
-      <p>只用 Encoder——擅长"理解"任务：分类、命名实体识别、检索。<br/>
-      <strong>特点</strong>: 双向注意力（能看前后所有词）<br/>
-      <strong>代表</strong>: BERT、RoBERTa、DeBERTa</p>
-    </div>
-    <div class="card">
-      <div class="card-num">Decoder-only</div>
-      <h4>GPT 家族</h4>
-      <p>只用 Decoder——擅长"生成"任务：写文章、对话、代码。<br/>
-      <strong>特点</strong>: 单向注意力（只看前面的词）<br/>
-      <strong>代表</strong>: GPT-3/4/5、Claude、Llama、Qwen、DeepSeek、豆包</p>
-    </div>
-    <div class="card">
-      <div class="card-num">Encoder-Decoder</div>
-      <h4>T5 / BART</h4>
-      <p>Encoder 理解输入，Decoder 生成输出——擅长翻译、摘要。<br/>
-      <strong>特点</strong>: 两段架构<br/>
-      <strong>代表</strong>: T5、BART、Google 的原始 Transformer</p>
-    </div>
+    <a class="card" href="./07-1-attention.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 7.1</div>
+      <h4>Attention · 注意力篇</h4>
+      <p>每个词都能"看到"其他所有词——图书馆查资料式加权。</p>
+    </a>
+    <a class="card" href="./07-2-qkv.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 7.2</div>
+      <h4>QKV · Query/Key/Value 篇</h4>
+      <p>打分 → Softmax → 加权求和——Attention 的完整公式。</p>
+    </a>
+    <a class="card" href="./07-3-multihead.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 7.3</div>
+      <h4>Multi-head · 多头篇</h4>
+      <p>多组 QKV 并行——像多个专家同时会诊。</p>
+    </a>
+    <a class="card" href="./07-4-variants.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 7.4</div>
+      <h4>Encoder / Decoder 派系篇</h4>
+      <p>BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。</p>
+    </a>
+    <a class="card" href="./07-5-moe.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 7.5</div>
+      <h4>MoE · 专家混合篇</h4>
+      <p>万亿参数只激活一小部分——DeepSeek 的降本秘籍。</p>
+    </a>
   </div>
 
-  <div class="callout analogy">
-    <span class="tag">Analogy · 三种考试形式</span>
-    <p><strong>Encoder-only</strong> = 阅读理解（读一段，回答问题）<br/>
-    <strong>Decoder-only</strong> = 作文（给个开头，续写下去）<br/>
-    <strong>Encoder-Decoder</strong> = 翻译（读中文，写英文）<br/>
-    现代大模型（ChatGPT、Claude、DeepSeek）几乎清一色是 <strong>Decoder-only</strong>——因为它最灵活，能通过"续写"完成几乎所有任务。</p>
-  </div>
-
-  <h3 id="moe">MoE · 专家混合模型（Mixture of Experts）</h3>
-  <p>2024 年后爆火的架构——<strong>让不同的"专家小组"处理不同的输入</strong>，大大降低推理成本。</p>
-
+  <h3>学之前先记住这一点</h3>
   <ul class="keylist">
-    <li><span class="k">思路</span><span class="v">模型里有多个"专家"（Expert）——每个 token 只激活其中几个，不是全部激活</span></li>
-    <li><span class="k">好处</span><span class="v">参数量可以做到万亿级，但每次推理只用其中很小一部分——省算力</span></li>
-    <li><span class="k">代表</span><span class="v">GPT-4（传闻用 MoE）、Mixtral、DeepSeek-V3、Qwen-MoE</span></li>
-    <li><span class="k">路由器</span><span class="v">决定每个 token 送给哪些专家——这是训练的关键</span></li>
+    <li><span class="k">Attention 是核心</span><span class="v">"Attention is All You Need"——去掉 RNN、去掉 CNN，光靠注意力就够了。</span></li>
+    <li><span class="k">并行 = 快</span><span class="v">RNN 只能顺序算，Transformer 所有词并行——训练效率数量级提升。</span></li>
+    <li><span class="k">现代 LLM 清一色 Decoder-only</span><span class="v">GPT/Claude/Llama/Qwen/DeepSeek 都是——因为它最灵活。</span></li>
+    <li><span class="k">MoE 是 2024 后的新趋势</span><span class="v">让万亿参数模型也能高效运行——DeepSeek-V3 把它玩到极致。</span></li>
   </ul>
-
-  <div class="callout analogy">
-    <span class="tag">Analogy · 大医院分诊台</span>
-    <p>传统大模型 = "每个病人都让全院所有医生一起会诊"——精准但贵。<br/>
-    MoE = "分诊台看病人症状，把他转给最合适的 2-3 个专科医生"——同样精准，成本降低几十倍。<br/>
-    这就是为什么 DeepSeek 能用远低于 OpenAI 的成本达到相近效果——它把 MoE 用到了极致。</p>
-  </div>
-
-  <h3>为什么 Transformer 统治了 AI</h3>
-  <ul class="keylist">
-    <li><span class="k">并行性</span><span class="v">所有词并行处理——GPU 效率极高</span></li>
-    <li><span class="k">可扩展性</span><span class="v">堆更多层、更多头、更多数据 → 效果稳定提升</span></li>
-    <li><span class="k">通用性</span><span class="v">同一个架构能做 NLP、图像（ViT）、视频（Sora）、语音、蛋白质</span></li>
-    <li><span class="k">生态成熟</span><span class="v">Hugging Face、PyTorch、CUDA、Flash Attention——全套工具链都围绕它</span></li>
-  </ul>
-
-  <div class="callout">
-    <span class="tag">Recap · 收束</span>
-    <p>Transformer = <mark class="key">"让每个词都能同时看到所有其他词"的注意力机器</mark>。<br/>
-    核心 = <strong>QKV Attention + Multi-head + 位置编码 + 残差归一化</strong>。<br/>
-    三大派系：<strong>Encoder（懂）· Decoder（写）· Encoder-Decoder（翻）</strong>——现代大模型清一色 Decoder-only。<br/>
-    最新趋势：<strong>MoE 稀疏激活</strong>——让万亿参数模型也能高效运行。<br/>
-    掌握 Transformer，你就掌握了 2017 年至今整个 AI 革命的技术底座。</p>
-  </div>
 
   <div class="pager">
-    <a class="btn prev" href="./06-training-trilogy.html">
-      <span class="dir">← 上一章</span>
-      <span class="title">第 6 章 · 训练三部曲</span>
+    <a class="btn prev" href="./06-5-rlhf.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 6.5 · RLHF / DPO 篇</span>
     </a>
     <a class="home" href="../../index.html">☰ 主页</a>
-    <a class="btn next disabled">
-      <span class="dir">下一章 →</span>
-      <span class="title">第 8 章 · 大语言模型 LLM（建设中）</span>
+    <a class="btn next" href="./07-1-attention.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 7.1 · Attention 篇</span>
     </a>
   </div>
 
-  <div class="page-foot">Xue Hai Wu Ya · Intelligence · Chapter 07</div>
+  <div class="page-foot">Xue Hai Wu Ya · Vol.03 AI · Chapter 07</div>
 
 </article>
   <script src="../../_shared/js/float-pager.js"></script>

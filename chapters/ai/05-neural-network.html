@@ -13,7 +13,7 @@
     <div class="breadcrumb">
       <a href="../../index.html">学海无涯</a>
       <span class="sep">›</span>
-      <a href="./04-machine-learning.html">智能篇 · 第 4 章</a>
+      <a href="../../index.html#vol-ai">人工智能</a>
       <span class="sep">›</span>
       <span>第 5 章</span>
     </div>
@@ -21,169 +21,64 @@
   </nav>
 
   <header class="chapter-head">
-    <div class="num">Intelligence · Chapter 05</div>
-    <h1>第 5 章 · 神经网络</h1>
+    <div class="num">Chapter · 05</div>
+    <h1>第 5 章 · 神经网络篇</h1>
     <div class="cn">Neural Networks · 深度学习的心脏</div>
   </header>
 
   <p class="lead">
-    机器学习是"从数据里找规律"，那"深度学习"就是<mark class="key">用一层一层堆起来的"人工神经元"去找规律</mark>。ChatGPT、Sora、AlphaGo、人脸识别、语音助手——背后跑的都是神经网络。这一章带你从"一个神经元"讲到"CNN / RNN / GAN / Diffusion"，把深度学习的核心组件全部串起来。
+    机器学习是"从数据里找规律"，那"深度学习"就是<mark class="key">用一层一层堆起来的"人工神经元"去找规律</mark>。ChatGPT、Sora、AlphaGo、人脸识别、语音助手——背后跑的都是神经网络。这一章拆成六个子篇，把深度学习的核心组件全部串起来。
   </p>
 
-  <div class="scene">
-    <span class="scene-tag">生活场景</span>
-    <div class="scene-title">🧠 一群"神经元"合力认字</div>
-    <p>你看到"猫"这个字，是怎么认出来的？大脑里有几十亿个神经元。第一层神经元负责"看到线条和弯钩"，第二层把线条组合成"部首"（比如"犭"），第三层把部首组合成"字"，第四层判断"这是不是猫"。<br/>
-    <strong>每个神经元只做一件小事，但一层层堆起来，就能识别复杂的东西。</strong>神经网络就是照着这个思路做的——只不过每个"神经元"是一段简单的数学公式而已。</p>
-  </div>
-
-  <h3 id="neuron">神经元 · 最小的计算单元</h3>
-  <p>一个"人工神经元"就是三步：<mark class="key">加权求和 → 激活 → 输出</mark>。</p>
-
-  <ul class="keylist">
-    <li><span class="k">输入 x₁, x₂, x₃</span><span class="v">三个数字（如三个像素的亮度）</span></li>
-    <li><span class="k">权重 w₁, w₂, w₃</span><span class="v">每个输入重要不重要——权重就是"重视程度"</span></li>
-    <li><span class="k">偏置 b</span><span class="v">整体偏移量，让神经元"敏感度"可调</span></li>
-    <li><span class="k">加权求和</span><span class="v">z = w₁x₁ + w₂x₂ + w₃x₃ + b</span></li>
-    <li><span class="k">激活函数 σ(z)</span><span class="v">给结果加"非线性"——最常用 ReLU：z 小于 0 就输出 0，否则输出 z</span></li>
-    <li><span class="k">输出 y = σ(z)</span><span class="v">这个神经元的最终答案</span></li>
-  </ul>
-
-  <p>就这么简单——<strong>一个神经元不过就是一个"带权重的加法器 + 激活函数"</strong>。神奇的是把成千上万个这样的神经元堆起来，就能识别人脸、写文章、下围棋。</p>
+  <h3>本章要回答什么</h3>
+  <p>一颗"人工神经元"到底做了什么？很多神经元堆起来为什么能学会认脸、写文章、画图？<strong>反向传播</strong>凭什么能让百亿参数自动调对？<strong>CNN、RNN、GAN、Diffusion</strong> 这四种主流架构各自擅长什么？把这六个子篇看完，深度学习 90% 的常见工具你就能识别。</p>
 
   <div class="callout analogy">
-    <span class="tag">Analogy · 面试评分</span>
-    <p>你是面试官，评估一个求职者。<strong>输入 x</strong> = 学历、经验、态度；<strong>权重 w</strong> = 你多看重每一项；<strong>加权求和</strong> = 综合分数；<strong>激活函数</strong> = 你的决策规则（分数 &gt; 70 才录用，否则打 0 分）。<br/>
-    一个神经元 = 一个"专业评委"。神经网络 = 一整个"评审团 + 复试团 + 决赛评委"层层筛选。</p>
+    <span class="tag">Analogy · 譬喻</span>
+    <p>你识字识物的过程，也是分层的——先看线条、再拼部首、再合成字、再判断意思。<strong>神经网络就是照抄大脑这个"分层抽象"的思路</strong>，只不过每一层的"神经元"只是一段简单的数学公式，靠数量和层数堆出复杂能力。</p>
   </div>
 
-  <h3>激活函数 · 让网络"活起来"</h3>
-  <p>没有激活函数，无论堆多少层，整个网络还是一个"线性变换"——学不到复杂的东西。激活函数给网络注入<mark class="key">"非线性"</mark>，这是深度学习能学复杂规律的秘密。</p>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>激活函数</th><th>公式</th><th>特点</th><th>用在哪</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Sigmoid</td><td>1 / (1+e⁻ᶻ)</td><td>输出 0~1，像概率</td><td>老式网络、二分类输出</td></tr>
-        <tr><td>Tanh</td><td>(eᶻ-e⁻ᶻ)/(eᶻ+e⁻ᶻ)</td><td>输出 -1~1</td><td>RNN 中间层</td></tr>
-        <tr><td>ReLU</td><td>max(0, z)</td><td>负数变 0，正数保留</td><td>现代 CNN 首选</td></tr>
-        <tr><td>GELU</td><td>近似 ReLU 但光滑</td><td>Transformer 首选</td><td>GPT、BERT 里的默认</td></tr>
-      </tbody>
-    </table>
+  <h3>本章的六个子篇</h3>
+  <div class="cards">
+    <a class="card" href="./05-1-neuron.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 5.1</div>
+      <h4>神经元篇</h4>
+      <p>加权求和 + 激活函数——一个"人工神经元"的全部秘密。</p>
+    </a>
+    <a class="card" href="./05-2-propagation.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 5.2</div>
+      <h4>前向 & 反向传播篇</h4>
+      <p>数据怎么流动、错误怎么反传——神经网络学习的引擎。</p>
+    </a>
+    <a class="card" href="./05-3-cnn.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 5.3</div>
+      <h4>CNN · 卷积网络篇</h4>
+      <p>图像专家——从 AlexNet 到 YOLO，看图靠它。</p>
+    </a>
+    <a class="card" href="./05-4-rnn.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 5.4</div>
+      <h4>RNN / LSTM 篇</h4>
+      <p>序列专家——2017 之前的 NLP 主力，被 Transformer 取代。</p>
+    </a>
+    <a class="card" href="./05-5-gan.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 5.5</div>
+      <h4>GAN · 对抗网络篇</h4>
+      <p>假币贩子 vs 警察——两个网络较量学会造假。</p>
+    </a>
+    <a class="card" href="./05-6-diffusion.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 5.6</div>
+      <h4>Diffusion · 扩散模型篇</h4>
+      <p>Midjourney / Sora 背后——从噪声一步步生成图像。</p>
+    </a>
   </div>
 
-  <h3 id="forward">前向传播 · 从输入到答案</h3>
-  <p><strong>前向传播（Forward Pass）</strong> = 数据从输入层流到输出层，一层层被计算：</p>
-
-  <div class="journey">
-    <div class="step">
-      <h4>1. 输入层</h4>
-      <p>喂进一张 28×28 的手写数字图片 —— 784 个像素值。</p>
-    </div>
-    <div class="step">
-      <h4>2. 隐藏层 1</h4>
-      <p>128 个神经元，每个都对 784 个输入做加权求和 + ReLU 激活。</p>
-    </div>
-    <div class="step">
-      <h4>3. 隐藏层 2</h4>
-      <p>64 个神经元，接收上一层 128 个输出，再一次加权求和 + ReLU。</p>
-    </div>
-    <div class="step">
-      <h4>4. 输出层</h4>
-      <p>10 个神经元（对应数字 0-9），经过 Softmax 转成"是数字 X 的概率"。</p>
-    </div>
-    <div class="step">
-      <h4>5. 结果</h4>
-      <p>概率最高的那个数字 → 就是网络的预测答案。</p>
-    </div>
-  </div>
-
-  <h3>反向传播 · 神经网络怎么"学"</h3>
-  <p>前向传播给出预测，但预测可能是错的。<mark class="key">反向传播（Backpropagation）</mark>就是"让网络知道自己错在哪、每个权重该怎么调"的算法——深度学习的核心引擎。</p>
-
+  <h3>学之前先记住这一点</h3>
   <ul class="keylist">
-    <li><span class="k">Step 1 · 算误差</span><span class="v">预测 = 5，正确答案 = 3，误差 = 差多少（用"损失函数"衡量）</span></li>
-    <li><span class="k">Step 2 · 反向传播梯度</span><span class="v">从输出层往输入层"倒着走"，用微积分链式法则算出每个权重对误差的"贡献"</span></li>
-    <li><span class="k">Step 3 · 梯度下降</span><span class="v">按贡献大小反向调整权重——大的调多点，小的调少点</span></li>
-    <li><span class="k">Step 4 · 重复</span><span class="v">看下一张图片，再来一次。看几百万张图后，网络就"学会"了</span></li>
+    <li><span class="k">神经元不神秘</span><span class="v">就是"加权和 + 激活函数"两步——所有花活都是它堆出来的。</span></li>
+    <li><span class="k">深度学习 = 深神经网络</span><span class="v">"深"就是层数多；"学习"就是靠数据把每一层的权重调准。</span></li>
+    <li><span class="k">四种主流架构各有专长</span><span class="v">CNN 看图 · RNN 读文（老派）· GAN 造假 · Diffusion 生成——今天的多模态基本靠这套组合拳。</span></li>
+    <li><span class="k">Transformer 是超集</span><span class="v">下一章会讲的 Transformer，几乎"接管"了 RNN 的地盘，还渗透到 CNN 和 Diffusion 里。</span></li>
   </ul>
-
-  <div class="callout">
-    <span class="tag">Note · 类比</span>
-    <p>反向传播就像老师批改试卷——不仅告诉你"错了 5 分"，还告诉你"这道题是因为公式 A 记错了、公式 B 用反了"。有了这个反馈，你才能针对性改错。</p>
-  </div>
-
-  <h3 id="cnn">CNN · 卷积神经网络（图像专家）</h3>
-  <p><strong>CNN（Convolutional Neural Network）</strong>是给"图像"设计的神经网络。它的核心思想：<mark class="key">图像的局部特征比整体重要</mark>——一只猫无论在图片的左边、右边、上下，都还是猫。</p>
-
-  <ul class="keylist">
-    <li><span class="k">卷积层</span><span class="v">用一个"小窗口"（3×3 或 5×5）扫过整张图，提取边缘、纹理、颜色等特征</span></li>
-    <li><span class="k">池化层</span><span class="v">把特征图缩小——保留重要信息、减少计算量</span></li>
-    <li><span class="k">全连接层</span><span class="v">最后一步做分类——"这堆特征综合起来像不像猫"</span></li>
-    <li><span class="k">代表作</span><span class="v">2012 AlexNet、2015 ResNet、2016 YOLO 目标检测</span></li>
-  </ul>
-
-  <h3 id="rnn">RNN / LSTM · 循环神经网络（序列专家）</h3>
-  <p><strong>RNN（Recurrent Neural Network）</strong>是给"序列数据"（文字、语音、时间序列）设计的。它的核心：<mark class="key">当前的输出取决于当前输入 + 之前所有输入</mark>——就像人读文章时脑子里有"记忆"。</p>
-
-  <ul class="keylist">
-    <li><span class="k">RNN</span><span class="v">简单循环——每一步都把前一步的"隐藏状态"传下去</span></li>
-    <li><span class="k">问题</span><span class="v">序列太长会"遗忘前面的信息"（梯度消失）</span></li>
-    <li><span class="k">LSTM · 长短期记忆</span><span class="v">加了"遗忘门/输入门/输出门"，能有选择地记住重要信息</span></li>
-    <li><span class="k">GRU</span><span class="v">LSTM 的简化版，速度更快</span></li>
-    <li><span class="k">现状</span><span class="v">2017 年 Transformer 出现后，RNN 在 NLP 领域基本被淘汰，但在时间序列预测等场景还在用</span></li>
-  </ul>
-
-  <h3 id="gan">GAN · 生成对抗网络（造假高手）</h3>
-  <p><strong>GAN（Generative Adversarial Network）</strong>是 2014 年 Ian Goodfellow 发明的——两个神经网络"互相打架"，最终一个学会造假、一个学会打假。</p>
-
-  <div class="callout analogy">
-    <span class="tag">Analogy · 假币贩子 vs 警察</span>
-    <p><strong>Generator 生成器</strong> = 假币贩子，努力印出看起来真的假币。<br/>
-    <strong>Discriminator 判别器</strong> = 警察，努力识破哪些是假币。<br/>
-    两人反复较量——假币贩子越印越真，警察越查越严。最后假币贩子印出的假币"连警察都分不出真假"——GAN 就学会了"生成以假乱真的图像"。</p>
-  </div>
-
-  <ul class="keylist">
-    <li><span class="k">用途</span><span class="v">人脸生成（这些人不存在！）、图像超分辨、风格迁移</span></li>
-    <li><span class="k">代表作</span><span class="v">StyleGAN、BigGAN、CycleGAN</span></li>
-    <li><span class="k">缺点</span><span class="v">训练不稳定，容易"模式崩溃"（老是生成同一张脸）</span></li>
-  </ul>
-
-  <h3 id="diffusion">Diffusion · 扩散模型（当前最火）</h3>
-  <p><strong>Diffusion Model 扩散模型</strong>是 2020 年后爆火的图像生成技术——Midjourney、Stable Diffusion、Sora 全靠它。核心思想反直觉：<mark class="key">先教网络"如何一步步把清晰图片变成噪声"，再让它反过来"从噪声一步步还原成图片"</mark>。</p>
-
-  <div class="journey">
-    <div class="step">
-      <h4>正向扩散（训练）</h4>
-      <p>拿一张清晰的猫图片，一步步加噪声——最后变成"雪花屏"。网络学习"每一步加了多少噪声"。</p>
-    </div>
-    <div class="step">
-      <h4>反向去噪（生成）</h4>
-      <p>从纯噪声开始，让网络一步步"去噪"——每一步都把噪声减少一点。50-100 步后，一张清晰的图片就"生成"出来了。</p>
-    </div>
-    <div class="step">
-      <h4>条件生成</h4>
-      <p>加个文字条件（"一只戴墨镜的橘猫"），网络会朝着这个方向去噪——文生图就实现了。</p>
-    </div>
-  </div>
-
-  <ul class="keylist">
-    <li><span class="k">代表作</span><span class="v">DALL-E 3、Stable Diffusion、Midjourney、Sora（视频扩散）</span></li>
-    <li><span class="k">优点</span><span class="v">生成质量高、训练稳定、可控性强</span></li>
-    <li><span class="k">缺点</span><span class="v">生成慢（要 50-100 步），比 GAN 单次推理更耗算力</span></li>
-  </ul>
-
-  <div class="callout">
-    <span class="tag">Recap · 收束</span>
-    <p>神经网络 = <mark class="key">"堆积木一样搭出来的大脑"</mark>。<br/>
-    最小积木：<strong>神经元</strong>（加权求和 + 激活）。<br/>
-    学习引擎：<strong>反向传播 + 梯度下降</strong>（试错 → 调参）。<br/>
-    专业变种：<strong>CNN 看图 · RNN 读文 · GAN 造假 · Diffusion 生成</strong>。<br/>
-    掌握这五种主流架构，你就掌握了深度学习 90% 的常见工具。</p>
-  </div>
 
   <div class="pager">
     <a class="btn prev" href="./04-5-overfitting.html">
@@ -191,13 +86,13 @@
       <span class="title">§ 4.5 · 特征/标签/过拟合篇</span>
     </a>
     <a class="home" href="../../index.html">☰ 主页</a>
-    <a class="btn next" href="./06-training-trilogy.html">
-      <span class="dir">下一章 →</span>
-      <span class="title">第 6 章 · 训练三部曲</span>
+    <a class="btn next" href="./05-1-neuron.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 5.1 · 神经元篇</span>
     </a>
   </div>
 
-  <div class="page-foot">Xue Hai Wu Ya · Intelligence · Chapter 05</div>
+  <div class="page-foot">Xue Hai Wu Ya · Vol.03 AI · Chapter 05</div>
 
 </article>
   <script src="../../_shared/js/float-pager.js"></script>

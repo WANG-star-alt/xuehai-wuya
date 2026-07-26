@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 7.2 · QKV · Query/Key/Value 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./07-transformer.html">第 7 章</a>
+      <span class="sep">›</span>
+      <span>§ 7.2</span>
+    </div>
+    <a href="./07-transformer.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 7.2 · Sub-chapter</div>
+    <h1>QKV · Query / Key / Value 篇</h1>
+    <div class="cn">The Three Vectors Behind Attention</div>
+  </header>
+
+  <p class="lead">
+    上一篇我们说清了 Attention 的<em>直觉</em>——"跳回去看一眼相关的词"。这一篇要把这个直觉<mark class="key">翻译成一个公式</mark>：<strong>Attention(Q, K, V) = softmax(QKᵀ / √d) · V</strong>。看起来吓人，但只要你记住"图书馆查资料"这个比喻，它就变得再自然不过。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📚 你去图书馆查一本书</div>
+    <p>周末，你走进图书馆，想找一本关于"深度学习"的书。你会怎么做？<br/>
+    <strong>第一步</strong>：脑子里先形成"我要查什么"——"深度学习相关的书"，这是你的<em>查询意图</em>。<br/>
+    <strong>第二步</strong>：走到目录检索机前，输入关键词。系统会拿你的关键词和每本书的<em>索引标签</em>做比对——"计算机 · 人工智能 · 深度学习"匹配度高、"烹饪 · 川菜"匹配度低。<br/>
+    <strong>第三步</strong>：系统告诉你："这三本最相关，那两本次相关，其他不推荐"。你按推荐去书架取书，把书里的<em>内容</em>综合起来读。<br/>
+    这一整套流程，就是 QKV 的完整生活版本——查询、匹配、取值。</p>
+    <div class="link">→ <strong>Q</strong> = 你的查询；<strong>K</strong> = 每本书的索引标签；<strong>V</strong> = 每本书的实际内容。</div>
+  </div>
+
+  <h3>三个字母各是什么</h3>
+  <p>对于句子里的每一个词，Transformer 会把它同时"变身"成三个不同的向量。<em>不是三份复制，而是三种不同的"用途视角"</em>——就像同一个人在图书馆里既是提问者、也是被别人翻阅的书目、还带着自己的一本内容。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>字母</th><th>全称</th><th>角色</th><th>直觉理解</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Q</strong></td><td>Query（查询）</td><td>"我想找什么"</td><td>当前词发出的询问："哪些词跟我有关？"</td></tr>
+        <tr><td><strong>K</strong></td><td>Key（键）</td><td>"我是什么"</td><td>每个词自我描述的"标签"：让别人用来匹配我。</td></tr>
+        <tr><td><strong>V</strong></td><td>Value（值）</td><td>"我带来什么"</td><td>每个词真正携带的信息内容，被别人加权取用。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>数学上：一个词的原始向量 <code>x</code>，会被三个不同的矩阵 <code>W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub></code> 分别乘一下，就得到了这个词的 <code>q, k, v</code> 三个向量。<strong>这三个矩阵是模型训练时学出来的</strong>——它们决定了"这个词该以什么姿态提问、以什么姿态展示自己、以什么姿态贡献内容"。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 相亲会上的三种自我</span>
+    <p>把一句话想成一场相亲会：每个词是一位嘉宾。<br/>
+    <strong>Q（查询）</strong>：你走过去时，脑子里"我在找什么样的对象"的清单——身高、爱好、性格。<br/>
+    <strong>K（键）</strong>：每位嘉宾佩戴的"胸牌"——身高、爱好、性格的关键词摘要。<br/>
+    <strong>V（值）</strong>：嘉宾本人——真正的内容、故事、经历。<br/>
+    你的清单（Q）去逐个匹配大家的胸牌（K），得出"跟谁最合"的分数，然后按分数决定坐下来听谁多聊、听谁少聊——听到的就是 V。</p>
+  </div>
+
+  <h3>Attention 的完整四步公式</h3>
+  <p>把生活场景翻译成公式，只有四步——记住它，你就懂了整个 Transformer 的核心运算。</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>1. 打分 · QKᵀ</h4>
+      <p>当前词的 <code>q</code> 向量，和句子里每个词的 <code>k</code> 向量做<strong>点积</strong>——点积越大，说明两个向量方向越接近，代表越相关。<br/>
+      直觉：<em>"我的查询"和"你的自我描述"匹配吗？</em><br/>
+      结果：得到一串"原始分数"，句子多长就多少个数。</p>
+    </div>
+    <div class="step">
+      <h4>2. 缩放 · ÷ √d</h4>
+      <p>把上一步的分数<strong>除以 √d</strong>（d 是向量维度，通常 64 或 128）。<br/>
+      直觉：<em>把分数缩小到一个"温和"的范围，避免下一步 softmax 变得极端。</em><br/>
+      细节我们下面单独讲。</p>
+    </div>
+    <div class="step">
+      <h4>3. 归一化 · softmax</h4>
+      <p>把一串分数转成一串"总和为 1"的<strong>概率权重</strong>。<br/>
+      直觉：<em>"每本书我该看多重？"——不是绝对分数，而是相对比例。</em><br/>
+      结果：得到一组权重，比如 [0.7, 0.2, 0.05, 0.05]，总和恰好是 1。</p>
+    </div>
+    <div class="step">
+      <h4>4. 加权求和 · · V</h4>
+      <p>把每个词的 <code>v</code> 向量按上面得到的权重<strong>加权相加</strong>。<br/>
+      直觉：<em>"把最相关的那本书的内容多抄一点，不相关的少抄"——最后得到当前词的新表示。</em><br/>
+      这一步就是 Attention 的最终输出。</p>
+    </div>
+  </div>
+
+  <h3>把四步合成一行 · 那个著名的公式</h3>
+  <p>把上面四步压成一行数学，就是这个 2017 年之后所有 AI 工程师都能背下来的公式：</p>
+  <div class="callout">
+    <span class="tag">公式 · Attention 的核心</span>
+    <p style="text-align:center;font-size:1.1em;"><strong>Attention(Q, K, V) = softmax( QKᵀ / √d ) · V</strong></p>
+    <p>拆开读一遍：<em>把 Q 和 K 的转置相乘（打分）→ 除以 √d（缩放）→ 走一遍 softmax（归一化）→ 再乘 V（加权求和）</em>。<br/>
+    整个 Transformer 的核心运算，就是这一行；接下来的多头、层数堆叠、Encoder/Decoder，都是围绕这一行做扩展。</p>
+  </div>
+
+  <h3>为什么要除以 √d？· 一个容易被忽略的细节</h3>
+  <p>公式里那个不起眼的 <code>√d</code>，是很多人第一次看时都会一笔带过的。但它其实是<strong>整个 Transformer 稳定训练的关键之一</strong>。<br/>
+  想象两个 d 维向量做点积。如果 d 很大（比如 512），点积的结果就会<em>非常大</em>——从统计上讲，方差会随 d 线性增长。而 softmax 有个不太友好的性质：<mark class="key">输入数值一旦拉得太大，输出就会变得极端</mark>——最大的那个几乎是 1，其他全接近 0。</p>
+  <p>这会带来两个坏消息：</p>
+  <ul class="keylist">
+    <li><span class="k">梯度消失</span><span class="v">softmax 输出接近 0/1 时，反向传播时梯度几乎为零——模型学不到东西。</span></li>
+    <li><span class="k">注意力过于尖锐</span><span class="v">每个词只盯着一个词看，其他全忽略——失去了"综合关注多个词"的能力。</span></li>
+  </ul>
+  <p>把点积除以 <code>√d</code>，正好把方差<strong>拉回到 1 附近</strong>——softmax 就能得到一个"温和分布"，既有主次，也不会一边倒。这个看似不起眼的除法，是让 Transformer 能训练得动的核心技巧之一。<em>没有这一除，你的 Transformer 十有八九训不起来。</em></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 调音量</span>
+    <p>把声音调太大，喇叭就炸了、只听得见一个声源；调太小，什么都听不见。<br/>
+    <strong>√d 缩放</strong>就是那个"合适的音量"——让每个词都能<em>被听见</em>，同时又<em>有主有次</em>。<br/>
+    这就是为什么 Transformer 又叫 "<em>Scaled</em> Dot-Product Attention"——多的那个"Scaled"，就是指这一步缩放。</p>
+  </div>
+
+  <h3>一个具体例子 · 用数字走一遍</h3>
+  <p>假设有一句超短的话："<em>猫追球</em>"——三个词。为了简单，我们把每个词的 Q/K/V 都设成 2 维向量（真实里通常是 64 或 128 维）。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>词</th><th>Q</th><th>K</th><th>V</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>猫</td><td>[1, 0]</td><td>[1, 0]</td><td>[1, 2]</td></tr>
+        <tr><td>追</td><td>[0, 1]</td><td>[0, 1]</td><td>[3, 0]</td></tr>
+        <tr><td>球</td><td>[1, 1]</td><td>[1, 1]</td><td>[0, 1]</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>现在算"追"这个词的 Attention 输出：</p>
+  <ul class="keylist">
+    <li><span class="k">Step 1 · 打分</span><span class="v">"追"的 q=[0,1] 分别和"猫"的 k=[1,0]（点积=0）、"追"的 k=[0,1]（点积=1）、"球"的 k=[1,1]（点积=1）。原始分数：[0, 1, 1]。</span></li>
+    <li><span class="k">Step 2 · 缩放</span><span class="v">除以 √2 ≈ 1.41 → [0, 0.71, 0.71]。</span></li>
+    <li><span class="k">Step 3 · Softmax</span><span class="v">得到权重 ≈ [0.22, 0.39, 0.39]。三者加起来是 1。</span></li>
+    <li><span class="k">Step 4 · 加权求和</span><span class="v">0.22×[1,2] + 0.39×[3,0] + 0.39×[0,1] = [1.39, 0.83]。这就是"追"的新表示。</span></li>
+  </ul>
+  <p>看出来了吗？<strong>"追"的新表示，融合了"猫"、"追"、"球"三个词的信息，各按不同权重</strong>。这个新向量不再是原来那个孤立的"追"，而是"在这个句子里、由这些邻居定义的追"。</p>
+
+  <h3>QKV 让 Attention 变得可训练</h3>
+  <p>你可能会问：为什么要搞出 Q、K、V 三个不同的向量？直接拿词向量互相点积不行吗？——<br/>
+  <strong>答案是：不行，会太死板</strong>。如果直接用词向量互相点积，那"相关性"就是<em>固定</em>的，无法根据不同任务、不同上下文灵活调整。<br/>
+  引入 <code>W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub></code> 三个可学习的投影矩阵后，情况就完全不同了——<mark class="key">同一个词，可以以不同的姿态提问、以不同的姿态展示、以不同的姿态贡献</mark>。模型通过训练，学会"处理这个词时，我应该关心什么方面的信息"——这才是 QKV 设计的精髓。</p>
+
+  <h3>K 和 V 为什么要分开 · 一个常被忽略的问题</h3>
+  <p>还有一个精妙的设计——为什么 K 和 V 是<strong>两个不同的向量</strong>而不是同一个？直觉上，"用来匹配的东西"和"被取走的内容"，好像也可以合并成一个吧？<br/>
+  但仔细想想图书馆的比喻——<em>目录卡片（K）</em>上写的是"标题、作者、关键词"，简短、便于快速匹配；而<em>书的正文（V）</em>是完整内容，是你真正要读的东西。<mark class="key">检索时用简短的标签匹配，取用时读完整的内容</mark>——这是两件不同的事，用不同的向量表达才最自然。<br/>
+  在数学上，把 K 和 V 分开，让模型能<em>学到</em>："我用哪些维度做匹配、用哪些维度贡献内容"——这两组维度可以完全不同。比如"猫"这个词，用"名词-动物-主语候选"这些标签做匹配（K）；但真正被取走的内容（V）可能包含"猫的语义、情感联想、上下文角色"等更丰富的东西。K 和 V 分离，让 Attention 的表达能力翻了一倍。</p>
+
+  <h3>Attention 是"软"的——不是硬选一个</h3>
+  <p>要理解 Attention 的另一个精妙之处：它给出的<strong>是一组权重分布，而不是"选中一个"的硬性选择</strong>。<br/>
+  很多人第一次学 Attention 时会想："模型是不是像我们查资料一样，找到最相关的那一本书就打开？"——不是。Attention 是 <em>softmax</em> 输出的一组概率，比如 [0.4, 0.3, 0.15, 0.1, 0.05]——它不"选定"任何一个，而是<mark class="key">按比例混合</mark>所有的候选。<br/>
+  这一点非常重要——它让 Attention 变成了一个<strong>可微分</strong>的操作，梯度可以通过它反向传播回去、调整参数。如果是"硬选一个"，就没法算梯度，模型就没法学习了。<em>"软注意力"</em>是 Transformer 能被端到端训练的数学基础。</p>
+
+  <h3>QKV 出现在 Transformer 的三个地方</h3>
+  <p>了解了 QKV 的运作，还得清楚它在整个 Transformer 里出现的位置——共有三处，作用略有不同：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>出现位置</th><th>Q 来源</th><th>K/V 来源</th><th>用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Encoder Self-Attention</td><td>输入句子</td><td>同一输入句子</td><td>让每个输入词理解全句上下文</td></tr>
+        <tr><td>Decoder Self-Attention（带掩码）</td><td>已生成部分</td><td>同一已生成部分</td><td>生成下一词时回顾自己写过的内容</td></tr>
+        <tr><td>Decoder Cross-Attention</td><td>Decoder 当前状态</td><td>Encoder 全部输出</td><td>翻译时"看一眼源语言"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三处使用的 QKV 是<strong>不同的三套矩阵</strong>——Encoder 有自己的一套 W<sub>Q</sub>/W<sub>K</sub>/W<sub>V</sub>，Decoder 的 Self-Attention 有另一套，Cross-Attention 又有一套。它们独立学习、各司其职。<em>整个 Transformer 里，QKV 是最基础也是最反复出现的建筑构件</em>。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>QKV 是 Attention 的心脏：<mark class="key">Q 提问、K 展示、V 贡献</mark>。四步公式——<strong>打分 → 缩放 → 归一化 → 加权求和</strong>——就是 Transformer 每一层里最核心的运算。<br/>
+    但一组 QKV 只能捕捉<em>一种</em>相关性。人类看一句话时，会同时关注语法、语义、指代、情感——一组 QKV 显然不够用。下一篇，我们把"一组"变成"很多组"——<strong>多头注意力</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./07-1-attention.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 7.1 · Attention 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./07-3-multihead.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 7.3 · Multi-head 多头篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 7.2 · QKV</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

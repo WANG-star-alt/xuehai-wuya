@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 6.5 · SFT · RLHF · DPO 对齐篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./06-training-trilogy.html">第 6 章</a>
+      <span class="sep">›</span>
+      <span>§ 6.5</span>
+    </div>
+    <a href="./06-training-trilogy.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 6.5 · Sub-chapter</div>
+    <h1>SFT · RLHF · DPO 对齐篇</h1>
+    <div class="cn">Alignment · Teaching Manners to a Genius Monster</div>
+  </header>
+
+  <p class="lead">
+    预训练之后，你得到的是一个"读遍全人类文字、但不懂对话礼仪"的怪物基座。<mark class="key">对齐（alignment）就是把这个怪物调教成有用、诚实、无害的助手</mark>——它是 ChatGPT、Claude、DeepSeek 之所以"好用"的最后一公里，也是过去两年 AI 领域最活跃的战场。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎓 天才少年入职培训</div>
+    <p>公司招了一个天才实习生——他博览群书、什么都懂，但完全没接受过职场训练：<br/>
+    你问他"帮我起草一封邮件"，他可能反问你"起草是什么意思"；<br/>
+    你请他推荐一本书，他可能给你一本涉及暴力的书；<br/>
+    你让他解释一个概念，他给你写了篇 5000 字论文——你只想要 3 句话。<br/>
+    于是 HR 分三步培训他：<br/>
+    <strong>Step 1</strong> — 给他看 1000 份"标准回答"，模仿着写（SFT）；<br/>
+    <strong>Step 2</strong> — 让他写两个版本，员工投票选更好的，训一个"品味打分器"（Reward Model）；<br/>
+    <strong>Step 3</strong> — 让他反复写、打分器反复打分，他一次比一次说得更得体（RLHF）。<br/>
+    三步走完，天才怪物就变成了顺手的助理。</p>
+    <div class="link">→ 对齐三部曲：<strong>SFT → RM → RLHF</strong>（新版可用 DPO 一步到位）。</div>
+  </div>
+
+  <h3>一、SFT：监督微调，学"对话的样子"</h3>
+  <p><strong>SFT（Supervised Fine-Tuning，监督微调）</strong>是对齐的第一步。做法很简单：准备几万到几十万条"高质量对话"——问题 + 理想的回答——让基座模型模仿着学。技术上还是<strong>预测下一个 token</strong> 的目标函数，只不过数据从"网页文本"换成了"人写的标准问答"。</p>
+  <p>SFT 的关键在<strong>数据质量</strong>。这些"标准回答"通常由高薪标注员或专家撰写：一个医学问题的回答，可能请医生写；一个法律问题的回答，可能请律师写。<mark class="key">一条 SFT 数据可能价值 5 到 50 美元</mark>，但只有几万条就能显著改变模型的"说话风格"和"回答格式"。</p>
+  <p>SFT 之后，模型学会了：</p>
+  <ul class="keylist">
+    <li><span class="k">对话格式</span><span class="v">"用户问 → 助理答"这种模式，而不是漫无边际地续写。</span></li>
+    <li><span class="k">拒绝有害请求</span><span class="v">面对"如何制毒"这样的问题，学会礼貌拒绝。</span></li>
+    <li><span class="k">遵循指令</span><span class="v">"用列表"、"用韩语"、"200字以内"——学会照做。</span></li>
+    <li><span class="k">工具使用</span><span class="v">如果 SFT 数据里包含函数调用示例，模型也能学会调用工具。</span></li>
+  </ul>
+  <p>但 SFT 有个天花板——模型只会模仿"人写过的答案"，而人写的答案数量有限、风格也有限。要突破这个瓶颈，就需要下一步——RLHF。</p>
+
+  <h3>二、RLHF：让模型"讨人喜欢"</h3>
+  <p><strong>RLHF（Reinforcement Learning from Human Feedback，基于人类反馈的强化学习）</strong>是 ChatGPT 之所以成为 ChatGPT 的关键技术。它的思路很聪明：<strong>让人给答案"打分"比"写答案"容易得多</strong>——从两个回答中选一个更好的，只需要几秒钟；从头写一个好回答，可能要几分钟。</p>
+  <p>RLHF 分三步走：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>步骤</th><th>做什么</th><th>产物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>① 收集偏好数据</td><td>让 SFT 模型对同一问题生成 2-4 个回答；人工标注哪一个更好</td><td>偏好数据集（几十万条）</td></tr>
+        <tr><td>② 训练奖励模型</td><td>用偏好数据训练一个"品味打分器"——输入问题+回答，输出一个分数</td><td>Reward Model（RM）</td></tr>
+        <tr><td>③ PPO 强化学习</td><td>让 SFT 模型生成回答，用 RM 打分，用 PPO 算法调整模型参数——分数越高越好</td><td>对齐后的模型</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><strong>PPO（Proximal Policy Optimization，近端策略优化）</strong>是 OpenAI 提出的强化学习算法。它有一个精妙的机制：<strong>不让模型偏离原来的 SFT 版本太远</strong>——因为强化学习容易"跑偏"，为了拿高分模型可能生成一些奇怪但骗过 RM 的答案，PPO 用一个 KL 散度惩罚项，把新模型"拴"在 SFT 模型附近。</p>
+  <p>RLHF 之后，模型变得<strong>圆滑、得体、有礼貌、会道歉、会解释</strong>——这就是你感觉到 ChatGPT "会聊天"的原因。它并不是变聪明了（知识量没增加），而是学会了"怎么把已经知道的东西说得让人喜欢听"。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 培训班的"品味老师"</span>
+    <p>SFT 阶段就像给学生看标准答案——他学会了"答题的样子"。RLHF 阶段就像请一位品味老师坐旁边——学生每写一个答案，老师点评"这个更好、那个太啰嗦、这段有礼貌加分、那段冷冰冰扣分"。学生反复试、老师反复评——一年下来，学生的"品味"就跟老师同步了。<strong>RLHF 的本质，是把"打分器"里的品味，蒸馏进大模型的参数里</strong>。</p>
+  </div>
+
+  <h3>三、DPO：把 RLHF 变简单</h3>
+  <p>RLHF 虽然好用，但工程复杂：要维护三个模型（SFT、RM、当前策略），要跑 PPO 这种 tricky 的强化学习算法，训练不稳定、超参多。2023 年斯坦福提出的 <strong>DPO（Direct Preference Optimization，直接偏好优化）</strong>，把 RLHF 大幅简化了。</p>
+  <p>DPO 的核心洞察是：<mark class="key">既然目标是让模型对齐偏好数据，为什么要绕道 RM+PPO？</mark>——它用数学推导出一个损失函数，可以<strong>直接在偏好数据上做监督式训练</strong>，跳过奖励模型这一步。工程上，DPO 只需要偏好数据 + 一次微调——训练稳定、代码简单、效果与 RLHF 相当或更好。</p>
+  <p>2024 年之后，DPO 成为开源模型的默认选择：Llama 3、Mistral、Qwen 系列都用了 DPO 或其变体（IPO、KTO、SimPO 等）。<strong>OpenAI 和 Anthropic 内部据说仍在用 RLHF+PPO</strong>——因为在超大规模下 RLHF 依然有其优势——但对于 90% 的团队，DPO 已经够用。</p>
+
+  <h3>四、RL 推理训练：o1 / R1 的新范式</h3>
+  <p>2024 年下半年，OpenAI 发布 o1、DeepSeek 发布 R1，让 AI 界震动的是——<strong>他们用强化学习让模型学会了"一步步深度思考"</strong>。这跟 RLHF 有本质区别：RLHF 是让模型"讨人喜欢"，RL 推理训练则是让模型"真正会推理"。</p>
+  <p>做法大体是：给模型出难题（数学、代码、逻辑），让它生成很长的思维链（chain-of-thought）；如果最终答案对，就给奖励；如果错，就给惩罚。<strong>DeepSeek-R1 的关键发现是：只用规则奖励（答案对就给分），不用人写偏好数据，模型也能自己"想出"越来越长、越来越复杂的推理链</strong>——这被称为"啊哈时刻"，因为它像是模型自己学会了反思。</p>
+  <ul class="keylist">
+    <li><span class="k">奖励类型</span><span class="v">规则奖励（答案对错）+ 格式奖励（是否用了 &lt;think&gt; 标签）——非常简单。</span></li>
+    <li><span class="k">算法</span><span class="v">DeepSeek 用的是 GRPO——PPO 的简化变体，去掉 Critic 网络省显存。</span></li>
+    <li><span class="k">效果</span><span class="v">数学、代码、逻辑推理能力暴涨，超越 GPT-4 的直接回答版本。</span></li>
+    <li><span class="k">代价</span><span class="v">推理时消耗大量 token（一次回答可能几万字思考）——但值得。</span></li>
+  </ul>
+
+  <h3>五、对齐的三层地图</h3>
+  <p>把 SFT、RLHF、DPO、RL 推理放到一张地图上：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>阶段</th><th>目标</th><th>数据</th><th>典型算法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>SFT</td><td>学对话样式与指令遵循</td><td>问答对（几万-几十万条）</td><td>标准监督学习</td></tr>
+        <tr><td>Reward Model</td><td>学"什么答案更好"</td><td>偏好对（几十万条）</td><td>Bradley-Terry 排序</td></tr>
+        <tr><td>RLHF</td><td>提升礼貌、有用性</td><td>RM 给的分</td><td>PPO / GRPO</td></tr>
+        <tr><td>DPO</td><td>RLHF 的简化替代</td><td>偏好对</td><td>直接损失优化</td></tr>
+        <tr><td>RL 推理训练</td><td>学一步步深度思考</td><td>数学/代码答案对错</td><td>规则奖励 + GRPO/PPO</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>六、对齐税：给模型"戴上礼貌手铐"的代价</h3>
+  <p>对齐虽然让模型好用，但也有<strong>对齐税（alignment tax）</strong>——过度对齐会让模型变笨、变啰嗦、变胆小。你可能注意到：<mark class="key">同一个模型的 Base 版有时反而比 Chat 版更聪明</mark>，因为 Chat 版为了礼貌、安全，牺牲了一部分原始能力。这是全行业都在权衡的问题——如何既让模型有礼貌又不损失聪明。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>预训练给了模型"知识"，对齐给了模型"教养"。<strong>SFT 教它对话的样子、RLHF/DPO 教它讨人喜欢、RL 推理教它一步步思考</strong>——这三层调教，把一个野生的语言模型，变成了今天你在用的 ChatGPT、Claude、DeepSeek。<mark class="key">从此以后，训练一个 AI 不再只是"读书"，还要"上礼仪课、学演讲、练思考"</mark>——AI 训练，正在越来越像"养一个人"。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./06-4-pretrain.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 6.4 · 预训练 Pre-training 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./07-transformer.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">第 7 章 · Transformer</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 6.5 · Alignment</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

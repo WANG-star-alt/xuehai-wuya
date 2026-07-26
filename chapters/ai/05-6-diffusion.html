@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 5.6 · Diffusion 扩散模型篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./05-neural-network.html">第 5 章</a>
+      <span class="sep">›</span>
+      <span>§ 5.6</span>
+    </div>
+    <a href="./05-neural-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 5.6 · Sub-chapter</div>
+    <h1>Diffusion · 扩散模型篇</h1>
+    <div class="cn">Diffusion Models</div>
+  </header>
+
+  <p class="lead">
+    Midjourney、Stable Diffusion、DALL·E、Sora——2022 年之后席卷全球的"AI 画图"浪潮，背后清一色都是<mark class="key">扩散模型（Diffusion Model）</mark>。它的核心想法听着像哲学：<strong>先把清晰的图像一步步搅成噪声，再教网络反过来把噪声一步步还原成清晰的图</strong>。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎬 一杯逐渐搅混的墨水</div>
+    <p>把一滴墨滴进清水杯，一开始只有小小一团黑；<br/>
+    你搅一下——墨扩散一点；<br/>
+    再搅一下——扩散更多；<br/>
+    搅了 1000 次以后——整杯水变成均匀的灰色，看不出墨最初落在哪。<br/>
+    这是"从有序到无序"的正向过程，物理上叫扩散。<mark class="key">Diffusion 模型的绝招是把这个过程倒着放</mark>：从一整杯灰水，能不能一步步"逆搅拌"，还原成"一滴清晰的墨"？<br/>
+    听起来像永动机，但如果你训练一个神经网络专门"预测每一步的搅拌方向"，理论上就可以做到——这就是扩散模型。</p>
+    <div class="link">→ <strong>前向 = 加噪声</strong>；<strong>反向 = 去噪声</strong>——学会去噪的网络，就等于学会了生成。</div>
+  </div>
+
+  <h3>训练分两步：先教它"如何加噪"，再教它"如何去噪"</h3>
+  <p><strong>前向扩散（Forward Diffusion）</strong>不需要学——它就是一个死板的数学过程：拿一张真实图片，每一步往上面加一点点高斯噪声。加个 1000 步之后，原图完全变成一片纯粹的随机噪声，跟无信号电视的雪花屏一样。<br/>
+  <strong>反向去噪（Reverse Denoising）</strong>才是要训练的：给神经网络看每一步"加噪后的图" + "这一步加了多少噪"，让它学会"去噪一小步"。训练目标很朴素——<mark class="key">给我第 t 步的带噪图，你告诉我第 t 步加进去的噪声长什么样</mark>。反复训练之后，这个网络就变成一位"专业去噪师"。<br/>
+  推理时怎么用？从一张纯噪声开始，让网络反复去噪 1000 次（或者用更快的采样器 50 步、20 步搞定），最后从雪花里"雕出"一张清晰的图像。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 米开朗琪罗雕大卫</span>
+    <p>米开朗琪罗有句名言："大卫本就在这块大理石里，我只是把多余的部分凿掉。"<br/>
+    <strong>Diffusion 模型的生成过程一模一样</strong>——它面对一堆纯粹随机的噪声，坚定地相信"清晰的图片就在这团噪声里"，然后一步一步把"多余的噪声"凿掉。凿到最后，图像浮现。<br/>
+    区别只是：米开朗琪罗靠天赋，Diffusion 靠一亿次训练教会的"哪一点是多余噪声"。</p>
+  </div>
+
+  <h3>为什么"分步去噪"比 GAN 更稳</h3>
+  <p>GAN 训练是"一步到位"——生成器直接从噪声生成整张图，这一步既要构图、又要上色、又要处理细节，什么都要它一次搞定，训练极其不稳。<br/>
+  Diffusion 把"一步到位"拆成 1000 步小改动——<mark class="key">每一步只需要预测"下一小点点噪声长什么样"</mark>，这个子任务简单得多，训练目标明确，梯度稳定。就像"一次搬 100 公斤"和"分 100 次每次搬 1 公斤"的区别——总量一样，但后者稳得多。<br/>
+  代价是：生成一张图需要几十上百步网络前向计算，速度天然慢。这也是为什么 Midjourney 让你等几秒钟才出图——它在心里默默去噪几十次。</p>
+
+  <h3>加上"文字条件"：从随机生图到"按提示词画"</h3>
+  <p>光会"随机生图"没啥用——真正让 Diffusion 走向大众的是<strong>文本引导（Text-conditioning）</strong>：把你输入的一句话（"一只在月球上滑板的柴犬，赛博朋克风格"）通过 CLIP 之类的文本编码器变成一个向量，喂给去噪网络。<br/>
+  这样每一步去噪时，网络不仅根据"当前带噪图"预测噪声，还会考虑"这张图应该更像那句话描述的东西"。<mark class="key">相当于给雕塑家发了一张草图</mark>：他一边凿石头一边看草图，凿出来的雕像就长成草图那样。</p>
+
+  <h3>Diffusion 家族的名片墙</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>年份</th><th>模型</th><th>看点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2015</td><td>Sohl-Dickstein</td><td>最早提出"扩散概率模型"的理论框架，几年没火。</td></tr>
+        <tr><td>2020</td><td>DDPM</td><td>Ho 等人把训练目标简化成"预测噪声"，效果直接超过 GAN。</td></tr>
+        <tr><td>2021</td><td>GLIDE / DALL·E 2</td><td>OpenAI 首次让扩散模型"听懂人话"生图。</td></tr>
+        <tr><td>2022</td><td>Stable Diffusion</td><td>Stability AI 开源，AI 画图从此走进千家万户。</td></tr>
+        <tr><td>2022</td><td>Imagen / Midjourney</td><td>谷歌和 Midjourney 分别把画质拉到照片级。</td></tr>
+        <tr><td>2023</td><td>SDXL / ControlNet</td><td>更高分辨率 + 姿态 / 边缘 / 深度精细可控。</td></tr>
+        <tr><td>2024</td><td>Sora / Veo</td><td>把扩散扩展到视频领域，直接生成一分钟连贯短片。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Latent Diffusion：偷偷去噪省算力</h3>
+  <p>直接在 1024×1024 的图像像素上做 1000 步去噪太贵了。Stable Diffusion 的一个关键工程创新是<strong>潜空间扩散（Latent Diffusion）</strong>：先用自编码器把图像压缩成一个 64×64 的"潜表示"（比原图小 64 倍），扩散过程全在这个小潜空间里跑，最后再解码回原尺寸。<br/>
+  <mark class="key">同样质量下，算力省了几十倍</mark>——这才让"消费级显卡就能生图"成为可能，也才有了后来 Stable Diffusion 的开源大爆炸。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 用缩略图先构图，再放大精修</span>
+    <p>设计师做海报，通常不会直接在 4K 大画布上苦干——他们先用<strong>小尺寸缩略图</strong>快速试构图、试配色，定下来之后再放大到大尺寸精修。潜空间扩散就是这个思路——先在小画布上"想清楚整体应该长啥样"，最后一次性放大。这是 Stable Diffusion 能便宜、能开源、能人人玩上的关键。</p>
+  </div>
+
+  <h3>Diffusion 的"副能力"们</h3>
+  <ul class="keylist">
+    <li><span class="k">图生图</span><span class="v">给一张原图，改成不同风格 / 不同姿势——ControlNet、img2img 都靠它。</span></li>
+    <li><span class="k">局部重绘</span><span class="v">圈出一块，让 AI 只重画这块，其他保持不动——Photoshop 的"生成填充"就是它。</span></li>
+    <li><span class="k">超分辨率</span><span class="v">把低清图作为条件，去噪时"猜"出高清细节。</span></li>
+    <li><span class="k">视频生成</span><span class="v">把 3D 视频张量整个当"图"扩散，Sora / Veo / Runway 就这么干。</span></li>
+    <li><span class="k">3D 与音频</span><span class="v">Diffusion 也用在 3D 模型、语音、音乐生成上——它的应用面比 GAN 广得多。</span></li>
+  </ul>
+
+  <h3>为什么 Diffusion 会取代 GAN</h3>
+  <p>Diffusion 相比 GAN 有三个决定性的优势：<strong>训练稳定</strong>（不会崩、超参友好）、<strong>生成质量高</strong>（照片级、连指头都不再画错）、<strong>可控性强</strong>（文字、姿态、深度、边缘、涂鸦都能当条件）。<br/>
+  唯一的短板是"慢"——但推理加速技术这两年进化神速，从最初的 1000 步到现在的一步 LCM，速度已经追上 GAN。<mark class="key">今天你几乎找不到理由再选 GAN 做高质量生成</mark>——所以 Diffusion 才在两年时间里几乎独占了整个生成式 AI 的图像 / 视频领域。</p>
+
+  <h3>Classifier-Free Guidance：让画得更"听话"</h3>
+  <p>如果只是把文字丢进去，扩散模型有时"听不进去"——出来的图可能创意有余、贴合不足。研究者发明了一个精妙的技巧叫 <strong>Classifier-Free Guidance（CFG）</strong>：训练时随机把文字条件抹掉一部分，让模型同时学会"有条件生成"和"无条件生成"两种模式；推理时，把两种模式的预测相减、放大差异，就得到一个<mark class="key">"更贴合提示词"的方向</mark>——朝这个方向多迈几步，生成的图就更符合你的描述。<br/>
+  几乎所有商用扩散模型都在用 CFG，Midjourney 里那个 <code>--s</code>（stylize）、Stable Diffusion 里那个 CFG Scale 参数，调的就是这个方向的强度：数字小则自由发挥，数字大则死抠提示词。这是"用户和模型对话"这层看不见的桥梁。</p>
+
+  <h3>DDIM、DPM-Solver：从 1000 步到 20 步</h3>
+  <p>Diffusion 慢的根本原因是"要跑 1000 次网络"。研究者们从数学上死磕："能不能一步顶几步？" 于是有了一系列<strong>快速采样器</strong>：<strong>DDIM</strong>（2020）把随机采样变成确定性积分，把 1000 步压到 50 步、质量不掉；<strong>DPM-Solver</strong>（2022）用高阶数值方法，20 步就能出高清图；<strong>Consistency Models 与 LCM</strong>（2023-2024）走得更极端——直接把 1000 步"蒸馏"成 1~4 步。<br/>
+  这条路径的意义不亚于算法本身：它把 Diffusion 从"要等半分钟才出图"变成"手机上也能实时生图"。Midjourney、可灵、即梦这些消费级产品之所以能"秒出图"，靠的正是这些采样器的进步。</p>
+
+  <h3>U-Net：藏在扩散模型里的老兵</h3>
+  <p>Diffusion 里那个"去噪网络"用的架构是<strong>U-Net</strong>——一种早在 2015 年就诞生的分割网络，形如英文字母 U：左边一路下采样把图缩小、右边一路上采样把图放大，中间用跳跃连接（skip connection）把对应层次的信息传过去。这种结构天生适合"输入是图、输出也是图"的任务——医学图像分割、边缘检测、超分辨率——都是它的传统地盘。<br/>
+  Diffusion 借用 U-Net 是因为去噪本质上也是"输入一张带噪图、输出一张干净图"的图像到图像任务。<mark class="key">Stable Diffusion 里核心那个巨大的神经网络，说穿了就是一个加了 Attention 的 U-Net</mark>。近两年更新的架构（比如 DiT，Diffusion Transformer）开始用纯 Transformer 替代 U-Net——Sora 走的就是这条路——但 U-Net 的思想还是深深烙在扩散模型的血脉里。</p>
+
+  <h3>Sora 与视频扩散的挑战</h3>
+  <p>把 Diffusion 从图像扩展到视频，看起来就是"多一个时间维度"，其实工程上难度爆炸——一段 10 秒的 1080p 视频有 240 帧，每帧上百万像素，直接扩散内存瞬间爆炸；而且不同帧之间要保持"人物身份、场景连贯、物理合理"，稍不注意就"人物换脸、桌子瞬移"。<br/>
+  Sora 的解法是把整段视频压缩到一个"时空潜空间"里——先用 3D 自编码器把视频压得极小，再在潜空间里扩散，最后解码回原尺寸。同时借鉴了 Transformer 的 Patch 切块思路，把视频切成"时空块（spacetime patches）"逐块处理。<mark class="key">这套架构让 Sora 能生成一分钟连贯的短片</mark>，人物动作、镜头运动、光影变化都能保持连贯——这是 2024 年 AI 领域最重要的突破之一，也预示了"视频不再稀缺"的新时代。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>Diffusion = <strong>正向加噪 + 反向去噪</strong>——训练时让网络学会"每一步的噪声长啥样"，生成时从纯噪声一步步"雕出"图像。它的稳定、高质、可控让它在两年内取代 GAN 成为生成式 AI 的主流。现在你看到的每一张 AI 高清图、每一段 AI 短视频、每一个 Photoshop 的"生成填充"——背后基本都是这个"逆搅拌"的思路在运转。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./05-5-gan.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 5.5 · GAN 对抗网络篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./06-training-trilogy.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">第 6 章 · 训练三部曲</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 5.6 · Diffusion</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

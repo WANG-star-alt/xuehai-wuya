@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 5.2 · 前向&反向传播篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./05-neural-network.html">第 5 章</a>
+      <span class="sep">›</span>
+      <span>§ 5.2</span>
+    </div>
+    <a href="./05-neural-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 5.2 · Sub-chapter</div>
+    <h1>前向 & 反向传播篇</h1>
+    <div class="cn">Forward &amp; Backward Propagation</div>
+  </header>
+
+  <p class="lead">
+    神经网络能"学习"，靠的是两个动作反复交替：<mark class="key">前向传播算出答案，反向传播算清责任</mark>。前者像考试，后者像批卷；一次考试 + 一次批卷，就叫做"训练一步"。上万亿次这种交替，就是 GPT 的训练全过程。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎬 一家人做红烧肉，一次比一次好吃</div>
+    <p>你第一次做红烧肉，凭感觉放糖、放酱油、放黄酒——端上桌，一家人各自打分：爸说"甜了"，妈说"色浅了"，你尝完自己也觉得"酒味太冲"。<br/>
+    第二次，你根据大家的反馈微调：<strong>少一勺糖、多半勺老抽、少倒点黄酒</strong>——再上桌，评价就好一些。<br/>
+    第三次、第十次……每一次你都是"先做菜 → 尝一尝 → 挨骂 → 改方子"。做菜的动作就是前向传播，"根据挨骂调方子"就是反向传播。<mark class="key">神经网络学东西的方式，跟你练红烧肉一模一样</mark>。</p>
+    <div class="link">→ <strong>前向 = 输出结果</strong> · <strong>反向 = 分摊责任、修正权重</strong>。</div>
+  </div>
+
+  <h3>前向传播：数据像水一样从左向右流</h3>
+  <p>前向传播（Forward Propagation）是神经网络的"正向计算"过程：你把输入（比如一张图、一句话）从最左边灌进去，它一层一层往右传——每一层的所有神经元都做一遍"加权求和 + 激活函数"，把这一层的输出扔给下一层。就像水流经一串水磨，一层磨一层磨，最后从右侧流出一个结果——比如"这张图片有 87% 的概率是猫"。<br/>
+  前向的每一步都清晰、单向、不回头。这个过程<strong>不会改变任何权重</strong>——它只是"用当前的参数算一遍答案"。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一条流水线上的多道工序</span>
+    <p>前向传播就像<strong>工厂流水线</strong>：原材料（输入）从这头进，经过冲压、焊接、喷漆、组装……每道工序（每一层神经元）都在半成品上加工一次，从那头出来的就是成品（模型的预测）。每道工序的机器（权重）是<strong>固定</strong>的——流水线开动时不许调机器。要改机器，得等下一步"反向"环节。</p>
+  </div>
+
+  <h3>损失函数：一把量差距的尺子</h3>
+  <p>前向传出结果之后，我们要问一句："这答案跟标准答案差多少？" 这就是<strong>损失函数（Loss Function）</strong>要干的事。它把"模型说的"和"真实标签"做对比，输出一个数字——<mark class="key">数字越小说明越准，越大说明越离谱</mark>。<br/>
+  比如分类任务里常用"交叉熵损失"，回归任务里常用"均方误差"。你可以把它想成菜端上桌之后一家人打的<strong>总分</strong>——0 分是完美复刻大厨，100 分是被扔了。整个训练的唯一目标，就是想尽办法让这个损失数字降下来。</p>
+
+  <h3>反向传播：把责任按贡献分摊回去</h3>
+  <p>反向传播（Backpropagation，简称 BP）是深度学习的"灵魂算法"。它做的事情听起来很难，但道理很朴素：<strong>既然结果错了，就得沿着来时路，一层一层往回追问——"这一层的每个权重，各自对最终错误负多少责任？"</strong> 谁责任大，就多调它一点；谁基本没参与，就少动或不动。<br/>
+  数学上，这靠的是"链式法则"——把最终的损失，对每个权重求"偏导数"。导数就是"这个权重变一点点，损失会跟着变多少"的斜率。斜率大的权重就是"祸首"，斜率小的就是"路人"。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 项目做砸了开复盘会</span>
+    <p>反向传播就是<strong>一场逆向复盘会</strong>：项目失败了（损失很高），项目经理不能只骂最后一个交付的人——他得从终点回溯：这次交付出错，是因为上一环节没接好；上一环节没接好，是因为再上一环节的输入就是错的……一层层追责，直到找到源头。<strong>每个环节该承担多少改进量，都算得清清楚楚</strong>。神经网络就靠这套自动复盘机制，让百亿参数各自认领自己那一份责任。</p>
+  </div>
+
+  <h3>梯度下降：顺着斜坡走下山</h3>
+  <p>反向传播算出了"每个权重的责任"（也叫<strong>梯度</strong>），接下来就要用它去修正权重。修正规则叫<strong>梯度下降（Gradient Descent）</strong>：<mark class="key">权重 = 原权重 − 学习率 × 梯度</mark>。<br/>
+  你可以把损失函数想象成一片山地：模型现在站在山上某个位置，梯度就是"最陡下坡方向的箭头"。你顺着箭头走一小步（"一小步"的大小由"学习率"决定），就离山谷（损失最小值）更近一点。走几百万步之后，模型基本就落到山谷里了——这时候各种权重的组合，就是训练出来的"聪明模型"。</p>
+
+  <h3>前向 + 反向 = 一次完整训练迭代</h3>
+  <ul class="keylist">
+    <li><span class="k">Step 1 · 前向</span><span class="v">拿一批样本，从输入层算到输出层，得到预测。</span></li>
+    <li><span class="k">Step 2 · 算损失</span><span class="v">用损失函数比较预测和真实标签，得到一个数字。</span></li>
+    <li><span class="k">Step 3 · 反向</span><span class="v">用链式法则，把损失对每个权重的梯度都算出来。</span></li>
+    <li><span class="k">Step 4 · 更新</span><span class="v">用梯度下降规则，把每个权重减去"学习率 × 梯度"。</span></li>
+    <li><span class="k">Step 5 · 回到 Step 1</span><span class="v">下一批样本进来，再走一遍——直到损失不再下降。</span></li>
+  </ul>
+
+  <h3>学习率：走多大一步是门艺术</h3>
+  <p>学习率（learning rate）这个数字看着不起眼，其实是训练里最难调的超参数之一。步子太大——每次跨过山谷两侧，永远不落底，甚至越训越糟（"发散"）；步子太小——训练龟速，几天几夜都下不了山。<br/>
+  实践中人们会用"学习率衰减"、"Adam / AdamW 优化器"之类的技巧，让开头步子大、后面步子小——粗调加精调结合。你写代码调不好，往往就是这个数字设得离谱。</p>
+
+  <h3>为什么反向传播是"神来一笔"</h3>
+  <p>1986 年之前的神经网络训练极其低效——人们不知道怎么高效地把误差摊回去。Rumelhart、Hinton 等人把链式法则用到神经网络上，让<strong>一次反向计算就能同时算出所有权重的梯度</strong>，算力复杂度和一次前向相当。<mark class="key">这一下把"训练百亿参数"从纸面变成工程可行</mark>。可以说，没有反向传播，就没有今天的深度学习——就像没有蒸汽机就没有工业革命一样重要。</p>
+
+  <h3>批量、随机、小批量——三种下山姿势</h3>
+  <p>梯度下降真正在工程里落地时，有三种玩法：<strong>批量梯度下降（Batch GD）</strong>——每一步都用整个数据集算梯度，稳但极慢，几百万条数据算一次就要跑半天；<strong>随机梯度下降（SGD）</strong>——每次只用一条样本算梯度，快但抖，像在山坡上边喝酒边走路；<strong>小批量梯度下降（Mini-batch GD）</strong>——每次用几十上百条，兼顾稳定和速度，是今天的标配。<br/>
+  再往上走，就是 Adam、AdamW、Adagrad 这些"聪明版优化器"——它们不但看当前梯度，还看历史梯度的动量、每个参数的自适应学习率，让下山过程更聪明。<mark class="key">同一个模型，只换一个优化器，训练结果可能天差地别</mark>——这是深度学习工程里非常见的"魔法"。</p>
+
+  <h3>梯度消失与梯度爆炸：反向传播的黑历史</h3>
+  <p>反向传播的思想虽然简单，但工程上曾经栽过大跟头。当神经网络堆到几十层时，反向传播的梯度沿着链式法则一层层相乘——每一层都乘一个小于 1 的数，几十层乘完，梯度几乎变成 0，前面几层的权重根本更新不动，这叫<strong>梯度消失</strong>；反之，如果每层都乘一个大于 1 的数，梯度就会指数级放大，训练直接飞了，这叫<strong>梯度爆炸</strong>。<br/>
+  这个问题让 1990 年代到 2006 年间的深度网络训练几乎是"不可能任务"。后来靠着 ReLU 激活函数、Batch Normalization、残差连接（ResNet）、更好的初始化方案（Xavier / He），才把这两个魔咒基本解掉。<strong>今天你能训练 175B 参数的 GPT-3</strong>，背后是几十年间无数工程师和研究员在跟这两个魔咒搏斗积累下的经验。</p>
+
+  <h3>训练完之后，权重就"冻结"了</h3>
+  <p>很多人以为模型上线之后还会继续学习——其实不然。<strong>训练</strong>和<strong>推理</strong>是深度学习里两个截然分开的阶段：训练时，前向 + 反向 + 更新三步循环几百万次，把权重调到位；训练完成后，模型被"打包"存起来，所有权重固定不变；推理时，只做前向传播——你输一个问题，它算一遍答案，权重丝毫不动。<br/>
+  这就是为什么 ChatGPT 不会因为你今天骂了它就"记仇"——它每次对话都是从冻结的权重开始跑的。它有的只是"上下文窗口"内的短期对话记忆，一旦对话结束、窗口关闭，什么都不会留下。想要模型真的"学新东西"，就得单独走一遍"微调"（fine-tune）——本质上是让训练循环再跑一次，用新数据把权重再微调一下。<mark class="key">前向 = 使用；反向 = 学习——两个阶段泾渭分明</mark>。</p>
+
+  <h3>过拟合：反向传播太"卷"的后遗症</h3>
+  <p>反向传播这么高效，反而带来一个副作用——模型可能会把训练数据"背下来"，包括数据里的噪声和偶然性——这就叫<strong>过拟合（overfitting）</strong>。表现是训练集上准确率 99%，一到测试集就掉到 60%。<br/>
+  工程上的对抗招式很多：<strong>早停（early stopping）</strong>——一发现验证集损失开始上升就停训；<strong>Dropout</strong>——训练时随机让一部分神经元罢工，防止过度依赖某几个；<strong>权重衰减（weight decay）</strong>——给损失函数加个惩罚项，逼权重别长太大；<strong>数据增强</strong>——让训练数据更多样。这些技巧本质都是在"给反向传播打拳击手套"——让它别把训练数据咬得太死。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>前向 = 用当前参数算答案；反向 = 用误差回溯，给每个参数分摊责任并修正。<strong>训练一个神经网络，就是让它做上亿次"考试 → 批卷 → 改题"的循环</strong>。理解了这两个动作，你就理解了 GPT、Sora、AlphaGo 是怎么"从随机瞎猜"训练成"世界高手"的——它们没有什么魔法，就是循环得比你多、算得比你快而已。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./05-1-neuron.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 5.1 · 神经元篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./05-3-cnn.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 5.3 · CNN 卷积网络篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 5.2 · Propagation</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

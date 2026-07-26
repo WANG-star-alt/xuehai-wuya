@@ -67,12 +67,12 @@
         '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。',
         '约 4 小时',
         [
-          createNode('ai-05-neuron', '神经元 · 最小单元', '加权求和 + 激活 + 输出——一个神经元的全部。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#neuron' }),
-          createNode('ai-05-forward', '前向 & 反向传播', '数据流动 + 反向调参——神经网络学习的核心引擎。', '40 min', [], { href: 'chapters/ai/05-neural-network.html#forward' }),
-          createNode('ai-05-cnn', 'CNN · 卷积网络', '图像专家——从 AlexNet 到 YOLO，看图靠它。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#cnn' }),
-          createNode('ai-05-rnn', 'RNN / LSTM', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#rnn' }),
-          createNode('ai-05-gan', 'GAN · 生成对抗网络', '假币贩子 vs 警察——两个网络互相较量学会造假。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#gan' }),
-          createNode('ai-05-diffusion', 'Diffusion · 扩散模型', 'Midjourney / Sora 背后——从噪声一步步生成图像。', '30 min', [], { href: 'chapters/ai/05-neural-network.html#diffusion' })
+          createNode('ai-05-1', '§ 5.1 · 神经元篇', '加权求和 + 激活函数——一个"人工神经元"的全部。', '30 min', [], { href: 'chapters/ai/05-1-neuron.html' }),
+          createNode('ai-05-2', '§ 5.2 · 前向 & 反向传播篇', '数据怎么流动、错误怎么反传——学习的引擎。', '40 min', [], { href: 'chapters/ai/05-2-propagation.html' }),
+          createNode('ai-05-3', '§ 5.3 · CNN 卷积网络篇', '图像专家——从 AlexNet 到 YOLO，看图靠它。', '30 min', [], { href: 'chapters/ai/05-3-cnn.html' }),
+          createNode('ai-05-4', '§ 5.4 · RNN / LSTM 篇', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '30 min', [], { href: 'chapters/ai/05-4-rnn.html' }),
+          createNode('ai-05-5', '§ 5.5 · GAN 对抗网络篇', '假币贩子 vs 警察——两个网络较量学会造假。', '30 min', [], { href: 'chapters/ai/05-5-gan.html' }),
+          createNode('ai-05-6', '§ 5.6 · Diffusion 扩散模型篇', 'Midjourney / Sora 背后——从噪声一步步生成图像。', '30 min', [], { href: 'chapters/ai/05-6-diffusion.html' })
         ],
         { href: 'chapters/ai/05-neural-network.html' }
       ),
@@ -80,11 +80,11 @@
         '数据、模型、损失——训练一个 AI 到底在干什么；预训练/SFT/RLHF/DPO 全解。',
         '约 3 小时',
         [
-          createNode('ai-06-data', '数据 · Dataset', '训练/验证/测试三集分离，规模+质量+多样性缺一不可。', '30 min', [], { href: 'chapters/ai/06-training-trilogy.html#dataset' }),
-          createNode('ai-06-model', '模型 · Model', '参数量、架构、初始化、超参数——待训练的神经网络。', '20 min', [], { href: 'chapters/ai/06-training-trilogy.html#model' }),
-          createNode('ai-06-loss', '损失 · Loss + 梯度下降', '交叉熵/MSE + 蒙眼下山——让损失越来越小。', '30 min', [], { href: 'chapters/ai/06-training-trilogy.html#loss' }),
-          createNode('ai-06-pretrain', '预训练 · Pre-training', '几十T 语料预测下一词——基座模型的诞生。', '20 min', [], { href: 'chapters/ai/06-training-trilogy.html#pretrain' }),
-          createNode('ai-06-rlhf', 'RLHF / DPO 对齐', '让模型讨人喜欢——SFT → 奖励模型 → PPO/DPO。', '30 min', [], { href: 'chapters/ai/06-training-trilogy.html#rlhf' })
+          createNode('ai-06-1', '§ 6.1 · 数据 · Dataset 篇', '规模+质量+多样性、训练/验证/测试三集分离。', '30 min', [], { href: 'chapters/ai/06-1-dataset.html' }),
+          createNode('ai-06-2', '§ 6.2 · 模型 · Model 篇', '参数量、架构、初始化、超参数——待训练的神经网络。', '30 min', [], { href: 'chapters/ai/06-2-model.html' }),
+          createNode('ai-06-3', '§ 6.3 · 损失 & 梯度下降篇', '交叉熵/MSE + 蒙眼下山——让损失越来越小。', '40 min', [], { href: 'chapters/ai/06-3-loss.html' }),
+          createNode('ai-06-4', '§ 6.4 · 预训练篇', '几十T 语料预测下一词——基座大模型的诞生。', '30 min', [], { href: 'chapters/ai/06-4-pretrain.html' }),
+          createNode('ai-06-5', '§ 6.5 · SFT · RLHF · DPO 对齐篇', '学对话 → 学偏好 → 让模型讨人喜欢。', '40 min', [], { href: 'chapters/ai/06-5-rlhf.html' })
         ],
         { href: 'chapters/ai/06-training-trilogy.html' }
       ),
@@ -92,11 +92,11 @@
         'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。',
         '约 3 小时',
         [
-          createNode('ai-07-attention', 'Attention · 注意力机制', '每个词都能"看到"其他所有词——图书馆查资料式加权。', '30 min', [], { href: 'chapters/ai/07-transformer.html#attention' }),
-          createNode('ai-07-qkv', 'QKV · 查询/键/值', '打分 → Softmax → 加权求和——Attention 的完整公式。', '30 min', [], { href: 'chapters/ai/07-transformer.html#qkv' }),
-          createNode('ai-07-multihead', 'Multi-head 多头', '多组 QKV 并行——像多个专家同时会诊。', '20 min', [], { href: 'chapters/ai/07-transformer.html#multihead' }),
-          createNode('ai-07-variants', 'Encoder / Decoder 派系', 'BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。', '30 min', [], { href: 'chapters/ai/07-transformer.html#variants' }),
-          createNode('ai-07-moe', 'MoE · 专家混合', '万亿参数只激活一小部分——DeepSeek 的降本秘籍。', '20 min', [], { href: 'chapters/ai/07-transformer.html#moe' })
+          createNode('ai-07-1', '§ 7.1 · Attention 注意力篇', '每个词都能"看到"其他所有词——图书馆式加权。', '30 min', [], { href: 'chapters/ai/07-1-attention.html' }),
+          createNode('ai-07-2', '§ 7.2 · QKV 三兄弟篇', '打分 → Softmax → 加权求和——Attention 完整公式。', '30 min', [], { href: 'chapters/ai/07-2-qkv.html' }),
+          createNode('ai-07-3', '§ 7.3 · Multi-head 多头篇', '多组 QKV 并行——像多个专家同时会诊。', '20 min', [], { href: 'chapters/ai/07-3-multihead.html' }),
+          createNode('ai-07-4', '§ 7.4 · Encoder / Decoder 派系篇', 'BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。', '30 min', [], { href: 'chapters/ai/07-4-variants.html' }),
+          createNode('ai-07-5', '§ 7.5 · MoE 专家混合篇', '万亿参数只激活一小部分——DeepSeek 的降本秘籍。', '30 min', [], { href: 'chapters/ai/07-5-moe.html' })
         ],
         { href: 'chapters/ai/07-transformer.html' }
       ),

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 5.4 · RNN / LSTM 篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./05-neural-network.html">第 5 章</a>
+      <span class="sep">›</span>
+      <span>§ 5.4</span>
+    </div>
+    <a href="./05-neural-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 5.4 · Sub-chapter</div>
+    <h1>RNN / LSTM 篇</h1>
+    <div class="cn">Recurrent Neural Networks &amp; Long Short-Term Memory</div>
+  </header>
+
+  <p class="lead">
+    CNN 擅长"看空间"，RNN 擅长"读时间"。<mark class="key">凡是"顺序"很重要的数据——文字、语音、股价、心电图</mark>——早年都靠 RNN 来处理。它的核心思想很浪漫：让神经网络学会"记住刚才发生了什么"。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎬 你在读一句话</div>
+    <p>你读这句话："今天早上出门忘带伞，结果被淋成落汤鸡。"<br/>
+    读到"淋成"时，你脑子里其实同时挂着前面的"忘带伞"——你知道正是这件事导致了后面的结果。<mark class="key">理解语言，靠的就是"边往下读，边把前面读到的信息挂在心里"</mark>。<br/>
+    读音乐、看电影、听别人讲故事——你的大脑始终有一个"上下文缓存"，一边读一边更新。RNN 就是把这个"记忆缓存"抄进神经网络里。</p>
+    <div class="link">→ <strong>网络的输出，不只依赖当前输入，还依赖"刚才那一步的自己"</strong>——这就是 recurrent（循环）。</div>
+  </div>
+
+  <h3>RNN 的核心：一个自带"内存"的神经元</h3>
+  <p>普通神经元每次只看当前输入 x，输出 y。RNN 神经元多了一个"心里的小本本"叫<strong>隐藏状态（hidden state）</strong>——每次它做计算时，除了看当前的 x，还会看上一步留下的隐藏状态 h。算完这一步，它又把新的 h 传给下一步。<br/>
+  展开来看：处理一个句子时，RNN 会像读书一样"一个词一个词"往前扫，扫到当前词时，它记着到目前为止读过的所有词的"精髓"（浓缩在隐藏状态里）。<mark class="key">整个网络在时间维度上像一根链条一样滚动</mark>，所以叫循环神经网络。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一位边听边记的秘书</span>
+    <p>RNN 像一位<strong>会记要点的秘书</strong>：会议上人们一句一句发言，秘书不能把所有原话都记下来，只能把"每句话的重点"更新到手里那张越来越浓缩的会议摘要上。等到最后一句话说完，她手里那份摘要就是整场会议的记忆。<strong>下次她做判断（比如决策"要不要发通知"）时，就靠这份摘要</strong>——这正是 RNN 的隐藏状态。</p>
+  </div>
+
+  <h3>RNN 的三大典型任务</h3>
+  <ul class="keylist">
+    <li><span class="k">语言建模</span><span class="v">给模型一段前文，让它预测下一个词——输入法、机器翻译、文本生成的老祖宗都靠它。</span></li>
+    <li><span class="k">语音识别</span><span class="v">把连续声波切成一小段一小段送进去，网络输出"这一段是哪个音素 / 字"。</span></li>
+    <li><span class="k">时序预测</span><span class="v">股价、气温、心电、机器传感器读数——凡是"过去决定未来"的数据都能训。</span></li>
+  </ul>
+
+  <h3>RNN 的致命毛病：健忘 & 训练难</h3>
+  <p>朴素 RNN 有个特别现实的问题——<mark class="key">它记不住太久远的事</mark>。让它读一段 30 个词的短句还行；读一段 300 字的长文，前面的信息早就在反复"传话"中被稀释、覆盖，等到读到末尾时，它已经"忘了"开头讲的是什么。<br/>
+  数学上这叫"梯度消失 / 梯度爆炸"：反向传播沿时间轴一层层回溯时，梯度要么衰减到 0（学不到远处的依赖），要么膨胀到爆炸（训练发散）。这个毛病在 90 年代一直阻碍着 RNN 走向实用。</p>
+
+  <h3>LSTM：给神经元装上"记忆开关"</h3>
+  <p>1997 年，Hochreiter & Schmidhuber 提出<strong>LSTM（Long Short-Term Memory）</strong>，一举把 RNN 从"金鱼记忆"救成"能记长文"的选手。<br/>
+  LSTM 的巧思是给神经元加上三扇<strong>门</strong>：<strong>遗忘门</strong>（决定要不要忘掉旧信息）、<strong>输入门</strong>（决定要不要写入新信息）、<strong>输出门</strong>（决定要不要把当前记忆吐出来）。加上一个专门存记忆的"细胞状态"（cell state）——像一条贯穿始终的传送带，重要信息可以顺着传送带一直向后传，中间既能被抹掉，也能被叠加。<mark class="key">这几个门本身也是神经网络学出来的，不是人设的规则</mark>。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一间设有三道门的档案室</span>
+    <p>LSTM 就像一间<strong>档案室</strong>：<strong>遗忘门</strong>是"销毁员"——他每次判断哪些旧档案该丢；<strong>输入门</strong>是"接收员"——他决定哪些新档案值得存进来；<strong>输出门</strong>是"查询员"——他决定这一刻要不要把某些档案交出去用。三道门都由训练数据教会该怎么开、怎么关。这就让 LSTM 在读长文时，能<strong>把开头的关键信息一路保留到结尾</strong>——短期和长期记忆兼顾。</p>
+  </div>
+
+  <h3>GRU：LSTM 的极简版</h3>
+  <p>2014 年，人们发现 LSTM 的三扇门其实有些冗余，于是搞出个精简款——<strong>GRU（Gated Recurrent Unit）</strong>：只保留两扇门（更新门 + 重置门），参数更少、训练更快、效果和 LSTM 相当。工程上如果对速度敏感，很多人会优先选 GRU；如果任务复杂、追求上限，还是选 LSTM。</p>
+
+  <h3>RNN / LSTM 的历史地位</h3>
+  <p>2014 到 2017 这几年，是 RNN / LSTM 的黄金时代——机器翻译、语音识别、图像描述生成、聊天机器人，几乎所有序列相关的 NLP 任务都靠它。谷歌翻译在 2016 年那次"神经机器翻译"重大升级，用的正是 LSTM 编码器 + LSTM 解码器结构。<br/>
+  但 2017 年 <strong>Transformer</strong> 论文《Attention Is All You Need》横空出世，彻底颠覆游戏规则：Transformer 用"自注意力"取代循环结构，可以并行训练（RNN 必须一个一个词串行）、能捕捉超长依赖，短短两年就把 RNN 从 NLP 主战场赶了下来。<mark class="key">今天你几乎再也看不到新论文用 RNN 做主流 NLP 任务了</mark>——但在某些资源受限的边缘设备、实时流式音频等场景，RNN / LSTM 依然是好选择。</p>
+
+  <h3>为什么依然值得学</h3>
+  <p>Transformer 虽然占据了主流，但它借鉴了 RNN 的很多思想（比如"位置编码"就是为了弥补 Transformer 天生没有顺序感这一点）。理解 RNN 的"记忆状态"、"梯度沿时间传播"这些概念，会让你更容易看懂 Transformer 的注意力机制到底解决了什么问题。它是一把<strong>回顾深度学习进化史</strong>的钥匙——学过 RNN，你才知道 Transformer 为什么必须诞生。</p>
+
+  <h3>Seq2Seq：翻译机器的原始骨架</h3>
+  <p>2014 年 Sutskever 等人提出 <strong>Seq2Seq（序列到序列）</strong>框架，用两个 RNN 拼成一台通用翻译机：<strong>编码器 RNN</strong> 读完源语言句子，把整句压缩成一个"上下文向量"；<strong>解码器 RNN</strong> 拿这个向量，一个词一个词吐出目标语言。这套结构让机器翻译效果一夜之间上一个台阶，也让"编码器-解码器"这种通用范式扎根在整个深度学习圈。<br/>
+  但 Seq2Seq 有个死穴——不管源句子多长，最后只能压缩到一个固定长度的向量里，长句子的细节全被挤没了。2015 年 Bahdanau 等人提出<strong>注意力机制（Attention）</strong>：解码器每输出一个词时，都可以"回头看"编码器的每个词，动态挑重点。<mark class="key">这一个补丁，直接埋下了 Transformer 的种子</mark>——3 年后 Google 的《Attention Is All You Need》干脆把 RNN 骨架砍掉，只留 Attention，从此改变了 NLP 的天。</p>
+
+  <h3>双向 RNN 与堆叠 RNN</h3>
+  <p>标准 RNN 只从前往后扫，但语言里"后面的话"经常能帮我们理解"前面的话"——比如读"他把苹果咬了一口，然后皱起了眉头"，你要读到"皱眉"才明白"这个苹果可能不好吃"。<strong>双向 RNN（Bi-RNN）</strong>用两条 RNN，一条从前往后、一条从后往前，把两个方向的隐藏状态拼起来——这样每个位置都能同时看到"前文和后文"。命名实体识别、词性标注这类任务，双向 RNN 一度是标配。<br/>
+  <strong>堆叠 RNN</strong>则是把几层 RNN 上下摞起来——底层学局部特征，高层学句法结构。谷歌 2016 年那次翻译升级用的就是"8 层堆叠 LSTM + 双向 + Attention"这套重型结构，训练一次要几周时间、动用几百块 GPU。</p>
+
+  <h3>RNN 处理"时间"的独特优势</h3>
+  <p>为什么 CNN、全连接网络不能拿来做序列任务？其实也能，但会碰上两个死结：<strong>输入长度不固定</strong>——你输入的句子有的 5 个词、有的 50 个词，普通网络得为每种长度设计一套结构；<strong>时序信息容易丢</strong>——把整句话拉平成一个大向量喂进去，词的先后顺序信息在权重里被稀释掉。<br/>
+  RNN 天然为"变长序列"设计——不管你输入多长，它就把同一颗神经元反复调用多少次；<mark class="key">同一组权重"复用"了整段时间线</mark>，就像同一位主持人一整晚串起所有节目。这一点在语音识别里尤其重要——一段录音有多少毫秒就得处理多少帧，RNN 天生适配。今天很多流式音频处理（比如同声传译、实时字幕）仍在用轻量 RNN 或 GRU，因为它逐帧处理、延迟极低，比 Transformer 那种"看完整句再输出"更适合实时场景。</p>
+
+  <h3>为什么串行是 RNN 的天花板</h3>
+  <p>RNN 的致命工程限制在"串行"两个字上——第 t 步的输出必须等第 t-1 步算完，一整个序列必须一帧一帧顺次计算，GPU 那种大规模并行的算力优势派不上用场。你哪怕有 8000 张 H100，训练 RNN 也只能一个 token 一个 token 慢慢走。<br/>
+  Transformer 恰恰在这一点上把 RNN 打得毫无还手之力——它用自注意力一次性看完所有位置，天生可并行；同一批训练数据在 Transformer 上跑一遍的时间，可能只有 RNN 的几十分之一。<mark class="key">在"算力越大越有效"的深度学习游戏里，RNN 被架构本身的串行性判了死刑</mark>——这不是聪明才智的问题，是工程规模的问题。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>RNN 教会神经网络"记住刚才发生了什么"，LSTM 又教会它"选择性地记 & 忘"。这条路线撑起了 2014-2017 年 NLP 的半壁江山，后来被 Transformer 取代——但<strong>"隐藏状态"、"门控机制"、"长期依赖"这些概念，已经融入了整个深度学习的思考方式</strong>。今天 Transformer 里的 KV 缓存、状态空间模型（Mamba）等新架构，都能看到 RNN 的影子。它没死，只是换了一副面孔继续活着。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./05-3-cnn.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 5.3 · CNN 卷积网络篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./05-5-gan.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 5.5 · GAN 对抗网络篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 5.4 · RNN / LSTM</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

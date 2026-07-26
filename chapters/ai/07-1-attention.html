@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 7.1 · Attention 注意力篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./07-transformer.html">第 7 章</a>
+      <span class="sep">›</span>
+      <span>§ 7.1</span>
+    </div>
+    <a href="./07-transformer.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 7.1 · Sub-chapter</div>
+    <h1>Attention 注意力篇</h1>
+    <div class="cn">Attention Mechanism</div>
+  </header>
+
+  <p class="lead">
+    2017 年那篇改变世界的论文，标题就叫《<em>Attention is All You Need</em>》——<mark class="key">你只需要注意力，别的都可以不要</mark>。这句话听起来像玄学，但它背后是一个非常朴素的直觉：读一句话时，我们的眼睛并不是均匀地扫过每一个字，而是会本能地"跳回去"关注某几个关键的词。Transformer 把这个动作变成了数学。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">👀 你读句子时眼睛在做什么</div>
+    <p>请慢慢读下面这句话，感受一下自己的视线："<em>那只在门口打盹了整整一下午的橘猫，追着一只不小心从窗台上滚下来的蓝色小球跑，最后它抓到了。</em>"<br/>
+    读到"<strong>它</strong>"这个字的时候，你的眼睛会不由自主地跳回去看——"它"到底指谁？是猫，还是球？<br/>
+    这一次"跳回去，看一眼前文，再回来"的动作，就是<strong>注意力</strong>。它极其自然，你甚至没意识到自己在做。<br/>
+    Transformer 做的事，就是让机器也学会这个"跳回去看一眼"的能力——而且是<em>同时看全句话所有的其他词</em>。</p>
+    <div class="link">→ <strong>Attention</strong> = 让每个词在处理自己时，都能"回头看"整句话的所有其他词，并<em>动态</em>决定看谁、看多重。</div>
+  </div>
+
+  <h3>先说清楚：Attention 到底解决了什么问题</h3>
+  <p>要理解 Attention 为什么震撼，得先看看它之前的世界——那个由 <strong>RNN（循环神经网络）</strong>统治的时代。RNN 是 2017 年之前处理文本、语音这种"序列数据"的绝对主力。它的思路很直觉：<em>一个词一个词地读，读完一个就把"上下文记忆"更新一下，再读下一个</em>。就像你一边听老师讲课，一边在脑子里滚动地记笔记。</p>
+  <p>这个思路听起来没毛病，但一到实战就暴露出<strong>两个致命缺点</strong>——正是这两个缺点，把整个自然语言处理领域逼到了墙角，才有了 2017 年的那次革命。</p>
+
+  <h3>RNN 的致命缺点一 · 必须"一个一个来"</h3>
+  <p>RNN 的核心是"下一步依赖上一步"——要算第 100 个词的表示，必须先把前面 99 个词依次算完。这就像流水线上的工人：第二个人必须等第一个人做完才能开工，第三个必须等第二个……<br/>
+  在 GPU 时代，这是灾难。GPU 有上万个核心，本来可以"一次算一千个词"，但 RNN 的顺序结构强行把它们锁在单车道上，只能一个接一个走。<mark class="key">训练一个大模型的时间被拉长十倍、百倍</mark>。你花一个月能训练完的 Transformer，用 RNN 得跑一年——这已经不是慢一点的问题，而是"根本没法做"的问题。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 传声筒游戏</span>
+    <p>RNN 就像小时候玩的"传声筒"游戏——一个人对下一个人耳语一句话，一路传到最后一个人。<br/>
+    只要队伍够长，传到最后的话基本就变形了：<em>"下午三点在图书馆碰面"</em> 最后可能变成 <em>"下午想吃冰淇淋"</em>。<br/>
+    RNN 处理长句子时也是这样——句首的信息传到句尾，早就被中间几十步"稀释"得七零八落了。</p>
+  </div>
+
+  <h3>RNN 的致命缺点二 · 长距离依赖差</h3>
+  <p>第二个问题更本质。想象一句话："<em>我小时候在东北长大，那里的冬天冷得能把水龙头冻住，我最想念的就是妈妈煮的那锅热腾腾的酸菜白肉——所以每次冬天回家，我都会特意去菜市场买一颗最大的<strong>酸菜</strong>。</em>"<br/>
+  句尾的"酸菜"，其实是被句子中间提过的"酸菜白肉"锚定的。这两个词之间隔了 40 多个字。RNN 处理时，"酸菜白肉"的信息要一路传到句尾——中间经过几十次矩阵乘法、几十次激活函数——信息早就被<strong>稀释、扭曲、遗忘</strong>了。这就是所谓的"<em>长距离依赖问题</em>"。</p>
+  <p>后来人们发明了 LSTM、GRU 这些"带记忆闸门"的改良版，能缓解一部分，但没有从根本上解决——只要还是"顺序传递"这套逻辑，信息就注定会随距离衰减。<strong>这个瓶颈卡了整个 NLP 领域十几年。</strong></p>
+
+  <h3>Attention 的核心思想 · 直接跳到源头</h3>
+  <p>2017 年 Transformer 的作者们做了一件极其大胆的事：<mark class="key">干脆不要"顺序传递"了</mark>。既然信息在传递中会衰减，那就让每个词<em>直接</em>访问句子里所有其他词，不再经过中间人。</p>
+  <p>具体怎么做？简单说三步：</p>
+  <ul class="keylist">
+    <li><span class="k">Step 1 · 每个词发出"询问"</span><span class="v">"我正在处理这个词，我关心哪些其他词？"——这个询问用一个向量表示。</span></li>
+    <li><span class="k">Step 2 · 和句子里每个词打分</span><span class="v">拿这个"询问"和句子里每个词做"匹配打分"——分数越高，说明越相关。</span></li>
+    <li><span class="k">Step 3 · 按分数加权求和</span><span class="v">把所有词的信息按分数比例混合，得到当前词的新表示——想象成"按重要程度取样"。</span></li>
+  </ul>
+  <p>这样一来，处理"它"这个词时，句子里的"猫"如果得了 0.7 分、"球"得了 0.2 分、其他词共 0.1 分——那"它"的新表示里，70% 是"猫"的信息、20% 是"球"的信息。<strong>这就是"跳回去看一眼"在数学上的实现</strong>。而且更妙的是——这个"跳"是模型<em>学出来的</em>，不用人教它"'它'应该看'猫'"，训练几百万句话后，它自己就学会了。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 会议里的举手投票</span>
+    <p>把一句话想成一场会议，每个词是一个与会者。当"它"这个人举手发言时，他环顾四周问："你们谁跟我有关？"<br/>
+    "猫"举手："我有关，权重 0.7"；"球"举手："我有关，权重 0.2"；其他人手举得很低。<br/>
+    "它"最后的观点，就是把所有举手的人的意见<em>按举手高度加权</em>综合起来。<br/>
+    Attention 就是这场会议——<strong>每个词都能同时问全场所有人的意见</strong>，一步到位，绝不传声筒。</p>
+  </div>
+
+  <h3>Attention vs Self-Attention · 别搞混</h3>
+  <p>你听过两个词：<strong>Attention</strong> 和 <strong>Self-Attention</strong>——它们不完全是一回事，但今天大家常常混着用，需要一次说清。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>名字</th><th>Query 来自</th><th>Key/Value 来自</th><th>典型场景</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>普通 Attention</td><td>A 句</td><td>B 句</td><td>翻译：中文（Q）看英文（K/V）</td></tr>
+        <tr><td>Self-Attention</td><td>同一句 A</td><td>同一句 A</td><td>理解：句子内部词与词的关系</td></tr>
+        <tr><td>Cross-Attention</td><td>Decoder 当前词</td><td>Encoder 输出</td><td>Encoder-Decoder 中的桥梁</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Transformer 里真正撑起大梁的，是 <strong>Self-Attention（自注意力）</strong>——一句话内部，每个词都对其他每个词做 Attention。这是它最核心的创新。<em>Attention 概念其实 2014 年就有了</em>，但真正把它推到"只用它就够了"这种极端的，是 2017 年的 Transformer。</p>
+
+  <h3>Attention 带来的三个改变</h3>
+  <ul class="keylist">
+    <li><span class="k">彻底并行</span><span class="v">每个词算自己的 Attention 时，不依赖别的词先算完——可以一次性放到 GPU 上万个核心里并行算。训练速度快了几十倍。</span></li>
+    <li><span class="k">距离不再是问题</span><span class="v">句首到句尾的信息传递变成"一步跳"，中间不再有几十步的稀释。长文本理解能力质变。</span></li>
+    <li><span class="k">可解释性大幅提升</span><span class="v">每个词看谁、看多重，都能画成热力图。你能清楚看到"它 → 猫"这条注意力线亮起来——AI 的黑箱被打开了一角。</span></li>
+  </ul>
+
+  <h3>一个直观的例子 · 消解歧义</h3>
+  <p>"<em>The animal didn't cross the street because it was too tired.</em>"——这里的 <strong>it</strong> 指谁？<br/>
+  英语母语者一看便知："<em>it</em>"指 animal（因为疲倦不过街）。<br/>
+  但如果把句子改成："<em>The animal didn't cross the street because it was too wide.</em>"——<strong>it</strong> 就变成了 street（因为街太宽）。<br/>
+  同一个"it"，指代不同——判断依据是句尾的"tired"还是"wide"。Transformer 在处理"it"时，通过 Self-Attention 会同时看向"animal"、"street"、"tired/wide"这几个词，并根据学到的模式给它们打分。<mark class="key">这就是"注意力"最直观的用途</mark>——让语言里那些微妙的、需要跨越距离才能理解的东西，被机器捕捉到。</p>
+
+  <h3>为什么"Attention is All You Need"</h3>
+  <p>论文标题这句话，其实是在挑衅——挑衅当时所有主流方案。作者的意思是：<strong>不需要 RNN，不需要 CNN，不需要复杂结构，光靠 Attention 一件武器，就能把整个序列建模的活儿全干了</strong>。<br/>
+  这话在 2017 年是极其大胆的宣言。但接下来五年发生的事情证明了它——BERT 用 Encoder 堆叠出了 SOTA，GPT 用 Decoder 堆叠出了 ChatGPT，Vision Transformer 甚至把图像也变成了"一串词"来处理。<em>Attention 真的就是全部所需</em>。</p>
+
+  <h3>从"读一句话"到"读一整本书"</h3>
+  <p>Attention 的威力，在句子级别就已经很明显了；但真正把它推到极致的，是<strong>长上下文</strong>时代——如今 GPT-4、Claude、Gemini、Kimi、DeepSeek 都在拼谁能塞下更长的输入：8K、32K、128K、200K、100 万 Token。<br/>
+  这些让人眼花的数字背后，是同一件事：<em>Attention 让每个词都能一步跳到任何位置</em>。你把一整本《红楼梦》喂给模型，它读到第 80 回"贾母去世"这四个字时，可以直接一步跳回第 3 回去看贾母第一次出场的描写——中间隔了几十万字，都不掉信息。这在 RNN 时代是完全不可能的事：几十步的传声筒里，早就把贾母忘光了。</p>
+  <p>当然，长上下文也带来新的问题——Attention 的计算量是<mark class="key">序列长度的平方</mark>（O(n²)）。1000 个词要算 100 万次匹配、10 万个词要算 100 亿次——所以后来又衍生出稀疏 Attention、Flash Attention、滑动窗口 Attention 等等一大批优化技术。但底层的思想没变：<em>让每个位置都能任意跳跃</em>。</p>
+
+  <h3>Attention 是通用的——不止用在语言上</h3>
+  <p>你可能以为 Attention 只是为文字设计的，其实它已经彻底征服了 AI 的其他领域：</p>
+  <ul class="keylist">
+    <li><span class="k">视觉 · Vision Transformer</span><span class="v">把一张图片切成 16×16 的小块（Patch），每个 Patch 当作一个"词"，用 Self-Attention 让每个 Patch 都能看到其他所有 Patch——图像分类、检测、分割全都被 Transformer 拿下。</span></li>
+    <li><span class="k">语音 · Whisper</span><span class="v">把音频波形切成时间片段，每个片段当作 Token——OpenAI 的 Whisper 就是这么做的语音识别，效果碾压传统 RNN 方案。</span></li>
+    <li><span class="k">蛋白质 · AlphaFold 2</span><span class="v">把氨基酸序列当作"词"，用 Attention 学习残基之间的空间关系——直接解决了困扰生物界 50 年的蛋白质结构预测问题，获得诺贝尔化学奖。</span></li>
+    <li><span class="k">视频、音乐、图 · 万物皆可 Attention</span><span class="v">Sora 生成视频、Suno 生成音乐、GNN 处理社交图——底层都在用 Attention。</span></li>
+  </ul>
+  <p>"<em>Attention is All You Need</em>"这句话在 2017 年是宣言，如今回头看更像是<strong>预言</strong>——这一个机制，重塑了整个 AI 的技术栈。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>Attention 之所以是革命，是因为它一次解决了 RNN 的两个死结：<strong>顺序处理慢</strong>和<strong>长距离依赖差</strong>。它的核心思想只有一句话——<mark class="key">让每个词都能同时看到句子里所有其他词，并动态决定关注谁</mark>。这个机制不仅统治了自然语言，也悄悄征服了视觉、语音、生物、视频等所有序列建模场景。<br/>
+    下一篇，我们把这个"看谁、看多重"的动作，翻译成三个字母：<strong>Q、K、V</strong>——图书馆查资料的比喻会让你一辈子记住这个公式。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./07-transformer.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">第 7 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./07-2-qkv.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 7.2 · QKV 篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 7.1 · Attention</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

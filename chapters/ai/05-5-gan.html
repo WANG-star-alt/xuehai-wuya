@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 5.5 · GAN 对抗网络篇 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./05-neural-network.html">第 5 章</a>
+      <span class="sep">›</span>
+      <span>§ 5.5</span>
+    </div>
+    <a href="./05-neural-network.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 5.5 · Sub-chapter</div>
+    <h1>GAN · 对抗网络篇</h1>
+    <div class="cn">Generative Adversarial Networks</div>
+  </header>
+
+  <p class="lead">
+    GAN 是深度学习史上最富戏剧性的架构——<mark class="key">两个神经网络你追我赶、互相较量，最后学会了造以假乱真的假货</mark>。人脸生成、图像风格迁移、DeepFake、AI 换脸……2014 到 2020 年那波"AI 生成图"的浪潮，几乎全是 GAN 的功劳。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎬 假币贩子 vs 银行验钞员</div>
+    <p>想象一个假币贩子想印出以假乱真的百元大钞。<br/>
+    第一次，他技术粗糙，钞票纸张都不对——验钞员一秒识破，退回；<br/>
+    他回去改进纸张——第二次能骗过验钞机，但荧光条不对——又被识破；<br/>
+    他继续琢磨——荧光条加上了，可水印位置歪了——又被识破……<br/>
+    验钞员每次抓假越来越严，贩子每次造假越来越精，两人<strong>互相逼迫、水涨船高</strong>。到最后——假币贩子印出的钞票，连验钞员都分辨不出真假。<br/>
+    <mark class="key">GAN 的训练过程，跟这一模一样</mark>。</p>
+    <div class="link">→ <strong>生成器（造假）</strong> vs <strong>判别器（打假）</strong>，两个网络对抗训练。</div>
+  </div>
+
+  <h3>GAN 的两个演员：G 与 D</h3>
+  <p>GAN（Generative Adversarial Network）由两个神经网络组成：<br/>
+  <strong>生成器 G（Generator）</strong>——它拿一小段随机噪声当"灵感"，努力生成一张看起来像真数据的东西。就像那位假币贩子，从空白纸开始造假钞。<br/>
+  <strong>判别器 D（Discriminator）</strong>——它看到一张图（可能真、可能假），要判断"这是真的（来自真实数据）还是 G 造的"。就像验钞员。<br/>
+  两者的目标彻底相反：G 要骗过 D，D 要抓住 G。这种"你死我活"的博弈就是 GAN 名字里"Adversarial（对抗）"的含义。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 学生和判卷老师一起进步</span>
+    <p>你可以把 GAN 想成一个<strong>怪异的教学场景</strong>：学生（G）不断交作业，老师（D）不断打分。<br/>
+    刚开始学生水平差，老师随便一看就知道是抄的；<br/>
+    学生根据老师的反馈改进，作业越来越像模像样；<br/>
+    老师为了跟上学生进步，也越来越挑剔，看得更精细；<br/>
+    最后<strong>学生的作业已经和真作品无法分辨</strong>——同时老师也变成了一位极其挑剔的鉴赏家。<br/>
+    有意思的是，训练结束后，我们通常只留下学生 G（生成器），扔掉老师 D——因为我们要的是"会造假"的能力，而不是"会打假"。</p>
+  </div>
+
+  <h3>训练一次到底发生了什么</h3>
+  <ul class="keylist">
+    <li><span class="k">Step 1</span><span class="v">从真实数据集里取一批"真图"，让 D 学会说"这些是真的"。</span></li>
+    <li><span class="k">Step 2</span><span class="v">G 从随机噪声生成一批"假图"，让 D 学会说"这些是假的"。</span></li>
+    <li><span class="k">Step 3</span><span class="v">冻结 D，用 D 的评价去反过来指导 G：G 调整参数，让 D 越来越无法把它的假图识破。</span></li>
+    <li><span class="k">Step 4</span><span class="v">回到 Step 1，G 和 D 交替更新，一步步共同进化。</span></li>
+  </ul>
+
+  <h3>零和博弈：为什么这个循环能收敛</h3>
+  <p>数学上，GAN 是一个"极小极大博弈"（minimax game）——G 想让"D 判断假图的失误率"越大越好，D 想让这个失误率越小越好。理论上，当两者都收敛到均衡点时，<strong>G 生成的分布 = 真实数据分布</strong>——也就是造出来的假图，从概率意义上和真图完全无法区分。<br/>
+  但训练 GAN 从来不轻松——G 和 D 力量失衡就完蛋：<mark class="key">G 太弱，D 一眼看穿，G 无从改进；D 太弱，G 造啥垃圾都能骗过，永远不进步</mark>。工程上要靠各种技巧（学习率、批大小、正则化、渐进增长……）小心地维持这场博弈的平衡。</p>
+
+  <h3>GAN 的名场面：从 64×64 到 4K 高清脸</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>年份</th><th>模型</th><th>标志性成果</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2014</td><td>原始 GAN</td><td>Ian Goodfellow 提出概念，生成 64×64 的模糊人脸。</td></tr>
+        <tr><td>2015</td><td>DCGAN</td><td>把卷积引入 G 和 D，第一次生成清晰可辨的人脸和卧室。</td></tr>
+        <tr><td>2017</td><td>CycleGAN</td><td>无需配对样本就能做"马 ↔ 斑马"、"照片 ↔ 油画"风格迁移。</td></tr>
+        <tr><td>2018</td><td>Pix2Pix</td><td>草图变照片、黑白变彩色——图像转换的通用框架。</td></tr>
+        <tr><td>2018-2019</td><td>ProGAN / StyleGAN</td><td>NVIDIA 生成 1024×1024 高清假人脸，thispersondoesnotexist.com 就是它。</td></tr>
+        <tr><td>2020~</td><td>StyleGAN3 / BigGAN</td><td>4K 分辨率、可控风格、以假乱真的动物 / 场景生成。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>GAN 干过的那些事</h3>
+  <p><strong>假脸生成</strong>——thispersondoesnotexist.com 上每一张脸都是 StyleGAN 编出来的，现实中不存在这个人。<br/>
+  <strong>DeepFake 换脸</strong>——把电影明星的脸换到另一个人身上，这项技术引发过大量伦理讨论。<br/>
+  <strong>老照片修复 / 上色</strong>——把黑白祖辈照片上色、模糊照片修高清、破损照片补全。<br/>
+  <strong>风格迁移</strong>——把你的自拍变成梵高油画、水墨画、动漫风格。<br/>
+  <strong>超分辨率</strong>——把 480p 视频放大到 4K，靠 GAN "脑补"细节。<br/>
+  <strong>时装 / 商品设计</strong>——生成从未见过的服装、鞋子、家具样式，让设计师参考。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一场没有终点的书法比拼</span>
+    <p>GAN 训练像<strong>两位书法大师互相较劲</strong>：一位专门临摹古人字帖（G），另一位专门鉴定"真古人 vs 仿的"（D）。两人越练越厉害，最后临摹的一方几乎可以以假乱真——但真正到了那一天，"临摹者"和"鉴定者"的水平<strong>已经不分伯仲</strong>。这就是 GAN 收敛的样子。</p>
+  </div>
+
+  <h3>GAN 的困境与 Diffusion 的接棒</h3>
+  <p>GAN 虽然效果炸裂，但训练极其不稳定、容易"模式崩溃"（只会生成几张固定图像）、可控性差。2020 年之后，<strong>扩散模型（Diffusion）</strong>横空出世——它训练更稳、生成质量更高、可控性更强，逐渐取代 GAN 成为图像生成的主流。<mark class="key">Midjourney、Stable Diffusion、DALL-E、Sora，用的都是 Diffusion，不是 GAN</mark>。<br/>
+  但 GAN 并没有退场——在实时生成（速度快）、图像超分、风格迁移等场景，它依然是首选。而且它开创的"对抗训练"思想已经渗透到很多其他领域，比如对抗样本、鲁棒性训练、隐私保护。</p>
+
+  <h3>为什么 GAN 训练如此难驯服</h3>
+  <p>GAN 的训练是深度学习圈公认的"最难调"之一，因为它违反了梯度下降最喜欢的那种"目标稳定"假设——你在优化 G 时，D 也在动；你在优化 D 时，G 也在动。整个过程像<strong>两个人在同一根跷跷板上找平衡</strong>，稍不小心就崩：G 太强，D 每次都被骗过去，梯度信号消失；D 太强，G 无论怎么改都被识破，梯度全变负数，直接崩溃到只输出几张固定的假图（这就是臭名昭著的"模式崩溃"）。<br/>
+  为此，工程师们发明了一堆花式技巧——<strong>WGAN</strong> 换了距离度量避免梯度消失、<strong>Spectral Norm</strong> 限制 D 的能力不让它太强、<strong>渐进增长</strong>先训小分辨率再加层、<strong>Two Timescale</strong> 让 G 和 D 学习率不同——每一样都是从血泪教训里总结出来的。<mark class="key">你去顶级会议翻 2017-2020 年的 GAN 论文，能看到工程师们对着这台"喜怒无常的机器"绞尽脑汁的样子</mark>。</p>
+
+  <h3>条件 GAN：让"造假"听话</h3>
+  <p>原始 GAN 只能"随机"生成——你不能指定"给我一张笑脸的猫"，它只会随机抽签。<strong>条件 GAN（cGAN）</strong>解决了这一点：把额外的信息（比如类别标签、文本描述、素描草图）也喂给 G 和 D，让 G 学会"按条件造假"、D 学会"按条件判断"。<br/>
+  这一个小改动打开了 GAN 的应用大门——<strong>Pix2Pix</strong>把它用在图像转换（草图 → 照片），<strong>StackGAN</strong> 用它做文本生图，<strong>StyleGAN</strong> 用它把风格向量作为条件精细控制生成人脸的年龄、性别、发型。今天你在网上看到的绝大多数 GAN 应用，本质上都是某种条件 GAN。</p>
+
+  <h3>StyleGAN：可控性的巅峰</h3>
+  <p>2018 年 NVIDIA 提出的 <strong>StyleGAN</strong> 是 GAN 时代最闪亮的一颗明珠——它把"生成"这件事拆成了"粗粒度到细粒度"的多个层次：早期层控制脸型、姿势这种大结构，中期层控制五官、发型，后期层控制皮肤纹理、光影。<mark class="key">你可以像调音台一样，一层一层拨动这些"风格向量"</mark>——瞬间改变发型而保持五官不变、瞬间改变年龄而保持身份识别、瞬间改变光照而保持表情——这是原始 GAN 完全做不到的可控性。<br/>
+  StyleGAN 2 和 StyleGAN 3 进一步解决了闪烁、抖动、"贴纸感"等问题，让生成的假人脸能在动态镜头里也保持真实感。thispersondoesnotexist.com 那些让人分不清真假的头像，全部都出自 StyleGAN 系列。它的架构和思想直接影响了后来的 Diffusion 模型——比如 Stable Diffusion 里也保留着"控制风格"的机制。</p>
+
+  <h3>GAN 与伦理：一把双刃剑</h3>
+  <p>GAN 造出的"以假乱真"的能力，从诞生第一天起就带着伦理阴影。<strong>DeepFake</strong> 换脸让人无中生有地"出现"在色情视频、假新闻里，损害了大量普通人的名誉。<strong>假身份证 / 假证件照</strong>让金融风控头疼不已。<strong>虚假历史照片</strong>让考古和历史研究面临真假难辨的挑战。<br/>
+  各国政府、平台、研究机构陆续给出反制方案：图像水印、GAN 检测器（反过来训练网络识别 AI 生成图）、法律层面的"深度伪造禁令"。<mark class="key">但这场"造假 vs 打假"的对抗游戏，未来几十年都不会有终点</mark>——毕竟 GAN 的思想本身就是"造假 vs 打假"。理解 GAN，不光是理解技术，更是理解今天信息时代"眼见不再为实"的根本原因。</p>
+
+  <h3>GAN 的思想为什么留了下来</h3>
+  <p>虽然 Diffusion 已经在图像生成主战场上取代了 GAN，但 GAN 的核心思想——<strong>用一个网络当"评委"来指导另一个网络学习</strong>——已经渗透进整个深度学习圈，远远超出了"生成图片"这个原始场景。<br/>
+  <strong>对抗训练（Adversarial Training）</strong>被用来增强模型的鲁棒性——用一个网络专门找"能骗过模型的对抗样本"，用另一个网络学着抵御，双方拉扯让模型更抗攻击。<strong>Actor-Critic</strong> 强化学习框架里，Actor（做决策）和 Critic（评价）也是一种类似 GAN 的博弈。<strong>差分隐私</strong>里，用一个网络专门生成"最像真数据的匿名数据"、另一个网络专门试着识别，两者对抗保护隐私。<mark class="key">GAN 提出的这套"两个网络较量"的范式，可能是深度学习史上影响最深远的一个 idea</mark>——它教会我们，AI 不一定要有明确的目标函数，有时"内部竞争"本身就能催生智能。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>GAN = <strong>生成器 G + 判别器 D 的对抗游戏</strong>。这个"造假 vs 打假"的循环，教会了神经网络造出以假乱真的图像。它开启了 AI 生成艺术的第一次高潮，也为后来的 Diffusion 铺好了路。今天当你看到"AI 生成的美女不存在于世上"、"老照片一键上色"、"实时换脸滤镜"，多半都还有 GAN 的血脉在流动。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./05-4-rnn.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 5.4 · RNN / LSTM 篇</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./05-6-diffusion.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 5.6 · Diffusion 扩散模型篇</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · § 5.5 · GAN</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>
