@@ -365,6 +365,7 @@
       text-transform: uppercase;
     }
   </style>
+  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-1" />
 </head>
 <body>
   <article class="page">
@@ -376,28 +377,52 @@
       <div class="subtitle">智能篇 · 网络篇 —— 一份可以随时展开的知识地图</div>
     </header>
 
-    <!-- ======= Knowledge Map ======= -->
-    <section class="kmap" aria-label="人工智能 · 知识树">
+    <!-- ======= Cognition Tree · 认知知识树 ======= -->
+    <section class="kmap cognition-tree-section" aria-label="学海 · 认知知识树">
       <div class="kmap-head">
-        <div class="title">学海 · 知识树</div>
-        <div class="sub">Knowledge Map</div>
+        <div class="title">学海 · 认知知识树</div>
+        <div class="sub">Cognition Tree · 数据驱动 · SVG 自绘</div>
       </div>
-      <div class="kmap-controls">
-        <div class="group">
-          <button type="button" class="kmap-btn" id="kmap-expand"   title="展开全部分支"><span class="ic">⊞</span>全部展开</button>
-          <button type="button" class="kmap-btn" id="kmap-collapse" title="仅保留根节点"><span class="ic">⊟</span>全部收起</button>
-          <button type="button" class="kmap-btn" id="kmap-level-1"  title="只显示到一级分支"><span class="ic">Ⅰ</span>一级</button>
-          <button type="button" class="kmap-btn" id="kmap-level-2"  title="只显示到二级分支"><span class="ic">Ⅱ</span>二级</button>
+
+      <div class="tree-toolbar">
+        <div class="search-box">
+          <input type="text" id="tree-search" placeholder="🔍 搜索节点：如 HTTP、监督学习、Cookie…" aria-label="搜索知识节点" />
+          <div id="search-results"></div>
         </div>
-        <div class="spacer"></div>
-        <div class="group">
-          <button type="button" class="kmap-btn" id="kmap-zoom-in"  title="放大"><span class="ic">＋</span>放大</button>
-          <button type="button" class="kmap-btn" id="kmap-zoom-out" title="缩小"><span class="ic">−</span>缩小</button>
-          <button type="button" class="kmap-btn" id="kmap-reset"    title="还原视图"><span class="ic">⟳</span>还原</button>
+        <div class="btn-group">
+          <button type="button" id="btn-depth-1" title="展开到一级">Ⅰ 一级</button>
+          <button type="button" id="btn-depth-2" title="展开到二级">Ⅱ 二级</button>
+          <button type="button" id="btn-depth-3" title="展开到三级">Ⅲ 三级</button>
+          <button type="button" id="btn-collapse-all" title="只保留根">⊟ 收起</button>
+        </div>
+        <div class="btn-group-sep"></div>
+        <div class="btn-group">
+          <button type="button" id="btn-zoom-in" title="放大">＋</button>
+          <button type="button" id="btn-zoom-out" title="缩小">−</button>
+          <button type="button" id="btn-fit" title="适应画布">⟳ 适应</button>
         </div>
       </div>
-      <div id="chart-knowledge-map"></div>
-      <div class="kmap-tip">↕ 滚轮缩放 · 拖拽平移 · <strong>点章节节点跳到对应篇</strong></div>
+
+      <div class="tree-workspace">
+        <div class="tree-map-panel">
+          <div class="tree-canvas" id="tree-canvas">
+            <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"
+                 role="img" aria-label="学海认知知识树">
+              <g id="tree-scene" class="scene">
+                <g id="tree-edges" class="edges"></g>
+                <g id="tree-nodes" class="nodes"></g>
+              </g>
+            </svg>
+          </div>
+        </div>
+        <aside class="tree-detail-panel" id="tree-detail">
+          <div class="detail-empty">选中一个节点查看详情</div>
+        </aside>
+      </div>
+
+      <div class="kmap-tip">
+        点击节点选中并展开 · 滚轮缩放 · 拖拽画布空白处平移 · 搜索快速定位 · 双击右侧"打开完整学习章节"跳转
+      </div>
     </section>
 
     <!-- ======= 智能篇 ======= -->
@@ -634,7 +659,7 @@
 
   </article>
 
-  <script src="./_shared/js/echarts.min.js"></script>
-  <script src="./assets/charts.js?v=kmap-38"></script>
+  <script src="./assets/tree-data.js?v=ct-1"></script>
+  <script src="./assets/cognition-tree.js?v=ct-1"></script>
 </body>
 </html>

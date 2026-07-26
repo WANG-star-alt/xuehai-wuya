@@ -227,6 +227,7 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 - **2026-07-26**: 有子节点的节点，折叠时 label 显示 `[+]`，展开时显示 `[-]`
 - **2026-07-26**: 交互方式改为——单击展开/收起，双击跳转（ECharts 无法区分 symbol/label 点击，用单击/双击分离）
 - **2026-07-26**: 树结构优化——如果子篇章已合并成一篇完整文章，树上只保留一个链接节点（如 OSI 七层、简史）
+- **2026-07-26**: **重大重构**——放弃 ECharts，改用数据驱动的 SVG 自绘认知树，遵循 COGNITION_TREE_FORMAT_SPEC 规范。数据在 `assets/tree-data.js`（node: id/label/desc/time/children/href/color），渲染在 `assets/cognition-tree.js`，样式在 `assets/cognition-tree.css`。三区结构：工具栏 + 树画布 + 详情面板。
 
 ## 待办事项
 
