@@ -61,6 +61,39 @@
     </table>
   </div>
   <p>参数量决定了模型的"知识容量上限"。但请注意：<mark class="key">参数量不是越大越好，而是要跟数据量匹配</mark>——DeepMind 提出的 Chinchilla 缩放定律指出，最优的参数/数据比例大约是 <strong>1 : 20</strong>：8B 参数最好搭配 160B token 训练；175B 参数最好用 3.5T token；否则要么"营养过剩"要么"营养不良"。</p>
+  <p>但"参数量"这三个字要落到地上，最有用的换算是<strong>它要占多少显存</strong>。这是所有本地部署、成本估算、选卡决策的起点。规则很简单：<strong>每个参数占多少字节，取决于你用什么精度存它</strong>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>精度格式</th><th>每参数字节数</th><th>1B 参数需要</th><th>70B 参数需要</th><th>典型用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>FP32（单精度）</td><td>4 字节</td><td>4 GB</td><td>280 GB</td><td>早期训练、小模型</td></tr>
+        <tr><td><strong>FP16 / BF16（半精度）</strong></td><td><strong>2 字节</strong></td><td><strong>2 GB</strong></td><td><strong>140 GB</strong></td><td>现代训练与推理的默认</td></tr>
+        <tr><td>FP8</td><td>1 字节</td><td>1 GB</td><td>70 GB</td><td>H100 起支持，DeepSeek-V3 用于训练</td></tr>
+        <tr><td>INT8 量化</td><td>1 字节</td><td>1 GB</td><td>70 GB</td><td>推理部署，质量损失很小</td></tr>
+        <tr><td>INT4 量化</td><td>0.5 字节</td><td>0.5 GB</td><td>35 GB</td><td>消费级显卡跑大模型的关键</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>记住这一条心算口诀就够用了：<mark class="key">半精度下，显存 GB 数 ≈ 参数 B 数 × 2</mark>。一个 7B 模型要 14 GB，塞不进 12 GB 的 RTX 3060，但量化到 4 位只需 3.5 GB，连笔记本都能跑。一个 70B 模型要 140 GB，需要两张 80 GB 的 A100/H100 并联，量化到 4 位则 35-40 GB，一张 48 GB 的 A6000 勉强够。</p>
+  <p>但这只是<strong>推理</strong>的账。训练的显存开销要大得多，因为除了权重本身，你还得存三样东西：</p>
+  <pre><code># 训练一个 N 参数模型的显存账（以混合精度 + AdamW 为例）
+权重（BF16）              : 2N 字节
+梯度（BF16）              : 2N 字节
+AdamW 一阶动量（FP32）    : 4N 字节
+AdamW 二阶动量（FP32）    : 4N 字节
+FP32 主权重副本           : 4N 字节
+                          ───────────
+优化器状态小计            : 约 16N 字节
+
+以 7B 模型为例:
+    16 × 7e9 = 112 GB   ← 光是状态就超过一张 H100(80GB)
+再加上激活值（随批大小和序列长度增长），实际常常翻倍
+
+结论: 训练所需显存 ≈ 推理的 8 到 10 倍
+      这就是为什么"能跑"和"能训"是两个完全不同的门槛</code></pre>
+  <p>这笔账解释了两件事。第一，为什么<strong>微调技术</strong>（LoRA、QLoRA）这么重要——它们只训练一小部分新增参数，把 16N 的优化器状态压到几乎可以忽略，于是单张消费级显卡也能微调 7B 模型。第二，为什么 <strong>ZeRO</strong> 这类"把优化器状态切分到多卡上"的技术是训练超大模型的必需品，而不是可选优化。</p>
 
   <h3>二、架构选型：Transformer 一统江湖</h3>
   <p>模型的"骨架"叫<strong>架构（architecture）</strong>。从 2017 年 Transformer 论文之后，几乎所有主流大模型都是 Transformer 变体：</p>
@@ -72,13 +105,75 @@
     <li><span class="k">Mamba / SSM</span><span class="v">2024 新势力——试图挑战 Transformer 的长序列瓶颈，但尚未成主流。</span></li>
   </ul>
   <p>为什么架构选型这么重要？因为不同架构对同样的数据，学到的东西完全不同。就像让同一个孩子分别用"死记硬背"和"理解推导"两种方法学数学，最终的能力差别巨大。<strong>Transformer 之所以赢，就是因为它的"注意力机制"特别适合语言这种长距离依赖的数据</strong>——这个我们下一章会详细讲。</p>
+  <p>把主流模型的真实规格摊开看，你会发现"架构"其实是一组具体数字。下面这张表值得对着读三遍，因为它是理解"模型配置"最直观的入口：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>参数量</th><th>层数</th><th>隐藏维度</th><th>注意力头数</th><th>词表大小</th><th>上下文</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-2 small</td><td>1.24 亿</td><td>12</td><td>768</td><td>12</td><td>50257</td><td>1024</td></tr>
+        <tr><td>GPT-2 XL</td><td>15 亿</td><td>48</td><td>1600</td><td>25</td><td>50257</td><td>1024</td></tr>
+        <tr><td>GPT-3</td><td>1750 亿</td><td>96</td><td>12288</td><td>96</td><td>50257</td><td>2048</td></tr>
+        <tr><td>Llama 3 8B</td><td>80 亿</td><td>32</td><td>4096</td><td>32（8 个 KV 头）</td><td>128256</td><td>8K→128K</td></tr>
+        <tr><td>Llama 3 70B</td><td>700 亿</td><td>80</td><td>8192</td><td>64（8 个 KV 头）</td><td>128256</td><td>8K→128K</td></tr>
+        <tr><td>Llama 3 405B</td><td>4050 亿</td><td><strong>126</strong></td><td><strong>16384</strong></td><td>128（8 个 KV 头）</td><td>128256</td><td>8K→128K</td></tr>
+        <tr><td>DeepSeek-V3</td><td>6710 亿（激活 370 亿）</td><td>61</td><td>7168</td><td>128</td><td>129280</td><td>128K</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这些数字不是随便填的，它们之间有<strong>硬性的相互制约</strong>。四条最重要的规则：</p>
+  <ul class="keylist">
+    <li><span class="k">隐藏维度必须能被头数整除</span><span class="v">因为每个注意力头分到 <code>d_head = d_model / n_heads</code> 的子空间。Llama 3 8B 是 4096 / 32 = 128；405B 是 16384 / 128 = 128。<strong>注意这个 128 在所有规模上都保持不变</strong>——业界经验是每个头的维度维持在 64 到 128 之间最有效，太小则表达力不足，太大则头之间的分工不明显。所以放大模型时，标准操作是<strong>同时增加头数和隐藏维度</strong>，而不是只放大其中一个。</span></li>
+    <li><span class="k">参数量约等于 12 × 层数 × 维度²</span><span class="v">Transformer 每层的参数主要来自两块：注意力的 Q/K/V/O 四个投影矩阵（4d²）和 FFN 的两个矩阵（通常 8d²，因为中间层扩展 4 倍）。加起来约 12d²。验算 GPT-3：12 × 96 × 12288² ≈ 1740 亿——和公布的 1750 亿几乎一致。<strong>这条公式让你能反推任何模型的配置是否合理。</strong></span></li>
+    <li><span class="k">FFN 的扩展倍数</span><span class="v">经典 Transformer 是 4 倍（d → 4d → d）。但用了 SwiGLU 激活的现代模型（Llama、Qwen、DeepSeek）需要三个矩阵而非两个，所以通常把倍数调到 8/3 ≈ 2.67 来保持参数量不变。Llama 3 8B 的 FFN 中间维度是 14336，正好约等于 4096 × 3.5。</span></li>
+    <li><span class="k">词表大小的隐藏代价</span><span class="v">词嵌入矩阵的参数量是 <code>词表 × 隐藏维度</code>。Llama 3 的 128256 × 4096 ≈ 5.25 亿——在 8B 模型里占了 6.5%，在一个 0.5B 的小模型里能占到 <strong>一半以上</strong>！这就是为什么小模型往往用更小的词表，而大模型可以放心扩词表（Llama 3 从 Llama 2 的 32000 扩到 128256，代价在大模型上摊薄了，收益是中文等非英语的 token 效率提升约 15%）。</span></li>
+  </ul>
+
+  <h3>三、稠密 vs MoE：两条放大路线</h3>
+  <p>上面那些模型里，DeepSeek-V3 那一行有点特殊：<strong>6710 亿参数，但每次只激活 370 亿</strong>。这就是 <strong>MoE（Mixture of Experts，混合专家）</strong>架构，它是过去两年最重要的架构分歧点。</p>
+  <p>原理并不复杂。传统"稠密"模型每生成一个 token，都要让数据流过<strong>全部</strong>参数。MoE 把每层的 FFN 拆成很多个小 FFN（叫"专家"），前面加一个<strong>路由器（router）</strong>——一个小小的线性层，负责给每个 token 打分，决定送给哪几个专家处理。</p>
+  <pre><code># MoE 层的核心逻辑（简化）
+def moe_layer(x, experts, router, top_k=2):
+    scores = softmax(router(x))            # 对 N 个专家打分
+    idx = topk_indices(scores, k=top_k)    # 只选前 k 个
+    out = 0
+    for i in idx:
+        out += scores[i] * experts[i](x)   # 加权求和
+    return out
+    # 假设有 256 个专家，只激活 8 个
+    # → 总参数 = 256 份，实际计算 = 8 份 → 省 32 倍算力
+
+# DeepSeek-V3 的实际配置
+专家数     : 每层 256 个路由专家 + 1 个共享专家
+激活数     : 每 token 选 8 个
+总参数     : 671B
+激活参数   : 37B     ← 推理开销只相当于一个 37B 稠密模型
+训练成本   : 278.8 万 GPU 小时（约 557 万美元）</code></pre>
+  <p>MoE 的诱惑在于它<strong>解耦了"知识容量"和"计算成本"</strong>。稠密模型这两者是绑死的：想装更多知识，就必须付更多算力。MoE 让你可以只花 37B 的推理成本，享受 671B 的知识储备。DeepSeek-V3 用 557 万美元的训练成本做出接近 GPT-4o 的效果，MoE 是最关键的一块拼图。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>稠密（Dense）</th><th>MoE 稀疏</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>推理算力</td><td>与参数量成正比</td><td><strong>只和激活参数相关，便宜得多</strong></td></tr>
+        <tr><td>显存占用</td><td>= 参数量</td><td><strong>= 总参数量（全部要装载）</strong>，这是它的硬伤</td></tr>
+        <tr><td>训练稳定性</td><td>成熟、可预测</td><td>路由容易失衡，需要负载均衡损失</td></tr>
+        <tr><td>微调难度</td><td>标准流程</td><td>较难，路由容易被小数据集破坏</td></tr>
+        <tr><td>适合场景</td><td>本地部署、小尺寸模型</td><td>云端大规模服务、追求性价比</td></tr>
+        <tr><td>代表</td><td>Llama 3、Qwen 稠密版</td><td>Mixtral 8×7B、DeepSeek-V3、GPT-4（推测）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>MoE 最麻烦的工程问题叫<strong>负载不均衡</strong>：路由器如果学"偷懒"，可能把 90% 的 token 都送给同几个专家，剩下的专家从没被训练过，等于白占参数。解法是在损失函数里加一项<strong>负载均衡惩罚</strong>，逼路由器把流量摊开。DeepSeek-V3 更进一步用了"无辅助损失的负载均衡"——通过动态调整每个专家的偏置项来平衡流量，避免辅助损失干扰主任务。<mark class="key">这类细节说明 MoE 不是"稠密模型加个开关"，它是一套需要单独调教的体系。</mark></p>
 
   <div class="callout analogy">
     <span class="tag">Analogy · 模型架构 = 楼房结构</span>
     <p>如果说训练数据是砖头，那模型架构就是<strong>建筑蓝图</strong>。同样一堆砖，你按四合院图纸盖，就是四合院；按摩天大楼图纸盖，就是 100 层高楼。Transformer 就是当代 AI 世界里"最靠谱的摩天大楼蓝图"——扎实、可扩展、几乎所有名楼都照它盖。</p>
   </div>
 
-  <h3>三、权重初始化：出生时的"起点"</h3>
+  <h3>四、权重初始化：出生时的"起点"</h3>
   <p>模型架构定了，参数量定了——但每一个参数的初始值该设成多少？全设成 0 行不行？答案是：<strong>绝对不行</strong>。如果所有参数都是 0，那所有神经元的输出都相同，反向传播的梯度也都相同——网络永远学不出任何有意义的东西，这叫"对称性问题"。</p>
   <p>那随机初始化行不行？可以，但也有讲究：如果初始值太大，激活函数会饱和（sigmoid、tanh），梯度消失；如果太小，信号一层层传下去就淹没了。所以业界发明了几种精心设计的初始化方法：</p>
   <ul class="keylist">
@@ -87,8 +182,22 @@
     <li><span class="k">正态 / 均匀分布</span><span class="v">两种采样方式，配合上面的方差控制。</span></li>
   </ul>
   <p>本质上，好的初始化就是给模型一个<strong>"不偏不倚的起点"</strong>——像跑步比赛前所有选手站在同一条起跑线，谁也不比谁多占一步。</p>
+  <p>Xavier 和 He 这两个名字背后的推导直觉值得讲清楚，因为它出人意料地简单。核心目标只有一句话：<mark class="key">让信号在逐层传播时，方差既不放大也不缩小</mark>。</p>
+  <p>假设某一层有 <code>n_in</code> 个输入，输出是 <code>y = Σ w_i · x_i</code>。如果各项独立，那么 <code>Var(y) = n_in · Var(w) · Var(x)</code>。要让 <code>Var(y) = Var(x)</code>，就必须让 <code>Var(w) = 1 / n_in</code>。这就是 <strong>Xavier 初始化</strong>的全部推导——Glorot 和 Bengio 在 2010 年同时考虑前向和反向，取了输入输出的平均，得到 <code>Var(w) = 2 / (n_in + n_out)</code>。</p>
+  <p><strong>He 初始化</strong>（何恺明等，2015）多了一步观察：如果激活函数是 ReLU，它会把一半的输入直接砍成 0，等于让方差<strong>减半</strong>。要补回来，就得把权重方差加倍：<code>Var(w) = 2 / n_in</code>。就这一个"×2"，让上百层的深度网络第一次能稳定训练起来。</p>
+  <pre><code># 三种初始化的实际差别（以 n_in=1024, n_out=1024 为例）
+全零初始化      : std = 0        → 所有神经元完全对称，永远学不动
+朴素高斯 N(0,1) : std = 1.0      → 逐层放大 32 倍，第 5 层就数值爆炸
+Xavier          : std = √(2/2048) ≈ 0.031   ← 适合 tanh / sigmoid
+He (Kaiming)    : std = √(2/1024) ≈ 0.044   ← 适合 ReLU / GELU
 
-  <h3>四、超参数：训练前的"作息表"</h3>
+# 大模型的额外一招：按深度缩放残差分支
+# GPT-2 论文：把残差分支的输出权重再乘 1/√(2 × 层数)
+# 目的：防止 N 层残差累加后方差线性增长
+std_residual = 0.02 / math.sqrt(2 * n_layers)</code></pre>
+  <p>最后那个细节在大模型上尤其关键。Transformer 是残差结构，每层的输出都加回主干上，<strong>N 层叠加会让方差涨 N 倍</strong>。GPT-2 的做法是把残差分支的输出投影权重按 <code>1/√(2N)</code> 缩小；Llama 系列则依赖 RMSNorm 和精心调过的标准差（常用 0.02）来控制。<mark class="key">初始化在小模型上是"调优"，在百层大模型上是"能不能训起来"的生死问题</mark>——一个 405B 模型跑崩一次，损失就是几十万美元的算力。</p>
+
+  <h3>五、超参数：训练前的"作息表"</h3>
   <p>还有一堆参数不属于模型本身，但决定训练的过程，叫<strong>超参数（hyperparameters）</strong>：</p>
   <div class="table-wrap">
     <table>
@@ -108,11 +217,114 @@
     </table>
   </div>
   <p>超参数为什么重要？举一个真实故事：<mark class="key">同一个模型架构，同一份数据，学习率从 3e-4 改到 3e-5，最终效果可能相差 5 个 MMLU 百分点</mark>。这就是为什么大模型团队要花几百万美元跑"超参搜索"——每一次实验都是烧钱，但值得。</p>
+  <p>更麻烦的是：<strong>大模型无法做超参搜索</strong>。你不可能把 405B 模型训 50 遍来试学习率。所以业界的做法是<strong>在小模型上搜，再按缩放规律外推到大模型</strong>。有几条已经被反复验证的经验定律：</p>
+  <ul class="keylist">
+    <li><span class="k">学习率随规模递减</span><span class="v">经验上最优学习率大致与模型宽度成反比。GPT-3 的 175B 用 0.6e-4，13B 用 1.0e-4，1.3B 用 2.0e-4——<strong>模型越大，学习率越小</strong>。Llama 3 405B 用的是 8e-5，8B 用 3e-4。μP（Maximal Update Parametrization）这一套理论就是专门为了让小模型搜出的学习率能直接迁移到大模型上。</span></li>
+    <li><span class="k">批大小随训练进程增长</span><span class="v">GPT-3 的批大小从 3.2 万 token 逐渐升到 320 万；Llama 3 405B 从 400 万 token 起，中途调到 800 万，最后到 1600 万。为什么？<strong>训练早期梯度噪声大，小批就够指方向；后期要精细优化，需要更精确的梯度估计。</strong></span></li>
+    <li><span class="k">批大小与学习率要联动</span><span class="v">经验法则是"平方根缩放"：批大小翻 4 倍，学习率翻 2 倍。背后逻辑是批大小翻倍会让梯度噪声降到 1/√2，于是可以承受更大的步长。这条规则在大批量下会失效，存在一个"临界批大小"——超过它，再加批也不会加速收敛，只是白烧算力。</span></li>
+    <li><span class="k">warmup 步数占比</span><span class="v">通常取总步数的 0.1% 到 2%，或者固定 2000 步左右。Llama 3 405B 用了 8000 步 warmup。<strong>模型越大越需要更长的 warmup</strong>，因为初始梯度更混乱。</span></li>
+    <li><span class="k">权重衰减固定在 0.1</span><span class="v">这是一个几乎所有大模型都在用的魔法数字：GPT-3、Llama、Qwen、DeepSeek 全部用 0.1。注意<strong>要排除 LayerNorm 参数和 bias</strong>——对这些参数做衰减会伤害性能。</span></li>
+  </ul>
+  <p>下面这张表把主流模型公开的真实超参放在一起，比任何教科书上的"典型值"都有说服力：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>峰值学习率</th><th>批大小（token）</th><th>warmup</th><th>权重衰减</th><th>梯度裁剪</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-3 175B</td><td>0.6e-4</td><td>320 万</td><td>3.75 亿 token</td><td>0.1</td><td>1.0</td></tr>
+        <tr><td>Llama 2 70B</td><td>1.5e-4</td><td>400 万</td><td>2000 步</td><td>0.1</td><td>1.0</td></tr>
+        <tr><td>Llama 3 405B</td><td>8e-5</td><td>400 万 → 1600 万</td><td>8000 步</td><td>0.1</td><td>1.0</td></tr>
+        <tr><td>DeepSeek-V3</td><td>2.2e-4</td><td>逐步升至 6273 万</td><td>2000 步</td><td>0.1</td><td>1.0</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-  <h3>五、层数 vs 宽度：深还是宽</h3>
+  <h3>六、Chinchilla 最优配比：算力该怎么花</h3>
+  <p>现在把参数量和数据量放在一起考虑。假设老板给你 1000 万美元算力预算，你该训一个"大模型少数据"还是"小模型多数据"？2022 年 DeepMind 的 Chinchilla 论文给出了第一个可计算的答案。</p>
+  <p>他们训了 400 多个不同规模的模型，拟合出的结论是：<strong>在固定算力预算下，参数量 N 和 token 数 D 应该同比例增长，最优比约为 D ≈ 20N</strong>。同时给出了那条著名的算力公式：<code>C ≈ 6ND</code>（训练所需 FLOPs 约等于 6 倍的参数量乘 token 数）。</p>
+  <pre><code># Chinchilla 三件套：给定算力，反推最优配置
+C = 6 · N · D          # 总算力（FLOPs）
+D = 20 · N             # 最优数据量
+→ C = 120 · N²  →  N = √(C / 120)
+
+# 例：手上有 1e24 FLOPs 的预算
+N = √(1e24 / 120) ≈ 9.1e10  →  约 91B 参数
+D = 20 × 9.1e10  ≈ 1.8e12   →  约 1.8T token
+
+# 验算 GPT-3（实际 175B 参数、300B token）
+按 Chinchilla，175B 参数应配 3.5T token
+它只用了 300B → 只有应有量的 8.6%  →  严重欠训
+DeepMind 用 70B + 1.4T 训出的 Chinchilla 打败了 GPT-3
+同样算力，参数减 60%、数据增 4.7 倍 → 效果反超</code></pre>
+  <p>但这条定律有一个被广泛误读的地方，必须说清：<mark class="key">Chinchilla 最优的是"训练算力"，不是"总体成本"</mark>。一个模型训完之后要服务几亿次请求，推理成本会远超训练成本。所以从商业角度，你宁愿多花训练算力去"过训"一个小模型——推理时每一次调用都省钱。</p>
+  <p>这就是为什么 2023 年之后所有模型都<strong>远远超过</strong> Chinchilla 建议值：Llama 3 8B 用了 15 万亿 token，是建议值（1600 亿）的 <strong>94 倍</strong>。它在训练算力上"浪费"了，但换来一个能在单张显卡上跑、推理便宜 50 倍的模型。<strong>Chinchilla 回答的是"怎么用最少算力达到某个损失"，而工业界真正关心的是"怎么用最低总成本服务用户"——这是两个不同的优化目标。</strong></p>
+
+  <h3>七、层数 vs 宽度：深还是宽</h3>
   <p>一个有趣的问题：给定同样的参数预算（比如 10B），是把网络堆得更深（100 层每层 1000 维），还是更宽（20 层每层 5000 维）？经验规律是：<strong>先增宽、再增深</strong>——太深会梯度消失、训练不稳定；太宽会计算不高效。Llama 3 8B 是 32 层 × 4096 维；70B 是 80 层 × 8192 维——你能看出比例上的讲究。</p>
+  <p>这个"讲究"是有量化规律的。Kaplan 等人 2020 年的缩放定律论文发现了一个重要事实：<strong>在参数量固定的情况下，模型的损失对"深宽比"非常不敏感</strong>——只要宽高比落在一个很宽的合理区间内，效果差不多。也就是说，形状不太重要，总参数才重要。这在当时是个解放性的结论，意味着你可以按工程便利去选形状。</p>
+  <p>但工程上的偏好非常明确，两个理由都跟硬件有关：</p>
+  <ul class="keylist">
+    <li><span class="k">宽度友好于并行</span><span class="v">增加宽度等于把矩阵变大，而大矩阵乘法在 GPU 上效率极高（张量核心就是为此设计的），并且可以直接切列切行做张量并行。增加深度则意味着更长的<strong>串行链条</strong>——第 N 层必须等第 N-1 层算完，流水线并行会产生气泡（空转），通信次数也线性增长。</span></li>
+    <li><span class="k">深度带来数值不稳定</span><span class="v">层数越多，激活值和梯度经过的变换越多，出现 NaN 或 loss spike 的概率越高。Llama 3 405B 的 126 层已经接近当前工程实践的舒适上限，再深就需要额外的稳定化手段（如更保守的初始化、QK-Norm、更小的学习率）。</span></li>
+  </ul>
+  <p>反过来，深度也有它不可替代的价值：<strong>推理的"步数"上限</strong>。直观地说，模型每一层可以看作一次"信息变换"，需要多步组合的推理任务（比如"A 的父亲的老师的国籍是什么"）就需要足够的层数来串联。有研究显示，在同参数量下，更深的模型在多步推理任务上略有优势，而更宽的模型在知识记忆类任务上略强。<mark class="key">深度换推理，宽度换记忆——这是一个粗糙但好用的直觉。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>层数 : 宽度</th><th>宽深比</th><th>观察</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-2 small</td><td>12 : 768</td><td>64</td><td>小模型偏窄</td></tr>
+        <tr><td>GPT-3 175B</td><td>96 : 12288</td><td>128</td><td>放大时宽度涨得更快</td></tr>
+        <tr><td>Llama 3 8B</td><td>32 : 4096</td><td>128</td><td>与 GPT-3 同比例</td></tr>
+        <tr><td>Llama 3 70B</td><td>80 : 8192</td><td>102</td><td>略偏深</td></tr>
+        <tr><td>Llama 3 405B</td><td>126 : 16384</td><td>130</td><td>回到约 128 这条线</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看最后一列的规律：<strong>宽深比长期稳定在 100 到 130 之间</strong>。这不是巧合，而是几百次实验之后收敛出来的工程共识。你要设计一个新模型，从这条线出发几乎不会错。</p>
 
-  <h3>六、"配置一个模型"的完整清单</h3>
+  <h3>八、模型并行：一个模型怎么塞进上万张卡</h3>
+  <p>一个 405B 模型光权重就要 810 GB，训练状态要 6 TB 以上——它<strong>物理上不可能装进任何一张卡</strong>。所以"配置一个大模型"必然包含一个问题：怎么把它切开分到几千张卡上？这里有四种正交的切法，实际训练中要组合使用。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>并行方式</th><th>切什么</th><th>通信量</th><th>通信发生在</th><th>主要作用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>数据并行 DP</strong></td><td>切数据批次，每卡一份完整模型</td><td>每步同步全部梯度</td><td>集群内任意位置皆可</td><td>提高吞吐，不省显存</td></tr>
+        <tr><td><strong>张量并行 TP</strong></td><td>切单层内的矩阵（按行/列）</td><td><strong>极高，每层两次 all-reduce</strong></td><td>必须在同一节点内（NVLink）</td><td>省显存，降低单卡负担</td></tr>
+        <tr><td><strong>流水线并行 PP</strong></td><td>按层切，前 20 层在卡 A，后 20 层在卡 B</td><td>低，只传层间激活</td><td>可跨节点（InfiniBand）</td><td>省显存，但有气泡</td></tr>
+        <tr><td><strong>ZeRO / FSDP</strong></td><td>切优化器状态、梯度、参数</td><td>中等，用时再收集</td><td>跨节点</td><td><strong>大幅省显存，改动最小</strong></td></tr>
+        <tr><td>专家并行 EP</td><td>把 MoE 的不同专家放不同卡</td><td>中等，all-to-all 路由</td><td>跨节点</td><td>MoE 模型专用</td></tr>
+        <tr><td>上下文并行 CP</td><td>按序列长度切</td><td>中等</td><td>节点内优先</td><td>训练超长上下文用</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>ZeRO</strong>（微软 DeepSpeed 提出，PyTorch 里对应 FSDP）是最值得单独理解的一个，因为它的思路特别漂亮。回到前面算过的那笔账：训练显存的大头是 16N 的优化器状态。ZeRO 的洞察是——<mark class="key">这些状态在数据并行的每张卡上都是完全一样的副本，纯属浪费</mark>。那就把它们切开，每张卡只存 1/N 份，需要时再临时收集。</p>
+  <pre><code># ZeRO 的三个阶段，省显存力度递增
+ZeRO-1: 只切优化器状态         → 省 4 倍，通信不增加
+ZeRO-2: 再切梯度               → 省 8 倍，通信不增加
+ZeRO-3: 连参数也切（= FSDP）   → 省 N 倍（N=卡数），通信增加约 50%
+
+# 以 64 张卡训练 7B 模型为例（单卡显存需求）
+不用 ZeRO : 权重14 + 梯度14 + 优化器84  = 112 GB  ← 装不下
+ZeRO-1    : 14 + 14 + 84/64  ≈  29 GB
+ZeRO-2    : 14 + 14/64 + 84/64 ≈ 16 GB
+ZeRO-3    : (14+14+84)/64      ≈ 1.8 GB  ← 一张消费卡都够
+
+# Llama 3 405B 的实际组合（16384 张 H100）
+张量并行 TP=8     （节点内 8 卡，走 NVLink 高速互联）
+流水线并行 PP=16  （跨 16 个节点分层）
+上下文并行 CP=?   （长上下文阶段启用）
+数据并行 DP=128   （最外层，配 FSDP 切状态）
+→ 8 × 16 × 128 = 16384 张卡</code></pre>
+  <p>为什么要这么复杂地组合？因为每种并行都有它的<strong>通信代价与拓扑约束</strong>。张量并行每层要做两次 all-reduce，通信量极大，只有节点内 NVLink 的 900 GB/s 带宽扛得住，跨节点走 InfiniBand（约 400 Gb/s）会直接把训练拖垮——所以 TP 的规模几乎永远等于单节点的卡数（通常是 8）。流水线并行通信量小，适合跨节点，但会产生"气泡"：第一张卡算完第 1 层要等最后一张卡回传梯度，中间大量空转，需要用 micro-batch 交错来填。</p>
+  <p>这些并行策略最终决定了一个关键指标：<strong>MFU（Model FLOPs Utilization，模型算力利用率）</strong>——你实际用上了 GPU 峰值算力的百分之几。Llama 3 405B 训练时报告的 <strong>BF16 MFU 约为 38%-43%</strong>。听起来不高，但这已经是世界级水平：<mark class="key">超过一半的理论算力，都消耗在了搬数据、等同步、填气泡上——分布式训练的真正对手不是计算，是通信。</mark></p>
+
+
+  <h3>九、"配置一个模型"的完整清单</h3>
   <p>把上面这些放在一起，训练一个大模型前，工程师要在一张 yaml 配置里定义大概这些东西：</p>
   <ul class="keylist">
     <li><span class="k">架构选择</span><span class="v">Decoder-only / MoE / 是否 RoPE / 是否 GQA</span></li>
@@ -124,12 +336,64 @@
     <li><span class="k">精度</span><span class="v">FP32 / BF16 / FP8——影响速度和显存</span></li>
   </ul>
   <p>这张配置表，就是这个"待培养的天才少年"的完整先天档案。</p>
+  <p>为了让它变成可触摸的东西，下面是一份接近真实的 7B 模型训练配置。你会发现前面讲的每一个概念，都在这里对应一行：</p>
+  <pre><code># config.yaml — 一个 7B 稠密模型的完整先天档案
+model:
+  architecture: llama          # Decoder-only Transformer
+  n_layers: 32                 # 深度
+  hidden_size: 4096            # 宽度  →  12 × 32 × 4096² ≈ 6.4B
+  n_heads: 32                  # 4096 / 32 = 128 维每头
+  n_kv_heads: 8                # GQA：KV 头只有 8 个，省 4 倍 KV Cache
+  ffn_hidden: 14336            # SwiGLU，约 3.5 倍扩展
+  vocab_size: 128256           # 嵌入层就占 5.25 亿参数
+  max_seq_len: 8192
+  norm: rmsnorm                # 比 LayerNorm 少算均值，快约 10%
+  pos_encoding: rope           # 旋转位置编码，支持外推
+  rope_theta: 500000           # 加大 theta 是为了后续扩长上下文
+  tie_word_embeddings: false    # 大模型不共享输入输出嵌入
+
+init:
+  method: normal
+  std: 0.02
+  scale_residual_by_depth: true   # 残差分支 × 1/√(2×32)
+
+optim:
+  optimizer: adamw
+  lr: 3.0e-4                   # 7B 规模的典型峰值
+  betas: [0.9, 0.95]           # 注意 beta2 是 0.95 不是默认的 0.999
+  eps: 1.0e-8
+  weight_decay: 0.1            # 排除 norm 与 bias
+  grad_clip: 1.0               # 全局梯度范数裁剪
+  scheduler: cosine
+  warmup_steps: 2000
+  min_lr_ratio: 0.1            # 衰减到峰值的 10% 而非 0
+
+train:
+  precision: bf16              # 主流选择，动态范围比 fp16 大
+  global_batch_tokens: 4194304 # 400 万 token / step
+  micro_batch_size: 4
+  grad_accum: auto
+  total_tokens: 2.0e12         # 2 万亿 token
+  seed: 42
+
+parallel:
+  tensor_parallel: 2
+  pipeline_parallel: 1
+  zero_stage: 3                # = FSDP，切一切
+  activation_checkpointing: true  # 用重算换显存，慢约 30%
+
+checkpoint:
+  save_every_steps: 500        # 万卡集群必须频繁存盘
+  keep_last: 5</code></pre>
+  <p>注意几个容易被忽略的细节。<strong><code>betas: [0.9, 0.95]</code></strong>——大模型几乎都把 AdamW 的第二个动量系数从默认 0.999 调到 0.95，因为大批量训练时梯度统计已经足够稳，用更短的记忆窗口反应更快。<strong><code>min_lr_ratio: 0.1</code></strong>——学习率不衰减到 0 而是留 10%，为的是保留一点继续训练的余地。<strong><code>activation_checkpointing: true</code></strong>——不保存中间激活值，反向传播时重新算一遍，用 30% 的速度换掉大部分激活显存，这是训练长序列的标准操作。</p>
+  <p>最后提醒一句现实：<mark class="key">这份配置的每一个数字，都可能因为一个小错误让几百万美元的算力打水漂</mark>。这就是为什么真正的大模型团队会先用 1B 规模跑几十次"缩放实验"验证配置，确认损失曲线符合预期，才敢按下大规模训练的开始按钮。</p>
 
   <div class="lab" data-lab="quiz" data-q="「Llama 3 70B」中的 70B 指的是？" data-opts="训练用了 70 亿条数据|模型有约 700 亿个参数|训练花了 70 天|支持 70 种语言" data-answer="1" data-explain="B 是 billion（十亿），70B 即约 700 亿个可训练参数（权重）。参数量大致决定了模型的「容量」——能记住和拟合多复杂的规律。"></div>
 
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>模型是训练开始之前，就要决定的一切"先天"——多少参数、什么架构、如何初始化、怎么调节奏。这些配置里的每一个数字，都可能让最终效果相差几个百分点。<mark class="key">好的模型 = 合适的架构 × 匹配的参数量 × 合理的初始化 × 精调的超参数</mark>。做完这些，你才拥有了一个"值得砸算力去训练"的胚子。</p>
+    <p>九条要点收束这一节：<strong>(1)</strong> 参数量最实用的换算是显存——<strong>半精度下 GB 数 ≈ B 数 × 2</strong>，7B 要 14 GB，70B 要 140 GB；<strong>(2)</strong> 但训练要 <strong>16N 字节的优化器状态</strong>，是推理的 8-10 倍，这就是"能跑"和"能训"的鸿沟；<strong>(3)</strong> 架构是一组互相制约的数字，记住 <strong>参数量 ≈ 12 × 层数 × 维度²</strong> 和 <strong>每头维度固定在 128</strong> 这两条，你能反推任何模型的配置；<strong>(4)</strong> <strong>MoE 解耦了知识容量与计算成本</strong>——DeepSeek-V3 用 671B 的知识、37B 的算力、557 万美元训出来，但显存仍要装全部参数；<strong>(5)</strong> 初始化的全部直觉是"让方差逐层守恒"，<strong>Xavier 是 2/(n_in+n_out)，He 因为 ReLU 砍掉一半而取 2/n_in</strong>；<strong>(6)</strong> 超参有铁律：<strong>模型越大学习率越小、批大小随进程增长、权重衰减固定 0.1、beta2 用 0.95</strong>；<strong>(7)</strong> <strong>Chinchilla 的 20:1</strong> 优化的是训练算力，而工业界要优化总成本，所以 Llama 3 8B 故意"过训"了 94 倍；<strong>(8)</strong> 宽深比长期稳定在 <strong>100 到 130</strong>，深度换推理、宽度换记忆；<strong>(9)</strong> 上万张卡靠 <strong>TP × PP × DP × ZeRO</strong> 四维切分组合，而 <strong>MFU 只有 38%-43%</strong> 说明了一切——<mark class="key">大模型训练真正的对手不是计算，是通信。</mark></p>
   </div>
 
   <div class="pager">

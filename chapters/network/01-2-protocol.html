@@ -41,8 +41,18 @@
     协议做的事，就是把这些"寒暄、约定、确认、确认收到的细节"全部标准化，让两台机器也能这么有条不紊地聊天。</p>
   </div>
 
+  <h3>为什么"能连上"不等于"能沟通"</h3>
+  <p>把两台电脑用网线插在一起，电信号确实能过去——但那只是"一串高低电平"。<strong>接收方怎么知道这串电平从哪里开始、到哪里结束、哪几位是"收件人"、哪几位才是正文？</strong>没有事先的约定，收到的一切都只是噪声。</p>
+  <p>所以网络世界里有一句话：<mark class="key">物理连通解决"到得了"，协议解决"听得懂"。</mark>前者是硬件的事，后者是约定的事——而后者才是这一节的主角。</p>
+
+  <div class="callout">
+    <span class="tag">Insight · 一个小实验</span>
+    <p>如果你把一段中文用 UTF-8 编码存成文件，再用 GBK 打开，屏幕上会出现"锟斤拷"这种乱码。数据一个字节都没丢，链路完全正常，唯一的问题是<strong>写的人和读的人用了不同的约定</strong>。<br/>
+    这就是"没有共同协议"最直观的样子——网络里的协议不匹配，后果和这个乱码一模一样。</p>
+  </div>
+
   <h3>协议的三要素</h3>
-  <p>任何一个网络协议，都至少包含这三件事：</p>
+  <p>不管是几十年前的电报规程，还是今天的 HTTP/3，任何一个网络协议都可以被拆成同样的三件事：<strong>格式怎么写、字段啥意思、谁先谁后</strong>。记住这三个词，以后你翻任何一份协议文档都不会迷路：</p>
 
   <div class="cards">
     <div class="card">
@@ -62,7 +72,40 @@
     </div>
   </div>
 
-  <h3>协议是如何"分层"的</h3>
+  <p>光看定义还有点飘，我们拿一段<strong>真实的 HTTP 请求报文</strong>把三要素一次全指出来。下面这几行就是你每次打开网页时，浏览器真正发出去的纯文本：</p>
+  <pre><code>GET /index.html HTTP/1.1          &lt;- 语法：动词 空格 路径 空格 版本，一格都不能错
+Host: example.com                 &lt;- 语法：字段名 冒号 空格 值
+User-Agent: Mozilla/5.0
+Accept: text/html
+Accept-Encoding: gzip, br
+Connection: keep-alive
+                                  &lt;- 语法：一个空行，表示"头部到此结束"
+（这里之后才是正文，GET 请求通常没有正文）</code></pre>
+  <p><strong>语法</strong>体现在哪？——"必须是三段、用空格隔开"、"字段名和值之间必须是冒号加空格"、"头部结束必须是一个空行（准确说是 <code>\r\n\r\n</code>）"。这些规则死板到近乎苛刻：<strong>你少写一个空格，服务器就直接回 400 Bad Request</strong>。<strong>语义</strong>体现在哪？——<code>GET</code> 的含义是"我只要读，别改数据"，<code>Host</code> 的含义是"我要访问的是这台服务器上的哪个网站"（这一行让一个 IP 能托管几千个网站），<code>Accept-Encoding: gzip</code> 的含义是"你可以压缩了再发给我，我解得开"。<strong>时序</strong>体现在哪？——必须客户端先发请求、服务器后回响应，且在 HTTP/1.1 里<strong>一个连接上的请求必须按顺序应答</strong>，不能乱序。</p>
+  <p>服务器的回答同样严格：</p>
+  <pre><code>HTTP/1.1 200 OK                   &lt;- 语义：200 = 成功
+Content-Type: text/html; charset=utf-8
+Content-Length: 3241              &lt;- 语义：正文正好 3241 字节，读够就停
+Content-Encoding: gzip
+Cache-Control: max-age=3600       &lt;- 语义：这份内容你可以自己存 1 小时
+
+&lt;!DOCTYPE html&gt;&lt;html&gt;…（3241 字节的压缩正文）</code></pre>
+  <p>注意那个 <code>Content-Length</code>——它是"语义"的绝佳例子。接收方靠这个数字知道<strong>什么时候该停止读取</strong>。如果这个数字写错了，会发生两种灾难：写大了，接收方一直傻等"还没收完"直到超时；写小了，多出来的字节被当成"下一个请求的开头"来解析，整个连接彻底错乱。<mark class="key">协议里的每个字段都不是装饰，它们都是接收方赖以生存的判断依据。</mark></p>
+  <p>三要素还有一个不对称的地方值得注意：<strong>语法错误容易发现，语义错误极难发现</strong>。语法写错，对方立刻报错；但如果你把"用户余额"字段的单位理解成"元"而对方发的是"分"，两边的解析都成功、没有任何报错，只是所有金额都错了 100 倍。真实世界里的接口事故，绝大多数是语义误解，不是语法错误。这也是为什么好的协议文档花在解释字段含义上的篇幅，永远远超解释格式。</p>
+
+  <h3>为什么一定要分层：软件工程的一次伟大胜利</h3>
+  <p>在讲"有哪几层"之前，先回答一个更根本的问题：<strong>为什么不能写一个协议把所有事一次办完？</strong>假设真有这么一个"万能协议"，它得同时负责：光纤里的激光怎么闪、网线上怎么避免两台机器同时说话、全球几十万个网络之间怎么选路、丢了包怎么重传、拥塞了怎么减速、HTML 用什么编码、密码怎么加密……</p>
+  <p>后果会是灾难性的，而且是四重灾难：</p>
+  <ul class="keylist">
+    <li><span class="k">改一处动全身</span><span class="v">WiFi 从 4 升到 6，是最底下两层的事。如果协议不分层，升级 WiFi 就得同时改浏览器、改邮件客户端、改所有 App。<strong>而现实中你换个路由器，一行代码都不用改。</strong></span></li>
+    <li><span class="k">组合数爆炸</span><span class="v">假设有 8 种物理介质、5 种传输方式、100 种应用。不分层要写 8×5×100 = 4000 个协议；分层只需要 8+5+100 = 113 个。<strong>分层把乘法变成了加法</strong>，这是它最大的数学价值。</span></li>
+    <li><span class="k">无法分工</span><span class="v">网卡厂商懂电磁波不懂 HTML，浏览器团队懂 HTML 不懂激光调制。分层给了每一群人一份可以独立完成、边界清晰的工作说明书。</span></li>
+    <li><span class="k">无法演进</span><span class="v">1983 年定型的 IP 协议至今还在跑，而它上面的应用层已经从 telnet 换到了 HTTP/3。<strong>不分层，任何一层的过时都意味着推倒重来。</strong></span></li>
+  </ul>
+  <p>分层的核心机制其实只有一句话：<mark class="key">每一层只跟"上一层"和"下一层"打交道，且只暴露服务、不暴露实现</mark>。TCP 只对上层承诺"你给我的字节，我保证按顺序、不重不漏地送到"；它绝口不提这些字节是走光纤还是走 5G——它根本不知道，也不需要知道。这种"故意的无知"在软件工程里叫<strong>封装</strong>，是所有大型系统能被建造出来的唯一办法。</p>
+  <p>当然，分层也有代价，值得诚实地说出来。<strong>第一是开销</strong>：每层都要加自己的头部，一个 1500 字节的以太网帧里，14（以太网）+ 20（IP）+ 20（TCP）= 54 字节是纯头部开销，约 3.6%；如果传的是几十字节的小包（比如游戏操作、语音帧），头部可能比数据还长。<strong>第二是性能损失</strong>：数据在层间传递要多次内存拷贝，这也是为什么高性能场景会出现"跨层优化"这种打破分层原则的做法。<strong>第三是重复劳动</strong>：TCP 有校验和，以太网也有 CRC，IP 头也有校验和，同一件事做了三遍。</p>
+
+  <h3>协议栈：五层协议在一次点击里同时工作</h3>
   <p>你可能听过"OSI 7 层"、"TCP/IP 4 层"——这其实就是把"一次完整对话"拆成多个不同层次的协议，每层只管一件事：</p>
 
   <div class="table-wrap">
@@ -86,6 +129,24 @@
     每层都有专门的"工人"和专门的"规则"，互不干扰——这就是分层的智慧。</p>
   </div>
 
+  <p>这一整摞协议叠在一起，就叫<strong>协议栈（Protocol Stack）</strong>。"栈"这个字用得很准：数据发出去时<strong>从上往下一层层加壳</strong>，收进来时<strong>从下往上一层层剥壳</strong>，严格的后进先出。你打开一个网页时，这一摞协议是这样同时开工的：</p>
+  <pre><code>【发送方 · 你的电脑】                     【接收方 · 服务器】
+
+应用层   HTTP: "GET /index.html"          HTTP: 解析请求，返回页面
+           ↓ 加 TCP 头（20B）                     ↑ 剥掉 TCP 头
+传输层   TCP: 端口 54321 → 443              TCP: 检查序号、校验和、排序
+           ↓ 加 IP 头（20B）                      ↑ 剥掉 IP 头
+网络层   IP: 192.168.1.20 → 93.184.216.34   IP: 确认目标是我
+           ↓ 加以太网头（14B）                    ↑ 剥掉以太网头
+链路层   Ethernet: 我的MAC → 网关MAC          Ethernet: CRC 校验通过
+           ↓                                      ↑
+物理层   ━━━━━━ 电磁波 / 光脉冲 / 电压 ━━━━━━━━━━━━━━━━━━
+
+一句"GET /index.html"（24 字节）出门时已变成 78 字节的以太网帧</code></pre>
+  <p>这张图里藏着一个精妙的对称性：<strong>每一层只跟对面的同一层"对话"</strong>。你的 TCP 层是在跟服务器的 TCP 层商量窗口大小，中间经过的十几个路由器完全插不上话——它们只看得懂网络层。这种"同层对话、跨层封装"的结构叫<strong>对等层通信（peer-to-peer communication）</strong>，是分层模型最核心的设计。用邮政来类比：你和朋友在"信件内容层"对话，两地邮局在"分拣层"对话，两个邮递员在"投递层"对话——三组人各说各话，互不干扰，却共同完成了一次通信。</p>
+  <p>顺手记住每一层数据单元的正式名字，读文档时会省很多力气：应用层叫<strong>报文（Message）</strong>，传输层 TCP 叫<strong>段（Segment）</strong>、UDP 叫<strong>数据报（Datagram）</strong>，网络层叫<strong>分组/包（Packet）</strong>，链路层叫<strong>帧（Frame）</strong>，物理层就是<strong>比特流（Bit）</strong>。日常聊天大家一律叫"包"，但看规范时这些词是严格区分的。</p>
+  <p>还有一件事必须点明：<strong>OSI 七层是理论模型，TCP/IP 四层是现实实现</strong>。OSI 由国际标准化组织设计得极其工整（会话层、表示层各司其职），但它太复杂、落地太晚，商业上彻底败给了先跑起来的 TCP/IP。今天的现实是：<strong>我们用 OSI 的术语（"这是二层问题"、"七层负载均衡"），跑 TCP/IP 的代码</strong>。这个"名义标准输给事实标准"的故事，在技术史上一遍遍重演。</p>
+
   <h3>你每天用到的 8 个协议</h3>
   <div class="table-wrap">
     <table>
@@ -105,6 +166,76 @@
     </table>
   </div>
 
+  <h3>请求-响应模型：绝大多数协议的骨架</h3>
+  <p>把上面那 8 个协议摊开看，你会发现它们的交互形状高度雷同：<strong>一方问，一方答</strong>。这个"一问一答"的结构叫<strong>请求-响应模型（Request-Response）</strong>，它是协议世界里最主流的骨架，也是理解一切网络行为的默认框架。</p>
+  <p>但"一问一答"其实有好几种变体，各解决不同的问题。这是初学者最容易混淆的一块，一张表就能理清：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>交互模式</th><th>形状</th><th>谁先说话</th><th>典型协议 / 场景</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>请求-响应</td><td>问 → 答，一次一对</td><td>客户端</td><td>HTTP、DNS 查询、数据库查询</td></tr>
+        <tr><td>轮询 Polling</td><td>反复问"有新消息吗"</td><td>客户端</td><td>老式网页每 5 秒刷一次，浪费带宽</td></tr>
+        <tr><td>长轮询 Long-Poll</td><td>问了以后服务器<strong>先不答</strong>，有消息才答</td><td>客户端</td><td>早期网页聊天室的标准做法</td></tr>
+        <tr><td>服务器推送</td><td>服务器主动说话</td><td>服务器</td><td>SSE、WebSocket、微信新消息通知</td></tr>
+        <tr><td>发布-订阅</td><td>订阅一个"主题"，有内容就自动来</td><td>双向</td><td>MQTT（物联网）、Kafka</td></tr>
+        <tr><td>流式 Streaming</td><td>建立一次连接，持续单向灌数据</td><td>服务器</td><td>视频直播、gRPC Streaming</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里有一个反直觉但极其重要的事实：<strong>HTTP 协议本身不允许服务器主动说话</strong>。它的设计是纯粹的"客户端问、服务器答"，服务器没有任何办法在没被问的时候插一句嘴。那微信、钉钉、网页版邮箱是怎么"主动"弹出新消息的？答案是<strong>它们全都在耍花招</strong>——要么让客户端偷偷不停地问（轮询），要么让客户端问了以后服务器故意不回、憋着直到有消息才回（长轮询），要么干脆升级到 WebSocket 这个允许双向说话的协议。</p>
+  <p>WebSocket 的升级过程本身就是一个协议协商的漂亮案例。它不另开端口，而是<strong>借 HTTP 的壳"变身"</strong>：</p>
+  <pre><code># 客户端先发一个看起来很正常的 HTTP 请求，但夹带了升级请求
+GET /chat HTTP/1.1
+Host: chat.example.com
+Upgrade: websocket              &lt;- "我想换个协议聊"
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+
+# 服务器同意了
+HTTP/1.1 101 Switching Protocols   &lt;- 101 这个状态码专门用于"换协议"
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+
+# 从这一行之后，这个 TCP 连接上跑的就不再是 HTTP 了，
+# 而是 WebSocket 帧格式，双方都能随时主动发消息。</code></pre>
+  <p>为什么要这么绕，而不直接开一个新端口跑 WebSocket？因为<strong>现实世界的防火墙只信 80 和 443</strong>。公司网络、酒店 WiFi、运营商网关，大量只放行这两个端口。借 HTTP 的壳完成升级，等于是"穿着 HTTP 的制服过安检，进去以后再换衣服"。<mark class="key">协议设计从来不是纯技术选择，它得跟已经存在的几十亿台设备妥协。</mark></p>
+
+  <h3>有状态 vs 无状态：协议记不记得你</h3>
+  <p>这是协议设计里最重要的一条分水岭，也是面试和实际架构里出现频率最高的概念。定义极简：<strong>服务器处理这一次请求时，需不需要依赖"上一次请求留下的记忆"？</strong>需要的叫有状态，不需要的叫无状态。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>有状态 · Stateful</th><th>无状态 · Stateless</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>服务器记忆</td><td>为每个客户端维护一份上下文</td><td>处理完就忘，每次请求都是初次见面</td></tr>
+        <tr><td>典型协议</td><td>FTP、SMTP、TCP、SSH、数据库连接</td><td>HTTP、DNS、UDP、大多数 REST API</td></tr>
+        <tr><td>好处</td><td>交互简洁——之前说过的不用重复</td><td>可任意扩容：请求打到哪台服务器都一样</td></tr>
+        <tr><td>坏处</td><td>服务器内存吃紧、挂了状态就丢、难做负载均衡</td><td>每次请求都要携带全部信息，报文更大</td></tr>
+        <tr><td>崩溃后果</td><td>整个会话失效，得重新登录/重连</td><td>几乎无感——换台机器接着处理</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>用两个真实协议对比一下就很清楚。<strong>FTP 是有状态的</strong>：你 <code>cd /docs</code> 进了一个目录，之后 <code>get a.txt</code> 服务器知道你要的是 <code>/docs/a.txt</code>——它记住了你"当前在哪"。<strong>HTTP 是无状态的</strong>：你请求 <code>/docs/</code>，再请求 <code>/docs/a.txt</code>，服务器对这两次请求毫无关联认知，第二次请求必须自己把完整路径写全。</p>
+  <p>那问题来了：<strong>既然 HTTP 无状态，为什么你登录淘宝一次，之后浏览几十个页面都不用重新登录？</strong>因为工程师在无状态的协议上，用了一个巧妙的补丁：<strong>把"记忆"存在客户端，每次请求自己带过来</strong>。</p>
+  <pre><code># 第一次：你登录成功，服务器发一张"通行证"给你
+HTTP/1.1 200 OK
+Set-Cookie: session=a8f3e91c...; Max-Age=604800; HttpOnly; Secure
+
+# 之后每一次请求，浏览器自动把通行证附上
+GET /cart HTTP/1.1
+Cookie: session=a8f3e91c...    &lt;- 服务器一看就知道"哦是小明"
+
+# 服务器端逻辑：拿这个 session ID 去 Redis 里查是谁
+# 协议依然无状态（每次请求都自带全部信息），
+# 但用户体验上有了"记忆"。</code></pre>
+  <p>无状态的价值在云时代被放大到了极致。<mark class="key">正因为 HTTP 无状态，淘宝才能在双十一临时加开一万台服务器</mark>——你的第一个请求可能打到杭州的机器，第二个打到南京的，第三个又回杭州，全都能正确处理，因为每台机器都不需要"认识"你，只需要能读懂你带来的那张通行证。如果 HTTP 是有状态的，你的所有请求就必须固定打到同一台机器（这叫"会话粘滞"），那台机器一挂你就得重新登录，扩容也会变成噩梦。</p>
+  <p>反过来说，有状态并非落后。<strong>SSH、数据库连接、视频通话都必须有状态</strong>——它们需要维护加密密钥、事务上下文、编解码器状态，这些东西每次重建的代价远大于维护它们的代价。判断标准很简单：<strong>如果"上下文"很小或很容易由客户端携带，就设计成无状态；如果上下文很重、重建很贵，就得有状态。</strong></p>
+
   <h3>协议为什么"必须双方都遵守"</h3>
   <p>这是新手最容易困惑的一点——协议不是"厂家规定"，它是<strong>双方都必须遵守的"约定"</strong>。如果两台机器用了不同的协议，它们就<strong>互相听不懂</strong>——就像你打电话说的是中文，对方只懂西班牙语，根本聊不下去。</p>
 
@@ -116,8 +247,94 @@
     你买过"WiFi 6 路由器但手机只支持 WiFi 5"的情况吗？它能工作，但只会按双方都支持的最老协议跑——这就是协议协商。</p>
   </div>
 
-  <h3>协议升级的方式：向后兼容</h3>
+  <h3>明文协议 vs 加密协议：那把小锁到底锁了什么</h3>
+  <p>互联网早期的协议全是<strong>明文</strong>的——因为发明它们的是一群互相信任的科研人员，压根没想过会有人偷看。后果是：<strong>只要能碰到数据流经的任何一台设备，你就能完整读到所有内容，包括密码。</strong></p>
+  <p>这不是理论风险，而是可以现场演示的事实。用 <code>telnet</code> 手动敲一个 HTTP 请求，你会发现整个过程就是纯文本聊天：</p>
+  <pre><code>$ telnet example.com 80
+Connected to example.com.
+GET / HTTP/1.1                    &lt;- 你手打的，服务器完全接受
+Host: example.com
+                                  &lt;- 敲一个空行
+
+HTTP/1.1 200 OK                   &lt;- 服务器回你了
+Content-Type: text/html
+...
+
+# 换成 443 端口（HTTPS）再试，你会看到一堆乱码
+$ telnet example.com 443
+GET / HTTP/1.1
+&lt;- 服务器直接掐断连接：你没做 TLS 握手，我不认识你</code></pre>
+  <p>下面这张表列出常见协议的"明文版"和"加密版"对应关系。规律非常清楚：<mark class="key">几乎每个老协议都在后来长出了一个带 S 的加密孪生兄弟</mark>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>用途</th><th>明文协议（端口）</th><th>加密协议（端口）</th><th>明文时代的风险</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>网页浏览</td><td>HTTP（80）</td><td>HTTPS（443）</td><td>密码、Cookie、浏览内容全暴露</td></tr>
+        <tr><td>远程登录</td><td>Telnet（23）</td><td>SSH（22）</td><td>root 密码直接被抓走</td></tr>
+        <tr><td>文件传输</td><td>FTP（21）</td><td>SFTP / FTPS（22 / 990）</td><td>账号与文件内容全裸奔</td></tr>
+        <tr><td>收邮件</td><td>POP3（110）/ IMAP（143）</td><td>POP3S（995）/ IMAPS（993）</td><td>邮箱密码与全部邮件</td></tr>
+        <tr><td>发邮件</td><td>SMTP（25）</td><td>SMTPS（465 / 587）</td><td>邮件内容可被篡改</td></tr>
+        <tr><td>域名解析</td><td>DNS（53）</td><td>DoH（443）/ DoT（853）</td><td>你访问过哪些网站全被记录</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>要理解那把小锁到底提供了什么，得把它拆成三件独立的事——这三件事经常被笼统地叫做"加密"，其实是三种不同的保障：</p>
+  <ul class="keylist">
+    <li><span class="k">机密性 · Confidentiality</span><span class="v">别人抓到你的包也读不懂内容。靠对称加密（AES）实现。<strong>注意它保护不了"元数据"</strong>——你访问了哪个域名、传了多少字节、什么时间访问，中间人依然一清二楚。</span></li>
+    <li><span class="k">完整性 · Integrity</span><span class="v">内容在路上被改过一个字节，接收方立刻发现。靠消息认证码（HMAC/AEAD）实现。这防的是"运营商往你的网页里插广告"这类劫持。</span></li>
+    <li><span class="k">身份认证 · Authentication</span><span class="v">确认你连的真是银行，不是长得一样的钓鱼站。靠证书和 CA 体系实现。<mark class="key">这一条往往比加密本身更重要</mark>——加密得再好，如果对面是骗子，你只是把密码安全地送给了骗子。</span></li>
+  </ul>
+  <p>常见误解值得澄清两个。<strong>第一：HTTPS 不等于"这个网站安全可信"</strong>。任何人花几分钟就能给自己的钓鱼站申请一张免费证书，浏览器照样显示小锁。小锁只保证"你连的确实是地址栏里那个域名，且传输没被偷看"，它对网站本身是好人还是坏人一无所知。<strong>第二：HTTPS 隐藏不了你访问的域名</strong>。TLS 握手时客户端要在 SNI 字段里明文写出目标域名（不然一个 IP 上的几千个网站不知道该拿哪张证书给你），所以运营商依然能记录你访问过哪些站，只是看不到具体页面内容。ECH（Encrypted Client Hello）就是为了补上这个洞而生的新标准。</p>
+
+  <h3>协议的版本演进与兼容性</h3>
   <p>网络用了 50 年，怎么没崩？因为新协议几乎都<strong>向后兼容</strong>——你 WiFi 6 路由器也接受 WiFi 5 手机；HTTP/2 浏览器也能跟 HTTP/1.1 服务器对话。这就是为什么 1980 年的老标准到今天还能用。<mark class="key">好的协议不是取代旧的，而是兼容旧的。</mark></p>
+  <p>以 HTTP 这条演进线为例，你能看到一个协议如何在三十年里被逼着做了三次大手术，每次都在解决上一代留下的病根：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>版本</th><th>年份</th><th>关键改进</th><th>它解决的痛点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>HTTP/0.9</td><td>1991</td><td>只有一个 GET，返回纯 HTML，连头部都没有</td><td>能用就行</td></tr>
+        <tr><td>HTTP/1.0</td><td>1996</td><td>加入头部、状态码、Content-Type</td><td>能传图片和非 HTML 内容了</td></tr>
+        <tr><td><strong>HTTP/1.1</strong></td><td><strong>1997</strong></td><td>长连接（keep-alive）、Host 头、分块传输</td><td>不用每张图都重开一次 TCP；一个 IP 能托管多个网站</td></tr>
+        <tr><td>HTTP/2</td><td>2015</td><td>二进制分帧、多路复用、头部压缩、服务器推送</td><td>解决"队头阻塞"：一个连接里几十个请求可以并行</td></tr>
+        <tr><td>HTTP/3</td><td>2022</td><td>底层从 TCP 换成 <strong>QUIC（基于 UDP）</strong></td><td>解决 TCP 层的队头阻塞；移动网络切换 WiFi/5G 不断连</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这条线里最激烈的一步是 HTTP/3。<strong>它把底层的 TCP 换成了 UDP</strong>——这在十年前是不可想象的，因为 TCP 的可靠传输被认为是天经地义的基础。为什么要换？因为 TCP 有个无法绕开的毛病：<strong>它按字节流严格保序</strong>。一个网页并行下载 50 个资源，如果其中一个包丢了，TCP 会把后面所有已经到达的数据都扣在缓冲区里等那个丢的包补齐——哪怕后面的数据属于完全无关的另一张图片。这就是"队头阻塞"。HTTP/2 在应用层解决了它，但 TCP 层的阻塞依然存在，只能连 TCP 一起换掉。<mark class="key">这告诉你一件事：分层的边界不是神圣的，当某一层成为瓶颈时，人们真的会把它整个换掉。</mark></p>
+  <p>兼容性在工程上是怎么实现的？三种手段，都很朴素：</p>
+  <ul class="keylist">
+    <li><span class="k">版本号协商</span><span class="v">客户端说"我最高支持 1.1"，服务器说"那就用 1.1"。<strong>双方取交集里最高的那个</strong>。这就是你 WiFi 6 路由器带 WiFi 5 手机时跑 WiFi 5 速率的原因。</span></li>
+    <li><span class="k">可选字段与"忽略未知"</span><span class="v">协议规定"看不懂的头部字段，请直接忽略，不要报错"。这条铁律让新版本可以随意加字段而不打死老客户端。HTTP 头部的可扩展性全靠它。</span></li>
+    <li><span class="k">另开端口 / 平行部署</span><span class="v">新旧协议同时提供服务，客户端自己选。HTTP/3 就是通过响应头里的 <code>Alt-Svc: h3=":443"</code> 告诉浏览器"下次你可以试试用 h3 连我"。</span></li>
+  </ul>
+  <p>反面教材也很有教育意义：<strong>IPv6 恰恰是不向后兼容的</strong>——IPv4 的主机无法直接和 IPv6 的主机通信，因为地址长度和头部格式完全变了。结果是什么？IPv6 在 1998 年就定稿了，二十多年后全球普及率才刚过一半，中间催生了 NAT64、6to4、双栈这一堆过渡技术。<strong>这是整个网络史上关于"不兼容的代价有多大"最昂贵的一课。</strong></p>
+
+  <h3>RFC：协议是怎么被"定下来"的</h3>
+  <p>你可能好奇：既然协议是全世界共同的约定，那到底谁有权定它？答案会让你意外——<strong>没有任何政府或公司说得上话，靠的是一群工程师写文档、公开吵架、然后看谁的实现真的跑得起来。</strong></p>
+  <p>这些文档叫 <strong>RFC（Request for Comments，"请求评论"）</strong>。名字本身就是这个体系的精神写照：它不叫"标准"，不叫"规定"，而叫"请大家来提意见"。第一份 RFC 1 写于 1969 年 4 月，作者是加州大学洛杉矶分校的一名研究生 Steve Crocker——他当时怕自己的语气显得太权威，才特意起了这么客气的名字。这个客气的名字延续了五十多年，如今编号已经过了 9600 号。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>RFC 编号</th><th>内容</th><th>为什么值得知道</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>RFC 791</td><td>IPv4</td><td>1981 年定稿，今天全球一半流量还在用它</td></tr>
+        <tr><td>RFC 793</td><td>TCP</td><td>1981 年，三次握手、拥塞控制的源头（2022 年被 RFC 9293 整合替代）</td></tr>
+        <tr><td>RFC 1035</td><td>DNS</td><td>1987 年，整个域名系统的规范</td></tr>
+        <tr><td>RFC 2616 → 7230~7235 → 9110</td><td>HTTP/1.1</td><td>被拆分、重写过多次，说明"标准也在不断返修"</td></tr>
+        <tr><td>RFC 9000</td><td>QUIC</td><td>2021 年，HTTP/3 的底座</td></tr>
+        <tr><td>RFC 2324</td><td><strong>超文本咖啡壶控制协议</strong></td><td>愚人节玩笑文档，却贡献了真实存在的状态码 <code>418 I'm a teapot</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>一份新协议要走完的路大致是：<strong>有人写出草案（Internet-Draft）→ 在 IETF 的邮件列表里被公开批斗几个月甚至几年 → 至少要有两个独立的、能互通的实现（这条是关键）→ 被 IESG 批准 → 分配一个 RFC 编号，成为"提议标准"→ 若被广泛采用，升为"互联网标准"</strong>。整个过程遵循 IETF 的一句名言：<mark class="key">"We reject kings, presidents and voting. We believe in rough consensus and running code."</mark>（我们不要国王、总统和投票，我们信奉大致的共识和跑得起来的代码。）</p>
+  <p>"至少两个能互通的实现"这条要求，是这个体系最聪明的设计。它意味着一份标准如果写得含糊不清、有二义性，那两组人各自照着实现出来的东西就一定连不上——问题会在成为标准之前就暴露。这道门槛把无数纸上漂亮但实际无法落地的设计挡在了外面。相比之下，OSI 七层模型走的是"先由委员会设计完美标准，再要求厂商实现"的路，结果就是设计得极其工整却迟迟落不了地，最终败给了"先跑起来再补文档"的 TCP/IP。</p>
+  <p>最后一个实用建议：<strong>RFC 是公开且免费的</strong>，地址是 <code>rfc-editor.org</code> 或 <code>datatracker.ietf.org</code>。当你对某个协议行为有疑问、网上的答案又互相矛盾时，直接去翻 RFC 原文，那是唯一的最终答案。它们读起来比想象中友好得多——因为写的时候本来就是给同行看的，不是给律师看的。</p>
 
   <h3>读懂一次握手</h3>
   <p>以"TCP 三次握手"为例，让你感受协议有多严谨：</p>
@@ -137,13 +354,34 @@
   </div>
 
   <p>为什么要三次？两次行不行？答：不行——两次时，服务器不知道客户端有没有收到自己的 SYN。三次之后，<strong>双方都明确知道对方收到了自己</strong>。协议的设计就是这么严谨。</p>
+  <p>更深一层的原因跟"旧包还魂"有关。假设只要两次握手，那么一个在网络里迷路了三十秒的旧 SYN 包，终于绕到服务器时，服务器会以为这是一个新连接请求，立刻分配内存、建立连接、等着数据——但客户端早就走了，这个连接会一直空占资源。三次握手的第三个 ACK 相当于让客户端<strong>最后确认一句"这个连接我确实还要"</strong>，把这种幽灵连接挡在门外。<mark class="key">协议里那些看起来"多余"的步骤，几乎每一个都是被某个真实事故逼出来的。</mark></p>
+  <p>握手不只有三次这一种。把常见协议的"开场仪式"排在一起，你能明显看到<strong>安全和速度之间的拉锯</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>协议</th><th>建立连接需要几个往返（RTT）</th><th>做了什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>UDP</td><td><strong>0</strong></td><td>不握手，直接开发。所以它快，也所以它不可靠</td></tr>
+        <tr><td>TCP</td><td>1（三次握手实际只占 1.5 个 RTT）</td><td>确认双向可达、交换初始序号</td></tr>
+        <tr><td>TCP + TLS 1.2</td><td>1 + 2 = <strong>3</strong></td><td>再加两轮：交换证书、协商密钥套件、生成会话密钥</td></tr>
+        <tr><td>TCP + TLS 1.3</td><td>1 + 1 = <strong>2</strong></td><td>TLS 1.3 把握手精简掉一个往返，这是它最大的卖点</td></tr>
+        <tr><td>QUIC（HTTP/3）</td><td><strong>1</strong>，重连时 <strong>0</strong></td><td>把传输层握手和加密握手<strong>合并成一次</strong>，还能复用上次的密钥</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表解释了一个你能实际感受到的现象：<strong>跨国网站第一次打开特别慢</strong>。假设北京到美国单程 90ms，一个 RTT 就是 180ms。用 TCP + TLS 1.2，光是"打招呼"就要 3 个 RTT = 540 毫秒，这时候<strong>一个字节的网页内容都还没开始传</strong>。换成 QUIC，同样的距离只需 1 个 RTT = 180ms，直接省掉 0.36 秒。这就是为什么全球性的大公司拼命推 HTTP/3——在跨洋链路上，减少握手往返次数比增加带宽有效得多。</p>
 
   <div class="lab" data-lab="quiz" data-q="为什么网络通信必须有「协议」？" data-opts="为了加密|双方必须事先约定好数据格式和交互顺序才能互相理解|为了提速|法律要求" data-answer="1" data-explain="协议就是通信双方的「共同语言」——数据怎么打包、字段什么顺序、收到后怎么回应，全都得事先约定。没有协议，两台机器发出的信号对彼此就是乱码。"></div>
 
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>协议 = <strong>网络里的"共同语言"</strong>。它规定了格式、含义、时序，让两台互不相识的机器能听懂对方。<br/>
-    你不需要背下所有协议——只要记住一件事：<mark class="key">遇到"两台机器连不上"的问题，第一步就是问：它们的协议对得上吗？</mark></p>
+    三要素记牢：<strong>语法</strong>（格式怎么写，错一个空格就 400）、<strong>语义</strong>（每个字段啥意思，写错了不报错但全盘皆错）、<strong>时序</strong>（谁先说话、出错怎么办）。<br/>
+    <strong>分层</strong>是协议世界最重要的组织方式，它把"8×5×100 个组合"变成了"8+5+100 个协议"——把乘法变成加法。每层只跟上下相邻的层打交道，且只对同层的"对端"说话，中间的路由器插不上嘴。代价是每层都要加头部（约 3.6% 开销）和多次内存拷贝。<br/>
+    交互形状上，绝大多数协议是<strong>请求-响应</strong>；HTTP 天生不许服务器主动说话，所以才有轮询、长轮询、WebSocket 这些花招。状态上，HTTP 的<strong>无状态</strong>是它能在云上无限扩容的根本原因，Cookie 只是把"记忆"甩给了客户端。<br/>
+    协议还在不断演进，规律是<strong>能兼容就兼容</strong>——HTTP 从 0.9 走到 3，连底层 TCP 都换成了 QUIC；而 IPv6 因为不兼容，二十多年才普及一半。所有这些约定，都由公开免费的 <strong>RFC</strong> 文档定义，靠的是"大致的共识和跑得起来的代码"。<br/>
+    你不需要背下所有协议——只要记住一件事：<mark class="key">遇到"两台机器连不上"的问题，第一步就是问：它们的协议对得上吗？版本对得上吗？谁该先说话？</mark></p>
   </div>
 
   <div class="pager">

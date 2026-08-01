@@ -31,7 +31,7 @@
     你抱怨"网速慢"的时候，到底在说什么？是下载电影慢？还是玩游戏卡？还是视频通话糊？<mark class="key">这三件事对应的是网络的三个完全不同的指标——带宽、时延、丢包率</mark>。搞懂它们，你就能像医生看病一样精准诊断网络问题。
   </p>
 
-  <h3>指标一 · 带宽（Bandwidth）</h3>
+  <h3>指标一 · 带宽（Bandwidth）与吞吐量（Throughput）</h3>
   <p><strong>"路有多宽"</strong>——一秒钟能运多少数据。单位是 Mbps（兆比特/秒）或 Gbps（千兆比特/秒）。</p>
 
   <div class="scene">
@@ -58,6 +58,53 @@
       </tbody>
     </table>
   </div>
+
+  <p>这里必须区分一对天天被混用的词：<strong>带宽（Bandwidth）</strong>是"理论上限"，<strong>吞吐量（Throughput）</strong>是"实际跑出来的量"。它们几乎从不相等，中间的差距被四样东西吃掉了：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>带宽 Bandwidth</th><th>吞吐量 Throughput</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>含义</td><td>链路的理论最大能力</td><td>某段时间内真实传完的数据量</td></tr>
+        <tr><td>会变吗</td><td>由硬件和套餐决定，基本固定</td><td>每一秒都在变</td></tr>
+        <tr><td>类比</td><td>水管的口径</td><td>实际流出来的水量</td></tr>
+        <tr><td>被什么削减</td><td>——</td><td>协议头部开销、重传、拥塞、对端限速、TCP 窗口</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre><code>【一条 500 Mbps 宽带的实际账】
+名义带宽                          500 Mbps = 62.5 MB/s
+减去以太网/IP/TCP 头部开销（约 4%）    → 480 Mbps = 60 MB/s
+减去 TCP ACK 反向占用、重传（约 3%）   → 466 Mbps = 58 MB/s
+如果服务器端限速 20 MB/s             → 实际只有 160 Mbps
+如果同时有家人在看 4K（占 25 Mbps）    → 你剩下 135 Mbps
+
+结论：你测速跑到 480 Mbps 是"链路能力"，
+      下载某个文件只有 5 MB/s 通常是"对方给你的配额"。
+      ——这两件事经常被误解成"运营商虚标"。</code></pre>
+  <p>还有一个极其容易忽略的天花板，叫<strong>带宽时延积（BDP, Bandwidth-Delay Product）</strong>。它解释了一个非常反直觉的现象：<mark class="key">跨国下载慢，往往不是带宽不够，而是时延太高导致带宽用不满。</mark></p>
+  <pre><code>BDP = 带宽 × 往返时延（RTT）
+    = "这条链路上最多能同时'在飞'多少字节"
+
+例 1：国内，1 Gbps，RTT = 10ms
+  BDP = 1,000,000,000 ÷ 8 × 0.010 = 1.25 MB
+  → 发送方的 TCP 窗口至少要有 1.25 MB 才能把带宽跑满
+
+例 2：跨洋，1 Gbps，RTT = 200ms
+  BDP = 1,000,000,000 ÷ 8 × 0.200 = 25 MB
+  → 窗口必须有 25 MB！
+
+而 TCP 头里的"窗口"字段只有 16 位 = 最大 65535 字节（64KB）
+在例 2 的条件下，单条 TCP 连接的理论极限只有：
+  65535 ÷ 0.2 秒 = 327 KB/s ≈ 2.6 Mbps
+—— 一条千兆链路，单连接只能跑出 2.6 兆！
+
+解决办法：
+① 窗口缩放选项（Window Scaling，RFC 1323）—— 把窗口放大到 1GB
+② 多线程并发下载（这就是迅雷、IDM 快的根本原因）
+③ 就近部署 / CDN —— 直接把 RTT 打下来（最有效）</code></pre>
+  <p>这段计算解释了三件日常现象：<strong>为什么多线程下载器比浏览器单线程下载快得多</strong>（它开 16 条连接，绕开了单连接的窗口限制）；<strong>为什么下载国外资源即使带宽充足也很慢</strong>（BDP 太大，窗口填不满）；<strong>为什么所有大公司都在拼命建 CDN</strong>（降 RTT 是唯一能同时改善时延和吞吐量的手段）。</p>
 
   <h3>指标二 · 时延（Latency）</h3>
   <p><strong>"跑一趟要多久"</strong>——从你发出一个请求，到收到响应，需要多长时间。单位是毫秒（ms）。</p>
@@ -93,7 +140,131 @@
     即使坐上 1000 人容量的超级高铁，从北京到深圳还是要 8 小时——这就是"高带宽 ≠ 低时延"。</p>
   </div>
 
-  <h3>指标三 · 丢包率（Packet Loss）</h3>
+  <h3>时延的四种构成：那几十毫秒到底花在哪</h3>
+  <p>"时延 30 毫秒"是个结果，但这 30 毫秒<strong>由四种性质完全不同的等待组成</strong>。搞清这四份，你才知道该往哪儿使劲——因为它们中只有两种是你能优化的。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>构成</th><th>它是什么</th><th>取决于</th><th>典型量级</th><th>能优化吗</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>① 传播时延</strong><br/>Propagation</td><td>信号在介质里跑完这段距离所需的时间</td><td><strong>物理距离 ÷ 光速</strong></td><td>北京→上海 6ms<br/>北京→美国 70ms</td><td><strong>不能</strong>，除非缩短距离（CDN）</td></tr>
+        <tr><td><strong>② 传输时延</strong><br/>Transmission</td><td>把这个包的所有比特"推"上线路所需的时间</td><td>包大小 ÷ 带宽</td><td>1500B ÷ 1Gbps = 0.012ms</td><td>能，加带宽或减小包</td></tr>
+        <tr><td><strong>③ 处理时延</strong><br/>Processing</td><td>路由器读头部、查路由表、算校验和</td><td>设备性能</td><td>现代设备 &lt; 0.1ms</td><td>能，换更好的设备</td></tr>
+        <tr><td><strong>④ 排队时延</strong><br/>Queuing</td><td>包在路由器缓冲区里等前面的包发完</td><td><strong>网络拥塞程度</strong></td><td>0ms ～ 数百 ms，<strong>波动最大</strong></td><td>能，这是优化的主战场</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>先算一遍第 ① 项，因为它是硬下限，值得刻在脑子里：</p>
+  <pre><code>真空中光速：           300,000 km/s
+光纤中的光速：约 200,000 km/s（折射率约 1.5，慢了三分之一）
+
+北京 → 上海（约 1200 km 光纤路径）
+  单程 = 1200 ÷ 200000 = 6 ms
+  往返 RTT = 12 ms  ← 无论你办多少兆宽带，这 12ms 一分都省不掉
+
+北京 → 洛杉矶（约 10000 km，实际光缆绕行更长）
+  单程 ≈ 50 ms，往返 ≈ 100 ms
+  实际测量常在 130～180 ms（因为要绕行、要过多个交换节点）
+
+地球同步轨道卫星（高度 35786 km）
+  上行 + 下行 = 71572 km ÷ 300000 = 239 ms
+  往返 RTT ≥ 478 ms ← 这就是卫星电话必须"你说完我再说"的原因
+
+Starlink 低轨卫星（高度约 550 km）
+  往返仅约 7 ms 的传播时延，这是它最大的技术卖点</code></pre>
+  <p>第 ④ 项<strong>排队时延</strong>才是日常体验里波动最大、也最值得动手优化的一项。它有个非常著名的病症叫<strong>缓冲区膨胀（Bufferbloat）</strong>：厂商为了"少丢包"，给路由器塞了超大的缓冲区。结果当你在下载大文件时，缓冲区被塞满几百毫秒的数据，你的游戏包和语音包只能<strong>排在几百个下载包后面</strong>，延迟从 20ms 飙到 500ms。</p>
+  <pre><code>【Bufferbloat 现场】
+路由器缓冲区（大得离谱，能装 1MB 数据）
+[下载包][下载包][下载包]……×700……[你的游戏操作]
+                                        ↑ 排在最后
+上行 10 Mbps 的情况下，1MB 缓冲要 0.8 秒才能排空
+→ 你的游戏延迟 = 20ms + 800ms = 820ms
+
+【测一测你家有没有这个病】
+① 先 ping 网关，记下延迟（比如 2ms）
+② 一边跑满速下载/上传，一边继续 ping
+③ 如果延迟从 2ms 涨到 200ms 以上 —— 恭喜，典型 Bufferbloat
+
+【解法】在路由器上开启智能队列管理（SQM）
+   算法名：fq_codel 或 CAKE
+   原理：主动丢弃/延迟排队过久的包，让缓冲区始终保持很短
+   效果：牺牲约 5% 峰值带宽，换来延迟稳定在个位数毫秒
+   ——OpenWrt、华硕梅林、部分商业固件都自带这个功能</code></pre>
+  <p>把四项加起来，你就能看懂一次真实的 <code>ping</code> 结果为什么是那个数：<strong>北京 ping 上海 = 传播 12ms + 传输 0.05ms + 处理 0.5ms（约 5 跳）+ 排队 2ms ≈ 15ms</strong>。<mark class="key">注意传播时延占了八成——这就是为什么"网络优化"的第一原则永远是"把数据搬得离用户更近"，而不是"加带宽"。</mark></p>
+
+  <h3>RTT 与 ping：那个数字到底在测什么</h3>
+  <p><strong>RTT（Round-Trip Time，往返时延）</strong>是实际工程中最常用的时延指标，因为它是<strong>唯一能在单侧测量出来的</strong>——测单程时延需要两端时钟精确同步，这在互联网上几乎做不到；而测往返只需要"我发出去、我收回来"，一台机器就能完成。</p>
+  <p>但 ping 出来的数字有几个必须知道的陷阱，否则你会读出完全错误的结论：</p>
+  <ul class="keylist">
+    <li><span class="k">ping 用的是 ICMP，不是你的业务流量</span><span class="v">路由器处理 ICMP 的优先级<strong>极低</strong>，很多设备甚至完全屏蔽。所以"ping 不通"不等于"服务不可用"，"ping 很快"也不保证"网页打开很快"。</span></li>
+    <li><span class="k">它测的是网络层，不含应用处理时间</span><span class="v">ping 一个网站 20ms，但网页打开花了 2 秒——那 1.98 秒花在 DNS、TLS 握手、服务器查数据库、浏览器渲染上，跟网络一点关系都没有。</span></li>
+    <li><span class="k">只看平均值会骗人</span><span class="v">平均 30ms 可能是"每次都 30ms"（很好），也可能是"一半 5ms 一半 55ms"（体验很糟）。<strong>要同时看最小、最大、平均，和标准差。</strong></span></li>
+    <li><span class="k">默认包很小</span><span class="v">ping 默认只发 32～64 字节，这个大小的包基本不会被排队和分片影响。用 <code>-l 1400</code> 发大包再测一次，结果往往差很多——那才更接近真实业务体验。</span></li>
+  </ul>
+  <pre><code>PS&gt; ping -n 20 baidu.com
+来自 110.242.68.66 的回复: 字节=32 时间=28ms TTL=51
+...
+110.242.68.66 的 Ping 统计信息:
+    数据包: 已发送 = 20，已接收 = 20，丢失 = 0 (0% 丢失)
+往返行程的估计时间(以毫秒为单位):
+    最短 = 26ms，最长 = 89ms，平均 = 31ms
+              └ 最长和最短差 63ms —— 抖动偏大，说明路上有排队
+
+# 比 ping 更有诊断价值的一条命令：mtr / pathping
+$ mtr -r -c 100 baidu.com          # Linux/macOS
+PS&gt; pathping baidu.com             # Windows 自带
+  它会显示"每一跳"的丢包率和延迟，
+  能直接定位到"从第 4 跳开始丢包" —— 这是 ping 给不了的信息
+
+# 测 HTTP 层的真实耗时（比 ping 更贴近用户体验）
+$ curl -o /dev/null -s -w "DNS:%{time_namelookup} 连接:%{time_connect} \
+TLS:%{time_appconnect} 首字节:%{time_starttransfer} 总计:%{time_total}\n" \
+https://example.com
+
+DNS:0.021 连接:0.048 TLS:0.112 首字节:0.203 总计:0.245
+     └ 一眼看出瓶颈在 TLS 握手和服务器处理，不在网络传输</code></pre>
+  <p>最后那条 <code>curl</code> 命令是排查"网页慢"最实用的工具，值得记下来。它把一次请求拆成五个阶段，让你能精确指出是<strong>域名解析慢、TCP 握手慢、TLS 协商慢、服务器思考慢，还是内容传输慢</strong>——这五种病的药方完全不同。<mark class="key">在没有分段数据之前，"网慢"这个判断没有任何行动价值。</mark></p>
+
+  <h3>指标四 · 抖动（Jitter）：比高延迟更难受的东西</h3>
+  <p>这是被普通人忽略最多、却对实时体验影响最大的一个指标。<strong>抖动（Jitter）指的是时延的"波动幅度"</strong>，而不是时延本身的大小。</p>
+  <p>反直觉的结论是：<mark class="key">对于语音和视频通话，"稳定的 100ms"远好于"在 20ms 和 150ms 之间乱跳"。</mark>因为接收端可以用一个固定的缓冲区把稳定的延迟"藏起来"，但对付不了忽快忽慢——包一会儿挤在一起、一会儿断档，声音就会出现卡顿、金属音、机器人音、忽然加速。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>平均延迟</th><th>抖动</th><th>实际通话体验</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>A · 有线光纤</td><td>30 ms</td><td>± 2 ms</td><td><strong>完美</strong>，感觉像面对面</td></tr>
+        <tr><td>B · 稳定的卫星链路</td><td>500 ms</td><td>± 5 ms</td><td>能用——只是要习惯"说完等一下"</td></tr>
+        <tr><td>C · 拥挤的公共 WiFi</td><td>40 ms</td><td><strong>± 120 ms</strong></td><td><strong>很糟</strong>，断续、机器音、听不清</td></tr>
+        <tr><td>D · 高铁上的 5G</td><td>60 ms</td><td>± 200 ms</td><td>基本无法通话，虽然平均延迟不高</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>C 的平均延迟只有 A 的 1.3 倍，却完全不能用；B 的平均延迟是 A 的 16 倍，反而勉强能用——这就是抖动的威力。</p>
+  <p>接收端的对策叫<strong>抖动缓冲区（Jitter Buffer）</strong>，它的工作原理是一次经典的取舍：</p>
+  <pre><code>【没有缓冲】包一到就播
+  包到达间隔：20ms 20ms 90ms 5ms 20ms 110ms
+  播放效果：正常 正常 卡顿 挤 正常 卡顿   ← 惨不忍睹
+
+【有 100ms 抖动缓冲】先攒 100ms 再开始播
+  攒够 5 个包才开始播，之后每 20ms 稳定播一个
+  播放效果：全程平滑                     ← 但整体延迟 +100ms
+
+取舍：缓冲越大 → 越平滑，但延迟越高
+      缓冲越小 → 延迟越低，但抖动一大就爆
+现代方案：动态自适应缓冲
+      网络稳 → 缓冲缩到 20ms（追求低延迟）
+      网络抖 → 缓冲涨到 200ms（追求不断线）
+      这就是微信语音"有时特别流畅、有时明显延迟"的原因
+
+# 测抖动最简单的办法
+PS&gt; ping -n 50 baidu.com
+   看"最长"和"最短"的差值 —— 差值就是抖动的粗略量级
+   差 &lt; 10ms 优秀；10~50ms 一般；&gt; 50ms 实时应用会受影响</code></pre>
+
+  <h3>指标五 · 丢包率（Packet Loss）</h3>
   <p><strong>"路上丢了多少件"</strong>——发出 100 个数据包，丢了几个。单位是百分比。</p>
 
   <div class="scene">
@@ -121,6 +292,96 @@
       </tbody>
     </table>
   </div>
+  <p>丢包最狠的地方在于<strong>它对 TCP 的伤害是非线性放大的</strong>。你可能以为丢 2% 就是慢 2%，实际远不止——因为 TCP 把丢包解读成"网络堵了"，会主动<strong>把发送窗口砍半</strong>，然后慢慢爬回来。有一个经典的近似公式（Mathis 公式）能量化这件事：</p>
+  <pre><code>单条 TCP 连接的最大吞吐 ≈ MSS ÷ (RTT × √丢包率)
+
+代入 MSS=1460 字节，RTT=100ms：
+  丢包率 0.01%  → 1460 ÷ (0.1 × 0.01) ≈ 1.46 MB/s ≈ 11.7 Mbps
+  丢包率 0.1%   → 1460 ÷ (0.1 × 0.0316) ≈ 462 KB/s ≈ 3.7 Mbps
+  丢包率 1%     → 1460 ÷ (0.1 × 0.1) = 146 KB/s ≈ 1.2 Mbps
+  丢包率 2%     → 约 103 KB/s ≈ 0.8 Mbps
+
+结论：丢包率从 0.01% 涨到 1%（只涨了一个百分点），
+      吞吐量掉到原来的十分之一。
+      而且你的千兆宽带在 1% 丢包下，
+      单连接只能跑出 1.2 Mbps —— 带宽完全用不上。</code></pre>
+  <p>这也解释了两个常见困惑：<strong>为什么"WiFi 信号只有两格"时下载速度会断崖式下跌</strong>（不是带宽变小了，是丢包率上去了，TCP 自己把速度砍了）；<strong>为什么跨国下载即使办了千兆也快不起来</strong>（RTT 和丢包率在公式的分母上，两个一起变大是致命的）。</p>
+  <p>丢包还分两种性质完全不同的类型，处理方式截然相反：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>拥塞丢包</th><th>误码丢包（随机丢包）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>原因</td><td>路由器队列满了，主动丢</td><td>无线干扰、信号弱导致比特出错</td></tr>
+        <tr><td>常见于</td><td>有线网络、晚高峰</td><td><strong>WiFi、4G/5G、卫星</strong></td></tr>
+        <tr><td>正确对策</td><td><strong>降速</strong>——确实该让路</td><td><strong>只重传，不该降速</strong>——路没堵，是信号差</td></tr>
+        <tr><td>传统 TCP 的反应</td><td>降速 ✓ 正确</td><td>也降速 ✗ <strong>完全错误</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后一行是 TCP 一个延续了三十年的设计缺陷：<mark class="key">经典 TCP 把所有丢包都当成"网络拥塞"，所以在信号差的无线环境下会不必要地自我降速</mark>。这正是 Google 在 2016 年推出 <strong>BBR</strong> 拥塞控制算法的动机——它不看丢包，而是主动测量"实际带宽"和"最小 RTT"来决定发送速率。在丢包率 1% 的链路上，BBR 的吞吐量可以是传统 CUBIC 算法的<strong>几十倍</strong>。这也是 YouTube 在弱网下比很多视频站流畅得多的技术原因。</p>
+
+  <h3>指标六 · 并发连接数与 QPS：服务器侧的性能指标</h3>
+  <p>前面五个指标都是从"一条链路"的视角看的。但如果你站在服务器一侧，关心的就完全是另一组数字了——<strong>它能同时招待多少人、每秒能办多少事</strong>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>指标</th><th>含义</th><th>决定因素</th><th>参考量级</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>并发连接数</strong></td><td>此刻同时保持着的连接总数</td><td>内存、文件描述符上限、并发模型</td><td>Nginx 单机 10 万～100 万长连接</td></tr>
+        <tr><td><strong>QPS / RPS</strong></td><td>每秒处理的请求数</td><td>CPU、后端数据库</td><td>静态文件 5 万+；带数据库查询 1 千～1 万</td></tr>
+        <tr><td><strong>TPS</strong></td><td>每秒完成的完整事务数</td><td>数据库写入能力</td><td>MySQL 单机千级；分库分表可到十万级</td></tr>
+        <tr><td><strong>P99 延迟</strong></td><td>99% 的请求都比这个值快</td><td>慢查询、GC 停顿、锁竞争</td><td><strong>比平均值重要得多</strong></td></tr>
+        <tr><td>连接建立速率</td><td>每秒能新建多少连接</td><td>TLS 握手的 CPU 开销</td><td>纯 TCP 几万；带 TLS 掉一个数量级</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中 <strong>P99</strong> 这个概念值得单独说，它是"平均值骗人"最典型的解药。看这个例子：</p>
+  <pre><code>某接口 1000 次请求的耗时分布：
+  990 次：10 ms
+   10 次：3000 ms（比如触发了慢查询）
+
+平均延迟 = (990×10 + 10×3000) ÷ 1000 = 39.9 ms   ← 看起来很棒！
+P50（中位数）= 10 ms                              ← 也很棒
+P99          = 3000 ms                            ← 真相暴露
+
+现实意义：每 100 个用户里就有 1 个等了 3 秒。
+如果一个页面要发 20 个请求，那么
+  至少有一个请求命中 P99 的概率 = 1 - 0.99^20 = 18%
+—— 每 5 个用户就有 1 个会遇到"页面卡了一下"。
+
+所以业界的监控标准是看 P95 / P99 / P999，
+而不是平均值。"平均耗时 40ms" 是一句没有信息量的话。</code></pre>
+  <p>还有一条容易被误解的：<strong>"高并发"和"高 QPS"不是一回事</strong>。一台服务器可以维持 50 万个长连接却只有 1000 QPS（比如消息推送服务，大部分连接长期空闲）；也可以只有 500 个并发连接却跑到 5 万 QPS（比如缓存服务，每个连接都在疯狂请求）。<strong>前者的瓶颈是内存，后者的瓶颈是 CPU</strong>——诊断和优化方向完全相反。</p>
+
+  <h3>QoS：当带宽不够时，谁该先走</h3>
+  <p>前面所有的讨论都隐含一个前提：<strong>大家平等地抢带宽</strong>。但现实中不同流量的重要性天差地别——视频会议卡一秒是灾难，后台系统更新慢十分钟无人察觉。<strong>QoS（Quality of Service，服务质量）</strong>就是用来打破这种"绝对平等"的机制。</p>
+  <p>它的核心思想是：<mark class="key">带宽紧张时，不该让所有人一起变慢，而应该让不重要的先慢下来。</mark>常见手段有四类：</p>
+  <ul class="keylist">
+    <li><span class="k">分类与标记 Classification</span><span class="v">先识别流量类型（靠端口、协议、五元组、或 DPI），然后在 IP 头的 DSCP 字段里打上优先级标签。企业网络里语音打 EF（快速转发）、视频打 AF41、批量下载打默认级。</span></li>
+    <li><span class="k">优先队列 Priority Queuing</span><span class="v">路由器不再用一个队列先来先服务，而是分成几个队列，高优先级的队列永远先发。这是最直接的手段，也最容易把低优先级流量彻底饿死。</span></li>
+    <li><span class="k">限速与整形 Shaping / Policing</span><span class="v">给某类流量设上限。<strong>整形</strong>是"超了就先缓一缓再发"（平滑），<strong>限速</strong>是"超了就直接丢"（粗暴）。家用路由器的"给某台设备限速"就是这个。</span></li>
+    <li><span class="k">公平队列 Fair Queuing</span><span class="v">不分贵贱，但保证每条流都能分到一份，防止一个 BT 下载把全家的带宽吃光。前面提到的 <code>fq_codel</code> 就是"公平队列 + 主动队列管理"的组合。</span></li>
+  </ul>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>应用类型</th><th>对带宽</th><th>对时延</th><th>对抖动</th><th>对丢包</th><th>该给什么优待</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>语音通话 / VoIP</td><td>极低（30 Kbps）</td><td><strong>极敏感</strong></td><td><strong>极敏感</strong></td><td>较敏感</td><td>最高优先级，但限死带宽</td></tr>
+        <tr><td>视频会议</td><td>中（1-4 Mbps）</td><td>敏感</td><td>敏感</td><td>敏感</td><td>高优先级 + 保底带宽</td></tr>
+        <tr><td>竞技网游</td><td>极低（&lt;100 Kbps）</td><td><strong>极敏感</strong></td><td><strong>极敏感</strong></td><td>极敏感</td><td>最高优先级</td></tr>
+        <tr><td>网页浏览</td><td>突发型</td><td>较敏感</td><td>不敏感</td><td>不敏感（TCP 兜着）</td><td>中等优先级</td></tr>
+        <tr><td>视频点播（有缓冲）</td><td><strong>高</strong></td><td>不敏感</td><td>不敏感</td><td>不敏感</td><td>中低，反正有几十秒缓冲</td></tr>
+        <tr><td>文件下载 / 备份 / 更新</td><td><strong>越多越好</strong></td><td>完全不敏感</td><td>完全不敏感</td><td>不敏感</td><td><strong>最低优先级，让路</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表是整节内容的实操总纲：<strong>没有一个应用同时对四项指标都敏感，所以"优化网络"从来不是把四项都拉满，而是搞清"这个场景在乎哪一项"，然后针对性地牺牲其他项。</strong>游戏玩家愿意为了 5ms 的延迟改用有线并关掉所有下载；备份任务愿意在凌晨慢慢跑一整夜。<mark class="key">带宽、时延、抖动、丢包不是四个"越好越好"的分数，而是一组需要你按场景做取舍的旋钮。</mark></p>
+  <p>最后一个残酷的现实：<strong>QoS 只在"你能控制的那一段"有效</strong>。你在家用路由器上给游戏开最高优先级，只能保证在你家这段线路上它先走；一旦包出了你家，运营商和公网上的几十台路由器完全不认你的标记（互联网的默认承诺就是"尽力而为"，不保证质量）。所以家用 QoS 能解决"家人下载导致我打游戏卡"，但解决不了"跨国服务器延迟高"。<strong>企业专线（MPLS/SD-WAN）卖的就是"全程都受控"这件事，价格是普通宽带的几十倍。</strong></p>
 
   <h3>三件事各自的"罪魁祸首"</h3>
   <p>同样一句"网慢"，背后可能是三种完全不同的问题——对症下药才能根治：</p>
@@ -138,6 +399,25 @@
       </tbody>
     </table>
   </div>
+  <p>把这套诊断思路再细化一层，就成了一张能直接照着做的对照表。<strong>关键是先用一两个命令把问题定位到某一层，再动手。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>现象</th><th>验证方法</th><th>如果成立，说明</th><th>怎么办</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>测速正常但某网站慢</td><td>换个网站测；<code>curl -w</code> 看分段耗时</td><td>是对方服务器或路由问题，不是你的网</td><td>等；或换 DNS / 换节点</td></tr>
+        <tr><td>能 ping IP 不能开网页</td><td><code>nslookup baidu.com</code></td><td><strong>DNS 故障</strong></td><td>改用 <code>223.5.5.5</code> 或 <code>1.1.1.1</code></td></tr>
+        <tr><td>下载时游戏就卡</td><td>边下载边 <code>ping</code> 网关看延迟涨多少</td><td><strong>Bufferbloat</strong>（上行被塞满）</td><td>路由器开 SQM / 给下载限速</td></tr>
+        <tr><td>WiFi 信号满格但慢</td><td>插网线对比一次</td><td>无线干扰或信道拥挤（不是带宽问题）</td><td>换 5GHz、改信道、靠近路由器</td></tr>
+        <tr><td>晚上八点变慢</td><td>换个时间段再测</td><td>小区共享带宽拥塞（统计复用失效）</td><td>基本无解，换运营商或错峰</td></tr>
+        <tr><td>大文件传一半卡死</td><td><code>ping -f -l 1400</code> 试大包</td><td><strong>MTU / PMTU 黑洞</strong></td><td>调小 MTU 到 1400 试试</td></tr>
+        <tr><td>跨国网站首屏特别慢</td><td><code>tracert</code> 看跳数和绕行</td><td>传播时延 + TLS 握手往返太多</td><td>无解，靠 CDN / HTTP/3 缓解</td></tr>
+        <tr><td>某几台设备慢，其他正常</td><td>看是否同一网段 / 同一 WiFi 频段</td><td>局部问题（网线、网卡、驱动）</td><td>换线换口，或更新网卡驱动</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表的价值不在于记住每一条，而在于养成一个习惯：<mark class="key">先做一次能区分"是我的问题还是对方的问题"的对比实验，再决定动哪里。</mark>换个网站、换根网线、换个时间、换台设备——这四个"换"能在两分钟内排除掉八成的错误方向。</p>
 
   <h3>怎么"体检"自己家的网络</h3>
   <p>给你三个免费工具，一分钟搞定：</p>
@@ -155,6 +435,36 @@
       <p>同样 cmd 输 <code>ping -n 100 baidu.com</code>——发 100 个包看丢几个。0% 完美，超过 2% 就该排查了。</p>
     </div>
   </div>
+  <p>如果想做得更专业一点，下面这套"完整体检流程"能在五分钟内把六项指标全部量化。建议把结果记下来，作为你家网络的"基线"——以后出问题时才有对比的依据。</p>
+  <pre><code># ① 带宽：网页测速（注意关掉其他所有下载和视频）
+   speedtest.cn / fast.com / 或命令行工具 speedtest-cli
+   看三个数：下载 / 上传 / 空载延迟（Idle Latency）
+
+# ② 时延与抖动：连测 50 次，看最短、最长、平均
+PS&gt; ping -n 50 223.5.5.5
+   最长 - 最短 = 抖动量级
+
+# ③ 丢包：发 200 个包统计
+PS&gt; ping -n 200 223.5.5.5
+   丢包率 &gt; 1% 就该查了
+
+# ④ 逐跳定位：找出是哪一段出问题
+PS&gt; pathping baidu.com            # Windows 自带，会跑几十秒
+$ mtr -r -c 100 baidu.com         # Linux/macOS，输出更清晰
+
+# ⑤ Bufferbloat 专项：这一项最容易被忽略、却最影响体验
+   打开 waveform.com/tools/bufferbloat 或 speedtest.net
+   它会在跑满带宽时同时测延迟，直接给你一个 A~F 的评级
+   拿到 C 以下就该在路由器上开 SQM 了
+
+# ⑥ MTU 上限：只在"大文件传输异常"时才需要测
+PS&gt; ping -f -l 1472 223.5.5.5     # 通了说明 MTU ≥ 1500
+
+# ⑦ 应用层分段耗时：判断"慢"到底慢在哪一步
+$ curl -o /dev/null -s -w "DNS:%{time_namelookup} TCP:%{time_connect} \
+TLS:%{time_appconnect} TTFB:%{time_starttransfer} 总:%{time_total}\n" \
+https://你常用的网站</code></pre>
+  <p>读测速结果时有三个容易被忽略的细节。<strong>第一，一定要看上传带宽</strong>——家用宽带的上传通常只有下载的十分之一（500M 下载可能只配 30M 上传），而视频会议、云盘同步、直播、远程办公全靠上传。很多"网卡"其实是上传被占满了。<strong>第二，要看"空载延迟"和"负载延迟"两个数</strong>——现在的测速网站都会给这两个值，两者差得越多，Bufferbloat 越严重。<strong>第三，测速服务器的位置会显著影响结果</strong>——默认选的是本市节点，那测的是"到本市"的能力，跟你访问国外网站的体验没什么关系。</p>
 
   <h3>常见误解澄清</h3>
   <ul class="keylist">
@@ -162,6 +472,11 @@
     <li><span class="k">误解 2 · WiFi 信号满格 = 网速一定快</span><span class="v">错！信号满格只说明"你和路由器连得好"。但如果路由器本身只接了 100M 宽带，你再满格也只有 100M。</span></li>
     <li><span class="k">误解 3 · 5G WiFi 一定比 2.4G 快</span><span class="v">通常对，但 5G 信号穿墙能力差——隔两堵墙 5G 可能还不如 2.4G。</span></li>
     <li><span class="k">误解 4 · 手机流量"满格 5G 信号"就是快</span><span class="v">满格只代表信号强度，不代表基站不拥塞。演唱会现场信号满格但完全刷不出网页，就是基站过载。</span></li>
+    <li><span class="k">误解 5 · 换根"贵网线"能提速</span><span class="v">网线只有"够不够规格"，没有"更快"。跑千兆只需 Cat5e（约 2 元/米），Cat6 及以上是为 2.5G/10G 准备的。<strong>几百块的"发烧级网线"对家用带宽零提升</strong>——数字信号只有对与错，没有"更清晰"。</span></li>
+    <li><span class="k">误解 6 · Ping 值低就等于游戏不卡</span><span class="v">ping 测的是<strong>平均</strong>延迟，而游戏体验取决于<strong>抖动和丢包</strong>。平均 30ms 但每隔十秒抖到 300ms，比稳定的 80ms 难受得多。</span></li>
+    <li><span class="k">误解 7 · 加带宽能降延迟</span><span class="v">带宽只影响四种时延中的"传输时延"那一项，而它通常只占总延迟的百分之一。<strong>把 100M 升到 1000M，你 ping 值几乎不会变。</strong></span></li>
+    <li><span class="k">误解 8 · 用了 VPN / 加速器一定更快</span><span class="v">加速器的原理是"换一条更优的绕行路径"，如果原路径本来就是最优的，绕路只会更慢。它对"路由绕行严重"的情况有效，对"物理距离远"的情况无解。</span></li>
+    <li><span class="k">误解 9 · 只看下载带宽</span><span class="v">上传通常只有下载的 1/10。视频会议、云同步、直播全靠上传——<strong>很多"网卡"的真凶是上传被某个后台同步占满了</strong>。</span></li>
   </ul>
 
   <h3>给普通人三条实用建议</h3>
@@ -187,7 +502,12 @@
 
   <div class="callout">
     <span class="tag">Recap · 收束</span>
-    <p>带宽 = 路宽，时延 = 跑一趟时间，丢包 = 丢件率。<mark class="key">它们是三件独立的事，单独诊断、单独解决</mark>。下次再有人说"我家网不好"，你可以反问：是下载慢、还是 ping 高、还是丢包？——这个问题立刻让你比对方多懂一层。</p>
+    <p>带宽 = 路宽，时延 = 跑一趟时间，丢包 = 丢件率。<mark class="key">它们是三件独立的事，单独诊断、单独解决</mark>。下次再有人说"我家网不好"，你可以反问：是下载慢、还是 ping 高、还是丢包？——这个问题立刻让你比对方多懂一层。<br/>
+    再补齐另外三个专业指标：<strong>吞吐量</strong>（实际跑出来的，永远小于带宽）、<strong>抖动</strong>（波动幅度，对通话和游戏比延迟本身更致命）、<strong>并发数 / QPS / P99</strong>（服务器侧视角）。<br/>
+    时延要拆成<strong>四份</strong>：<strong>传播</strong>（距离÷光速，无法优化，通常占八成）、<strong>传输</strong>（包÷带宽，微不足道）、<strong>处理</strong>（设备性能，已经很快）、<strong>排队</strong>（拥塞，波动最大，也是唯一值得动手的战场）。所以优化网络的第一原则永远是<strong>缩短物理距离（CDN）</strong>，而不是加带宽。<br/>
+    三个必须记住的量化关系：<strong>① BDP = 带宽 × RTT</strong>——RTT 高会让带宽根本用不满，这是跨国下载慢的真正原因；<strong>② 吞吐 ≈ MSS ÷ (RTT × √丢包率)</strong>——丢包率从 0.01% 涨到 1%，吞吐掉到十分之一；<strong>③ 500 Mbps ÷ 8 = 62.5 MB/s</strong>——比特与字节差 8 倍，这是最常见的单位误解。<br/>
+    最容易被忽略的两个真实病症：<strong>Bufferbloat</strong>（下载时延迟从 20ms 飙到 800ms，解法是路由器开 SQM）和<strong>上传带宽被占满</strong>（家宽上传通常只有下载的 1/10）。<br/>
+    最后是这一节真正的落点：<mark class="key">没有任何应用同时对四项指标都敏感。语音在乎时延和抖动却几乎不吃带宽；下载在乎带宽却完全不在乎延迟。所以"优化网络"从来不是把四个数字都拉满，而是搞清这个场景在乎哪一项，然后果断牺牲其他项——这正是 QoS 存在的全部意义。</mark></p>
   </div>
 
   <div class="pager">
