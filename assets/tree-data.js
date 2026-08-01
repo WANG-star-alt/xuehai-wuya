@@ -174,34 +174,107 @@
     [
       createNode('gui-01', '第 1 章 · GUI 是什么',
         'CLI / TUI / GUI 三种交互范式 + 控件、窗口、事件驱动的基本盘。',
-        '约 3 小时', []),
+        '约 3 小时',
+        [
+          createNode('gui-01-1', '§ 1.1 · 命令行 CLI 篇', '打字对话式交互——精准、可脚本化，但要背命令。', '30 min', []),
+          createNode('gui-01-2', '§ 1.2 · 字符界面 TUI 篇', '终端里画界面——htop、vim、Midnight Commander。', '25 min', []),
+          createNode('gui-01-3', '§ 1.3 · 图形界面 GUI 篇', '窗口、图标、菜单、指针——WIMP 范式的诞生。', '35 min', []),
+          createNode('gui-01-4', '§ 1.4 · 控件 Widget 篇', '按钮、输入框、列表、滑块——界面的乐高积木。', '30 min', []),
+          createNode('gui-01-5', '§ 1.5 · 事件驱动篇', '程序不再"从上到下跑完"，而是"等你动手才响应"。', '35 min', [])
+        ]),
       createNode('gui-02', '第 2 章 · 界面是怎么画出来的',
         '像素、位图与矢量、渲染管线、GPU 合成——一帧画面的诞生过程。',
-        '约 3 小时', []),
+        '约 3 小时',
+        [
+          createNode('gui-02-1', '§ 2.1 · 像素与分辨率篇', '像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。', '30 min', []),
+          createNode('gui-02-2', '§ 2.2 · 位图 vs 矢量篇', 'PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。', '25 min', []),
+          createNode('gui-02-3', '§ 2.3 · 颜色与色彩空间篇', 'RGB、HSL、sRGB vs P3、透明度与混色。', '30 min', []),
+          createNode('gui-02-4', '§ 2.4 · 渲染管线篇', '解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。', '40 min', []),
+          createNode('gui-02-5', '§ 2.5 · GPU 合成与 60fps 篇', '为什么动画会卡、为什么 transform 比 top 快。', '35 min', [])
+        ]),
       createNode('gui-03', '第 3 章 · 布局与排版',
         '盒模型、Flex / Grid、约束布局、响应式——元素为什么待在那个位置。',
-        '约 3 小时', []),
+        '约 3 小时',
+        [
+          createNode('gui-03-1', '§ 3.1 · 盒模型篇', 'content / padding / border / margin——一切布局的原子。', '30 min', []),
+          createNode('gui-03-2', '§ 3.2 · 流式与定位篇', '文档流、浮动、absolute / fixed / sticky 的取舍。', '35 min', []),
+          createNode('gui-03-3', '§ 3.3 · Flexbox 篇', '一维弹性布局——主轴、交叉轴、伸缩与对齐。', '35 min', []),
+          createNode('gui-03-4', '§ 3.4 · Grid 网格篇', '二维网格布局——真正的"报纸排版"能力。', '35 min', []),
+          createNode('gui-03-5', '§ 3.5 · 约束布局篇', '原生 App 的另一套思路——AutoLayout / ConstraintLayout。', '30 min', []),
+          createNode('gui-03-6', '§ 3.6 · 响应式与自适应篇', '媒体查询、断点、容器查询——一套界面适配所有屏幕。', '35 min', [])
+        ]),
       createNode('gui-04', '第 4 章 · 事件与交互',
         '事件循环、冒泡与捕获、手势、焦点与无障碍——点击背后发生了什么。',
-        '约 3 小时', []),
+        '约 3 小时',
+        [
+          createNode('gui-04-1', '§ 4.1 · 事件循环 Event Loop 篇', '主线程、任务队列、微任务——界面为什么会"卡死"。', '40 min', []),
+          createNode('gui-04-2', '§ 4.2 · 冒泡与捕获篇', '事件的三个阶段 + 事件委托为什么能提升性能。', '35 min', []),
+          createNode('gui-04-3', '§ 4.3 · 输入设备篇', '鼠标、键盘、触摸、笔、手柄——不同设备的事件模型。', '30 min', []),
+          createNode('gui-04-4', '§ 4.4 · 手势识别篇', '点击、长按、拖拽、双指缩放——手势冲突怎么解。', '30 min', []),
+          createNode('gui-04-5', '§ 4.5 · 焦点与键盘导航篇', 'Tab 顺序、焦点陷阱、快捷键——不用鼠标也能用。', '30 min', []),
+          createNode('gui-04-6', '§ 4.6 · 无障碍 A11y 篇', 'ARIA、屏幕阅读器、对比度——让所有人都能用。', '35 min', [])
+        ]),
       createNode('gui-05', '第 5 章 · 桌面 GUI 框架',
         'Tkinter / Qt / WPF / Electron / Tauri——原生与套壳的取舍。',
-        '约 3 小时', []),
+        '约 3 小时',
+        [
+          createNode('gui-05-1', '§ 5.1 · Tkinter · Python 入门篇', 'Python 自带、零依赖——写小工具最快的路。', '30 min', []),
+          createNode('gui-05-2', '§ 5.2 · Qt / PySide 篇', '工业级跨平台方案——WPS、VirtualBox 都用它。', '40 min', []),
+          createNode('gui-05-3', '§ 5.3 · Windows 原生篇', 'Win32 / WinForms / WPF / WinUI 3——微软四代 UI 栈。', '35 min', []),
+          createNode('gui-05-4', '§ 5.4 · Electron 篇', '用网页技术做桌面应用——VS Code、Discord 的选择。', '35 min', []),
+          createNode('gui-05-5', '§ 5.5 · Tauri 与新生代篇', 'Rust + 系统 WebView——体积只有 Electron 的十分之一。', '30 min', [])
+        ]),
       createNode('gui-06', '第 6 章 · Web 前端三件套',
         'HTML 结构 / CSS 表现 / JS 行为——浏览器里的分工与协作。',
-        '约 4 小时', []),
+        '约 4 小时',
+        [
+          createNode('gui-06-1', '§ 6.1 · HTML 结构篇', '标签、语义化、DOM 树——网页的骨架。', '40 min', []),
+          createNode('gui-06-2', '§ 6.2 · CSS 表现篇', '选择器、层叠、继承、优先级——样式为什么"不生效"。', '45 min', []),
+          createNode('gui-06-3', '§ 6.3 · JavaScript 行为篇', '变量、函数、DOM 操作、异步——让页面活起来。', '45 min', []),
+          createNode('gui-06-4', '§ 6.4 · 浏览器工作原理篇', '从输入网址到看到页面——渲染引擎与 JS 引擎的分工。', '40 min', []),
+          createNode('gui-06-5', '§ 6.5 · 开发者工具篇', 'Elements / Console / Network / Performance——调试的兵器谱。', '30 min', [])
+        ]),
       createNode('gui-07', '第 7 章 · 前端框架',
         'React / Vue / Svelte 的心智模型——虚拟 DOM、响应式、编译时。',
-        '约 4 小时', []),
+        '约 4 小时',
+        [
+          createNode('gui-07-1', '§ 7.1 · 为什么需要框架篇', '手写 DOM 操作的三大痛点——状态、复用、同步。', '30 min', []),
+          createNode('gui-07-2', '§ 7.2 · 组件化思维篇', '把界面拆成可复用的积木——props、state、组合。', '40 min', []),
+          createNode('gui-07-3', '§ 7.3 · React 篇', '虚拟 DOM、单向数据流、Hooks——声明式 UI 的代表。', '45 min', []),
+          createNode('gui-07-4', '§ 7.4 · Vue 篇', '响应式系统、模板语法、渐进式采用——上手最快的框架。', '45 min', []),
+          createNode('gui-07-5', '§ 7.5 · Svelte 与编译时篇', '没有虚拟 DOM——把框架成本挪到编译阶段。', '30 min', []),
+          createNode('gui-07-6', '§ 7.6 · 状态管理篇', 'Redux / Pinia / Zustand——大型应用的数据怎么管。', '35 min', [])
+        ]),
       createNode('gui-08', '第 8 章 · 移动端 UI',
         'iOS / Android 原生 + Flutter / RN 跨平台——小屏幕的设计约束。',
-        '约 3 小时', []),
+        '约 3 小时',
+        [
+          createNode('gui-08-1', '§ 8.1 · 移动端设计约束篇', '小屏、手指、单手、断网、省电——五条硬约束。', '30 min', []),
+          createNode('gui-08-2', '§ 8.2 · iOS 原生篇', 'UIKit vs SwiftUI + 人机界面指南 HIG。', '40 min', []),
+          createNode('gui-08-3', '§ 8.3 · Android 原生篇', 'View 体系 vs Jetpack Compose + Material Design。', '40 min', []),
+          createNode('gui-08-4', '§ 8.4 · Flutter 篇', '自绘引擎 + Dart——一套代码全平台一致。', '35 min', []),
+          createNode('gui-08-5', '§ 8.5 · React Native 与小程序篇', 'JS 写原生 + 微信生态——中国式跨端方案。', '35 min', [])
+        ]),
       createNode('gui-09', '第 9 章 · 设计原则与 HCI',
         '费茨定律、认知负荷、一致性、可用性测试——好界面为什么好。',
-        '约 2 小时', []),
+        '约 2 小时',
+        [
+          createNode('gui-09-1', '§ 9.1 · 费茨定律与希克定律篇', '目标越大越近越好点、选项越多越慢——两条量化定律。', '30 min', []),
+          createNode('gui-09-2', '§ 9.2 · 认知负荷篇', '7±2 法则、渐进披露——别让用户脑子过载。', '30 min', []),
+          createNode('gui-09-3', '§ 9.3 · 可见性与反馈篇', '状态可见、操作有回应、错误可撤销——诺曼三原则。', '30 min', []),
+          createNode('gui-09-4', '§ 9.4 · 一致性与设计系统篇', 'Design Token、组件库、Material / HIG / Fluent。', '30 min', []),
+          createNode('gui-09-5', '§ 9.5 · 可用性测试篇', '五个用户就能发现 85% 的问题——怎么测、测什么。', '30 min', [])
+        ]),
       createNode('gui-10', '第 10 章 · AI 时代的界面',
         '对话式 UI、生成式 UI、Agent 操作界面——AI 正在重写交互范式。',
-        '约 2 小时', [])
+        '约 2 小时',
+        [
+          createNode('gui-10-1', '§ 10.1 · 对话式 UI 篇', '从表单填空到自然语言——ChatGPT 式交互的得与失。', '30 min', []),
+          createNode('gui-10-2', '§ 10.2 · 生成式 UI 篇', '界面不再预先写死，而是按需即时生成。', '30 min', []),
+          createNode('gui-10-3', '§ 10.3 · Agent 操作界面篇', 'Computer Use——AI 直接点你的鼠标、敲你的键盘。', '35 min', []),
+          createNode('gui-10-4', '§ 10.4 · AI 辅助设计与编码篇', 'Figma AI、v0、Cursor——设计稿到代码的自动化。', '30 min', []),
+          createNode('gui-10-5', '§ 10.5 · 未来交互范式篇', '语音、空间计算、脑机接口——屏幕之后是什么。', '30 min', [])
+        ])
     ],
     { color: '#8a5a7a' }
   );
