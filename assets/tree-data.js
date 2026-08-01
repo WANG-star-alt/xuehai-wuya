@@ -165,13 +165,54 @@
     { color: '#556b3d' }
   );
 
+  // ---------- 界面篇 ----------
+  const branchInterface = createNode(
+    'interface',
+    '界面篇',
+    '从"GUI 是什么"到"AI 时代的生成式界面"——10 章讲透人和机器之间那层看得见、摸得着的皮肤。',
+    '约 30 小时',
+    [
+      createNode('gui-01', '第 1 章 · GUI 是什么',
+        'CLI / TUI / GUI 三种交互范式 + 控件、窗口、事件驱动的基本盘。',
+        '约 3 小时', []),
+      createNode('gui-02', '第 2 章 · 界面是怎么画出来的',
+        '像素、位图与矢量、渲染管线、GPU 合成——一帧画面的诞生过程。',
+        '约 3 小时', []),
+      createNode('gui-03', '第 3 章 · 布局与排版',
+        '盒模型、Flex / Grid、约束布局、响应式——元素为什么待在那个位置。',
+        '约 3 小时', []),
+      createNode('gui-04', '第 4 章 · 事件与交互',
+        '事件循环、冒泡与捕获、手势、焦点与无障碍——点击背后发生了什么。',
+        '约 3 小时', []),
+      createNode('gui-05', '第 5 章 · 桌面 GUI 框架',
+        'Tkinter / Qt / WPF / Electron / Tauri——原生与套壳的取舍。',
+        '约 3 小时', []),
+      createNode('gui-06', '第 6 章 · Web 前端三件套',
+        'HTML 结构 / CSS 表现 / JS 行为——浏览器里的分工与协作。',
+        '约 4 小时', []),
+      createNode('gui-07', '第 7 章 · 前端框架',
+        'React / Vue / Svelte 的心智模型——虚拟 DOM、响应式、编译时。',
+        '约 4 小时', []),
+      createNode('gui-08', '第 8 章 · 移动端 UI',
+        'iOS / Android 原生 + Flutter / RN 跨平台——小屏幕的设计约束。',
+        '约 3 小时', []),
+      createNode('gui-09', '第 9 章 · 设计原则与 HCI',
+        '费茨定律、认知负荷、一致性、可用性测试——好界面为什么好。',
+        '约 2 小时', []),
+      createNode('gui-10', '第 10 章 · AI 时代的界面',
+        '对话式 UI、生成式 UI、Agent 操作界面——AI 正在重写交互范式。',
+        '约 2 小时', [])
+    ],
+    { color: '#8a5a7a' }
+  );
+
   // ---------- 根节点 ----------
   const treeRoot = createNode(
     'root',
     '学海无涯',
-    '把 AI 与网络两大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '总计约 70 小时',
-    [branchIntelligence, branchNetwork]
+    '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
+    '总计约 100 小时',
+    [branchIntelligence, branchNetwork, branchInterface]
   );
 
   window.__cognitionTreeData = treeRoot;
