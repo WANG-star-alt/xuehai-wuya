@@ -211,9 +211,10 @@
         y: NODE_H / 2 + 14,
         'dominant-baseline': 'middle'
       });
+      const nodeWords = realNode.words || realNode.time || '';
       const metaText = hasChildren
-        ? `${realNode.time || ''} · ${realNode.children.length} 项`
-        : (realNode.time || '');
+        ? `${nodeWords} · ${realNode.children.length} 项`
+        : nodeWords;
       meta.textContent = metaText;
       g.appendChild(meta);
 
@@ -321,7 +322,7 @@
       <div class="detail-body">
         <div class="detail-desc">${escapeHtml(node.desc || '')}</div>
         <div class="detail-meta">
-          <div class="meta-item"><span class="meta-label">建议时间</span><span class="meta-value">${escapeHtml(node.time || '未定')}</span></div>
+          <div class="meta-item"><span class="meta-label">内容字数</span><span class="meta-value">${escapeHtml(node.words || node.time || '待撰写')}</span></div>
           <div class="meta-item"><span class="meta-label">子节点</span><span class="meta-value">${hasChildren ? node.children.length + ' 项' : '叶子节点'}</span></div>
         </div>
         <div class="detail-path">
