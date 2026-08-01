@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 2.3 · 颜色与色彩空间 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -44,6 +45,8 @@
 
   <h3>RGB：为什么是红绿蓝这三个</h3>
   <p>屏幕上每一个像素，其实是三个挨得极近的微型灯：红（Red）、绿（Green）、蓝（Blue）。它们各自独立发光，因为距离太近，你的眼睛无法分辨，只会把三束光混合后的结果当成"一个颜色"。</p>
+
+  <div class="lab" data-lab="color-picker"></div>
   <p>选这三个颜色不是随便定的，而是<strong>照着人眼的构造抄的</strong>。人的视网膜上有三种视锥细胞，分别对长波（偏红）、中波（偏绿）、短波（偏蓝）最敏感。屏幕要骗过眼睛，最省事的办法就是直接给这三种细胞分别投喂对应的光——只要三种细胞收到的刺激比例和看真实物体时一致，大脑就认为"我看到了同一个颜色"。<mark class="key">屏幕不是在复制颜色，是在复制眼睛对颜色的反应</mark>。</p>
   <p>因为混合的是光，所以叫<strong>加色混合</strong>（additive）：加得越多越亮，全加满是白。这和小学美术课上颜料的规律正好相反——颜料是<strong>减色混合</strong>（subtractive），每加一种颜料就多吸收一部分光，混到最后是脏黑色。打印机用的 CMYK 就是减色体系，这也是"屏幕上鲜艳的荧光绿印出来永远发闷"的根本原因：印刷用的是吸光的墨，压根做不出发光的效果。</p>
 
@@ -171,6 +174,8 @@ G =   0 × 0.5 +   0 × 0.5 =   0
 
   <h3>对比度：颜色好不好看之外，还得看得清</h3>
   <p>配色最容易被忽略的一半是<strong>可读性</strong>。浅灰字配白底，在你的高亮度屏幕上看着很高级，用户在阳光下的手机上可能完全读不到。这不是审美问题，是功能失效。</p>
+
+  <div class="lab" data-lab="contrast"></div>
   <p>行业有一套量化标准：<strong>WCAG 对比度</strong>。它根据前景色和背景色的相对亮度算出一个比值，最低 1:1（完全同色，不可读），最高 21:1（纯黑配纯白）。要求是：</p>
   <ul class="keylist">
     <li><span class="k">4.5:1</span><span class="v">正文文字的合格线（AA 级）。这是最该记住的一个数字——绝大多数设计评审卡的就是它。</span></li>
@@ -182,6 +187,8 @@ G =   0 × 0.5 +   0 × 0.5 =   0
 
   <h3>把这一节串起来看</h3>
   <p>一个颜色从你手里走到用户眼里，要过四道关：<strong>第一关，你用某种坐标系（RGB / HSL）写下三个数字</strong>；<strong>第二关，这些数字要配上一份说明书（sRGB / P3）才有确定含义</strong>；<strong>第三关，如果涉及透明，系统会用 alpha 公式把它和背景混合成一个实际颜色</strong>；<strong>第四关，屏幕按自己的能力把它点亮，色彩管理负责在中间做翻译，超出能力的部分被压回边界</strong>。任何一关的信息丢失或误解，都会表现为"颜色变了"。</p>
+
+  <div class="lab" data-lab="quiz" data-q="正文小字要通过 WCAG AA 级无障碍标准，文字与背景的对比度至少要达到多少？" data-opts="3 : 1|4.5 : 1|7 : 1|21 : 1" data-answer="1" data-explain="AA 级对正文（小于 18pt）要求 ≥ 4.5:1；大字放宽到 3:1；最严格的 AAA 级要求 ≥ 7:1。21:1 是纯黑配纯白的理论最大值。"></div>
 
   <div class="callout">
     <span class="tag">Recap · 收束</span>
@@ -203,6 +210,7 @@ G =   0 × 0.5 +   0 × 0.5 =   0
   <div class="page-foot">学海无涯 · 界面篇 · § 2.3</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

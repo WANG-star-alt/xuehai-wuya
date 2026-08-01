@@ -25,7 +25,9 @@ xuehai-wuya/
 │   └── charts.js                    # 【已废弃】旧 ECharts 版，未使用
 ├── _shared/
 │   ├── css/theme.css                # 所有子页面共享样式
-│   └── js/float-pager.js            # 悬浮翻页岛
+│   ├── css/interactive.css          # 互动实验室组件样式
+│   ├── js/float-pager.js            # 悬浮翻页岛
+│   └── js/interactive.js            # 互动实验室组件引擎（10 种组件）
 ├── chapters/                        # 所有章节内容
 │   ├── ai/                          # 智能篇 14 章
 │   ├── network/                     # 网络篇 10 章
@@ -247,6 +249,55 @@ let scale, translateX, translateY;
 
 **字数要求**: 每篇 2500+ 字，通俗易懂，贴近生活。
 
+### 6.5 互动实验室规范（★ 重要 · 每篇都要考虑）
+
+**核心原则**: 讲到"可以动手试"的概念时，**必须配一个互动组件让用户亲自玩**，而不是只用文字描述。讲颜色就给色盘，讲布局就给可拖的盒模型，讲帧率就给能调速的动画。
+
+**引入方式**（需要用组件的页面才引，不用的不引）:
+```html
+<!-- head 里，theme.css 之后 -->
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+<!-- body 末尾，float-pager.js 之前 -->
+<script src="../../_shared/js/interactive.js"></script>
+```
+
+**使用方式**: 只写一个空 div，JS 自动扫描 `data-lab` 并渲染，无需手写内部结构。
+```html
+<div class="lab" data-lab="color-picker"></div>
+```
+
+**现有 10 个组件**:
+
+| `data-lab` | 组件 | 适合放在讲什么的地方 |
+|---|---|---|
+| `color-picker` | HSL 调色盘 + 三种色值 + 预设色 | 颜色、RGB/HSL、配色、主题色 |
+| `contrast` | 对比度检查器 + WCAG 徽章 | 可读性、无障碍、深色模式 |
+| `box-model` | 盒模型四层可拖演示 | 盒模型、margin/padding、布局计算 |
+| `flexbox` | Flex 属性下拉 + 实时代码输出 | Flexbox、一维布局、对齐 |
+| `pixel-zoom` | 网格数可调的像素化圆 | 像素、分辨率、锯齿、抗锯齿 |
+| `event-flow` | 三层嵌套点击 + 冒泡日志 + stopPropagation 开关 | 事件冒泡、事件委托、事件循环 |
+| `fps` | 帧率可调的小球动画 | 帧率、60fps、卡顿、动画性能 |
+| `converter` | PPI / DPR 换算器 | 分辨率、DPI、@2x 图、Retina |
+| `quiz` | 单选小测验 + 判定 + 解析 | **任何一节的结尾**，检验理解 |
+| `cmd-break` | 命令行三段结构拆解器 | CLI、命令语法、选项与参数 |
+
+**小测验写法**（唯一需要传参数的组件）:
+```html
+<div class="lab" data-lab="quiz"
+     data-q="题干，可含 <code>行内代码</code>"
+     data-opts="选项A|选项B|选项C|选项D"
+     data-answer="1"
+     data-explain="答案解析——不只说对错，要讲清为什么。"></div>
+```
+`data-answer` 是**从 0 开始**的正确选项下标。
+
+**放置原则**:
+- 互动组件插在**对应概念讲完的那一段之后**，不要堆在文末
+- 每篇 **1-3 个**互动组件为宜，`quiz` 固定放在结尾 Recap 之前
+- 组件是"讲完再练"，不能代替文字讲解——先把道理说明白，再让用户动手验证
+
+**扩展新组件**: 在 `interactive.js` 的 `builders` 注册表里加一个 `'名字': build函数`，配套样式加到 `interactive.css`。函数签名 `function(box)`，box 就是那个 `.lab` 容器。
+
 ### 7. 缓存规范
 
 **每次修改 `tree-data.js` / `cognition-tree.js` / `cognition-tree.css` / `index.html` 后，必须更新缓存号**:
@@ -318,6 +369,8 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 - **2026-08-01**: 认知树工具栏加**框宽滑块**（120-420px），可自由调节节点框宽度
 - **2026-08-01**: **界面篇第 5 章是用户重点学习目标**——从 5 节扩到 **14 节**，覆盖 Python / C++ / C# / Web / Rust 五大技术栈：Tkinter、PySide6/PyQt6、Qt Designer、CustomTkinter、Flet、NiceGUI、Dear PyGui、Streamlit/Gradio、Windows 原生栈、Avalonia/.NET MAUI、Electron、Tauri、打包分发。写这一章时要**多给可运行代码示例**。
 - **2026-08-01**: **封面改为简洁印章式**——不要重复堆字。结构：SVG 印章 logo（方章 + 三色水波对应三篇 + 橙点书舟）→ `学海无涯`（只出现一次，字距 0.22em）→ `Xue Hai Wu Ya` 小字 → 三色分隔线 → `智能 · 网络 · 界面`。页脚也精简为`学海无涯 · 2026`。已加同款 SVG favicon（内联 data URI）。
+
+- **2026-08-01**: **要求文章加入互动元素**——讲到特定内容时要提供合适的动手互动，比如讲选颜色就给一个色盘让用户自己选。已建成互动实验室组件库（`_shared/css/interactive.css` + `_shared/js/interactive.js`，10 种组件），并写入 §6.5 规范。**以后每写一节都要考虑配什么互动组件**。
 
 ### 品牌视觉规范
 

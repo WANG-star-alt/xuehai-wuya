@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 2.5 · GPU 合成与 60fps · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -44,6 +45,8 @@
 
   <h3>为什么偏偏是 60fps</h3>
   <p>60 这个数字不是设计师拍脑袋定的，它来自硬件：绝大多数显示器的<strong>刷新率</strong>是每秒 60 次，即每 16.7 毫秒把屏幕内容整体更新一遍。屏幕就像那本翻页本，它按固定节奏翻，不会等你。</p>
+
+  <div class="lab" data-lab="fps"></div>
   <p>再往上追一层，是人眼的特性。大约 10~12fps 时人开始感知到"这是连续动作"而不是一张张图；24fps 是电影标准，够看但快速运动时会有拖影；到 60fps，视觉上基本感觉不到离散感，手指拖动界面时的跟手感也才成立。所以 60fps 是"硬件能给、人眼够用"的交汇点。</p>
   <p>这条时间预算算下来更让人紧张：16.7 毫秒里，浏览器自己的内务（合成、上屏、和系统交互）要占掉几毫秒，<mark class="key">真正留给你的 JS 逻辑、样式计算、布局和绘制的时间，大约只有 10 毫秒</mark>。而现在的手机上，一次全页布局就可能吃掉 5 毫秒以上。</p>
   <div class="table-wrap">
@@ -190,6 +193,8 @@ el.addEventListener('transitionend', () => {
   .panel { transition: none; }
 }</code></pre>
 
+  <div class="lab" data-lab="quiz" data-q="下面哪一组 CSS 属性做动画时只触发「合成」这一步，因此性能最好？" data-opts="width / height|top / left|transform / opacity|margin / padding" data-answer="2" data-explain="transform 和 opacity 可以完全交给 GPU 在合成阶段处理，跳过布局和绘制。其余三组都会触发回流（reflow），代价高得多。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>流畅的定义是硬的：<strong>每帧 16.7 毫秒，实际留给你的只有约 10 毫秒</strong>，超时就丢帧。CPU 像一位教授，擅长布局、样式、逻辑这些"证明题"；GPU 像一千个小学生，擅长把海量像素统一变换这类"乘法题"。<mark class="key">优化的本质就是把活从 CPU 挪到 GPU：把会动的元素提升为独立图层，然后只用 transform 和 opacity 驱动它</mark>——因为这两者只触发合成，改的是"看起来"而不是"事实"。反过来，卡顿基本只有四个源头：长任务堵住主线程、频繁回流、图层爆炸、大图解码与重绘过大。而找出它们不需要猜，打开 DevTools Performance 录一段，看红条、看火焰图的颜色宽度，凶手自己就站出来了。</p>
@@ -210,6 +215,7 @@ el.addEventListener('transitionend', () => {
   <div class="page-foot">学海无涯 · 界面篇 · § 2.5</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

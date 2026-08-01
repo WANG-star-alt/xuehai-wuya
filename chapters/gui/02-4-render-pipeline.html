@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 2.4 · 渲染管线 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -77,6 +78,8 @@ body
   <p><strong>布局</strong>（Layout，在 Firefox 的术语体系里叫 Reflow）要回答的问题非常具体：渲染树里每一个元素，它的左上角坐标是多少，宽高各是多少。输入是"样式描述"，输出是一堆精确的几何盒子。</p>
   <p>这一步之所以昂贵，是因为<strong>元素之间高度耦合</strong>。一个段落多了一行字，它下面的所有兄弟元素都要往下挪；它的父容器高度要增加，父容器的父容器也可能跟着变；如果这是个 flex 布局，同一行的兄弟元素宽度还要重新分配。<mark class="key">一处改动，可能引发整棵子树甚至整个文档的重新计算</mark>——这就是布局的成本所在。</p>
   <p>布局要处理的事情包括：解析 <code>%</code>、<code>em</code>、<code>vw</code> 这类相对单位换算成实际像素；根据可用宽度决定文字在哪里折行；处理 flex / grid 的空间分配；计算外边距合并；确定绝对定位元素相对哪个祖先定位。任何"位置和尺寸相关"的信息，都在这一步产生。</p>
+
+  <div class="lab" data-lab="box-model"></div>
 
   <h3>第三步 · 绘制：往图层上刷颜色</h3>
   <p>位置定了，接下来是<strong>绘制</strong>（Paint）。这一步把每个元素变成一系列具体的绘图指令："在 (120, 340) 到 (400, 380) 这个矩形里填 #f2ede4"、"在这里画一条 1px 的 #e2dccf 边框"、"用 16px Lora 在这个位置写这几个字"。</p>
@@ -185,6 +188,8 @@ items.forEach((el, i) => {
   <h3>一帧的完整时间线</h3>
   <p>把上面的知识按时间轴排一遍，一帧里实际发生的事是这样的：先执行 JS（事件回调、定时器、requestAnimationFrame）；然后处理 CSS 动画和过渡的当前值；接着如果有几何变动就执行布局；然后绘制发生变化的图层；最后合成上屏。如果这一整套在 16.7 毫秒内跑完，用户看到流畅画面；跑不完，这一帧就被丢掉，用户看到卡顿。下一节会专门算这笔时间账。</p>
 
+  <div class="lab" data-lab="quiz" data-q="把一个元素的 <code>background-color</code> 从白改成灰，会触发渲染管线的哪几步？" data-opts="布局 + 绘制 + 合成|绘制 + 合成|只有合成|四步全走" data-answer="1" data-explain="改颜色不影响任何元素的位置和尺寸，所以可以跳过「布局」，直接从「绘制」开始重来——这叫重绘（repaint）。如果改的是 width、margin 这类几何属性，就必须从「布局」重算，那叫回流（reflow），代价高得多。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>一帧画面走四道工序：<strong>解析</strong>（HTML→DOM，CSS→CSSOM，合成渲染树）、<strong>布局</strong>（算出每个元素在哪多大）、<strong>绘制</strong>（生成绘图指令刷到图层上）、<strong>合成</strong>（GPU 把图层叠成最终画面）。这条流水线是单向的，<mark class="key">从哪一步重来，后面的步骤就必须全部跟着重来</mark>——所以改几何属性触发回流（三步全走，最贵），改颜色只触发重绘（跳过布局），改 <code>transform</code> / <code>opacity</code> 只触发合成（几乎免费）。记住两条最实用的：<strong>做动画只用 transform 和 opacity</strong>，以及<strong>批量 DOM 操作要先读完再写，别读写交替</strong>。</p>
@@ -205,6 +210,7 @@ items.forEach((el, i) => {
   <div class="page-foot">学海无涯 · 界面篇 · § 2.4</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

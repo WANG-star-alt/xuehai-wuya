@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.4 · 控件 Widget · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -75,6 +76,8 @@
 
   <h3>控件三要素：外观 + 状态 + 行为</h3>
   <p>任何一个控件，无论多简单多复杂，都可以拆成三个部分来理解。这是本节最值得记住的一个模型。</p>
+
+  <div class="lab" data-lab="quiz" data-q="鼠标悬停在按钮上但还没按下，此时按钮处于哪种状态？" data-opts="default 默认|hover 悬浮|active 按下|disabled 禁用" data-answer="1" data-explain="hover 是"指针在上方但未按下"。按下瞬间才进入 active。CSS 里对应 <code>:hover</code> 和 <code>:active</code> 两个伪类，顺序写错会互相覆盖。"></div>
 
   <ul class="keylist">
     <li><span class="k">外观 Appearance</span><span class="v">它长什么样：尺寸、颜色、圆角、字体、边框、阴影、图标。外观是"给眼睛看的部分"，通常由样式表或主题统一控制，改起来最便宜。</span></li>
@@ -214,6 +217,7 @@ Button {
   <div class="page-foot">学海无涯 · 界面篇 · § 1.4</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

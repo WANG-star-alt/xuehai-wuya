@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.5 · 事件驱动 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -194,6 +195,8 @@ button.onClick = async () => {
   <p>三者的关系可以这样理解：控件树是<em>身体</em>，事件循环是<em>心跳</em>，你写的回调是<em>反射</em>。心跳不停，身体才有反应；而反射必须够快，快不了就得把活儿交给别人干——这就是异步存在的全部理由。</p>
   <p>下一章开始，我们往下钻一层：这些控件最终是<strong>怎么变成屏幕上的像素</strong>的。</p>
 
+  <div class="lab" data-lab="quiz" data-q="为什么在按钮的点击回调里执行一个耗时 3 秒的循环，会导致整个界面「未响应」？" data-opts="CPU 被占满了|主线程被阻塞，事件循环无法取下一个事件|内存不够了|显卡来不及渲染" data-answer="1" data-explain="界面的一切都靠主线程的事件循环驱动。回调没返回，循环就转不下去——既取不到新事件，也没机会重绘，于是看起来就是「卡死」。耗时任务应该交给后台线程或拆成异步分片。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p><strong>命令式脚本</strong>的控制权在你手里，从上到下跑完；<strong>事件驱动</strong>把控制权交给框架，你只登记"发生什么就做什么"，代码顺序不等于执行顺序。<br/>
@@ -202,6 +205,8 @@ button.onClick = async () => {
     最重要的实践底线是：<strong>主线程不能阻塞</strong>。回调超过 16.7ms 就掉帧，超过几秒就"未响应"。<br/>
     因此等待型任务用<strong>异步</strong>，计算型任务用<strong>后台线程</strong>；但无论走哪条路，<strong>最终更新界面的必须是主线程</strong>。</p>
   </div>
+
+  <div class="lab" data-lab="event-flow"></div>
 
   <div class="pager">
     <a class="btn prev" href="./01-4-widget.html">
@@ -218,6 +223,7 @@ button.onClick = async () => {
   <div class="page-foot">学海无涯 · 界面篇 · § 1.5</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

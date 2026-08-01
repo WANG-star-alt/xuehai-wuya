@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 2.1 · 像素与分辨率 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -75,6 +76,8 @@
 
   <h3>PPI / DPI：清晰度的真正指标</h3>
   <p><strong>PPI</strong>（Pixels Per Inch，每英寸像素数）用于屏幕；<strong>DPI</strong>（Dots Per Inch，每英寸墨点数）本来是印刷术语，说的是打印机每英寸打多少个墨点。两者原理相通，日常口语里常混用，但严格来说：<em>屏幕说 PPI，打印说 DPI</em>。</p>
+
+  <div class="lab" data-lab="converter"></div>
   <p>计算公式很简单——先用勾股定理算出对角线上有多少像素，再除以对角线的物理英寸数：</p>
 
   <pre><code>PPI = √(横向像素² + 纵向像素²) ÷ 屏幕对角线英寸
@@ -205,6 +208,8 @@ ctx.scale(dpr, dpr);                 // 坐标系缩回来，后面照常用逻�
   <p>下一节讲位图和矢量的差别，本质就是"存像素值"还是"存绘制指令"；讲颜色，就是给每个像素的 RGB 三个通道赋值；讲渲染管线，就是"如何高效地算出每个像素该是什么颜色"；讲 60fps，就是"这几百万个像素必须在 16.7 毫秒内全部算完并送屏"。</p>
   <p>把像素、分辨率、PPI、逻辑像素、DPR 这五个概念的关系理清了，后面四节都会顺理成章。<mark class="key">而没理清的话，你会一直被"为什么我的图在这台机器上是糊的"这类问题反复困扰，却始终找不到病根</mark>。</p>
 
+  <div class="lab" data-lab="quiz" data-q="iPhone 屏幕逻辑宽度 393pt、物理宽度 1179px，它的设备像素比 DPR 是多少？" data-opts="1x|2x|3x|4x" data-answer="2" data-explain="1179 ÷ 393 = 3，所以 DPR 是 3x——这也是为什么要为它准备 @3x 的位图资源。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p><strong>像素</strong>是屏幕上能被独立控制颜色的最小单元，内部由 <strong>RGB 三个子像素</strong>组成，各 256 级，合计约 1678 万色。<br/>
@@ -229,6 +234,7 @@ ctx.scale(dpr, dpr);                 // 坐标系缩回来，后面照常用逻�
   <div class="page-foot">学海无涯 · 界面篇 · § 2.1</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

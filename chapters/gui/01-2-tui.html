@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.2 · 字符界面 TUI · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -198,6 +199,8 @@ class DemoApp(App):
 DemoApp().run()</code></pre>
   <p>顺带说一句，现在你用的很多命令行工具其实已经悄悄是 TUI 了：<code>npm install</code> 那个会动的进度条、<code>docker pull</code> 里多层并行更新的下载条、AI 编程助手在终端里的对话框——它们都在用光标定位原地重写，都是 TUI 技术。<strong>TUI 早已渗透到你每天的工作流里，只是你没给它起名字。</strong></p>
 
+  <div class="lab" data-lab="quiz" data-q="TUI 程序能在终端里画出"界面"，最关键的技术手段是？" data-opts="调用显卡驱动|发送 ANSI 转义序列控制光标和颜色|嵌入一个浏览器内核|直接写显存" data-answer="1" data-explain="TUI 靠向终端输出 ANSI 转义序列（如 <code>\033[2J</code> 清屏、<code>\033[H</code> 归位）来定位光标、设置颜色，在字符网格上"画"出界面。ncurses 就是把这套序列封装成了易用的 API。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>TUI 的原理是三件事叠起来：<strong>把终端当成固定的字符网格当画布</strong>、<strong>用 ANSI 转义序列控制光标位置与颜色</strong>、<strong>靠差分刷新做到不闪烁的实时更新</strong>。<strong>ncurses</strong> 把这些脏活封装成了窗口和事件循环，让 <code>htop</code>、<code>vim</code>、<code>lazygit</code>、<code>mc</code>、<code>tmux</code> 这一整代工具成为可能。它真正不可替代的战场是 <strong>SSH 远程运维</strong>：带宽只要几 KB、服务器不需要桌面、断线还能续。而 <strong>ratatui / Textual / Bubble Tea / ink</strong> 的出现说明它没在衰退，而是把现代前端范式吃了进来。记住定位：<mark class="key">TUI 的编程范式已经是 GUI 的（事件驱动 + 控件 + 布局），只是它的像素是字符。</mark></p>
@@ -218,6 +221,7 @@ DemoApp().run()</code></pre>
   <div class="page-foot">学海无涯 · 界面篇 · § 1.2</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

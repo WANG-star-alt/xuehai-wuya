@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.1 · 命令行 CLI · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -77,6 +78,8 @@
 
   <h3>命令的三段结构：命令 + 选项 + 参数</h3>
   <p>几乎所有命令都遵守同一个语法骨架。认清这三段，你就能读懂 90% 的命令，哪怕从没见过那个程序：</p>
+
+  <div class="lab" data-lab="cmd-break" data-default="git commit -m "fix bug" --amend"></div>
   <pre><code>ls        -l -a        /home/user
 │         │            │
 命令      选项         参数
@@ -162,6 +165,8 @@ echo "部署完成，返回码 $?"</code></pre>
   </ul>
   <p>所以结论不是"命令行更好"，而是：<mark class="key">任务性质决定界面形态</mark>。重复、批量、需要精确表达和留痕的工作，交给 CLI；探索性、空间性、一次性的工作，交给 GUI。真正熟练的人两手都会用，并且清楚地知道什么时候该切换到哪一边——这也是下一节 TUI 和第三节 GUI 要继续展开的话题。</p>
 
+  <div class="lab" data-lab="quiz" data-q="在命令 <code>ls -la /home</code> 里，<code>-la</code> 属于哪一部分？" data-opts="命令|选项|参数|管道" data-answer="1" data-explain="以短横线开头的是选项（option），用来开启某种行为；<code>/home</code> 才是参数（argument），是命令要操作的对象。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>命令行是<strong>"读取—执行—打印"的文本对话循环</strong>：终端是窗口，shell 是翻译官，命令是干活的小程序；每条命令都是"命令 + 选项 + 参数"的三段式；<strong>管道和重定向</strong>让一堆小工具组合出无穷用法，这才是它真正的护城河。它靠<strong>可脚本化、可远程、省资源、可复现</strong>四条支柱牢牢占住服务器与工程自动化的生态位；代价是<strong>不可发现、记忆负担重、误操作不可撤销、不擅长空间任务</strong>。记住一句话：<mark class="key">图形界面的上限由开发者决定，命令行的上限由你决定。</mark></p>
@@ -182,6 +187,7 @@ echo "部署完成，返回码 $?"</code></pre>
   <div class="page-foot">学海无涯 · 界面篇 · § 1.1</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

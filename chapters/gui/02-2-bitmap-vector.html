@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 2.2 · 位图 vs 矢量 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -42,6 +43,8 @@
 
   <h3>位图：一张巨大的颜色表格</h3>
   <p>位图的原理朴素到近乎粗暴：<strong>它就是一个像素矩阵</strong>。一张 1920×1080 的图片，本质上是一张有 1920 列、1080 行的表格，一共 2,073,600 个格子，每个格子里填了一个颜色值。文件里存的就是这两百多万个颜色值，按顺序排成一长串数字。</p>
+
+  <div class="lab" data-lab="pixel-zoom"></div>
   <p>如果每个像素用 R、G、B 三个通道、每个通道 8 位（0~255）来记，那一个像素占 3 个字节；再加一个透明通道 A 就是 4 个字节。所以一张 1920×1080 的<strong>未压缩</strong>图片，理论大小是 1920 × 1080 × 4 ≈ 8.3 MB。你平时下载的图片只有几百 KB，是因为所有图片格式都做了<strong>压缩</strong>——这也是各种格式差异的核心来源。</p>
   <p>位图最大的软肋，就来自"它只存结果"这个事实。图片里根本没有"这是一条直线"的概念，只有"第 300 行第 47 到 92 个格子是黑色"这种记录。当你要放大它，程序面对的是一道无解的题：<mark class="key">原图只有 100 个格子的信息，现在要填 400 个格子，多出来的信息从哪来？</mark>只能靠猜——这个猜的过程叫<strong>插值</strong>（interpolation）。猜得再好也是猜，所以放大后必然发虚、发糊，或者出现阶梯锯齿。</p>
 
@@ -166,6 +169,8 @@
   <h3>一个容易混淆的点：分辨率无关 ≠ 无限精细</h3>
   <p>矢量图"无限放大不失真"说的是<strong>已有的几何信息在任何尺寸下都能精确重绘</strong>，不是"能凭空长出更多细节"。一个只用 8 条直线画成的粗糙图标，放大到墙那么大，依然是那个只有 8 条边的粗糙图标——只不过每条边都很锐利。矢量解决的是<em>清晰度</em>问题，不解决<em>细节量</em>问题。同理，把位图用工具"转成矢量"（描摹）只是让程序去猜边界并生成路径，猜错了就会变形，这不是真正的还原。</p>
 
+  <div class="lab" data-lab="quiz" data-q="一个需要在不同尺寸下反复使用、还要能换颜色的图标，最合适的格式是？" data-opts="JPG|PNG|SVG|GIF" data-answer="2" data-explain="SVG 是矢量格式，任意缩放都清晰，而且可以用 CSS 直接改 fill 颜色。JPG 有损且不支持透明，PNG 和 GIF 都是位图放大会糊。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p><strong>位图存结果，矢量存做法</strong>——这一句话是本节的全部。位图是一张写满颜色值的巨型表格，出厂即定型，放大只能靠猜，所以会糊；它的各种格式（PNG/JPG/WebP/AVIF/GIF）差别几乎全在压缩策略上，选错格式就是白扛体积或白丢画质。矢量是一份几何配方，每次显示都按当前尺寸重新算一遍，因此天然适配所有屏幕密度，一份文件通吃 @1x 到 @3x。<mark class="key">凡是能用形状描述清楚的（图标、Logo、图表）就上 SVG，凡是真实世界拍下来的（照片、纹理）就用位图</mark>。剩下的功夫，就是给每种图选对格式、压对大小、写好宽高。</p>
@@ -186,6 +191,7 @@
   <div class="page-foot">学海无涯 · 界面篇 · § 2.2</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>
