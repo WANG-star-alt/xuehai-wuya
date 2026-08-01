@@ -300,8 +300,8 @@
   const branchInterface = createNode(
     'interface',
     '界面篇',
-    '从"GUI 是什么"到"AI 时代的生成式界面"——10 章讲透人和机器之间那层看得见、摸得着的皮肤。',
-    '约 30 小时',
+    '从"GUI 是什么"到"AI 时代的生成式界面"——10 章讲透人和机器之间那层看得见、摸得着的皮肤；第 5 章重点铺开 14 种主流 GUI 工具。',
+    '约 35 小时',
     [
       createNode('gui-01', '第 1 章 · GUI 是什么',
         'CLI / TUI / GUI 三种交互范式 + 控件、窗口、事件驱动的基本盘。',
@@ -345,15 +345,24 @@
           createNode('gui-04-5', '§ 4.5 · 焦点与键盘导航', 'Tab 顺序、焦点陷阱、快捷键——不用鼠标也能用。', '30 min', []),
           createNode('gui-04-6', '§ 4.6 · 无障碍 A11y', 'ARIA、屏幕阅读器、对比度——让所有人都能用。', '35 min', [])
         ]),
-      createNode('gui-05', '第 5 章 · 桌面 GUI 框架',
-        'Tkinter / Qt / WPF / Electron / Tauri——原生与套壳的取舍。',
-        '约 3 小时',
+      createNode('gui-05', '第 5 章 · 桌面 GUI 工具箱',
+        'Python / C++ / C# / Web / Rust 五大技术栈 · 14 种主流 GUI 工具选型与实战。',
+        '约 8 小时',
         [
-          createNode('gui-05-1', '§ 5.1 · Tkinter · Python 入门', 'Python 自带、零依赖——写小工具最快的路。', '30 min', []),
-          createNode('gui-05-2', '§ 5.2 · Qt / PySide', '工业级跨平台方案——WPS、VirtualBox 都用它。', '40 min', []),
-          createNode('gui-05-3', '§ 5.3 · Windows 原生', 'Win32 / WinForms / WPF / WinUI 3——微软四代 UI 栈。', '35 min', []),
-          createNode('gui-05-4', '§ 5.4 · Electron', '用网页技术做桌面应用——VS Code、Discord 的选择。', '35 min', []),
-          createNode('gui-05-5', '§ 5.5 · Tauri 与新生代', 'Rust + 系统 WebView——体积只有 Electron 的十分之一。', '30 min', [])
+          createNode('gui-05-1', '§ 5.1 · GUI 框架选型总览', '五大技术栈全景图 + 一张决策树帮你选对工具。', '35 min', []),
+          createNode('gui-05-2', '§ 5.2 · Tkinter', 'Python 自带、零依赖——写小工具最快的路。', '35 min', []),
+          createNode('gui-05-3', '§ 5.3 · PySide6 / PyQt6', '工业级跨平台方案——WPS、VirtualBox 都用它。', '50 min', []),
+          createNode('gui-05-4', '§ 5.4 · Qt Designer 可视化拖拽', '拖控件生成 .ui 文件——不写布局代码也能出界面。', '40 min', []),
+          createNode('gui-05-5', '§ 5.5 · CustomTkinter 与美化方案', '给 Tkinter 换皮——现代化圆角、暗色主题。', '30 min', []),
+          createNode('gui-05-6', '§ 5.6 · Flet', 'Flutter 的 Python 封装——一套代码出桌面/Web/手机。', '40 min', []),
+          createNode('gui-05-7', '§ 5.7 · NiceGUI', '浏览器当界面、Python 写逻辑——数据面板神器。', '40 min', []),
+          createNode('gui-05-8', '§ 5.8 · Dear PyGui', 'GPU 加速即时渲染——实时曲线、游戏工具首选。', '35 min', []),
+          createNode('gui-05-9', '§ 5.9 · Streamlit 与 Gradio', '几十行代码出一个 AI 演示页——最快的原型工具。', '35 min', []),
+          createNode('gui-05-10', '§ 5.10 · Windows 原生栈', 'Win32 / WinForms / WPF / WinUI 3——微软四代 UI 演进。', '45 min', []),
+          createNode('gui-05-11', '§ 5.11 · Avalonia 与 .NET MAUI', 'C# 跨平台双雄——Avalonia 全平台、MAUI 官方牌。', '40 min', []),
+          createNode('gui-05-12', '§ 5.12 · Electron', '用网页技术做桌面应用——VS Code、Discord 的选择。', '45 min', []),
+          createNode('gui-05-13', '§ 5.13 · Tauri', 'Rust + 系统 WebView——体积只有 Electron 的十分之一。', '45 min', []),
+          createNode('gui-05-14', '§ 5.14 · 打包与分发', 'PyInstaller / Nuitka / 安装包 / 签名 / 自动更新。', '45 min', [])
         ]),
       createNode('gui-06', '第 6 章 · Web 前端三件套',
         'HTML 结构 / CSS 表现 / JS 行为——浏览器里的分工与协作。',
