@@ -27,7 +27,7 @@ xuehai-wuya/
 │   ├── css/theme.css                # 所有子页面共享样式
 │   ├── css/interactive.css          # 互动实验室组件样式
 │   ├── js/float-pager.js            # 悬浮翻页岛
-│   └── js/interactive.js            # 互动实验室组件引擎（10 种组件）
+│   └── js/interactive.js            # 互动实验室组件引擎（18 种组件）
 ├── chapters/                        # 所有章节内容
 │   ├── ai/                          # 智能篇 14 章
 │   ├── network/                     # 网络篇 10 章
@@ -62,11 +62,11 @@ xuehai-wuya/
 
 ### 1. 章节结构规范
 
-每个"篇"必须是一个**独立 HTML 页面**，放在 `chapters/<篇名>/` 下。
+每个"章"和每个"节"都必须是一个**独立 HTML 页面**，放在 `chapters/<篇目录>/` 下。
 
 **页面命名规则**:
-- 主页面: `XX-<title>.html` (如 `04-machine-learning.html`)
-- 子篇章: `XX-Y-<title>.html` (如 `04-1-supervised.html`)
+- 章总览页: `XX-<title>.html` (如 `04-machine-learning.html`)
+- 节正文页: `XX-Y-<title>.html` (如 `04-1-supervised.html`)
 
 **每个页面必须包含**:
 ```html
@@ -77,28 +77,35 @@ xuehai-wuya/
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>§ X.Y · 标题 · 学海无涯</title>
   <link rel="stylesheet" href="../../_shared/css/theme.css">
+  <!-- 用到互动组件时才加这一行 -->
+  <link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
   <!-- 顶部面包屑 -->
   <nav class="topbar">...</nav>
-  <!-- 章节头 -->
+  <!-- 章节头：num 用 "§ X.Y · Section" 或 "Chapter · XX" -->
   <header class="chapter-head">...</header>
-  <!-- 内容 -->
+  <!-- 内容（含互动组件 div.lab） -->
   ...
-  <!-- 底部翻页（.pager） -->
+  <!-- 底部翻页（.pager）：节用"上一节/下一节"，跨章用"上一章/下一章" -->
   <div class="pager">
-    <a class="btn prev" href="...">← 上一篇</a>
+    <a class="btn prev" href="...">← 上一节</a>
     <a class="home" href="../../index.html">☰ 主页</a>
-    <a class="btn next" href="...">下一篇 →</a>
+    <a class="btn next" href="...">下一节 →</a>
   </div>
-  <div class="page-foot">Xue Hai Wu Ya · ...</div>
+  <!-- 页脚格式：学海无涯 · <篇名> · § X.Y -->
+  <div class="page-foot">学海无涯 · 界面篇 · § X.Y</div>
 </article>
+<!-- 用到互动组件时才加这一行，且必须在 float-pager 之前 -->
+<script src="../../_shared/js/interactive.js"></script>
 <!-- 必须引入悬浮翻页脚本 -->
 <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>
 ```
+
+**禁止内联 `<style>`**——所有样式都放 `theme.css` / `interactive.css`，页面里不许写 `<style>` 块。
 
 ### 2. 悬浮翻页岛规范（重要）
 
@@ -222,32 +229,40 @@ let scale, translateX, translateY;
 
 ### 5. 翻页链规范
 
-**每篇文章底部 `.pager` 必须正确链接**:
+**每个页面底部 `.pager` 必须正确链接**，形成一条贯穿全篇的线性阅读路径：
 
-- **上一篇**: 同篇内上一章，或上一篇的最后一章
-- **下一篇**: 同篇内下一章，或下一篇的第一章
-- **主页**: `../../index.html`
+```
+章总览 → §X.1 → §X.2 → … → §X.n → 下一章总览 → §(X+1).1 → …
+```
+
+**方向文字用词**:
+- 同章内节与节之间 → `← 上一节` / `下一节 →`
+- 节 → 本章总览 → `← 上一节`，标题写"第 X 章 · 总览"
+- 本章最后一节 → 下一章总览 → `下一章 →`，标题写"第 X+1 章 · 章名"
 
 **首尾处理**:
-- 第一篇的"上一篇" → `disabled`（不可点）
-- 最后一篇的"下一篇" → `disabled`（不可点）
+- 每篇第一章总览页的"上一章" → `class="btn prev disabled"`（无 href），标题写"已是本篇首章"
+- 最后一个已上线节的"下一节" → `class="btn next disabled"`（无 href），标题写"第 X 章 · 章名（建设中）"
 
-**跨篇衔接**（重要）:
-- 智能篇 §2.5 末页"下一章" → 指向第 3 章
-- 智能篇 §4.5 末页"下一章" → 指向第 5 章（未上线则 disabled）
-- 网络篇 §1.6 末页"下一章" → 指向第 2 章（未上线则 disabled）
+**新增章节时必须回头改前一章末节的 next**——否则阅读链断在那里。
 
 ### 6. 内容规范
 
-**每篇必须包含**:
+**每个节正文页必须包含**（缺一不可）:
 - `p.lead` — 核心观点（带 `<mark class="key">` 高亮）
-- `div.scene` — 生活场景类比（带 🎯 图标）
-- `h3` + `p` — 正文讲解
-- `div.callout` — 提示框（Recap/Note/Analogy）
-- `ul.keylist` 或 `table` — 结构化信息
+- `div.scene` — 生活场景类比（带 emoji，含 `.scene-tag` / `.scene-title` / `.link`）
+- 3–8 个 `h3` + `p` — 正文讲解
+- `div.callout.analogy` — 至少一个譬喻框
+- `ul.keylist` 或 `.table-wrap table` — 结构化信息
+- **互动组件** `div.lab` — 见 §6.5，至少一个 `quiz`
+- `div.callout` — 结尾 Recap 收束
 - `div.pager` — 翻页
 
-**字数要求**: 每篇 2500+ 字，通俗易懂，贴近生活。
+**章总览页必须包含**: `p.lead` + "本章要回答什么" + `div.callout.analogy` + `div.cards`（各节导航卡片）+ "学之前先记住这一点" `ul.keylist` + `div.pager`。章总览页**不放互动组件**。
+
+**字数要求**: 节正文页 **2500+ 中文字**（实际写作按 3000 字左右为佳），章总览页 600–900 字。通俗易懂、贴近生活、大量类比。
+
+**代码示例**: 用 `<pre><code>` 包裹，HTML 标签要转义（`&lt;` / `&gt;`）。`theme.css` 已有全局 `pre` 样式，不要在页面里另写。
 
 ### 6.5 互动实验室规范（★ 重要 · 每篇都要考虑）
 
@@ -333,7 +348,26 @@ let scale, translateX, translateY;
 <script src="./assets/cognition-tree.js?v=ct-N"></script>
 ```
 
-`N` 递增（当前 `ct-5`）。旧版 `kmap-XX` 已废弃。
+`N` 递增（**当前 `ct-15`**，每次改完 +1）。旧版 `kmap-XX` 已废弃。
+
+### 7.5 交付前自检规范（★ 每次改完必做）
+
+**批量操作优先用脚本**——新增/修改多个页面时，写一个临时 Python 脚本放在临时工作目录跑，不要逐个手改。避免高频工具调用触发 `AccountRateLimitExceeded`（HTTP 429）。
+
+**每次交付前必须跑一遍自检**，检查项：
+- [ ] 每个页面都有 `.pager` 且引入了 `float-pager.js`
+- [ ] 用了互动组件的页面，`interactive.css` 和 `interactive.js` 都引了；没用的页面不要引
+- [ ] 所有 `data-lab` 的值都在 `interactive.js` 的 `builders` 注册表里
+- [ ] 每个 `quiz` 的 `data-q` / `data-opts` / `data-answer` / `data-explain` 四项齐全，且 `data-answer` 下标不越界
+- [ ] 没有内联 `<style>` 块
+- [ ] 命名符合 §0：节标题不带"节/篇"字，章标题不带"篇"字
+- [ ] 树数据里新上线的节点已加 `href`（否则圆点还是灰的）
+- [ ] 主页对应卡片已从 `wip` 改成 `ready`
+- [ ] 缓存号已递增
+
+**注意**: 校验 quiz 参数的正则不能用 `[^>]*`——`data-q` 里可能含 `<code>` 标签，会被提前截断。要用 `(.*?)></div>` 配 `re.S`。
+
+**浏览器验证**：需要验证交互逻辑时，优先用一次 `browser_evaluate` 批量取回多个断言结果，不要反复截图和抓页面快照（快照返回上万字，极易触发限流）。
 
 ### 8. 推送规范
 
@@ -397,6 +431,9 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 
 - **2026-08-01**: **要求文章加入互动元素**——讲到特定内容时要提供合适的动手互动，比如讲选颜色就给一个色盘让用户自己选。已建成互动实验室组件库（`_shared/css/interactive.css` + `_shared/js/interactive.js`，18 种组件），并写入 §6.5 规范。**以后每写一节都要考虑配什么互动组件**。
 - **2026-08-01**: 互动组件已**覆盖全站三个篇**——组件库从 10 种扩到 18 种（新增智能篇 4 种：tokenizer / temperature / embedding / neuron；网络篇 4 种：subnet / handshake / latency / status-code）。已上线的 53 篇文章全部配好组件，共 67 处。`temperature` / `embedding` / `flexbox` 预留给尚未写的 §8.4 / §9.2 / §3.3。
+- **2026-08-01**: **不要频繁触发限流**——批量改文件用脚本一次跑完；验证交互用一次 `browser_evaluate` 批量断言，不要反复抓页面快照。已写入 §7.5。
+- **通用**: 用户要求"记住"、"写进规范"、"更新制作规范"时，**必须写入本 skill 文件**，不能只在对话里答应。
+- **通用**: 每次改动完成后**主动跑自检 + 提交推送**，不要等用户催。
 
 ### 品牌视觉规范
 
