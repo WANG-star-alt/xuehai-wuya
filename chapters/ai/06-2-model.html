@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 6.2 · 模型 · Model · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -124,6 +125,8 @@
   </ul>
   <p>这张配置表，就是这个"待培养的天才少年"的完整先天档案。</p>
 
+  <div class="lab" data-lab="quiz" data-q="「Llama 3 70B」中的 70B 指的是？" data-opts="训练用了 70 亿条数据|模型有约 700 亿个参数|训练花了 70 天|支持 70 种语言" data-answer="1" data-explain="B 是 billion（十亿），70B 即约 700 亿个可训练参数（权重）。参数量大致决定了模型的「容量」——能记住和拟合多复杂的规律。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>模型是训练开始之前，就要决定的一切"先天"——多少参数、什么架构、如何初始化、怎么调节奏。这些配置里的每一个数字，都可能让最终效果相差几个百分点。<mark class="key">好的模型 = 合适的架构 × 匹配的参数量 × 合理的初始化 × 精调的超参数</mark>。做完这些，你才拥有了一个"值得砸算力去训练"的胚子。</p>
@@ -144,6 +147,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 6.2 · Model</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

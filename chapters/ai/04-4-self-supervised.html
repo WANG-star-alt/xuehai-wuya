@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 4.4 · 自监督学习 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -145,6 +146,8 @@
   <p>人类学习其实也很"自监督"——小孩不需要老师告诉他"这是桌子、这是椅子"，他自己观察世界就懂了。<br/>
   但人类比 AI 强的地方在于：<strong>人类有身体，能摸、能尝、能跌倒</strong>——这就是"具身智能"（Embodied AI）想补的课。今天的大模型只有"读"的能力，没有"体验"的能力。</p>
 
+  <div class="lab" data-lab="quiz" data-q="自监督学习为什么能绕开「人工标注贵」这个难题？" data-opts="它不需要数据|它从数据本身自动造出题目和答案|它用更少的数据|它让 AI 自己标注" data-answer="1" data-explain="自监督的妙处是「答案本来就藏在数据里」——遮住一句话中的某个词让模型猜，答案就是被遮住的那个词。不需要任何人工标注，互联网上所有文本都能直接当训练数据。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>自监督学习 = <mark class="key">"让数据自己教自己"</mark>。它是 2018 年之后最重要的范式突破——没有它，就没有 GPT、没有 ChatGPT、没有今天的大模型时代。<br/>
@@ -166,6 +169,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 4.4 · Self-Supervised Learning</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

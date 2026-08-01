@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 2.3 · 分层实战 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -159,6 +160,8 @@
     <li><span class="k">应用层</span><span class="v">"服务好不好"——HTTP、DNS、邮件</span></li>
   </ul>
 
+  <div class="lab" data-lab="quiz" data-q="HTTPS 协议应该归到 TCP/IP 四层模型的哪一层？" data-opts="网络层|传输层|应用层|链路层" data-answer="2" data-explain="HTTP/HTTPS、DNS、FTP、SMTP 都是应用层协议。TLS 加密虽然位置有点特殊（在应用层和传输层之间），但通常也归入应用层范畴讨论。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>分层模型不是"考试知识点"，是<mark class="key">"排查问题的地图"</mark>。记住：<strong>物理层看线、链路层看本地、网络层看路由、传输层看端口、应用层看服务</strong>。<br/>
@@ -180,6 +183,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 2.3 · Layers in Action</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

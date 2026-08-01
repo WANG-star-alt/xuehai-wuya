@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.5 · 数据包 · Packet · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -144,6 +145,8 @@
   <p>粗略估算：本页 HTML + 样式 + 字体 + 图片 ≈ 300KB。<br/>
   按每包 1500 字节算，大约需要 <strong>200 个数据包</strong>，从 Cloudflare 服务器发到你手机。这 200 个包跨越了<strong>十几个路由器</strong>，可能走了<strong>3-5 条不同路径</strong>，最终在 <strong>200 毫秒</strong>内全部到齐——你完全无感知。</p>
 
+  <div class="lab" data-lab="quiz" data-q="为什么网络传输要把数据切成小包，而不是整块发送？" data-opts="小包传得更快|出错只需重传一小块，且多条链路能同时利用|协议规定必须切|节省存储" data-answer="1" data-explain="切包有三个好处：出错时只重传丢的那一小包；不同包可走不同路径实现负载均衡；多个连接能公平共享链路，不会被一个大文件独占。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>数据包是互联网的"原子"——<mark class="key">小而独立、贴序号、走自己的路、到了再拼</mark>。<br/>
@@ -166,6 +169,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 1.5 · Packet</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

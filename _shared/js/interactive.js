@@ -496,6 +496,430 @@
     foot(box, '几乎所有命令行工具都遵循「命令 + 选项 + 参数」三段结构。认出这个模式，看陌生命令就不再懵。');
   }
 
+  // ============ 组件 11 · 分词器（Tokenizer 模拟） ============
+  function buildTokenizer(box) {
+    head(box, 'Try it', '分词器 · 看看模型眼里你的话被切成了什么');
+
+    const row = el('div', 'lab-row');
+    row.appendChild(el('label', null, '输入'));
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = box.dataset.default || '学海无涯，AI tokenization 很有意思！';
+    inp.style.flex = '1'; inp.style.minWidth = '150px';
+    row.appendChild(inp);
+    box.appendChild(row);
+
+    const stage = el('div', 'lab-token-stage');
+    box.appendChild(stage);
+
+    const stat = el('div', 'lab-convert-grid');
+    box.appendChild(stat);
+
+    function tokenize(text) {
+      // 近似规则：CJK 单字成 token；英文按词根+常见后缀粗切；数字整体；标点单独
+      const toks = [];
+      const re = /[\u4e00-\u9fff]|[A-Za-z]+|[0-9]+|\s+|[^\s]/g;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        const t = m[0];
+        if (/^\s+$/.test(t)) continue;
+        if (/^[A-Za-z]+$/.test(t) && t.length > 6) {
+          // 长英文词常被拆成子词
+          toks.push(t.slice(0, 4));
+          let rest = t.slice(4);
+          while (rest.length > 0) { toks.push(rest.slice(0, 4)); rest = rest.slice(4); }
+        } else {
+          toks.push(t);
+        }
+      }
+      return toks;
+    }
+
+    function update() {
+      const text = inp.value;
+      const toks = tokenize(text);
+      stage.innerHTML = '';
+      toks.forEach((t, i) => {
+        const s = el('span', 'lab-token', t.replace(/</g, '&lt;'));
+        s.style.background = ['#eaece1', '#e4ebf0', '#f0e6ec', '#f3e8dd'][i % 4];
+        s.title = 'token #' + (i + 1);
+        stage.appendChild(s);
+      });
+      const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+      stat.innerHTML =
+        '<div class="lab-convert-cell"><b>字符数</b><span>' + text.length + '</span></div>' +
+        '<div class="lab-convert-cell"><b>Token 数</b><span>' + toks.length + '</span></div>' +
+        '<div class="lab-convert-cell"><b>中文字</b><span>' + cjk + '</span></div>' +
+        '<div class="lab-convert-cell"><b>字符/Token</b><span>' +
+          (toks.length ? (text.length / toks.length).toFixed(2) : '0') + '</span></div>';
+    }
+    inp.addEventListener('input', update);
+    update();
+
+    foot(box, '这是近似演示，真实分词器（BPE / SentencePiece）规则更复杂。关键结论：<mark class="key">一个中文字通常约等于 1 个 token，而英文单词可能被拆成好几个</mark>——所以同样内容，中文的 token 数往往比英文多，计费也就更贵。');
+  }
+
+  // ============ 组件 12 · 温度采样模拟 ============
+  function buildTemperature(box) {
+    head(box, 'Try it', 'Temperature · 调节"想象力"看概率怎么变');
+
+    const T = slider('温度', 1, 200, 100);
+    T.input.step = 1;
+    box.appendChild(T.row);
+
+    const bars = el('div', 'lab-bars');
+    box.appendChild(bars);
+
+    // 模型对"今天天气真___"的原始打分（logits）
+    const words = ['好', '不错', '糟糕', '奇怪', '魔幻'];
+    const logits = [3.2, 2.4, 1.1, 0.3, -0.6];
+
+    function update() {
+      const t = +T.input.value / 100;
+      T.output.textContent = t.toFixed(2);
+      const ex = logits.map(l => Math.exp(l / Math.max(0.01, t)));
+      const sum = ex.reduce((a, b) => a + b, 0);
+      const probs = ex.map(e => e / sum);
+      bars.innerHTML = '';
+      words.forEach((w, i) => {
+        const p = probs[i];
+        const r = el('div', 'lab-bar-row');
+        r.innerHTML =
+          '<span class="lab-bar-label">' + w + '</span>' +
+          '<span class="lab-bar-track"><i style="width:' + (p * 100).toFixed(1) + '%"></i></span>' +
+          '<span class="lab-bar-val">' + (p * 100).toFixed(1) + '%</span>';
+        bars.appendChild(r);
+      });
+    }
+    T.input.addEventListener('input', update);
+    update();
+
+    foot(box, '温度接近 0 时概率极度集中在最高分那个词——输出稳定但呆板；温度调高，低分词也有机会被选中——更有创意但也更容易胡说。<mark class="key">要准确就调低，要发散就调高</mark>。');
+  }
+
+  // ============ 组件 13 · 向量相似度 ============
+  function buildEmbedding(box) {
+    head(box, 'Try it', '语义向量 · 拖动看两个词"有多像"');
+
+    const stage = el('div', 'lab-vec-stage');
+    stage.innerHTML =
+      '<svg viewBox="0 0 220 160" class="lab-vec-svg">' +
+      '<line x1="20" y1="140" x2="210" y2="140" stroke="#e2dccf" stroke-width="1"/>' +
+      '<line x1="20" y1="140" x2="20" y2="10" stroke="#e2dccf" stroke-width="1"/>' +
+      '<line id="vA" x1="20" y1="140" x2="150" y2="40" stroke="#4a6d8c" stroke-width="2.5"/>' +
+      '<line id="vB" x1="20" y1="140" x2="120" y2="70" stroke="#a05a2c" stroke-width="2.5"/>' +
+      '<text id="tA" x="152" y="38" font-size="9" fill="#4a6d8c">猫</text>' +
+      '<text id="tB" x="122" y="68" font-size="9" fill="#a05a2c">狗</text>' +
+      '</svg>';
+    box.appendChild(stage);
+
+    const A = slider('向量 A', 0, 90, 38);
+    const B = slider('向量 B', 0, 90, 55);
+    [A, B].forEach(s => box.appendChild(s.row));
+
+    const res = el('div', 'lab-convert-grid');
+    box.appendChild(res);
+
+    function update() {
+      const a = +A.input.value, b = +B.input.value;
+      A.output.textContent = a + '°';
+      B.output.textContent = b + '°';
+      const R = 130;
+      const svg = stage.querySelector('svg');
+      const set = (id, ang, tid) => {
+        const rad = (90 - ang) * Math.PI / 180;
+        const x = 20 + R * Math.cos(rad), y = 140 - R * Math.sin(rad);
+        svg.querySelector('#' + id).setAttribute('x2', x.toFixed(1));
+        svg.querySelector('#' + id).setAttribute('y2', y.toFixed(1));
+        const t = svg.querySelector('#' + tid);
+        t.setAttribute('x', (x + 3).toFixed(1)); t.setAttribute('y', (y - 2).toFixed(1));
+      };
+      set('vA', a, 'tA'); set('vB', b, 'tB');
+      const diff = Math.abs(a - b);
+      const cos = Math.cos(diff * Math.PI / 180);
+      let verdict = cos > 0.95 ? '几乎同义' : cos > 0.8 ? '高度相关' : cos > 0.5 ? '有点关系' : cos > 0.1 ? '基本无关' : '毫不相干';
+      res.innerHTML =
+        '<div class="lab-convert-cell"><b>夹角</b><span>' + diff + '°</span></div>' +
+        '<div class="lab-convert-cell"><b>余弦相似度</b><span>' + cos.toFixed(3) + '</span></div>' +
+        '<div class="lab-convert-cell"><b>判定</b><span style="font-size:.8rem">' + verdict + '</span></div>';
+    }
+    [A, B].forEach(s => s.input.addEventListener('input', update));
+    update();
+
+    foot(box, '真实的词向量有几百到几千维，这里简化成二维。核心思想不变：<mark class="key">语义相近的词，向量方向也相近，夹角越小余弦值越接近 1</mark>。这就是语义搜索和 RAG 检索的数学基础。');
+  }
+
+  // ============ 组件 14 · 神经元计算器 ============
+  function buildNeuron(box) {
+    head(box, 'Try it', '神经元 · 亲手算一次加权求和 + 激活');
+
+    const X1 = slider('输入 x₁', -20, 20, 8, 1);
+    const W1 = slider('权重 w₁', -20, 20, 12, 1);
+    const X2 = slider('输入 x₂', -20, 20, -5, 1);
+    const W2 = slider('权重 w₂', -20, 20, 7, 1);
+    const Bs = slider('偏置 b', -20, 20, 2, 1);
+    [X1, W1, X2, W2, Bs].forEach(s => box.appendChild(s.row));
+
+    const rowFn = el('div', 'lab-row');
+    rowFn.appendChild(el('label', null, '激活'));
+    const sel = document.createElement('select');
+    ['ReLU', 'Sigmoid', 'Tanh', '无（线性）'].forEach(v => {
+      const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
+    });
+    rowFn.appendChild(sel);
+    box.appendChild(rowFn);
+
+    const out = el('div', 'lab-formula');
+    box.appendChild(out);
+
+    function update() {
+      const x1 = +X1.input.value / 10, w1 = +W1.input.value / 10;
+      const x2 = +X2.input.value / 10, w2 = +W2.input.value / 10;
+      const b = +Bs.input.value / 10;
+      X1.output.textContent = x1.toFixed(1); W1.output.textContent = w1.toFixed(1);
+      X2.output.textContent = x2.toFixed(1); W2.output.textContent = w2.toFixed(1);
+      Bs.output.textContent = b.toFixed(1);
+      const z = x1 * w1 + x2 * w2 + b;
+      let a, name = sel.value;
+      if (name === 'ReLU') a = Math.max(0, z);
+      else if (name === 'Sigmoid') a = 1 / (1 + Math.exp(-z));
+      else if (name === 'Tanh') a = Math.tanh(z);
+      else a = z;
+      out.innerHTML =
+        '<div class="lab-formula-line">z = x₁·w₁ + x₂·w₂ + b</div>' +
+        '<div class="lab-formula-line">z = (' + x1.toFixed(1) + '×' + w1.toFixed(1) + ') + (' +
+          x2.toFixed(1) + '×' + w2.toFixed(1) + ') + ' + b.toFixed(1) +
+          ' = <b>' + z.toFixed(3) + '</b></div>' +
+        '<div class="lab-formula-line">输出 = ' + name + '(' + z.toFixed(3) + ') = <b class="hi">' +
+          a.toFixed(4) + '</b></div>';
+    }
+    [X1, W1, X2, W2, Bs].forEach(s => s.input.addEventListener('input', update));
+    sel.addEventListener('change', update);
+    update();
+
+    foot(box, '一个神经元就这两步：<mark class="key">先算加权和，再过激活函数</mark>。注意 ReLU 会把负数直接压成 0——这个"非线性"是神经网络能拟合复杂规律的关键，没有它，再多层也只等于一层线性变换。');
+  }
+
+  // ============ 组件 15 · 子网掩码计算器 ============
+  function buildSubnet(box) {
+    head(box, 'Try it', '子网计算器 · 拖动前缀看网络怎么被切分');
+
+    const row = el('div', 'lab-row');
+    row.appendChild(el('label', null, 'IP'));
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = box.dataset.default || '192.168.1.100';
+    inp.style.flex = '1'; inp.style.minWidth = '110px';
+    row.appendChild(inp);
+    box.appendChild(row);
+
+    const P = slider('前缀 /', 8, 32, 24);
+    box.appendChild(P.row);
+
+    const grid = el('div', 'lab-convert-grid');
+    box.appendChild(grid);
+    const bits = el('div', 'lab-bits');
+    box.appendChild(bits);
+
+    function update() {
+      const p = +P.input.value;
+      P.output.textContent = '/' + p;
+      const parts = inp.value.split('.').map(n => parseInt(n, 10));
+      if (parts.length !== 4 || parts.some(n => isNaN(n) || n < 0 || n > 255)) {
+        grid.innerHTML = '<div class="lab-convert-cell"><b>提示</b><span style="font-size:.75rem">IP 格式不对</span></div>';
+        bits.innerHTML = '';
+        return;
+      }
+      const ipNum = ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+      const maskNum = p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0;
+      const netNum = (ipNum & maskNum) >>> 0;
+      const bcNum = (netNum | (~maskNum >>> 0)) >>> 0;
+      const toIp = n => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+      const hosts = p >= 31 ? 0 : Math.pow(2, 32 - p) - 2;
+      grid.innerHTML =
+        '<div class="lab-convert-cell"><b>子网掩码</b><span style="font-size:.78rem">' + toIp(maskNum) + '</span></div>' +
+        '<div class="lab-convert-cell"><b>网络地址</b><span style="font-size:.78rem">' + toIp(netNum) + '</span></div>' +
+        '<div class="lab-convert-cell"><b>广播地址</b><span style="font-size:.78rem">' + toIp(bcNum) + '</span></div>' +
+        '<div class="lab-convert-cell"><b>可用主机</b><span>' + hosts.toLocaleString() + '</span></div>';
+      // 32 位可视化
+      let html = '';
+      for (let i = 31; i >= 0; i--) {
+        const bit = (ipNum >>> i) & 1;
+        const isNet = (31 - i) < p;
+        html += '<i class="' + (isNet ? 'net' : 'host') + '">' + bit + '</i>';
+        if (i % 8 === 0 && i !== 0) html += '<u>.</u>';
+      }
+      bits.innerHTML = html +
+        '<div class="lab-bits-legend"><span><i class="net">0</i> 网络部分（前 ' + p + ' 位）</span>' +
+        '<span><i class="host">0</i> 主机部分（后 ' + (32 - p) + ' 位）</span></div>';
+    }
+    inp.addEventListener('input', update);
+    P.input.addEventListener('input', update);
+    update();
+
+    foot(box, '子网掩码的作用就是<mark class="key">用一条线把 32 位地址切成"网络部分"和"主机部分"</mark>。前缀越小，网络越大、能容纳的主机越多。<code>/24</code> 是最常见的家用网段，正好 254 台设备。');
+  }
+
+  // ============ 组件 16 · 三次握手动画 ============
+  function buildHandshake(box) {
+    head(box, 'Try it', 'TCP 三次握手 · 点一步走一步');
+
+    const stage = el('div', 'lab-hs-stage');
+    stage.innerHTML =
+      '<div class="lab-hs-side"><b>客户端</b><div class="lab-hs-state" id="hsC">CLOSED</div></div>' +
+      '<div class="lab-hs-mid" id="hsMid"></div>' +
+      '<div class="lab-hs-side"><b>服务器</b><div class="lab-hs-state" id="hsS">LISTEN</div></div>';
+    box.appendChild(stage);
+
+    const row = el('div', 'lab-row');
+    const btnNext = document.createElement('button');
+    btnNext.className = 'primary'; btnNext.textContent = '下一步 →';
+    const btnReset = document.createElement('button');
+    btnReset.textContent = '重来';
+    row.appendChild(btnNext); row.appendChild(btnReset);
+    box.appendChild(row);
+
+    const log = el('div', 'lab-log', '<div class="empty">点「下一步」开始建立连接…</div>');
+    box.appendChild(log);
+
+    const steps = [
+      { arrow: '→', text: 'SYN seq=x', c: 'SYN-SENT', s: 'LISTEN',
+        note: '客户端发起：我想连你，我的初始序号是 x' },
+      { arrow: '←', text: 'SYN+ACK seq=y ack=x+1', c: 'SYN-SENT', s: 'SYN-RCVD',
+        note: '服务器回应：收到你的 x，我同意；我的初始序号是 y' },
+      { arrow: '→', text: 'ACK ack=y+1', c: 'ESTABLISHED', s: 'ESTABLISHED',
+        note: '客户端确认：收到你的 y。至此双向通道打通，可以传数据了' }
+    ];
+    let step = 0, empty = true;
+
+    function render() {
+      const mid = stage.querySelector('#hsMid');
+      if (step === 0) {
+        mid.innerHTML = '<span class="lab-hs-idle">尚未开始</span>';
+        stage.querySelector('#hsC').textContent = 'CLOSED';
+        stage.querySelector('#hsS').textContent = 'LISTEN';
+        return;
+      }
+      const s = steps[step - 1];
+      mid.innerHTML = '<span class="lab-hs-packet ' + (s.arrow === '→' ? 'fwd' : 'bwd') + '">' +
+        s.arrow + ' ' + s.text + '</span>';
+      stage.querySelector('#hsC').textContent = s.c;
+      stage.querySelector('#hsS').textContent = s.s;
+      if (empty) { log.innerHTML = ''; empty = false; }
+      const d = el('div', null, '<b>第 ' + step + ' 次</b> ' + s.text + ' —— ' + s.note);
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+      if (step === 3) btnNext.disabled = true;
+    }
+
+    btnNext.addEventListener('click', () => { if (step < 3) { step++; render(); } });
+    btnReset.addEventListener('click', () => {
+      step = 0; empty = true; btnNext.disabled = false;
+      log.innerHTML = '<div class="empty">点「下一步」开始建立连接…</div>';
+      render();
+    });
+    render();
+
+    foot(box, '为什么必须三次而不是两次？因为<mark class="key">双方都要确认"对方能收到我的消息"</mark>。前两次只能证明服务器收到了客户端，第三次才让服务器确认客户端也收到了自己的回复。');
+  }
+
+  // ============ 组件 17 · 时延计算器 ============
+  function buildLatency(box) {
+    head(box, 'Try it', '时延账本 · 加载一个网页要等多久');
+
+    const D = slider('单程距离 km', 10, 20000, 1000, 10);
+    const B = slider('带宽 Mbps', 1, 1000, 100, 1);
+    const S = slider('页面大小 KB', 50, 10000, 2000, 50);
+    [D, B, S].forEach(s => box.appendChild(s.row));
+
+    const grid = el('div', 'lab-convert-grid');
+    box.appendChild(grid);
+    const bd = el('div', 'lab-bars');
+    box.appendChild(bd);
+
+    function update() {
+      const d = +D.input.value, b = +B.input.value, s = +S.input.value;
+      D.output.textContent = d + 'km';
+      B.output.textContent = b + 'M';
+      S.output.textContent = s + 'KB';
+      // 光纤中光速约 2/3 真空光速
+      const rtt = (d / 200000) * 2 * 1000;   // ms
+      const dns = rtt * 1.0;
+      const tcp = rtt * 1.0;
+      const tls = rtt * 2.0;
+      const req = rtt * 1.0;
+      const trans = (s * 8 / (b * 1000)) * 1000;
+      const total = dns + tcp + tls + req + trans;
+      grid.innerHTML =
+        '<div class="lab-convert-cell"><b>单程 RTT/2</b><span>' + (rtt / 2).toFixed(1) + 'ms</span></div>' +
+        '<div class="lab-convert-cell"><b>往返 RTT</b><span>' + rtt.toFixed(1) + 'ms</span></div>' +
+        '<div class="lab-convert-cell"><b>传输耗时</b><span>' + trans.toFixed(0) + 'ms</span></div>' +
+        '<div class="lab-convert-cell"><b>总计</b><span>' + total.toFixed(0) + 'ms</span></div>';
+      const items = [['DNS 查询', dns], ['TCP 握手', tcp], ['TLS 握手', tls], ['请求响应', req], ['数据传输', trans]];
+      bd.innerHTML = '';
+      items.forEach(([name, v]) => {
+        const r = el('div', 'lab-bar-row');
+        r.innerHTML =
+          '<span class="lab-bar-label" style="min-width:5.2em">' + name + '</span>' +
+          '<span class="lab-bar-track"><i style="width:' + (v / total * 100).toFixed(1) + '%"></i></span>' +
+          '<span class="lab-bar-val">' + v.toFixed(0) + 'ms</span>';
+        bd.appendChild(r);
+      });
+    }
+    [D, B, S].forEach(s => s.input.addEventListener('input', update));
+    update();
+
+    foot(box, '把距离拉到 15000km（跨洋）会发现：<mark class="key">再大的带宽也救不了物理距离带来的时延</mark>。这就是 CDN 存在的全部理由——把内容搬到离用户近的地方，RTT 才是真正的瓶颈。');
+  }
+
+  // ============ 组件 18 · 状态码查询 ============
+  function buildStatusCode(box) {
+    head(box, 'Try it', 'HTTP 状态码 · 点一个看它什么意思');
+
+    const codes = [
+      ['200', 'OK', '请求成功，响应体里有你要的东西。最常见的正常状态。', 'ok'],
+      ['301', 'Moved Permanently', '永久重定向。资源换地址了，浏览器会记住并下次直接去新地址。', 'redir'],
+      ['302', 'Found', '临时重定向。这次去别处拿，但下次还来问我。登录跳转常用。', 'redir'],
+      ['304', 'Not Modified', '你缓存的版本还是最新的，不用重新下载。省流量的关键。', 'redir'],
+      ['400', 'Bad Request', '你的请求本身格式就有问题，服务器看不懂。', 'cli'],
+      ['401', 'Unauthorized', '你没有出示身份凭证。注意：它其实是"未认证"，不是"未授权"。', 'cli'],
+      ['403', 'Forbidden', '身份我认了，但你没权限访问这个东西。', 'cli'],
+      ['404', 'Not Found', '这个地址上没有东西。最出名的一个状态码。', 'cli'],
+      ['429', 'Too Many Requests', '你请求太频繁了，被限流了。等一会儿再来。', 'cli'],
+      ['500', 'Internal Server Error', '服务器自己代码崩了。跟你的请求无关，是它的问题。', 'srv'],
+      ['502', 'Bad Gateway', '网关/代理找上游服务器要数据，上游给了个无效响应。', 'srv'],
+      ['503', 'Service Unavailable', '服务器暂时不可用——过载、维护中，或者正在重启。', 'srv'],
+      ['504', 'Gateway Timeout', '网关等上游服务器等太久，超时放弃了。', 'srv']
+    ];
+
+    const wrap = el('div', 'lab-codes');
+    box.appendChild(wrap);
+    const detail = el('div', 'lab-quiz-explain', '点上面任意一个状态码，这里会显示它的含义。');
+    box.appendChild(detail);
+
+    codes.forEach(([c, en, zh, kind]) => {
+      const b = document.createElement('button');
+      b.className = 'lab-code-btn ' + kind;
+      b.textContent = c;
+      b.addEventListener('click', () => {
+        wrap.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
+        detail.innerHTML = '<b>' + c + ' ' + en + '</b><br>' + zh;
+      });
+      wrap.appendChild(b);
+    });
+
+    const legend = el('div', 'lab-box-legend');
+    legend.innerHTML =
+      '<span><i style="background:#d4e2c8"></i>2xx 成功</span>' +
+      '<span><i style="background:#dde6ee"></i>3xx 重定向</span>' +
+      '<span><i style="background:#f3e4d8"></i>4xx 客户端错误</span>' +
+      '<span><i style="background:#f0d8d0"></i>5xx 服务器错误</span>';
+    box.appendChild(legend);
+
+    foot(box, '记住首位数字就够了：<mark class="key">2 成功、3 换地方、4 你的错、5 我的错</mark>。排查问题时先看首位，能立刻判断该查自己还是找后端。');
+  }
+
   // ============ 注册表 ============
   const builders = {
     'color-picker': buildColorPicker,
@@ -507,7 +931,15 @@
     'fps': buildFps,
     'converter': buildConverter,
     'quiz': buildQuiz,
-    'cmd-break': buildCmdBreak
+    'cmd-break': buildCmdBreak,
+    'tokenizer': buildTokenizer,
+    'temperature': buildTemperature,
+    'embedding': buildEmbedding,
+    'neuron': buildNeuron,
+    'subnet': buildSubnet,
+    'handshake': buildHandshake,
+    'latency': buildLatency,
+    'status-code': buildStatusCode
   };
 
   // ============ 自动初始化 ============

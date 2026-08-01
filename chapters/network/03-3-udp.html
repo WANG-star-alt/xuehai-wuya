@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 3.3 · UDP · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -118,6 +119,8 @@
     </div>
   </div>
 
+  <div class="lab" data-lab="quiz" data-q="视频直播、在线游戏这类应用为什么偏爱 UDP 而不是 TCP？" data-opts="UDP 更省流量|宁可丢一帧也不能卡——重传带来的延迟比丢包更难忍受|UDP 更安全|TCP 不支持视频" data-answer="1" data-explain="实时场景里「迟到的正确数据」等于无用数据。TCP 为了保证不丢会反复重传并阻塞后续数据，造成卡顿；UDP 允许丢，画面糊一帧但不卡，体验反而更好。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>UDP = <mark class="key">"泼出去的水"</mark>——快、简单、不保证。适合"实时但容错"的场景：视频、语音、游戏、直播。<br/>
@@ -139,6 +142,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 3.3 · UDP</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

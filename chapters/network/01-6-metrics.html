@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.6 · 带宽 / 时延 / 丢包 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -60,6 +61,8 @@
 
   <h3>指标二 · 时延（Latency）</h3>
   <p><strong>"跑一趟要多久"</strong>——从你发出一个请求，到收到响应，需要多长时间。单位是毫秒（ms）。</p>
+
+  <div class="lab" data-lab="latency"></div>
 
   <div class="scene">
     <span class="scene-tag">生活场景</span>
@@ -180,6 +183,8 @@
     </div>
   </div>
 
+  <div class="lab" data-lab="quiz" data-q="你家宽带升级到千兆后，玩国外服务器的游戏延迟还是很高。最主要原因是？" data-opts="带宽还不够|物理距离决定的传播时延无法靠带宽解决|游戏优化差|路由器太旧" data-answer="1" data-explain="带宽是「水管有多粗」，时延是「水流过去要多久」。跨洋光纤单程就要几十毫秒，这是光速决定的物理下限——再粗的管子也快不了。这就是 CDN 和就近部署存在的理由。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>带宽 = 路宽，时延 = 跑一趟时间，丢包 = 丢件率。<mark class="key">它们是三件独立的事，单独诊断、单独解决</mark>。下次再有人说"我家网不好"，你可以反问：是下载慢、还是 ping 高、还是丢包？——这个问题立刻让你比对方多懂一层。</p>
@@ -200,6 +205,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 1.6 · Metrics</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

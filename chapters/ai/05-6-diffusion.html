@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 5.6 · Diffusion 扩散模型 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -119,6 +120,8 @@
   <p>把 Diffusion 从图像扩展到视频，看起来就是"多一个时间维度"，其实工程上难度爆炸——一段 10 秒的 1080p 视频有 240 帧，每帧上百万像素，直接扩散内存瞬间爆炸；而且不同帧之间要保持"人物身份、场景连贯、物理合理"，稍不注意就"人物换脸、桌子瞬移"。<br/>
   Sora 的解法是把整段视频压缩到一个"时空潜空间"里——先用 3D 自编码器把视频压得极小，再在潜空间里扩散，最后解码回原尺寸。同时借鉴了 Transformer 的 Patch 切块思路，把视频切成"时空块（spacetime patches）"逐块处理。<mark class="key">这套架构让 Sora 能生成一分钟连贯的短片</mark>，人物动作、镜头运动、光影变化都能保持连贯——这是 2024 年 AI 领域最重要的突破之一，也预示了"视频不再稀缺"的新时代。</p>
 
+  <div class="lab" data-lab="quiz" data-q="扩散模型生成图像的基本思路是？" data-opts="直接一次性画出完整图像|先学会给图加噪声，再反过来一步步从噪声还原图像|拼接已有图片|用 GAN 对抗训练" data-answer="1" data-explain="训练时学「清晰图 → 加噪声」这个过程；生成时反向执行——从纯噪声出发，一步步去噪，最终"显影"出一张图。Midjourney 和 Sora 都是这个原理。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>Diffusion = <strong>正向加噪 + 反向去噪</strong>——训练时让网络学会"每一步的噪声长啥样"，生成时从纯噪声一步步"雕出"图像。它的稳定、高质、可控让它在两年内取代 GAN 成为生成式 AI 的主流。现在你看到的每一张 AI 高清图、每一段 AI 短视频、每一个 Photoshop 的"生成填充"——背后基本都是这个"逆搅拌"的思路在运转。</p>
@@ -139,6 +142,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 5.6 · Diffusion</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

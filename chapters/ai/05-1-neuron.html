@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 5.1 · 神经元 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -42,6 +43,8 @@
 
   <h3>一颗神经元的三个零件</h3>
   <p>把上面那个"要不要带伞"的例子写成数学，就是三行——但请别被数学吓到，它就是把你的直觉翻译成公式而已。第一步，每个输入 <code>x</code>（下雨概率、天色暗度、风力……）都乘上一个<strong>权重</strong> <code>w</code>（这条证据你有多信）。第二步，把所有"证据 × 权重"加起来，再补上一个<strong>偏置</strong> <code>b</code>（你天生就爱带伞，还是懒得带？这就是偏置）。第三步，把这个总分丢进一个<strong>激活函数</strong>，得到最终输出：要么接近 0（别带），要么接近 1（带上）。</p>
+
+  <div class="lab" data-lab="neuron"></div>
 
   <p>整个流程一句话就说完：<code>y = f(w₁x₁ + w₂x₂ + w₃x₃ + … + b)</code>。<mark class="key">整整一个 ChatGPT，无非就是把这行公式重复上万亿次</mark>。</p>
 
@@ -90,6 +93,8 @@
   <p>ReLU 之所以在 2012 年之后成为深度学习标配，还有一个重要原因——它天然带来<strong>稀疏性</strong>：负输入直接归零，意味着每一次前向传播里，只有一部分神经元会"发言"，其它都在沉默。这种稀疏性和人脑很像——你随时清醒着的神经元只是一小撮，大多数处于待命状态。稀疏还让计算变便宜、让特征更纯粹。<br/>
   同时，一颗神经元的"表达力"取决于它有多少输入。只有 2 个输入，神经元最多划一条线；输入越多，能划的"决策边界"就越复杂。加上一层里几百颗神经元并联，加上几十层堆叠——<mark class="key">整个网络能表达的函数几乎无穷</mark>。这个数学上叫"通用逼近定理"（Universal Approximation Theorem）——足够宽的一层网络就能逼近任意连续函数。深度学习之所以万能，就基于这个定理。</p>
 
+  <div class="lab" data-lab="quiz" data-q="如果去掉神经网络里所有的激活函数，会发生什么？" data-opts="训练变快但精度下降|无论堆多少层，整个网络等价于一层线性变换|完全无法训练|只影响输出范围" data-answer="1" data-explain="激活函数提供的「非线性」是关键。没有它，多层线性变换的复合仍然是线性变换——那么再深的网络也只能拟合直线，学不了任何复杂规律。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>一颗人工神经元 = <strong>加权求和 + 偏置 + 激活函数</strong>——一行公式就写完。它单独能力弱，但成千上万颗堆起来，再靠反向传播把权重自动调对，就能识脸、译文、下棋、写诗。<mark class="key">深度学习不是魔法，它是这一颗颗小算子的"人海战术"</mark>。理解了这一颗，后面几篇——传播、CNN、RNN、GAN、Diffusion——你就都能从底层看穿。</p>
@@ -110,6 +115,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 5.1 · Neuron</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

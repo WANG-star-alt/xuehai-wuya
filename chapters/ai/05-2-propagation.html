@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 5.2 · 前向&反向传播 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -97,6 +98,8 @@
   <p>反向传播这么高效，反而带来一个副作用——模型可能会把训练数据"背下来"，包括数据里的噪声和偶然性——这就叫<strong>过拟合（overfitting）</strong>。表现是训练集上准确率 99%，一到测试集就掉到 60%。<br/>
   工程上的对抗招式很多：<strong>早停（early stopping）</strong>——一发现验证集损失开始上升就停训；<strong>Dropout</strong>——训练时随机让一部分神经元罢工，防止过度依赖某几个；<strong>权重衰减（weight decay）</strong>——给损失函数加个惩罚项，逼权重别长太大；<strong>数据增强</strong>——让训练数据更多样。这些技巧本质都是在"给反向传播打拳击手套"——让它别把训练数据咬得太死。</p>
 
+  <div class="lab" data-lab="quiz" data-q="反向传播算法的作用是？" data-opts="把数据从输入传到输出|计算每个权重该往哪个方向调、调多少|压缩模型体积|生成训练数据" data-answer="1" data-explain="前向传播算出预测和误差，反向传播则用链式法则从输出层往回逐层计算「每个权重对误差的贡献」（梯度），从而知道每个参数该怎么调。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>前向 = 用当前参数算答案；反向 = 用误差回溯，给每个参数分摊责任并修正。<strong>训练一个神经网络，就是让它做上亿次"考试 → 批卷 → 改题"的循环</strong>。理解了这两个动作，你就理解了 GPT、Sora、AlphaGo 是怎么"从随机瞎猜"训练成"世界高手"的——它们没有什么魔法，就是循环得比你多、算得比你快而已。</p>
@@ -117,6 +120,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 5.2 · Propagation</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

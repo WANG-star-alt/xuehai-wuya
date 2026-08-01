@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.1 · 主机 · Host · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -119,6 +120,8 @@
   <h3>所以"主机"到底是什么</h3>
   <p>它不是一台具体的"机器"，而是<mark class="key">一种"角色"</mark>——任何一台设备，只要它<strong>有自己的地址 + 能在网络上收发数据</strong>，它就是这台网络上的"主机"。这种视角在你做故障排查时特别重要：你问"这是哪台主机出的问题"，就是在问"是谁在发包、发什么包、发到哪去"。</p>
 
+  <div class="lab" data-lab="quiz" data-q="在网络术语里，什么样的设备算「主机」（Host）？" data-opts="只有服务器|只有电脑|任何有 IP 地址、能收发数据的联网设备|只有路由器" data-answer="2" data-explain="主机不分大小贵贱——手机、电脑、服务器、智能灯泡、摄像头，只要有 IP 能收发数据就都是主机。路由器和交换机则属于「网络设备」，负责转发而非产生数据。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>主机 = <strong>网络上能说话的任何设备</strong>。小到一颗蓝牙手环，大到阿里云的超算中心，本质都是同一种角色——发数据、收数据、有自己的"门牌号"。</p>
@@ -139,6 +142,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 1.1 · Host</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

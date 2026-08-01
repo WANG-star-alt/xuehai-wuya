@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 5.4 · RNN / LSTM · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -94,6 +95,8 @@
   <p>RNN 的致命工程限制在"串行"两个字上——第 t 步的输出必须等第 t-1 步算完，一整个序列必须一帧一帧顺次计算，GPU 那种大规模并行的算力优势派不上用场。你哪怕有 8000 张 H100，训练 RNN 也只能一个 token 一个 token 慢慢走。<br/>
   Transformer 恰恰在这一点上把 RNN 打得毫无还手之力——它用自注意力一次性看完所有位置，天生可并行；同一批训练数据在 Transformer 上跑一遍的时间，可能只有 RNN 的几十分之一。<mark class="key">在"算力越大越有效"的深度学习游戏里，RNN 被架构本身的串行性判了死刑</mark>——这不是聪明才智的问题，是工程规模的问题。</p>
 
+  <div class="lab" data-lab="quiz" data-q="RNN 处理长句子时表现不佳，最主要的技术原因是？" data-opts="参数太少|梯度消失导致学不到长距离依赖|不支持中文|需要 GPU" data-answer="1" data-explain="梯度在时间维度上逐步反传时会指数级衰减，导致句子开头的信息传不到结尾。LSTM 用门控机制部分缓解，但直到 Transformer 的注意力机制才真正解决。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>RNN 教会神经网络"记住刚才发生了什么"，LSTM 又教会它"选择性地记 & 忘"。这条路线撑起了 2014-2017 年 NLP 的半壁江山，后来被 Transformer 取代——但<strong>"隐藏状态"、"门控机制"、"长期依赖"这些概念，已经融入了整个深度学习的思考方式</strong>。今天 Transformer 里的 KV 缓存、状态空间模型（Mamba）等新架构，都能看到 RNN 的影子。它没死，只是换了一副面孔继续活着。</p>
@@ -114,6 +117,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 5.4 · RNN / LSTM</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

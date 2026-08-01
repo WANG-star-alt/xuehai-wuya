@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 2.1 · OSI 七层模型 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -172,6 +173,8 @@
     <li><span class="k">应用层升级</span><span class="v">从 HTTP/1.1 换 HTTP/2，其他层不用改</span></li>
   </ul>
 
+  <div class="lab" data-lab="quiz" data-q="OSI 七层模型中，负责「端到端可靠传输」的是哪一层？" data-opts="网络层|传输层|会话层|数据链路层" data-answer="1" data-explain="传输层（第 4 层）负责端到端：TCP 在这一层提供可靠、有序、不丢不重的传输。网络层（第 3 层）只负责「尽力而为」地把包送到目标 IP。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>OSI 七层 = <mark class="key">"网络世界的分工表"</mark>。每层只管一件事，互不干扰，坏了单独修。<br/>
@@ -193,6 +196,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 2.1 · OSI Model</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

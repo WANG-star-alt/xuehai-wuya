@@ -266,7 +266,15 @@ let scale, translateX, translateY;
 <div class="lab" data-lab="color-picker"></div>
 ```
 
-**现有 10 个组件**:
+**现有 18 个组件**:
+
+**通用 · 任何篇都能用**
+
+| `data-lab` | 组件 | 适合放在讲什么的地方 |
+|---|---|---|
+| `quiz` | 单选小测验 + 判定 + 解析 | **每一节的结尾都要有**，检验理解 |
+
+**界面篇专用**
 
 | `data-lab` | 组件 | 适合放在讲什么的地方 |
 |---|---|---|
@@ -278,8 +286,25 @@ let scale, translateX, translateY;
 | `event-flow` | 三层嵌套点击 + 冒泡日志 + stopPropagation 开关 | 事件冒泡、事件委托、事件循环 |
 | `fps` | 帧率可调的小球动画 | 帧率、60fps、卡顿、动画性能 |
 | `converter` | PPI / DPR 换算器 | 分辨率、DPI、@2x 图、Retina |
-| `quiz` | 单选小测验 + 判定 + 解析 | **任何一节的结尾**，检验理解 |
 | `cmd-break` | 命令行三段结构拆解器 | CLI、命令语法、选项与参数 |
+
+**智能篇专用**
+
+| `data-lab` | 组件 | 适合放在讲什么的地方 |
+|---|---|---|
+| `tokenizer` | 分词器模拟 + token 计数统计 | Token、分词、上下文窗口、计费 |
+| `temperature` | 温度调节 + softmax 概率条形图 | Temperature、Top-p、采样策略 |
+| `embedding` | 二维向量夹角 + 余弦相似度 | Embedding、语义搜索、RAG、CLIP |
+| `neuron` | 神经元加权求和 + 四种激活函数 | 神经元、权重偏置、激活函数、非线性 |
+
+**网络篇专用**
+
+| `data-lab` | 组件 | 适合放在讲什么的地方 |
+|---|---|---|
+| `subnet` | 子网掩码计算器 + 32 位可视化 | IP、子网划分、CIDR、掩码 |
+| `handshake` | TCP 三次握手分步演示 + 状态机 | TCP、握手挥手、连接建立 |
+| `latency` | 时延账本（RTT + 传输时间分解） | 时延、带宽、RTT、CDN、性能指标 |
+| `status-code` | 13 个 HTTP 状态码点击查询 | HTTP、状态码、错误排查 |
 
 **小测验写法**（唯一需要传参数的组件）:
 ```html
@@ -370,7 +395,8 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 - **2026-08-01**: **界面篇第 5 章是用户重点学习目标**——从 5 节扩到 **14 节**，覆盖 Python / C++ / C# / Web / Rust 五大技术栈：Tkinter、PySide6/PyQt6、Qt Designer、CustomTkinter、Flet、NiceGUI、Dear PyGui、Streamlit/Gradio、Windows 原生栈、Avalonia/.NET MAUI、Electron、Tauri、打包分发。写这一章时要**多给可运行代码示例**。
 - **2026-08-01**: **封面改为简洁印章式**——不要重复堆字。结构：SVG 印章 logo（方章 + 三色水波对应三篇 + 橙点书舟）→ `学海无涯`（只出现一次，字距 0.22em）→ `Xue Hai Wu Ya` 小字 → 三色分隔线 → `智能 · 网络 · 界面`。页脚也精简为`学海无涯 · 2026`。已加同款 SVG favicon（内联 data URI）。
 
-- **2026-08-01**: **要求文章加入互动元素**——讲到特定内容时要提供合适的动手互动，比如讲选颜色就给一个色盘让用户自己选。已建成互动实验室组件库（`_shared/css/interactive.css` + `_shared/js/interactive.js`，10 种组件），并写入 §6.5 规范。**以后每写一节都要考虑配什么互动组件**。
+- **2026-08-01**: **要求文章加入互动元素**——讲到特定内容时要提供合适的动手互动，比如讲选颜色就给一个色盘让用户自己选。已建成互动实验室组件库（`_shared/css/interactive.css` + `_shared/js/interactive.js`，18 种组件），并写入 §6.5 规范。**以后每写一节都要考虑配什么互动组件**。
+- **2026-08-01**: 互动组件已**覆盖全站三个篇**——组件库从 10 种扩到 18 种（新增智能篇 4 种：tokenizer / temperature / embedding / neuron；网络篇 4 种：subnet / handshake / latency / status-code）。已上线的 53 篇文章全部配好组件，共 67 处。`temperature` / `embedding` / `flexbox` 预留给尚未写的 §8.4 / §9.2 / §3.3。
 
 ### 品牌视觉规范
 

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.2 · 协议 · Protocol · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -137,6 +138,8 @@
 
   <p>为什么要三次？两次行不行？答：不行——两次时，服务器不知道客户端有没有收到自己的 SYN。三次之后，<strong>双方都明确知道对方收到了自己</strong>。协议的设计就是这么严谨。</p>
 
+  <div class="lab" data-lab="quiz" data-q="为什么网络通信必须有「协议」？" data-opts="为了加密|双方必须事先约定好数据格式和交互顺序才能互相理解|为了提速|法律要求" data-answer="1" data-explain="协议就是通信双方的「共同语言」——数据怎么打包、字段什么顺序、收到后怎么回应，全都得事先约定。没有协议，两台机器发出的信号对彼此就是乱码。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>协议 = <strong>网络里的"共同语言"</strong>。它规定了格式、含义、时序，让两台互不相识的机器能听懂对方。<br/>
@@ -158,6 +161,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 1.2 · Protocol</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

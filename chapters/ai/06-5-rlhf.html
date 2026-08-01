@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 6.5 · SFT · RLHF · DPO 对齐 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -117,6 +118,8 @@
   <h3>六、对齐税：给模型"戴上礼貌手铐"的代价</h3>
   <p>对齐虽然让模型好用，但也有<strong>对齐税（alignment tax）</strong>——过度对齐会让模型变笨、变啰嗦、变胆小。你可能注意到：<mark class="key">同一个模型的 Base 版有时反而比 Chat 版更聪明</mark>，因为 Chat 版为了礼貌、安全，牺牲了一部分原始能力。这是全行业都在权衡的问题——如何既让模型有礼貌又不损失聪明。</p>
 
+  <div class="lab" data-lab="quiz" data-q="RLHF 中的「HF」（Human Feedback）具体指人类做了什么？" data-opts="编写训练数据|对模型的多个回答排序，标出更喜欢哪个|修改模型代码|标注图片" data-answer="1" data-explain="人类标注者对同一问题的多个回答做偏好排序，这些排序用来训练一个奖励模型，再用强化学习让主模型去最大化这个奖励——从而学会「说人类更喜欢的话」。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>预训练给了模型"知识"，对齐给了模型"教养"。<strong>SFT 教它对话的样子、RLHF/DPO 教它讨人喜欢、RL 推理教它一步步思考</strong>——这三层调教，把一个野生的语言模型，变成了今天你在用的 ChatGPT、Claude、DeepSeek。<mark class="key">从此以后，训练一个 AI 不再只是"读书"，还要"上礼仪课、学演讲、练思考"</mark>——AI 训练，正在越来越像"养一个人"。</p>
@@ -137,6 +140,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 6.5 · Alignment</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

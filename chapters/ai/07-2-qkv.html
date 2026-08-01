@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 7.2 · QKV · Query/Key/Value · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -176,6 +177,8 @@
   </div>
   <p>三处使用的 QKV 是<strong>不同的三套矩阵</strong>——Encoder 有自己的一套 W<sub>Q</sub>/W<sub>K</sub>/W<sub>V</sub>，Decoder 的 Self-Attention 有另一套，Cross-Attention 又有一套。它们独立学习、各司其职。<em>整个 Transformer 里，QKV 是最基础也是最反复出现的建筑构件</em>。</p>
 
+  <div class="lab" data-lab="quiz" data-q="Attention 公式里除以 √d 这一步是为了什么？" data-opts="加快计算|防止点积值过大导致 softmax 梯度消失|归一化输出范围|减少参数量" data-answer="1" data-explain="维度 d 越大，QK 点积的数值方差越大，softmax 会变得极端尖锐（接近 one-hot），梯度趋近于 0。除以 √d 把方差拉回可控范围，训练才稳定。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>QKV 是 Attention 的心脏：<mark class="key">Q 提问、K 展示、V 贡献</mark>。四步公式——<strong>打分 → 缩放 → 归一化 → 加权求和</strong>——就是 Transformer 每一层里最核心的运算。<br/>
@@ -197,6 +200,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 7.2 · QKV</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

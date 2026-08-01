@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 3.2 · TCP · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -40,6 +41,8 @@
 
   <h3>三次握手 · 建立连接</h3>
   <p>TCP 通信前，双方必须先"握手"确认：</p>
+
+  <div class="lab" data-lab="handshake"></div>
 
   <div class="journey">
     <div class="step">
@@ -144,6 +147,8 @@
     </table>
   </div>
 
+  <div class="lab" data-lab="quiz" data-q="TCP 建立连接为什么需要三次握手，两次不够吗？" data-opts="三次更安全|两次只能确认单向可达，第三次才让服务器确认客户端也收到了自己的回复|协议规定|为了交换密钥" data-answer="1" data-explain="前两次证明「服务器收到了客户端」；第三次的 ACK 才让服务器确认「客户端也收到了我的回复」。双向都确认了，连接才真正可用。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>TCP = <mark class="key">"靠谱的快递"</mark>——三次握手确认身份，序号+确认+重传保证不丢，滑动窗口+拥塞控制防止堵路。<br/>
@@ -165,6 +170,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 3.2 · TCP</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

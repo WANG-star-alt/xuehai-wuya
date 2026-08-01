@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 5.5 · GAN 对抗网络 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -124,6 +125,8 @@
   <p>虽然 Diffusion 已经在图像生成主战场上取代了 GAN，但 GAN 的核心思想——<strong>用一个网络当"评委"来指导另一个网络学习</strong>——已经渗透进整个深度学习圈，远远超出了"生成图片"这个原始场景。<br/>
   <strong>对抗训练（Adversarial Training）</strong>被用来增强模型的鲁棒性——用一个网络专门找"能骗过模型的对抗样本"，用另一个网络学着抵御，双方拉扯让模型更抗攻击。<strong>Actor-Critic</strong> 强化学习框架里，Actor（做决策）和 Critic（评价）也是一种类似 GAN 的博弈。<strong>差分隐私</strong>里，用一个网络专门生成"最像真数据的匿名数据"、另一个网络专门试着识别，两者对抗保护隐私。<mark class="key">GAN 提出的这套"两个网络较量"的范式，可能是深度学习史上影响最深远的一个 idea</mark>——它教会我们，AI 不一定要有明确的目标函数，有时"内部竞争"本身就能催生智能。</p>
 
+  <div class="lab" data-lab="quiz" data-q="GAN 里的生成器和判别器是什么关系？" data-opts="前后串联，依次工作|互相对抗博弈，共同进步|生成器指导判别器|两者完全独立" data-answer="1" data-explain="生成器努力造出能骗过判别器的假货，判别器努力识破。两者在对抗中共同变强——最终生成器学会了造出足以以假乱真的样本。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>GAN = <strong>生成器 G + 判别器 D 的对抗游戏</strong>。这个"造假 vs 打假"的循环，教会了神经网络造出以假乱真的图像。它开启了 AI 生成艺术的第一次高潮，也为后来的 Diffusion 铺好了路。今天当你看到"AI 生成的美女不存在于世上"、"老照片一键上色"、"实时换脸滤镜"，多半都还有 GAN 的血脉在流动。</p>
@@ -144,6 +147,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 5.5 · GAN</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

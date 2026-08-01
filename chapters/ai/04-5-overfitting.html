@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 4.5 · 特征 / 标签 / 过拟合 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -178,6 +179,8 @@
     </div>
   </div>
 
+  <div class="lab" data-lab="quiz" data-q="模型在训练集上准确率 99%，在测试集上只有 60%，这是什么问题？" data-opts="欠拟合|过拟合|数据太少|学习率太高" data-answer="1" data-explain="这是典型的过拟合——模型把训练数据「背下来了」，包括其中的噪声，但没学到能推广的规律。就像只会做例题、换个数字就不会的学生。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p><strong>特征</strong>是输入，<strong>标签</strong>是答案，<strong>过拟合</strong>是"背题不学真"。<mark class="key">这三个词是 ML 的 ABC——后面所有章节都会用到</mark>。<br/>
@@ -199,6 +202,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 4.5 · Features, Labels &amp; Overfitting</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

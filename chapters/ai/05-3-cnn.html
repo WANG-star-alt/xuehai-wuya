@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 5.3 · CNN 卷积网络 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -111,6 +112,8 @@
   ViT 在数据量足够大（几亿张图以上）时确实更强，但在中小规模数据（几十万张）上，CNN 反而效果更稳、训练更快、部署更省。原因是 CNN 天生带有"平移不变性"、"局部性"这两个先验，等于给了模型一份"物理规律作业"；而 ViT 什么都不假设，全靠数据从零学起——数据不够就学不好。<br/>
   今天工程里最常见的组合是<strong>混合架构</strong>：底层用 CNN 提局部特征，高层用 Transformer 做全局理解，各取所长。<mark class="key">CNN 没死，它更多是变成了"识图"这道大菜里的关键调料，而不是主菜</mark>。手机端跑的模型、边缘设备上的模型、实时视频推理，CNN 依然是首选——因为它算得快、模型小、耗电低。</p>
 
+  <div class="lab" data-lab="quiz" data-q="CNN 特别适合处理图像，核心原因是它利用了图像的什么特性？" data-opts="图像文件很大|局部相关性和平移不变性|图像是彩色的|图像有固定尺寸" data-answer="1" data-explain="卷积核在整张图上滑动共享同一组权重，这体现了两个先验：相邻像素高度相关（局部性），以及一只猫无论出现在图片哪个位置都还是猫（平移不变性）。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>CNN 的三大心法——<strong>局部感知（一小块一小块看）、参数共享（同一个滤镜扫全图）、层级抽象（浅层看纹理、深层看语义）</strong>。它把"识图"从"要写复杂规则"变成"喂数据 + 训网络"，从此让计算机真正"看得见"。今天你手机里的绝大多数视觉功能，功劳簿上都得记 CNN 一大笔。</p>
@@ -131,6 +134,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 5.3 · CNN</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

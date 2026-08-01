@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 6.3 · 损失 & 梯度下降 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -99,6 +100,8 @@
   <p>梯度下降公式说得很好，但那个"梯度"到底怎么算？答案是<strong>反向传播（backpropagation）</strong>——链式法则的应用。前向传播时，数据从输入一路流到输出、算出损失；反向传播时，损失的"责任"从输出一路推回输入，每一层的参数都能算出"我该改变多少"。</p>
   <p>你不需要真的会推导反向传播——PyTorch、TensorFlow、JAX 都自动帮你做了这件事，写代码只需要一行 <code>loss.backward()</code>。但要理解一点：<strong>整个训练过程就是"前向 → 算损失 → 反向 → 更新权重"这四步的无限循环</strong>，一个 175B 的模型可能要重复这个循环几百万次，才能训练完成。</p>
 
+  <div class="lab" data-lab="quiz" data-q="梯度下降中的「学习率」如果设得过大，最可能出现什么后果？" data-opts="训练变慢|在最低点附近来回震荡甚至发散|模型变小|精度自动提升" data-answer="1" data-explain="学习率是每一步迈多大。太小则收敛极慢；太大则一步跨过谷底，在两侧反复横跳，甚至越跳越远导致损失爆炸。这也是要用 warmup 和衰减调度的原因。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>损失函数告诉模型"你错在哪、错多少"；梯度告诉模型"该往哪个方向改"；优化器决定"每一步的步长和节奏"。这三样合起来，就是<strong>神经网络学习的全部机制</strong>。听起来简单，但正是这个"一小步一小步下山"的朴素办法，让几十亿参数的巨兽学会了写代码、聊天、画画、推理——<mark class="key">数学的力量，就在于此</mark>。</p>
@@ -119,6 +122,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 6.3 · Loss & GD</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

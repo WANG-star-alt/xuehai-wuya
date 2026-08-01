@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 1.4 · 客户端 vs 服务器 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -131,6 +132,8 @@
   <h3>你要记住的一句话</h3>
   <p><mark class="key">客户端和服务器，是"角色"而不是"机器"</mark>——同一个设备，在 A 次对话里是客户端，在 B 次对话里可能是服务器。判断标准只有一个：<strong>谁先发起请求，谁就是客户端</strong>。</p>
 
+  <div class="lab" data-lab="quiz" data-q="客户端-服务器模式的核心特征是？" data-opts="双方地位对等|客户端主动发起请求，服务器被动等待并响应|服务器主动推送|不需要网络" data-answer="1" data-explain="客户端主动、服务器被动是这个模式的定义性特征。P2P 则不同——每个节点既是客户端也是服务器，地位对等。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>所有网络通信，本质都是<strong>一对"问与答"</strong>——客户端问、服务器答。理解了这个分工，你就理解了整个互联网服务的骨架。</p>
@@ -151,6 +154,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 1.4 · Client &amp; Server</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

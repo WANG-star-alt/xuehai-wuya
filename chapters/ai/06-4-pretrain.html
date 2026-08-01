@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 6.4 · 预训练 · Pre-training · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -99,6 +100,8 @@
   <p>预训练跑完，你会得到一个<strong>Base Model（基座模型）</strong>——它已经"读过全人类的书"，知识渊博，但性格古怪：你问它问题，它可能不回答，而是给你续写；你让它讲笑话，它可能给你一段严肃论文；它不会礼貌、不会拒绝、不懂"对话"的规则。<mark class="key">Base 模型是一个"没被驯化的天才怪物"</mark>。</p>
   <p>要让它变成能对话、有用、安全的助手，还需要下一篇要讲的 <strong>SFT → RLHF/DPO</strong> 三段式对齐。但基座已经准备好——所有能力都在参数里，只是需要被"唤醒"和"驯化"。</p>
 
+  <div class="lab" data-lab="quiz" data-q="大模型预训练阶段的核心任务通常是什么？" data-opts="回答用户问题|预测下一个 token|给图片分类|翻译句子" data-answer="1" data-explain="预训练就是在海量文本上反复做「预测下一个词」这一件事。看似简单，但要预测得准，模型必须学会语法、常识、逻辑甚至推理——能力就是这么涌现出来的。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>预训练 = 让模型玩几万亿次"猜下一个字"的游戏。<strong>数据要海量、算力要顶级、耐心要充足</strong>——单次几千万到几亿美元的成本，换来一个通晓万物的基座模型。涌现能力是这场军备竞赛最诱人的奖赏——你不知道更大的模型会突然学会什么，但只要它学会了，那就是护城河。<mark class="key">预训练完，基座是怪物；接下来的对齐，才让它变成"人"</mark>。</p>
@@ -119,6 +122,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 6.4 · Pre-training</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 7.5 · MoE · 专家混合 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -189,6 +190,8 @@
   研究者对 Mixtral 和 DeepSeek 做了大量可视化分析，发现专家的分工是<em>相当抽象</em>的——它们不是按"话题"分，而是按更底层的"语言模式"分。有的专家专门处理数字类 Token，有的专家专门处理动词，有的专家专门处理句尾结构，有的专家专门处理代码里的括号缩进……<mark class="key">分工存在，但不是我们直觉里那种"学科式分工"</mark>。<br/>
   这也解释了为什么单看某位专家没什么规律可言——它们是训练动态中自组织涌现的产物，不是人类概念体系的镜像。让专家真正"每人一门学科"是一条研究方向，但目前的主流 MoE 都还处于"隐性分工"阶段。</p>
 
+  <div class="lab" data-lab="quiz" data-q="MoE（专家混合）架构如何做到「参数量巨大但推理成本可控」？" data-opts="压缩参数精度|每次只激活一小部分专家，其余不参与计算|用更快的显卡|减少层数" data-answer="1" data-explain="MoE 有很多个「专家」子网络，但路由器每次只挑 Top-K 个（比如 8 选 2）参与计算。总参数可以上万亿，单次推理实际激活的却只有几百亿。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>MoE 的口诀只有一句——<mark class="key">"参数很多，激活很少"</mark>。它把 Transformer 里那个又大又贵的 FFN 层，换成了一堆专家 + 一个分诊台。总参数量可以疯狂堆到万亿，激活参数量却只有几百亿，成本大幅下降。<br/>
@@ -211,6 +214,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 7.5 · MoE</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

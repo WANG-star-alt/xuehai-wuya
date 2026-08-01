@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 7.1 · Attention 注意力 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -126,6 +127,8 @@
   </ul>
   <p>"<em>Attention is All You Need</em>"这句话在 2017 年是宣言，如今回头看更像是<strong>预言</strong>——这一个机制，重塑了整个 AI 的技术栈。</p>
 
+  <div class="lab" data-lab="quiz" data-q="相比 RNN，Transformer 的注意力机制最大的两个优势是？" data-opts="参数更少、训练更快|可以并行计算、任意两个位置直接建立联系|不需要 GPU、内存占用小|支持更多语言、精度更高" data-answer="1" data-explain="RNN 必须按顺序一个个处理，且远距离信息会衰减。注意力让所有位置同时计算（可并行），且任意两个词之间是「一步直达」，不受距离影响。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>Attention 之所以是革命，是因为它一次解决了 RNN 的两个死结：<strong>顺序处理慢</strong>和<strong>长距离依赖差</strong>。它的核心思想只有一句话——<mark class="key">让每个词都能同时看到句子里所有其他词，并动态决定关注谁</mark>。这个机制不仅统治了自然语言，也悄悄征服了视觉、语音、生物、视频等所有序列建模场景。<br/>
@@ -147,6 +150,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 7.1 · Attention</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

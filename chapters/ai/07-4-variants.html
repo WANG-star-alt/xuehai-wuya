@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 7.4 · Encoder / Decoder 派系 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -159,6 +160,8 @@
     <li><span class="k">Encoder-Decoder（T5）</span><span class="v">先看再说、专业转写——用在"翻译、摘要、语音识别"。</span></li>
   </ul>
 
+  <div class="lab" data-lab="quiz" data-q="为什么现在主流的大语言模型（GPT / Claude / Llama）几乎清一色是 Decoder-only？" data-opts="Decoder 参数更少|生成任务最灵活，且理解任务也能用生成方式完成|Encoder 已被淘汰|Decoder 训练更快" data-answer="1" data-explain="Decoder-only 天生适合自回归生成，而分类、抽取、问答这些理解任务都可以改写成「生成答案文本」。一个架构统一所有任务，工程上极其划算。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>Transformer 的"左右脑"可以拆开单独用，于是有了三大派系：<mark class="key">Encoder-only 懂、Decoder-only 写、Encoder-Decoder 翻</mark>。今天的 LLM 战场，Decoder-only 一家独大——因为它足够通用、足够易扩展、还能涌现出上下文学习能力。<br/>
@@ -180,6 +183,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 7.4 · Variants</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

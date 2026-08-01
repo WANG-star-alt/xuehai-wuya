@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 6.1 · 数据 · Dataset · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -94,6 +95,8 @@
   <h3>七、数据的未来：合成数据崛起</h3>
   <p>2024 年之后，一个明显趋势是<strong>合成数据（synthetic data）</strong>比重上升。真人写的高质量文本毕竟有限，而已有的强模型（如 GPT-4）可以"产出"大量高质量文本，再用来训练下一代模型——Phi-3、Llama 3.1、DeepSeek-V3 都大量使用了合成数据。这有点像"武学门派的秘籍能自动生成新的招式"，也带来一个哲学问题：<mark class="key">当模型开始靠自己产生的数据训练自己，进步会不会有天花板？</mark>这是接下来几年 AI 领域最有趣的问题之一。</p>
 
+  <div class="lab" data-lab="quiz" data-q="为什么必须把数据分成训练集、验证集、测试集三份？" data-opts="方便管理文件|避免用做过的题考试，保证评估结果可信|加快训练速度|减少存储空间" data-answer="1" data-explain="训练集用来学，验证集用来调超参数，测试集只在最后用一次。如果拿训练数据去评估，就像让学生用做过的题考试——分数虚高，不反映真实能力。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>数据是 AI 的教材。<strong>规模决定见识、质量决定品味、多样性决定通才</strong>。训练集用来学、验证集用来调、测试集用来考——一分为三是铁律。到了对齐阶段，人工标注的每一条数据都价值千金。别再迷信"模型越大越强"，真正的秘密在于——<strong>你喂给它的是什么</strong>。</p>
@@ -114,6 +117,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 6.1 · Dataset</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

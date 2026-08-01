@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 3.1 · HTTP / HTTPS · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -106,6 +107,8 @@
   <h3>Cookie · HTTP 的"记忆机制"</h3>
   <p>HTTP 协议本身是<strong>无状态</strong>的——服务器不记得你上次来过。每次请求都是"陌生人"。但网站需要"记住"你——登录状态、购物车、浏览记录。Cookie 就是干这个的。</p>
 
+  <div class="lab" data-lab="status-code"></div>
+
   <div class="scene">
     <span class="scene-tag">生活场景</span>
     <div class="scene-title">🎫 游乐园的"快速通行证"</div>
@@ -205,6 +208,8 @@
     </table>
   </div>
 
+  <div class="lab" data-lab="quiz" data-q="HTTP 的「无状态」（stateless）指的是什么？" data-opts="不能传输数据|服务器默认不记得你上一次请求了什么|不能加密|没有状态码" data-answer="1" data-explain="每个 HTTP 请求都是独立的，服务器默认不知道「你是谁、刚才干了什么」。Cookie、Session、Token 都是为了在无状态协议上人为地补出「状态」。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>HTTP 是<mark class="key">"浏览器和服务器对话的格式"</mark>——请求/响应、状态码、Cookie、HTTPS 加密，四件事搞定。<br/>
@@ -226,6 +231,7 @@
   <div class="page-foot">Xue Hai Wu Ya · Network · § 3.1 · HTTP / HTTPS</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>

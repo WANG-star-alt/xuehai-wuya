@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>§ 7.3 · Multi-head 多头 · 学海无涯</title>
 <link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
 </head>
 <body>
 <article class="page">
@@ -172,6 +173,8 @@
   想想看：如果你要让模型学会关注多种关系，直觉上应该给模型加更多参数、加更多层、加更多计算。但 Multi-Head 做的事却是——<mark class="key">在不增加计算量的前提下，让参数"分工"</mark>。总维度 512，无论切成 1 头还是 8 头，矩阵乘法的总量是一样的；但切成 8 头之后，模型的"表达角度"翻了 8 倍。<br/>
   这种"用同样的钱办 8 倍的事"，在工程上极其罕见——它是 Transformer 能在 2017 年一夜爆红的关键之一。<em>没有 Multi-Head，Attention 的表达能力会大打折扣，也就没有后来的 GPT 和 BERT</em>。</p>
 
+  <div class="lab" data-lab="quiz" data-q="多头注意力（Multi-head）相比单头的好处是？" data-opts="计算量更小|不同头可以关注不同类型的关系|参数更少|不需要位置编码" data-answer="1" data-explain="一组 QKV 只能学一种「关注模式」。多个头并行，一个头可能专注语法主谓关系，另一个专注指代消解，还有的关注语义相似——像多个专家同时会诊。"></div>
+
   <div class="callout">
     <span class="tag">Recap · 收束</span>
     <p>Multi-Head 是 Attention 的"复眼版本"——<mark class="key">把一组 QKV 变成多组并行，每组各看一个侧面，最后拼接融合</mark>。它让 Transformer 具备了同时理解语法、语义、指代、情感的能力，而计算成本却几乎不变。<br/>
@@ -193,6 +196,7 @@
   <div class="page-foot">Xue Hai Wu Ya · § 7.3 · Multi-Head</div>
 
 </article>
+  <script src="../../_shared/js/interactive.js"></script>
   <script src="../../_shared/js/float-pager.js"></script>
 </body>
 </html>
