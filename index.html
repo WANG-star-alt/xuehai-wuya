@@ -368,7 +368,7 @@
       text-transform: uppercase;
     }
   </style>
-  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-3" />
+  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-13" />
 </head>
 <body>
   <article class="page">
@@ -399,6 +399,14 @@
           <button type="button" id="btn-collapse-all" title="只保留根">⊟ 收起</button>
         </div>
         <div class="btn-group-sep"></div>
+        <div class="width-control">
+          <label for="node-width-slider">框宽</label>
+          <input type="range" id="node-width-slider" min="120" max="420" step="4" value="184"
+                 aria-label="调节知识树节点框宽度" />
+          <span id="node-width-value">184px</span>
+          <button type="button" id="node-width-reset" title="恢复默认宽度">↺</button>
+        </div>
+        <div class="btn-group-sep"></div>
         <div class="btn-group">
           <button type="button" id="btn-zoom-in" title="放大">＋</button>
           <button type="button" id="btn-zoom-out" title="缩小">−</button>
@@ -424,7 +432,7 @@
       </div>
 
       <div class="kmap-tip">
-        点击节点选中并展开 · 滚轮缩放 · 拖拽画布空白处平移 · 搜索快速定位 · 双击右侧"打开完整学习章节"跳转
+        点击节点选中并展开 · 拖动"框宽"滑块调节节点宽度 · 滚轮缩放 · 拖拽画布空白处平移 · 搜索快速定位
       </div>
     </section>
 
@@ -761,7 +769,7 @@
 
   </article>
 
-  <script src="./assets/tree-data.js?v=ct-12"></script>
-  <script src="./assets/cognition-tree.js?v=ct-12"></script>
+  <script src="./assets/tree-data.js?v=ct-13"></script>
+  <script src="./assets/cognition-tree.js?v=ct-13"></script>
 </body>
 </html>

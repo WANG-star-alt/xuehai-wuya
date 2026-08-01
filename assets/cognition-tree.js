@@ -8,7 +8,9 @@
   'use strict';
 
   // ============ 常量配置 ============
-  const NODE_W = 184;
+  const NODE_W_DEFAULT = 184;
+  const NODE_W_MIN = 120;
+  const NODE_W_MAX = 420;
   const NODE_H = 54;
   const COL_GAP = 80;      // 列间距（额外距离）
   const ROW_GAP = 22;      // 行间距
@@ -18,9 +20,10 @@
   const PAD_BOTTOM = 40;
   const MIN_SCALE = 0.55;
   const MAX_SCALE = 2.5;
-  const NODE_LABEL_MAX = 16; // 节点显示最多字符数
 
   // ============ 状态变量 ============
+  let NODE_W = NODE_W_DEFAULT;          // 节点宽度（可由滑块调节）
+  let NODE_LABEL_MAX = 16;              // 显示字符数上限，随宽度联动
   let selectedNodeId = null;
   let scale = 1;
   let translateX = 0;
@@ -432,6 +435,17 @@
     setTimeout(fitCanvas, 50);
   }
 
+  // ============ 节点宽度调节 ============
+  function setNodeWidth(w, doFit) {
+    NODE_W = Math.max(NODE_W_MIN, Math.min(NODE_W_MAX, Math.round(w)));
+    // 字符数上限随宽度线性联动：184px ≈ 16 字
+    NODE_LABEL_MAX = Math.max(6, Math.round((NODE_W - 44) / 8.75));
+    const out = document.getElementById('node-width-value');
+    if (out) out.textContent = NODE_W + 'px';
+    render();
+    if (doFit) fitCanvas();
+  }
+
   // ============ 事件绑定 ============
   function bindEvents() {
     // 工具栏按钮
@@ -442,6 +456,27 @@
     document.getElementById('btn-depth-2')?.addEventListener('click', () => expandToDepth(2));
     document.getElementById('btn-depth-3')?.addEventListener('click', () => expandToDepth(3));
     document.getElementById('btn-collapse-all')?.addEventListener('click', collapseAll);
+
+    // 节点宽度滑块
+    const widthSlider = document.getElementById('node-width-slider');
+    if (widthSlider) {
+      widthSlider.min = String(NODE_W_MIN);
+      widthSlider.max = String(NODE_W_MAX);
+      widthSlider.value = String(NODE_W);
+      // 拖动过程：只重绘，不 fit（避免画面乱跳）
+      widthSlider.addEventListener('input', () => {
+        setNodeWidth(parseInt(widthSlider.value, 10), false);
+      });
+      // 松手后：适应画布
+      widthSlider.addEventListener('change', () => {
+        setNodeWidth(parseInt(widthSlider.value, 10), true);
+      });
+    }
+    // 双击滑块恢复默认宽度
+    document.getElementById('node-width-reset')?.addEventListener('click', () => {
+      if (widthSlider) widthSlider.value = String(NODE_W_DEFAULT);
+      setNodeWidth(NODE_W_DEFAULT, true);
+    });
 
     // 搜索
     const searchInput = document.getElementById('tree-search');
@@ -525,6 +560,9 @@
     });
 
     bindEvents();
+    // 同步滑块显示值
+    const wOut = document.getElementById('node-width-value');
+    if (wOut) wOut.textContent = NODE_W + 'px';
     render();
     // 用 requestAnimationFrame 确保 SVG 已经布局完成再计算缩放
     requestAnimationFrame(() => {
