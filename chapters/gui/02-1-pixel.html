@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.1 · 像素与分辨率 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-how-pixels-happen.html">第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.1</span>
+    </div>
+    <a href="./02-how-pixels-happen.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.1 · Section</div>
+    <h1>像素与分辨率</h1>
+    <div class="cn">Pixels &amp; Resolution · The Smallest Unit of Everything</div>
+  </header>
+
+  <p class="lead">
+    界面世界的原子是<strong>像素</strong>。<mark class="key">无论多精致的设计、多复杂的动画，最终都归结为一件事：给屏幕上每个小方格指定一个颜色</mark>。而"1 个像素到底多大"这个看似幼稚的问题，答案居然有三种——搞不清这三种，你就永远不明白为什么设计稿要给 @2x、@3x 三份图。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧵 十字绣、马赛克与体育馆的人浪</div>
+    <p>凑到很近看老式路边的 LED 广告牌，你会发现它其实是<strong>一颗一颗小灯泡</strong>，每颗灯泡只能亮一种颜色。走远了，眼睛把它们混在一起，就成了一幅完整的画。<br/>
+    体育馆里几万人举牌做出的"人浪图案"也是这个道理——每个人只负责举一块牌子（一个像素），图案是从远处看才出现的。<br/>
+    屏幕就是这样一块巨大的、极其精细的"举牌方阵"。你手机上大约有三百多万个"人"在同时举牌，而且每秒换 60 次姿势。</p>
+    <div class="link">→ <strong>像素</strong> = <em>Pixel</em>（Picture Element 的缩写）：屏幕上可以被独立控制颜色的最小单元。</div>
+  </div>
+
+  <h3>像素是什么：屏幕上最小的发光单元</h3>
+  <p>把手机屏幕放到显微镜下看，你会看到一件出乎意料的事：<strong>一个像素其实不是一个点，而是三个挨在一起的小灯</strong>——一个红、一个绿、一个蓝。它们叫<strong>子像素（Subpixel）</strong>。</p>
+  <p>为什么是红绿蓝这三个？因为人眼视网膜上正好有三种感知颜色的锥状细胞，分别对红、绿、蓝三段波长最敏感。所以只要用这三种光按不同比例混合，就能骗过人眼，让它"以为"看到了任何颜色。这套机制叫<strong>RGB 加色混合</strong>。</p>
+  <p>每个子像素的亮度通常用 0 到 255 共 256 级来表示。于是一个像素能表达的颜色数量是 256 × 256 × 256 ≈ <strong>1678 万种</strong>——这就是"1600 万色 / 24 位真彩色"的来历。</p>
+
+  <pre><code>一个像素的内部构造与颜色计算
+
+  ┌─────────────────┐
+  │  R  │  G  │  B  │   ← 三个子像素，各 256 级亮度
+  └─────────────────┘
+
+  (255,   0,   0) → 纯红     ：只有红灯全亮
+  (255, 255,   0) → 黄色     ：红 + 绿全亮（不是红+黄！加色混合反直觉）
+  (255, 255, 255) → 白色     ：三个全亮
+  (  0,   0,   0) → 黑色     ：三个全灭
+  ( 85,107,  61) → 本站主色  ：#556b3d
+
+  可表达颜色数 = 256 × 256 × 256 = 16,777,216 种</code></pre>
+
+  <p>这里有个值得注意的细节：<strong>纯黑在不同屏幕上不是一回事</strong>。液晶屏（LCD）的背光是常亮的，靠液晶层"挡光"来做黑，挡不干净，所以黑色其实是深灰。而 OLED 屏的每个子像素自己发光，要黑就直接<em>断电不亮</em>，那是真正的漆黑。这就是为什么 OLED 手机上的深色模式看起来特别"深"，而且还更省电——黑色区域压根没通电。</p>
+  <p>子像素的排列方式也不止一种。常见的 LCD 是横向 RGB 条状排列，而三星的 OLED 常用"钻石排列"（Pentile），红蓝子像素数量少于绿色。这会导致同样标称分辨率下，文字边缘的细节表现略有差异——早年 Pentile 屏被批评"文字发虚"，就是这个原因。</p>
+
+  <h3>分辨率 vs 屏幕尺寸：两个完全不同的东西</h3>
+  <p>这是新手最容易混的一对概念，也是买显示器时最容易踩的坑。</p>
+  <ul class="keylist">
+    <li><span class="k">分辨率 Resolution</span><span class="v">屏幕横竖各有多少个像素，比如 1920 × 1080。它是<strong>数量</strong>，单位是"个"，和屏幕多大完全无关。</span></li>
+    <li><span class="k">屏幕尺寸 Screen Size</span><span class="v">对角线的物理长度，比如 27 英寸。它是<strong>长度</strong>，单位是英寸，和有多少像素完全无关。</span></li>
+    <li><span class="k">像素密度 PPI</span><span class="v">前两者相除得到的第三个量：每英寸塞了多少个像素。它才真正决定"看起来清不清晰"。</span></li>
+  </ul>
+
+  <p>为什么必须分清？举个极端例子：<strong>一块 6 英寸的手机屏和一块 60 英寸的电视，分辨率可以完全一样，都是 1920 × 1080</strong>。像素数量一模一样，但手机看起来细腻锐利，电视凑近看能数出格子。</p>
+  <p>反过来也成立：一块 27 英寸的 1080p 显示器，和一块 24 英寸的 1080p 显示器，同样是 1080p，但 24 寸那块明显更清晰——因为同样多的像素被塞进了更小的面积里。</p>
+  <p>所以下次看到"高分辨率 = 高清"这种说法，要在心里补一句：<mark class="key">决定清晰度的从来不是分辨率，而是分辨率与尺寸的比值</mark>。</p>
+
+  <h3>PPI / DPI：清晰度的真正指标</h3>
+  <p><strong>PPI</strong>（Pixels Per Inch，每英寸像素数）用于屏幕；<strong>DPI</strong>（Dots Per Inch，每英寸墨点数）本来是印刷术语，说的是打印机每英寸打多少个墨点。两者原理相通，日常口语里常混用，但严格来说：<em>屏幕说 PPI，打印说 DPI</em>。</p>
+  <p>计算公式很简单——先用勾股定理算出对角线上有多少像素，再除以对角线的物理英寸数：</p>
+
+  <pre><code>PPI = √(横向像素² + 纵向像素²) ÷ 屏幕对角线英寸
+
+【例 1】iPhone 15：2556 × 1179，6.1 英寸
+   对角线像素 = √(2556² + 1179²) = √(6533136 + 1390041) ≈ 2814
+   PPI = 2814 ÷ 6.1 ≈ 461      → 非常细腻
+
+【例 2】27 寸 1080p 显示器
+   对角线像素 = √(1920² + 1080²) ≈ 2203
+   PPI = 2203 ÷ 27 ≈ 82        → 凑近能看到颗粒
+
+【例 3】27 寸 4K 显示器（3840 × 2160）
+   对角线像素 = √(3840² + 2160²) ≈ 4406
+   PPI = 4406 ÷ 27 ≈ 163       → 清晰，接近"视网膜"标准</code></pre>
+
+  <p>那么多少 PPI 才算够？这里的关键是<strong>观看距离</strong>。人眼的角分辨力大约是 1 弧分，换算下来：手机通常在 25～30 厘米处使用，需要 300 PPI 以上才看不出颗粒；笔记本在 50 厘米左右，200 PPI 左右就够；电视在 3 米开外，50 PPI 都足够。</p>
+  <p>这解释了一个常见疑问：<strong>为什么 8K 电视看起来提升不大？</strong>因为在正常客厅的观看距离上，你的眼睛已经分辨不出 4K 和 8K 的差别了——不是屏幕不够好，是眼睛的采样率不够。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一斤糖，撒在盘子上还是撒在操场上</span>
+    <p>把像素想成<strong>一袋糖粉</strong>。<br/>
+    <strong>分辨率</strong> = 糖粉有多少粒；<strong>屏幕尺寸</strong> = 要撒到多大面积上；<strong>PPI</strong> = 撒完以后每平方厘米有多少粒。<br/>
+    同样一袋糖，撒在小盘子上密密实实看不出颗粒（高 PPI）；撒到操场上就稀稀拉拉，一眼能数出粒（低 PPI）。<br/>
+    所以"这块屏清晰吗"这个问题，光问"多少粒糖"是没有答案的——必须同时知道"撒多大"。</p>
+  </div>
+
+  <h3>物理像素 vs 逻辑像素：一个 px 到底多大</h3>
+  <p>现在到了本节最核心、也最容易让人困惑的地方。</p>
+  <p>假设你在 CSS 里写 <code>width: 100px</code>。在 2010 年之前，这句话的意思很朴素：占 100 个真实的屏幕像素。但当手机 PPI 冲到 400 以上后，这个逻辑彻底崩了——如果 <code>100px</code> 还是 100 个物理像素，那么一个手机上的按钮会小到只有几毫米，根本按不到。</p>
+  <p>于是业界引入了一层<strong>抽象</strong>，把"像素"这个词拆成了两个概念：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>概念</th><th>别称</th><th>含义</th><th>谁在用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>物理像素</strong></td><td>设备像素 / Device Pixel</td><td>屏幕上真实存在的那颗发光单元，硬件出厂就定死了</td><td>硬件、驱动、渲染最底层</td></tr>
+        <tr><td><strong>逻辑像素</strong></td><td>CSS px / DIP / pt / dp</td><td>一个<em>抽象的长度单位</em>，约定为"在标准观看距离下看起来差不多大"，与硬件解耦</td><td>开发者写代码、设计师出稿</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>换句话说，<mark class="key">CSS 里的 px 从来就不是"一个屏幕像素"，它是一个视觉长度单位</mark>。W3C 的规范里把 1 个 CSS px 定义为在标准观看距离下约等于 1/96 英寸的视角大小。它更像"厘米"，而不像"一颗灯泡"。</p>
+  <p>各平台给这个抽象单位起了不同名字，但说的是同一件事：Web 叫 <strong>CSS px</strong>，Android 叫 <strong>dp</strong>（density-independent pixel），iOS 叫 <strong>pt</strong>（point），Windows 叫 <strong>DIP</strong>。你写 <code>44dp</code> 或 <code>44pt</code>，在任何设备上摸起来都差不多大——系统会自动换算成对应数量的物理像素。</p>
+  <p>这层抽象带来的好处极大：<strong>你不再需要关心用户的屏幕有多密</strong>。你按"看起来该多大"来写代码，系统负责翻译。这跟你订做衣服时说"腰围 75 厘米"而不是"75 根纤维宽"是一个道理。</p>
+
+  <h3>设备像素比 DPR：两套像素之间的汇率</h3>
+  <p>既然有两套像素，就必须有一个换算比率。这个比率叫<strong>设备像素比（Device Pixel Ratio，DPR）</strong>：</p>
+
+  <pre><code>DPR = 物理像素数 ÷ 逻辑像素数
+
+【普通显示器】DPR = 1
+   1 个逻辑像素  →  1 个物理像素        （一对一）
+
+【iPhone / Retina 笔记本】DPR = 2
+   1 个逻辑像素  →  2×2 = 4 个物理像素   （一个格子里塞四颗灯）
+
+【高端安卓旗舰】DPR = 3
+   1 个逻辑像素  →  3×3 = 9 个物理像素   （一个格子里塞九颗灯）
+
+// 在浏览器里查看当前设备的 DPR：
+console.log(window.devicePixelRatio);   // 1、2、2.75、3 ...
+
+// 逻辑分辨率（你写代码面对的） vs 物理分辨率（屏幕真实的）
+console.log(window.innerWidth);            // 例如 393（逻辑）
+console.log(window.innerWidth * window.devicePixelRatio);  // 例如 1179（物理）</code></pre>
+
+  <p>这解释了一个让很多人困惑的现象：<strong>iPhone 15 的屏幕物理分辨率是 1179 × 2556，但你在 CSS 里拿到的宽度只有 393</strong>。因为 1179 ÷ 3 = 393——它的 DPR 是 3，三个物理像素排成一行才算一个逻辑像素。</p>
+  <p>注意 DPR 不一定是整数。很多安卓机是 2.625、2.75 这类小数，Windows 的缩放设置里选 125%、150% 也会得到 1.25、1.5。<strong>小数 DPR 是渲染问题的重灾区</strong>——1 逻辑像素的细线要画成 1.5 个物理像素，画不出半颗灯，只能靠灰度模糊来近似，于是细线看起来发虚。这就是老前端常抱怨的"1px 边框问题"。</p>
+
+  <h3>Retina 屏原理与 @2x / @3x 图</h3>
+  <p>2010 年苹果推出 iPhone 4 时提出了 <strong>Retina（视网膜屏）</strong>这个营销词，它的技术含义就一句话：<mark class="key">PPI 高到在正常使用距离上人眼分辨不出单个像素</mark>。</p>
+  <p>但苹果做的最聪明的一件事不是提高 PPI，而是<strong>同时把逻辑像素数保持不变</strong>。iPhone 3GS 是 320×480 物理像素，iPhone 4 变成 640×960 物理像素，但逻辑尺寸仍然是 320×480。结果是：所有老 App 不用改一行代码，按钮和文字还是原来那么大，只是<em>每一个逻辑像素现在由四颗灯来显示，边缘变得极其平滑</em>。</p>
+  <p>这个策略的代价，落在了<strong>图片</strong>身上。</p>
+  <p>文字和矢量图形无所谓——它们是靠数学公式实时绘制的，DPR 多大就按多大精度画，天生清晰。但<strong>位图（PNG / JPG）里的像素是死的</strong>。一张 100×100 的图片，在 DPR=2 的屏幕上要占据 200×200 个物理像素，系统只能把每个原始像素<em>拉大成四个</em>——于是变糊。</p>
+  <p>解决办法就是准备多套图：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>文件名</th><th>实际像素尺寸</th><th>适用 DPR</th><th>显示出来的逻辑尺寸</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>icon.png</code></td><td>100 × 100</td><td>1（普通屏）</td><td>100 × 100</td></tr>
+        <tr><td><code>icon@2x.png</code></td><td>200 × 200</td><td>2（Retina）</td><td>100 × 100</td></tr>
+        <tr><td><code>icon@3x.png</code></td><td>300 × 300</td><td>3（安卓旗舰）</td><td>100 × 100</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>注意最后一列：<strong>三张图显示出来一样大</strong>，区别只在于高 DPR 屏幕上用的那张有更多真实像素可供利用，所以更清晰。这就是设计师交付时总要导出三份的原因——不是为了让图变大，而是为了<em>喂饱</em>那些密集的灯泡。</p>
+
+  <pre><code>&lt;!-- 让浏览器根据 DPR 自动挑选合适的图 --&gt;
+&lt;img src="icon.png"
+     srcset="icon.png 1x, icon@2x.png 2x, icon@3x.png 3x"
+     width="100" height="100" alt="图标"&gt;
+
+/* CSS 里的写法 */
+.logo { background-image: url(logo.png); }
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .logo { background-image: url(logo@2x.png); background-size: 100px 100px; }
+}</code></pre>
+
+  <p>同样的道理也适用于 <code>&lt;canvas&gt;</code>。画布的默认物理像素数等于 CSS 尺寸，在 Retina 屏上画出来的东西是糊的，必须手动把画布的实际像素放大 DPR 倍，再把绘图坐标系缩放回来：</p>
+
+  <pre><code>// Canvas 高清适配：三行标准操作
+const dpr = window.devicePixelRatio || 1;
+canvas.width  = cssWidth  * dpr;     // 实际像素放大
+canvas.height = cssHeight * dpr;
+canvas.style.width  = cssWidth  + 'px';   // 显示尺寸保持不变
+canvas.style.height = cssHeight + 'px';
+ctx.scale(dpr, dpr);                 // 坐标系缩回来，后面照常用逻辑坐标画</code></pre>
+
+  <h3>开发中的六条实用建议</h3>
+  <ul class="keylist">
+    <li><span class="k">图标一律用 SVG</span><span class="v">矢量图不存在 DPR 问题，任何屏幕都清晰，体积还小、能改颜色。能用 SVG 就别导 PNG——这一条能省掉 90% 的适配麻烦。</span></li>
+    <li><span class="k">位图按最高 DPR 准备</span><span class="v">照片和插画只能用位图。按 @3x 出图 + 用 <code>srcset</code> 让浏览器自己选，别一股脑塞最大图，那会浪费低端设备的流量。</span></li>
+    <li><span class="k">永远用逻辑像素写布局</span><span class="v">代码里只写 CSS px / dp / pt，绝不去手动乘 DPR。DPR 换算是系统的职责，你插手只会在某些设备上算错。</span></li>
+    <li><span class="k">触控目标至少 44×44 逻辑像素</span><span class="v">苹果和 Google 的规范里，可点击区域的下限约是 44pt / 48dp。这是手指的物理尺寸决定的，和屏幕多密无关——高 PPI 屏上按钮不能因为"看着大"就做小。</span></li>
+    <li><span class="k">警惕小数 DPR 上的 1px 线</span><span class="v">DPR=1.5 时 1px 细线会发虚。需要极细分割线时，用 <code>transform: scaleY(0.5)</code> 或 <code>0.5px</code> 配合特性检测，而不是硬写 1px 然后祈祷。</span></li>
+    <li><span class="k">测试要覆盖三档 DPR</span><span class="v">至少测 DPR=1（普通显示器）、2（Retina / 多数 iPhone）、3（安卓旗舰）。浏览器开发者工具的设备模拟可以直接切换 DPR，成本很低。</span></li>
+  </ul>
+
+  <h3>为什么这一节必须放在第 2 章开头</h3>
+  <p>因为像素是本章后面所有内容的<strong>计量单位</strong>。</p>
+  <p>下一节讲位图和矢量的差别，本质就是"存像素值"还是"存绘制指令"；讲颜色，就是给每个像素的 RGB 三个通道赋值；讲渲染管线，就是"如何高效地算出每个像素该是什么颜色"；讲 60fps，就是"这几百万个像素必须在 16.7 毫秒内全部算完并送屏"。</p>
+  <p>把像素、分辨率、PPI、逻辑像素、DPR 这五个概念的关系理清了，后面四节都会顺理成章。<mark class="key">而没理清的话，你会一直被"为什么我的图在这台机器上是糊的"这类问题反复困扰，却始终找不到病根</mark>。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>像素</strong>是屏幕上能被独立控制颜色的最小单元，内部由 <strong>RGB 三个子像素</strong>组成，各 256 级，合计约 1678 万色。<br/>
+    <strong>分辨率</strong>（像素个数）与<strong>屏幕尺寸</strong>（物理英寸）是两个独立的量，两者相除得到的 <strong>PPI</strong> 才决定清晰度；公式是 √(横²+纵²) ÷ 对角线英寸。<br/>
+    "像素"这个词有两种含义：硬件上真实存在的<strong>物理像素</strong>，和开发者使用的抽象长度单位<strong>逻辑像素</strong>（CSS px / dp / pt）。两者的换算比率叫 <strong>DPR</strong>。<br/>
+    <strong>Retina 屏</strong>的做法是提高物理像素密度、同时保持逻辑尺寸不变，于是文字和矢量自动变清晰，而<strong>位图必须准备 @2x / @3x</strong> 才不糊。<br/>
+    实践底线三句话：<strong>图标用 SVG、布局用逻辑像素、位图配 srcset</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-how-pixels-happen.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">第 2 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-2-bitmap-vector.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 2.2 · 位图 vs 矢量</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 2.1</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

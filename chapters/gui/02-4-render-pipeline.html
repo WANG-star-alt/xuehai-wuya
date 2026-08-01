@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.4 · 渲染管线 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-how-pixels-happen.html">第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.4</span>
+    </div>
+    <a href="./02-how-pixels-happen.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.4 · Section</div>
+    <h1>渲染管线</h1>
+    <div class="cn">The Rendering Pipeline</div>
+  </header>
+
+  <p class="lead">
+    浏览器拿到的是一堆纯文本——HTML 标签、CSS 规则，一个像素都没有。可几百毫秒后，屏幕上出现了完整的页面。<mark class="key">中间那段黑盒，是一条固定顺序、四道工序的流水线：解析 → 布局 → 绘制 → 合成</mark>。搞懂这条流水线，你就能回答几乎所有界面性能问题——包括为什么改一个 CSS 属性会让整页重算，而改另一个几乎不花钱。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏗️ 从一张设计图到一栋房子</div>
+    <p><strong>第一步 · 读图纸</strong>：施工队拿到建筑图和材料清单，先把它们整理成自己看得懂的清单和结构。<br/>
+    <strong>第二步 · 放线定位</strong>：在工地上拉线，量出每一面墙的准确位置、每个房间的实际尺寸——这一步最费功夫，因为一面墙挪动，后面所有房间都得重新量。<br/>
+    <strong>第三步 · 刷漆装饰</strong>：位置定了，开始刷墙、贴砖、装灯。改颜色不用重新拉线，重刷就行。<br/>
+    <strong>第四步 · 拍效果图</strong>：把各个楼层、各个图层的照片按顺序叠起来，合成一张最终的宣传图交给客户。</p>
+    <div class="link">→ 依次对应浏览器的<strong>解析 Parse</strong>、<strong>布局 Layout</strong>、<strong>绘制 Paint</strong>、<strong>合成 Composite</strong>。</div>
+  </div>
+
+  <h3>第一步 · 解析：把文本变成树</h3>
+  <p>浏览器收到的 HTML 是一长串字符。它做的第一件事是<strong>词法分析</strong>：一个字符一个字符地扫过去，识别出"这是一个开标签"、"这是属性名"、"这是文本内容"。识别完再按嵌套关系拼成一棵树，这棵树叫 <strong>DOM 树</strong>（Document Object Model，文档对象模型）。</p>
+<pre><code>&lt;body&gt;
+  &lt;div class="card"&gt;
+    &lt;h2&gt;标题&lt;/h2&gt;
+    &lt;p&gt;正文&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+
+        ↓ 解析成
+
+body
+└── div.card
+    ├── h2
+    │   └── "标题"
+    └── p
+        └── "正文"</code></pre>
+  <p>CSS 走的是同一套流程，产物叫 <strong>CSSOM 树</strong>（CSS Object Model）。它记录的是所有样式规则，以及它们的继承与优先级关系。为什么 CSS 也要建成树？因为样式会<strong>继承</strong>——给 <code>body</code> 设了字号，里面的段落默认跟着变。只有树形结构才能高效地表达这种"上级影响下级"。</p>
+  <p>两棵树建好后，浏览器把它们<strong>合成为渲染树</strong>（Render Tree，Chrome 里叫 Layout Tree）。这一步做的是"给每个要显示的 DOM 节点，配上它最终生效的样式"。注意两个细节：</p>
+  <ul class="keylist">
+    <li><span class="k">不可见的节点会被剔除</span><span class="v"><code>display: none</code> 的元素<strong>不进入渲染树</strong>，因为它根本不占空间、不需要计算位置。而 <code>visibility: hidden</code> 的元素会进入——它虽然看不见，但仍然占着位置。</span></li>
+    <li><span class="k">CSS 会阻塞渲染</span><span class="v">渲染树需要 CSSOM 才能建成，所以 CSS 没下载解析完，页面就不能显示。这是"首屏白屏"的常见原因之一，也是为什么关键 CSS 建议内联。</span></li>
+    <li><span class="k">JS 会阻塞解析</span><span class="v">遇到没有 <code>defer</code>/<code>async</code> 的 <code>&lt;script&gt;</code>，HTML 解析必须暂停等它执行完——因为脚本可能会往 DOM 里插入内容。所以脚本一般放在 body 末尾或加 <code>defer</code>。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 两份文件合成一份施工单</span>
+    <p><strong>DOM 树</strong>像房子的<em>结构图</em>：几层楼、每层几间房、房间怎么嵌套。<br/>
+    <strong>CSSOM 树</strong>像<em>装修规范手册</em>：所有卧室刷米白、所有窗框用铝合金、二楼的规则覆盖全局规则。<br/>
+    <strong>渲染树</strong>就是工头把两份文件对照一遍，写出的<em>逐间施工单</em>：201 房间，米白墙、铝合金窗、木地板。<br/>
+    而 <code>display:none</code> 的房间，工头直接从施工单里划掉了——不施工，也不给它留位置。</p>
+  </div>
+
+  <h3>第二步 · 布局：算清每个元素在哪、多大</h3>
+  <p><strong>布局</strong>（Layout，在 Firefox 的术语体系里叫 Reflow）要回答的问题非常具体：渲染树里每一个元素，它的左上角坐标是多少，宽高各是多少。输入是"样式描述"，输出是一堆精确的几何盒子。</p>
+  <p>这一步之所以昂贵，是因为<strong>元素之间高度耦合</strong>。一个段落多了一行字，它下面的所有兄弟元素都要往下挪；它的父容器高度要增加，父容器的父容器也可能跟着变；如果这是个 flex 布局，同一行的兄弟元素宽度还要重新分配。<mark class="key">一处改动，可能引发整棵子树甚至整个文档的重新计算</mark>——这就是布局的成本所在。</p>
+  <p>布局要处理的事情包括：解析 <code>%</code>、<code>em</code>、<code>vw</code> 这类相对单位换算成实际像素；根据可用宽度决定文字在哪里折行；处理 flex / grid 的空间分配；计算外边距合并；确定绝对定位元素相对哪个祖先定位。任何"位置和尺寸相关"的信息，都在这一步产生。</p>
+
+  <h3>第三步 · 绘制：往图层上刷颜色</h3>
+  <p>位置定了，接下来是<strong>绘制</strong>（Paint）。这一步把每个元素变成一系列具体的绘图指令："在 (120, 340) 到 (400, 380) 这个矩形里填 #f2ede4"、"在这里画一条 1px 的 #e2dccf 边框"、"用 16px Lora 在这个位置写这几个字"。</p>
+  <p>绘制有严格的<strong>顺序</strong>，大致是：背景色 → 背景图 → 边框 → 子元素 → 文字 → 轮廓。同时它还要处理层叠关系——<code>z-index</code> 高的后画，所以盖在上面。文字渲染在这一步尤其复杂：要找到字形轮廓、按当前字号栅格化、做亚像素抗锯齿。</p>
+  <p>关键点是：<strong>绘制不一定画在同一张画布上</strong>。浏览器会把页面拆成若干 <strong>图层</strong>（Layer），分别绘制。这是理解性能的枢纽，下面单独讲。</p>
+
+  <h3>第四步 · 合成：把图层叠成最终画面</h3>
+  <p><strong>合成</strong>（Composite）是最后一步：把所有已经画好的图层，按正确的顺序、位置、透明度、变换矩阵叠在一起，得到一张完整的位图，交给屏幕显示。</p>
+  <p>这一步的特殊之处在于——它基本上是 <strong>GPU 的活</strong>，而且极其擅长。GPU 天生就是为"把一堆贴图按矩阵变换叠起来"设计的，这类操作可以大规模并行，快到几乎不计成本。<mark class="key">这意味着：如果一个变化只需要重新合成，而不需要重新布局和绘制，它就几乎是免费的</mark>。这句话是所有前端动画性能优化的总纲。</p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>1. 解析 Parse · 一次性成本</h4>
+      <p>HTML → DOM 树，CSS → CSSOM 树，合并成渲染树。首屏加载时最重，之后只在 DOM 变动时局部重来。</p>
+    </div>
+    <div class="step">
+      <h4>2. 布局 Layout · 最贵</h4>
+      <p>算出每个元素的坐标和尺寸。牵一发动全身，代价随元素数量增长。</p>
+    </div>
+    <div class="step">
+      <h4>3. 绘制 Paint · 中等</h4>
+      <p>生成绘图指令并栅格化到图层。改颜色、阴影走这一步，成本比布局低。</p>
+    </div>
+    <div class="step">
+      <h4>4. 合成 Composite · 最便宜</h4>
+      <p>GPU 把图层叠起来。只走这一步的变化（transform / opacity）几乎不花钱。</p>
+    </div>
+  </div>
+
+  <h3>回流与重绘：一定要分清的两个词</h3>
+  <p>这条流水线有个重要特性：<strong>它是单向的，而且一旦从某一步重来，后面的所有步骤都必须跟着重来</strong>。这就是"回流"和"重绘"两个概念的由来。</p>
+  <ul class="keylist">
+    <li><span class="k">回流 Reflow</span><span class="v">又叫 Relayout。几何信息变了，必须从<strong>布局</strong>那一步重新开始——布局完还得重绘，重绘完还得重新合成。相当于三道工序全走一遍，最贵。</span></li>
+    <li><span class="k">重绘 Repaint</span><span class="v">位置尺寸都没变，只是"长得不一样了"（颜色、阴影、圆角）。跳过布局，从<strong>绘制</strong>开始重来，再合成。中等成本。</span></li>
+    <li><span class="k">仅合成 Composite Only</span><span class="v">连画面内容都没变，只是这一层的位置、缩放、透明度变了。布局和绘制全部跳过，只让 GPU 重新叠一次。极便宜。</span></li>
+  </ul>
+  <p>触发回流的典型动作，值得单独列出来记住：</p>
+  <ul class="keylist">
+    <li><span class="k">改几何属性</span><span class="v"><code>width</code>、<code>height</code>、<code>padding</code>、<code>margin</code>、<code>border-width</code>、<code>top/left/right/bottom</code>、<code>font-size</code>、<code>display</code> 等。</span></li>
+    <li><span class="k">增删可见的 DOM 节点</span><span class="v">插入一个元素、删除一个元素，都会改变文档流的排布。</span></li>
+    <li><span class="k">改变内容</span><span class="v">修改文本、替换图片尺寸——内容一变，占位就变。</span></li>
+    <li><span class="k">窗口尺寸变化</span><span class="v">resize 会触发整个文档的回流，所以 resize 事件必须做节流。</span></li>
+    <li><span class="k">读取某些布局属性</span><span class="v">这一条最隐蔽：读 <code>offsetHeight</code>、<code>scrollTop</code>、<code>getBoundingClientRect()</code> 时，浏览器为了给你准确答案，会被迫立即执行一次布局。这叫<strong>强制同步布局</strong>。</span></li>
+  </ul>
+
+  <h3>布局抖动：一个非常常见的性能陷阱</h3>
+  <p>浏览器其实很聪明，它会把连续的 DOM 修改<strong>攒起来批处理</strong>，等一帧结束时统一算一次布局。但如果你在修改之后立刻读取布局属性，这个优化就被打破了——浏览器必须马上算完才能回答你。改一次、读一次、再改一次、再读一次，就形成了 <strong>Layout Thrashing</strong>（布局抖动）。</p>
+<pre><code>// ✗ 坏写法：读写交替，每轮循环都强制一次布局
+const items = document.querySelectorAll('.item');
+for (const el of items) {
+  // 读（强制布局） → 写（作废布局） → 下一轮再读……
+  el.style.width = el.offsetWidth + 10 + 'px';
+}
+
+// ✓ 好写法：先全部读完，再全部写
+const widths = [];
+for (const el of items) {
+  widths.push(el.offsetWidth);        // 阶段一：只读
+}
+items.forEach((el, i) => {
+  el.style.width = widths[i] + 10 + 'px';  // 阶段二：只写
+});</code></pre>
+  <p>规则很简单：<strong>把读操作和写操作分成两批，不要交替</strong>。100 次读写交替可能触发 100 次布局，分批后只触发 1 次。</p>
+
+  <h3>图层：为什么页面不是画在一张纸上</h3>
+  <p><strong>图层</strong>（Layer / Compositing Layer）是把页面拆成多张独立画布的机制。默认情况下大部分内容画在同一个图层里，但满足某些条件的元素会被"提升"到自己的独立图层。</p>
+  <p>提升的好处非常直接：<mark class="key">这个元素动的时候，其他图层完全不需要重画，只要 GPU 重新叠一次</mark>。就像做动画片，背景画一次不动，只把角色画在透明赛璐珞片上逐帧移动——不用每帧重画整个背景。</p>
+  <p>常见的图层提升条件包括：使用了 3D 变换（<code>transform: translateZ(0)</code>、<code>translate3d</code>）；声明了 <code>will-change: transform / opacity</code>；<code>position: fixed</code> 元素；<code>video</code>、<code>canvas</code> 元素；应用了 CSS 滤镜；<code>opacity</code> 参与动画的元素。</p>
+  <p>但图层不是免费的：每个图层都要在显存里存一份自己的位图。一个全屏图层在高清屏上可能占几十 MB。图层过多会导致<strong>显存暴涨、合成本身变慢</strong>，在低端设备上甚至直接崩溃。这个反模式有个名字叫"图层爆炸"——比如给列表里的每一项都加上 <code>will-change</code>。正确做法是只给<strong>真正在动的那几个元素</strong>提层，动画结束后还应该撤掉。</p>
+
+  <h3>哪些 CSS 属性触发哪一步</h3>
+  <p>这张表是本节最实用的产出。改属性之前先看一眼它落在哪一列，性能预期就有数了。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>CSS 属性</th><th>布局</th><th>绘制</th><th>合成</th><th>成本</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>width</code> / <code>height</code></td><td>✔</td><td>✔</td><td>✔</td><td>高</td></tr>
+        <tr><td><code>top</code> / <code>left</code>（定位）</td><td>✔</td><td>✔</td><td>✔</td><td>高</td></tr>
+        <tr><td><code>margin</code> / <code>padding</code></td><td>✔</td><td>✔</td><td>✔</td><td>高</td></tr>
+        <tr><td><code>font-size</code> / <code>font-family</code></td><td>✔</td><td>✔</td><td>✔</td><td>高</td></tr>
+        <tr><td><code>display</code></td><td>✔</td><td>✔</td><td>✔</td><td>高</td></tr>
+        <tr><td><code>border-width</code></td><td>✔</td><td>✔</td><td>✔</td><td>高</td></tr>
+        <tr><td><code>color</code></td><td>—</td><td>✔</td><td>✔</td><td>中</td></tr>
+        <tr><td><code>background-color</code></td><td>—</td><td>✔</td><td>✔</td><td>中</td></tr>
+        <tr><td><code>box-shadow</code></td><td>—</td><td>✔</td><td>✔</td><td>中（模糊半径大时较贵）</td></tr>
+        <tr><td><code>border-radius</code></td><td>—</td><td>✔</td><td>✔</td><td>中</td></tr>
+        <tr><td><code>visibility</code></td><td>—</td><td>✔</td><td>✔</td><td>中</td></tr>
+        <tr><td><code>transform</code></td><td>—</td><td>—</td><td>✔</td><td><strong>低</strong></td></tr>
+        <tr><td><code>opacity</code></td><td>—</td><td>—</td><td>✔</td><td><strong>低</strong></td></tr>
+        <tr><td><code>filter</code></td><td>—</td><td>—</td><td>✔</td><td>低（但 GPU 负担随强度上升）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看懂这张表，一条实践准则就自然浮现了——<strong>做动画只用 <code>transform</code> 和 <code>opacity</code></strong>：</p>
+<pre><code>/* ✗ 每帧都触发布局 → 绘制 → 合成 */
+.box { transition: left .3s, width .3s; }
+.box:hover { left: 100px; width: 320px; }
+
+/* ✓ 每帧只触发合成，GPU 直接搞定 */
+.box { transition: transform .3s, opacity .3s; }
+.box:hover { transform: translateX(100px) scale(1.2); opacity: .85; }</code></pre>
+  <p>顺带说一个反直觉的点：<code>transform: translateX(100px)</code> 和 <code>left: 100px</code> 视觉结果几乎一样，但代价差了一个数量级。因为 <code>left</code> 是在告诉布局引擎"我在文档流里的位置变了，你重新算"，而 <code>transform</code> 是在告诉合成器"我在文档流里没动，你只是把我这一层贴图挪个位置显示"。<strong>前者改的是事实，后者改的是呈现</strong>。</p>
+
+  <h3>一帧的完整时间线</h3>
+  <p>把上面的知识按时间轴排一遍，一帧里实际发生的事是这样的：先执行 JS（事件回调、定时器、requestAnimationFrame）；然后处理 CSS 动画和过渡的当前值；接着如果有几何变动就执行布局；然后绘制发生变化的图层；最后合成上屏。如果这一整套在 16.7 毫秒内跑完，用户看到流畅画面；跑不完，这一帧就被丢掉，用户看到卡顿。下一节会专门算这笔时间账。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>一帧画面走四道工序：<strong>解析</strong>（HTML→DOM，CSS→CSSOM，合成渲染树）、<strong>布局</strong>（算出每个元素在哪多大）、<strong>绘制</strong>（生成绘图指令刷到图层上）、<strong>合成</strong>（GPU 把图层叠成最终画面）。这条流水线是单向的，<mark class="key">从哪一步重来，后面的步骤就必须全部跟着重来</mark>——所以改几何属性触发回流（三步全走，最贵），改颜色只触发重绘（跳过布局），改 <code>transform</code> / <code>opacity</code> 只触发合成（几乎免费）。记住两条最实用的：<strong>做动画只用 transform 和 opacity</strong>，以及<strong>批量 DOM 操作要先读完再写，别读写交替</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-3-color.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 2.3 · 颜色与色彩空间</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-5-gpu-60fps.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 2.5 · GPU 合成与 60fps</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 2.4</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.3 · 图形界面 GUI · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-gui.html">第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.3</span>
+    </div>
+    <a href="./01-what-is-gui.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.3 · Section</div>
+    <h1>图形界面 GUI</h1>
+    <div class="cn">Graphical User Interface</div>
+  </header>
+
+  <p class="lead">
+    你现在看这篇文章用的东西——可以拖动的窗口、桌面上的图标、点开会展开的菜单、跟着手移动的箭头——这套组合已经统治了人机交互<strong>整整四十年</strong>，从未被撼动。它看起来天经地义，其实每一个元素都是被人在某一年发明出来的。<mark class="key">GUI 最伟大的地方不是好看，而是它把"操作计算机"从"背命令"变成了"用手指"</mark>。这一节讲清它由什么构成、从哪来、底下怎么运转、以及它付出了什么代价。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🗂️ 一张真实的办公桌</div>
+    <p>低头看看你的书桌：桌面上摊着几份文件，有的叠在上面挡住了下面的；文件夹里装着纸；用完的纸团扔进桌边的垃圾桶；要用剪刀就从笔筒里拿。<br/>
+    你从来没学过"怎么用桌子"，因为它符合直觉：<strong>要用什么就伸手拿，不要了就扔掉，重要的放最上面。</strong><br/>
+    现在再看你的电脑屏幕：桌面、文件、文件夹、回收站、工具栏。<mark class="key">它是照抄你的书桌造出来的</mark>——这不是巧合，这是四十年前一个刻意的设计决定。</p>
+    <div class="link">→ <strong>GUI</strong> = <em>把抽象的计算机操作，翻译成你在现实世界早已熟悉的动作。</em></div>
+  </div>
+
+  <h3>WIMP 四要素：GUI 的四根柱子</h3>
+  <p>学术界给这套范式起了个缩写叫 <strong>WIMP</strong>。它不是一个虚概念，而是精确指出了四个各自解决一个具体难题的发明：</p>
+  <ul class="keylist">
+    <li><span class="k">W · Window 窗口</span><span class="v">解决"屏幕只有一块，任务却有很多个"的冲突。每个窗口是一块独立的、可移动可缩放可重叠的矩形工作区，让一块屏幕变成无限多块。<strong>它把"一次只能干一件事"变成了"同时开八件事"。</strong></span></li>
+    <li><span class="k">I · Icon 图标</span><span class="v">解决"抽象概念难记"的问题。一个小图形代表一个文件、程序或功能。图形的识别速度远快于文字——你在一堆图标里找浏览器只要零点几秒，在一堆文件名里找要几秒。<strong>它把"记住名字"变成了"认出样子"。</strong></span></li>
+    <li><span class="k">M · Menu 菜单</span><span class="v">解决命令行最大的短板——<strong>不可发现性</strong>。菜单把"这个程序能做什么"全部摊开摆给你看，你不需要事先知道任何命令名，逛一圈就学会了。<strong>它把"回忆"变成了"识别"。</strong></span></li>
+    <li><span class="k">P · Pointer 指针</span><span class="v">解决"如何指定操作对象"。有了跟随鼠标的箭头，你可以直接指着屏幕上的东西说"就是它"，而不必用文字精确描述它的路径和名称。<strong>它把"描述对象"变成了"指向对象"。</strong></span></li>
+  </ul>
+  <p>四者必须凑齐才成立，缺一个都不行。上一节的 TUI 有 M（菜单）和某种意义上的 W（分屏），但缺 I 和 P，所以它到不了 GUI 那种"零学习成本"的境界。反过来说，今天的手机把 P 从"鼠标箭头"换成了"你的手指"，把 W 从"可重叠窗口"换成了"全屏页面栈"——<strong>四要素还在，只是换了形态</strong>。</p>
+
+  <h3>历史源头：一条清晰的传承链</h3>
+  <p>GUI 不是自然演化出来的，它有明确的发明者和明确的传播路径。这条链非常值得记住，因为它是计算机史上最著名的一次技术转移。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>年份</th><th>里程碑</th><th>它贡献了什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1968</td><td>Douglas Engelbart 的"演示之母"</td><td>首次公开展示<strong>鼠标</strong>、多窗口、超文本、协同编辑，一场演示预告了未来三十年</td></tr>
+        <tr><td><strong>1973</strong></td><td><strong>Xerox PARC · Alto</strong></td><td>世界上第一台图形界面计算机：位图屏幕、鼠标、可重叠窗口、所见即所得编辑。<strong>GUI 的真正原点</strong></td></tr>
+        <tr><td>1981</td><td>Xerox Star (8010)</td><td>第一款商用 GUI 产品，确立了<strong>桌面隐喻</strong>、图标、文件夹、双击等概念，但一台约 16000 美元，卖不动</td></tr>
+        <tr><td>1979</td><td>乔布斯参观 PARC</td><td>看到 Alto 后意识到"这就是未来"，把这套思想带回苹果</td></tr>
+        <tr><td>1983</td><td>Apple Lisa</td><td>苹果第一次商业化尝试，加入下拉菜单和拖放，售价近万美元，失败</td></tr>
+        <tr><td><strong>1984</strong></td><td><strong>Apple Macintosh</strong></td><td>2495 美元，第一台<strong>普通人买得起</strong>的 GUI 电脑。它让 GUI 从实验室走进大众，是真正的分水岭</td></tr>
+        <tr><td>1985</td><td>Windows 1.0 / Amiga / Atari</td><td>GUI 开始在各平台开花，Windows 早期只是 DOS 上的一层图形壳</td></tr>
+        <tr><td><strong>1995</strong></td><td><strong>Windows 95</strong></td><td>开始菜单、任务栏、右键菜单成为全球标准，把 GUI 推向数以亿计的用户</td></tr>
+        <tr><td>2007</td><td>iPhone</td><td>用手指取代鼠标指针，把 GUI 带入触控时代，四要素形态重构</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这条链里最耐人寻味的一点：<mark class="key">发明 GUI 的施乐（Xerox）没有靠它赚到钱</mark>。PARC 造出了几乎所有现代计算的雏形——GUI、以太网、激光打印机、面向对象语言，但公司高层是复印机出身，看不懂这些东西的商业价值。真正把它变成产业的是苹果和微软。这是技术史上关于"发明"与"商业化"是两件事的最经典案例。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 汽车的方向盘与踏板</span>
+    <p>早期汽车的操控五花八门，有用操纵杆的、有用缰绳式手柄的，学一辆车换一辆车就得重新学。<br/>
+    后来<strong>方向盘 + 油门 + 刹车</strong>这套组合固定下来，从此你会开一辆车就会开所有车。它未必是理论上最优的方案（有人论证过操纵杆更灵敏），但它<strong>成了共同语言</strong>，价值远大于任何局部优化。<br/>
+    WIMP 就是计算机的方向盘：<mark class="key">它的最大价值不在于"最好"，而在于"到处都一样"</mark>。所以哪怕过了四十年，也没人敢彻底推翻它。</p>
+  </div>
+
+  <h3>桌面隐喻：为什么你不用学就会用</h3>
+  <p>GUI 能被普通人瞬间接受，靠的是一个叫 <strong>隐喻（metaphor）</strong> 的设计手法：<strong>把陌生的新事物，包装成用户已经熟悉的旧事物。</strong></p>
+  <p>数一数你的电脑里藏了多少现实世界的东西：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>界面元素</th><th>现实原型</th><th>被隐藏的技术真相</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>桌面（Desktop）</td><td>办公桌桌面</td><td>其实是某个用户目录下的一个普通文件夹</td></tr>
+        <tr><td>文件（File）</td><td>一张纸/一份文档</td><td>磁盘上一串不连续的数据块 + 一条索引记录</td></tr>
+        <tr><td>文件夹（Folder）</td><td>牛皮纸文件夹</td><td>一个记录着"哪些名字对应哪些索引"的特殊文件</td></tr>
+        <tr><td>回收站</td><td>桌边垃圾桶</td><td>一个隐藏目录，"删除"只是移动位置并标记</td></tr>
+        <tr><td>剪贴板 / 剪切复制粘贴</td><td>剪刀与胶水</td><td>一块由系统管理的临时内存缓冲区</td></tr>
+        <tr><td>窗口的层叠</td><td>桌上叠放的纸</td><td>一个记录 Z 轴顺序的绘制列表，决定谁遮谁</td></tr>
+        <tr><td>拖动滚动条</td><td>卷轴/放大镜移动</td><td>改变一个"视口偏移量"数值并触发重绘</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>隐喻的力量在于<strong>迁移已有经验</strong>：你不需要理解 inode、扇区、内存缓冲区，你只需要相信"东西可以拿起来放到别处，不要了就扔进垃圾桶"。<mark class="key">这就是 GUI 干的最漂亮的一件事：用一个善意的谎言，把真相全部藏起来</mark>。</p>
+  <p>不过隐喻也有它的天花板。当新功能在现实世界找不到对应物时，隐喻就开始失效或变得别扭——比如"云盘"到底是什么？"同步"该怎么隐喻？为什么把 U 盘拔掉前要先"安全弹出"？这些都是隐喻裂缝处的产物，也是很多用户困惑的根源。所以现代设计（扁平化、Material Design）已经在有意淡化拟物隐喻，转而依赖<strong>另一条更本质的原则</strong>——直接操作。</p>
+
+  <h3>GUI 的三层结构：屏幕上那个按钮是怎么来的</h3>
+  <p>从代码角度看，任何 GUI 系统都能剖成三层。搞清这三层，你就能理解为什么同一个程序在不同系统上长得不一样、为什么有些界面卡顿而有些流畅。</p>
+  <ul class="keylist">
+    <li><span class="k">第一层 · 窗口系统（Window System）</span><span class="v">最底层，由操作系统提供。它管三件事：<strong>给每个窗口分配一块画布</strong>、<strong>把这些画布按 Z 序合成一张最终画面送给显卡</strong>、<strong>接收鼠标键盘的原始信号并判断该派给哪个窗口</strong>。代表：Linux 的 X11 / Wayland、Windows 的 DWM、macOS 的 Quartz Compositor。它只认矩形和像素，<strong>它不知道什么叫"按钮"</strong>。</span></li>
+    <li><span class="k">第二层 · 工具包（Toolkit / Widget 库）</span><span class="v">中间层，是真正定义"按钮长什么样、被点了怎么响应"的地方。它把底层的"一块画布 + 一堆鼠标坐标"封装成按钮、输入框、列表、滑块这些可复用控件，还负责布局、主题、字体渲染、动画。代表：Qt、GTK、Win32/WinUI、Cocoa/SwiftUI、Flutter、以及浏览器里的 DOM+CSS。<strong>不同工具包的界面风格差异，全在这一层。</strong></span></li>
+    <li><span class="k">第三层 · 应用程序（Application）</span><span class="v">你写的那一层。你不画像素，只声明"我要一个标题栏、下面一个列表、右下角一个确定按钮"，然后把按钮和你的业务函数绑定起来。<strong>剩下的脏活全由下面两层承担。</strong></span></li>
+  </ul>
+  <pre><code>你的代码            btn = Button("保存");  btn.onClick = save_file
+      ↓
+工具包 (Qt/GTK/Cocoa)   决定按钮的圆角、阴影、按下动效；
+                        把"点击(320,480)"翻译成"保存按钮被点了"
+      ↓
+窗口系统 (Wayland/DWM)  分配画布、按 Z 序合成、分发鼠标事件
+      ↓
+GPU / 显示器            把最终这一帧的像素点亮</code></pre>
+  <p>这三层的分工解释了一个常见困惑：<strong>为什么同一个跨平台软件在 Windows 和 macOS 上按钮样子不同？</strong>因为它调用了各系统的原生工具包。而 Electron 类应用（VS Code、Discord）在所有平台长得一模一样，是因为它<mark class="key">自带了一整个浏览器当工具包</mark>，绕开了系统原生那一层——这也正是它吃内存的原因。</p>
+
+  <h3>直接操作原则：GUI 真正的灵魂</h3>
+  <p>如果把隐喻剥掉，GUI 留下的最核心思想是 Ben Shneiderman 在 1983 年提出的<strong>直接操作（Direct Manipulation）</strong>。它有三条铁律：</p>
+  <ul class="keylist">
+    <li><span class="k">对象始终可见</span><span class="v">你要操作的东西就摆在眼前，不需要在脑子里维护"当前状态"。命令行里你得记住自己在哪个目录，GUI 里那个目录就明晃晃开在你面前。</span></li>
+    <li><span class="k">用物理动作代替语法</span><span class="v">移动文件不是敲 <code>mv a.txt ~/docs/</code>，而是<strong>抓住它拖过去</strong>。动作本身就表达了意图，不需要记语法，也不会写错。</span></li>
+    <li><span class="k">效果即时可见且可逆</span><span class="v">拖到一半能看到虚影跟着走，松手立刻生效，做错了 Ctrl+Z 撤销。<strong>反馈越快，你越敢试</strong>——而"敢试"是学会一个软件的唯一途径。</span></li>
+  </ul>
+  <p>这三条合起来，产生了一个巨大的心理效应：<mark class="key">用户感觉自己在直接摆弄东西，而不是在遥控一台机器</mark>。这也是为什么调色、剪视频、排版、画图这类工作永远不会回到命令行——它们需要"边看边调"的连续反馈闭环，而文本指令天生给不了。</p>
+  <p>顺带解释一个技术后果：正因为要"随时响应用户"，GUI 程序不能像脚本那样从上到下跑完就结束，它必须停在一个循环里等事件。这就是<strong>事件驱动</strong>模型，我们会在 § 1.5 专门展开。这里先记住一句话：<strong>CLI 是你控制流程，GUI 是用户控制流程，你只负责响应。</strong></p>
+
+  <h3>GUI 的代价：没有免费的直观</h3>
+  <p>四十年的统治不代表它没有短板。恰恰相反，GUI 的代价非常昂贵，只是被硬件进步掩盖了。</p>
+  <ul class="keylist">
+    <li><span class="k">资源占用高一到三个数量级</span><span class="v">一个字符界面几 MB 就够，一套桌面环境要几百 MB 到几 GB；GUI 还要维持每秒 60 帧甚至 120 帧的重绘，持续消耗 CPU、GPU 和电量。这是服务器一律不装桌面的根本原因。</span></li>
+    <li><span class="k">极难自动化</span><span class="v">这是最致命的一条。鼠标点击<strong>无法被存成文本、无法被版本管理、无法被复制给同事</strong>。"点这里再点那里"只能录屏或写文档，而屏幕布局一变、系统一升级，脚本就失效。所谓的图形自动化（按坐标模拟点击、图像识别找按钮）极其脆弱，业界公认为最后手段。</span></li>
+    <li><span class="k">熟手效率反而更低</span><span class="v">GUI 对新手友好，对熟手是拖累。一个批量重命名两千个文件的任务，GUI 里点两千次，命令行一行搞定。这就是为什么所有专业软件最后都加回了快捷键和脚本接口——<strong>快捷键本质上是 GUI 里的小型命令行</strong>。</span></li>
+    <li><span class="k">不可远程、不可组合</span><span class="v">你没法把一个 GUI 程序的输出用管道接进另一个 GUI 程序。每个图形软件都是一座孤岛，只能靠复制粘贴或导出文件交换数据，而 CLI 世界里万物皆可拼接。</span></li>
+    <li><span class="k">开发成本高、表达上限受限于开发者</span><span class="v">写一个 GUI 要处理布局适配、多分辨率、主题、无障碍、国际化，工作量常常超过核心逻辑本身。而且用户只能做界面上提供的操作，<strong>开发者没想到的用法就永远做不到</strong>。</span></li>
+  </ul>
+  <p>所以到这一节结束，第 1 章开头那句话应该更清楚了：<mark class="key">CLI、TUI、GUI 不是三代产品，而是三个并存的生态位</mark>。GUI 赢下了"面向所有人的日常交互"，CLI 守住了"面向专业者的批量与自动化"，TUI 卡在"窄通道下也要有界面"的缝隙里。真正成熟的用法是三者混用：用 GUI 探索和创作，用 CLI 批量和留痕，用 TUI 远程运维。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>GUI 的骨架是 <strong>WIMP 四要素</strong>：窗口解决"一块屏幕多个任务"、图标把"记名字"变成"认样子"、菜单消灭了命令行的不可发现性、指针让你能直接指着东西说"就是它"。它的源头是 <strong>1973 年 Xerox PARC 的 Alto</strong>，经 Xerox Star 定型、Apple Lisa 试错，由 <strong>1984 年 Macintosh</strong> 带给大众，再由 <strong>Windows 95</strong> 推向全球。它靠<strong>桌面隐喻</strong>借用你的现实经验降低门槛，靠<strong>直接操作三原则</strong>（对象可见、动作代替语法、即时可逆）建立"我在亲手摆弄"的掌控感。技术上它分三层：<strong>窗口系统 → 工具包 → 应用</strong>，你只写最上面那层。代价是<strong>吃资源、几乎无法自动化、熟手效率低、无法组合</strong>。所以记住：<mark class="key">GUI 用"更多的机器算力"换来了"更少的人类学习成本"——这笔交易在多数场景下极其划算，但绝不是所有场景。</mark></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-2-tui.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 1.2 · 字符界面 TUI</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-4-widget.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 1.4 · 控件 Widget</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 1.3</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

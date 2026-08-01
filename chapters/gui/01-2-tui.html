@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.2 · 字符界面 TUI · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-gui.html">第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.2</span>
+    </div>
+    <a href="./01-what-is-gui.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.2 · Section</div>
+    <h1>字符界面 TUI</h1>
+    <div class="cn">Text-based User Interface</div>
+  </header>
+
+  <p class="lead">
+    上一节的命令行是"一问一答"，说完就散。但你一定见过另一种东西：在同一个黑窗口里，居然出现了会实时跳动的彩色条形图、能上下选择的文件列表、能分屏的编辑器。它们不是图形界面，一个像素都没有——<mark class="key">TUI 是纯粹用字符搭出来的界面</mark>。它是命令行和图形界面之间那个被严重低估的中间物种，而且这几年正在强势复兴。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧩 用麻将牌拼一张画</div>
+    <p>想象你手上只有一堆麻将牌，每张牌上印着一个字或一个符号，你要在桌面上铺出 80 列 × 24 行的方阵。<br/>
+    你不能画曲线、不能画渐变，但你可以选择：<strong>每个格子放哪张牌</strong>、<strong>牌是红的还是绿的</strong>、<strong>哪一格要翻过来高亮</strong>。<br/>
+    于是你用 <code>─│┌┐└┘</code> 这些牌拼出边框，用一整排 <code>█</code> 拼出进度条，用反色的一行表示"光标现在停在这里"。远远一看——这不就是一个界面吗？</p>
+    <div class="link">→ <strong>TUI</strong> = <em>把终端的字符网格当画布，用字符当像素画出来的界面。</em></div>
+  </div>
+
+  <h3>终端里怎么"画"界面：字符网格</h3>
+  <p>要理解 TUI，先要接受一件事：<strong>终端窗口本质上是一个二维字符网格</strong>。它不像浏览器那样有一个自由的像素坐标系，它只有"第几行第几列"。一个典型终端是 80 列 × 24 行，也就是 1920 个格子，每个格子只能装一个字符，外加几个属性：前景色、背景色、粗体、下划线、反色。</p>
+  <p>普通命令行程序对这个网格的用法非常保守：<mark class="key">只在最后一行往下追加，写过的地方永不回头</mark>。像一条只会往前流的河，历史内容滚上去就不管了。</p>
+  <p>而 TUI 程序做的是完全不同的一件事：它<strong>把整个网格接管下来当成画布</strong>，可以随时跳到第 5 行第 12 列去改一个字符，可以整屏重绘，可以每秒刷新十次。这就相当于从"写日记"变成了"画画"——同一张纸，可以擦了重画。</p>
+  <p>下面是一个 TUI 界面在字符层面的真实样子，你看到的"框"其实只是一些制表符字符：</p>
+  <pre><code>┌─ Processes ──────────────────────────────┐
+│  PID  USER    CPU%   MEM%  COMMAND       │
+│ 1024  root     3.2    1.1  systemd       │
+│ 2048  alice   68.5   12.4  node          │  ← 反色高亮 = 当前选中行
+│ 3072  bob      0.7    0.3  bash          │
+├──────────────────────────────────────────┤
+│ CPU [||||||||||||||||......]  72%        │  ← 用 | 和 . 拼出的进度条
+│ MEM [||||||||............]    41%        │
+└──────────────────────────────────────────┘
+ F1 Help  F5 Tree  F9 Kill  F10 Quit          ← 底部功能键提示条</code></pre>
+
+  <h3>ANSI 转义序列：控制光标的那套暗号</h3>
+  <p>问题来了：字符是通过一根管道流进终端的，程序怎么告诉终端"接下来这个字符请写到第 5 行第 12 列，用红色"？管道里只能流字符，没有额外的控制通道。</p>
+  <p>答案是一套非常聪明也非常古老的约定：<strong>ANSI 转义序列</strong>。约定的核心是选一个几乎不会出现在正常文本里的特殊字符 <code>ESC</code>（ASCII 27）当作"暗号开头"。终端一看到 <code>ESC[</code> 这个组合，就知道：<mark class="key">后面跟着的不是要显示的内容，而是给我下的命令</mark>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>序列</th><th>含义</th><th>类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>ESC[2J</code></td><td>清空整个屏幕</td><td>擦黑板</td></tr>
+        <tr><td><code>ESC[H</code></td><td>光标回到左上角（1,1）</td><td>笔尖回到纸的开头</td></tr>
+        <tr><td><code>ESC[12;40H</code></td><td>光标跳到第 12 行第 40 列</td><td>直接把笔尖挪到指定格子</td></tr>
+        <tr><td><code>ESC[31m</code></td><td>之后的字符用红色前景</td><td>换一支红笔</td></tr>
+        <tr><td><code>ESC[7m</code></td><td>反色显示（黑白互换）</td><td>荧光笔涂高亮</td></tr>
+        <tr><td><code>ESC[0m</code></td><td>重置所有属性</td><td>换回默认的黑笔</td></tr>
+        <tr><td><code>ESC[?25l</code></td><td>隐藏光标</td><td>把碍眼的笔尖收起来</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>有了这套暗号，"画界面"就变成了一件机械活：清屏 → 跳到某格 → 设颜色 → 输出字符 → 再跳下一格。用最原始的 shell 就能验证：</p>
+  <pre><code># 清屏，然后在第 5 行第 20 列打印一行红色反色文字
+printf '\033[2J\033[5;20H\033[31;7m Hello TUI \033[0m\n'
+
+# 用一个死循环把秒数刷在同一个位置上（原地更新，不换行）
+while true; do
+  printf '\033[3;1H当前时间：%s' "$(date +%T)"
+  sleep 1
+done</code></pre>
+  <p>注意第二个例子里的关键点：它每次都跳回<strong>同一个位置</strong>覆盖写。屏幕上看起来是"时间在原地跳动"，实际上只是不停地重写那一小块格子。<mark class="key">所有 TUI 动画的原理都是这个：反复擦掉重画，快到让你以为它在动。</mark></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 电子屏与广场大屏</span>
+    <p>老式火车站的<strong>翻页式时刻表</strong>，每一格只能翻出固定的几个数字，整块牌子由无数小格拼成——这就是 TUI：格子固定、内容有限、但组合起来足够表达信息。<br/>
+    而广场上的<strong>LED 全彩大屏</strong>，每个像素都能独立发任意颜色，什么图都能显示——这是 GUI。<br/>
+    翻页牌显然"落后"，但它<strong>极省电、极耐用、远看极清楚、坏一格不影响全局</strong>。TUI 之于 GUI，就是这个关系：不是能力更强，而是在特定约束下更优。</p>
+  </div>
+
+  <h3>ncurses：不用再手写暗号的那层封装</h3>
+  <p>直接手写转义序列写一个 <code>htop</code>，理论上可行，实际上是噩梦。原因有三个：不同品牌的终端支持的序列不完全一样（VT100、xterm、Windows 控制台各有差异）；每帧全屏重绘会导致明显的闪烁；还要自己处理窗口大小变化、键盘特殊键、鼠标事件等一堆杂事。</p>
+  <p>于是 1980 年代出现了 <strong>curses</strong>，后来演化成今天几乎所有 Unix 系统都自带的 <strong>ncurses</strong>（new curses）。它是 TUI 世界的"图形库"，解决了四个核心问题：</p>
+  <ul class="keylist">
+    <li><span class="k">终端能力抽象</span><span class="v">通过 <code>terminfo</code> 数据库查询"当前这个终端支持什么"，你只管调 <code>move(5, 12)</code>，它负责翻译成这个终端听得懂的具体序列。</span></li>
+    <li><span class="k">虚拟屏幕与差分刷新</span><span class="v">你所有的绘制都写进内存里的一块虚拟屏幕，调用 <code>refresh()</code> 时它<strong>只把和上一帧不同的格子</strong>发给终端。这是消除闪烁的关键，也大幅节省带宽。</span></li>
+    <li><span class="k">窗口（window）抽象</span><span class="v">可以把屏幕切成若干矩形区域，各自独立绘制、独立坐标系，互不干扰——这就是"分屏"的底层能力。</span></li>
+    <li><span class="k">输入处理</span><span class="v">把方向键、F1~F12、Home/End 这些会发出多字节序列的按键，统一识别成一个个键码；还能关闭回显和行缓冲，做到"按一下键立刻响应"而不必等回车。</span></li>
+  </ul>
+  <p>一段最小的 ncurses 程序长这样，你会发现它的心智模型已经很接近图形界面编程了：</p>
+  <pre><code>#include &lt;ncurses.h&gt;
+
+int main(void) {
+    initscr();              // 接管屏幕，进入 TUI 模式
+    noecho();               // 按键不回显
+    curs_set(0);            // 隐藏光标
+    keypad(stdscr, TRUE);   // 允许识别方向键等特殊键
+
+    mvprintw(2, 4, "请用 ↑↓ 选择，q 退出");
+    box(stdscr, 0, 0);      // 给整屏画一个边框
+    refresh();              // 差分刷新：只发送变化的部分
+
+    int ch;
+    while ((ch = getch()) != 'q') {   // 事件循环：等按键
+        mvprintw(4, 4, "你按了键码：%d   ", ch);
+        refresh();
+    }
+
+    endwin();               // 归还屏幕，恢复原样
+    return 0;
+}</code></pre>
+  <p>请留意 <code>while ((ch = getch()) != 'q')</code> 这一行——这是一个<strong>事件循环</strong>：程序不再从上往下跑完就退出，而是停在那里等你动作，你按一下它响应一下。这个思路和后面 § 1.5 要讲的 GUI 事件驱动<mark class="key">本质上是同一件事</mark>。也就是说，TUI 虽然长得像命令行，但它的编程范式已经站到 GUI 那一边了。</p>
+
+  <h3>那些你一定见过的 TUI 代表作</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>工具</th><th>做什么</th><th>为什么它是 TUI 而不是 CLI</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>htop</code></td><td>实时进程与资源监视</td><td>彩色条形图每秒刷新、可上下选中进程、按 F9 直接杀掉</td></tr>
+        <tr><td><code>vim</code> / <code>neovim</code></td><td>文本编辑器</td><td>整屏是可编辑画布，有状态栏、分屏、语法高亮</td></tr>
+        <tr><td><code>lazygit</code></td><td>Git 图形化操作</td><td>多面板并排显示分支/提交/暂存区，空格键暂存单个文件块</td></tr>
+        <tr><td><code>Midnight Commander</code> (mc)</td><td>双栏文件管理器</td><td>左右两栏对拷、F 键功能条，是 DOS 时代 Norton Commander 的精神续作</td></tr>
+        <tr><td><code>tmux</code></td><td>终端复用器</td><td>把一个终端切成多个面板与窗口，还能断线后原样恢复会话</td></tr>
+        <tr><td><code>nmtui</code></td><td>网络配置</td><td>在没有桌面的服务器上，用对话框式界面配网卡和 WiFi</td></tr>
+        <tr><td><code>ranger</code> / <code>yazi</code></td><td>文件浏览</td><td>三栏预览式浏览目录，键盘直达，比图形文件管理器还快</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里面 <code>tmux</code> 值得多说一句，因为它是"TUI 里再跑 TUI"的典型：它自己是一个字符界面程序，同时又把屏幕切成好几块，每块里再跑别的程序（可能又是一个 TUI）。它扮演的角色，其实就是终端世界里的<strong>窗口管理器</strong>——和桌面上负责给窗口排版、切换焦点的那个组件一模一样。</p>
+
+  <h3>为什么 SSH 场景下 TUI 无可替代</h3>
+  <p>这是 TUI 存在的最硬的理由，也是它永远不会消失的原因。设想一个真实场景：凌晨三点，你收到告警，要连到新加坡机房的一台服务器上排查内存暴涨。你手上只有笔记本和一个不太稳的网络。</p>
+  <ul class="keylist">
+    <li><span class="k">带宽差距是三个数量级</span><span class="v">TUI 一次全屏刷新只要传几 KB 字符；把图形界面画面通过 VNC / 远程桌面传过来，是每秒几 MB 的视频流。网络一抖，图形远程桌面直接卡成幻灯片，TUI 依然顺滑。</span></li>
+    <li><span class="k">服务器根本没有图形环境</span><span class="v">生产服务器为了安全和省资源，通常连桌面都没装。你想用图形工具，得先给它装一整套 X11 或桌面环境——这本身就是不可接受的风险和开销。</span></li>
+    <li><span class="k">SSH 通道天生就是字符流</span><span class="v">SSH 传输的就是终端字符，TUI 是它的"原生格式"，不需要任何额外协议、端口、代理。图形转发（X11 forwarding）能做但极其笨重且脆弱。</span></li>
+    <li><span class="k">断线可续</span><span class="v">配合 <code>tmux</code> 或 <code>screen</code>，网断了重新连上，你的界面还在那里，跑了一半的任务没有中断。图形远程会话一断往往就死了。</span></li>
+    <li><span class="k">既有交互又有实时</span><span class="v">CLI 打印一次静态快照不够看趋势，图形界面又用不上。TUI 恰好填住这个空档：<code>htop</code> 让你在纯字符通道里获得了"实时可交互仪表盘"。</span></li>
+  </ul>
+  <p>所以 TUI 的生态位可以一句话概括：<mark class="key">当你只有一根字符通道，却需要一个界面的时候，TUI 是唯一的答案。</mark></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 用摩斯电码开会</span>
+    <p>假如你和同事之间只有一根电报线，一秒钟只能传几个字符。你还想开一场"有议程、有投票、能实时看到结果"的会议，怎么办？<br/>
+    你不能传视频（带宽不够），只发一封封邮件又太慢太散（那是 CLI）。于是你们约定一套精简符号，在有限通道上模拟出一个"会议界面"——<strong>这就是 TUI 的设计处境</strong>：在极窄的通道上榨出最大的交互密度。</p>
+  </div>
+
+  <h3>现代 TUI 复兴：它其实正在变年轻</h3>
+  <p>你可能以为 TUI 是上世纪的遗产，只剩老工具在苟活。恰恰相反，2020 年之后 TUI 出现了明显的<strong>第二春</strong>，原因有三个：云原生时代大家天天泡在终端里；ncurses 的 C 语言 API 太痛苦而新语言给出了现代方案；开发者工具的用户本来就是键盘重度用户，TUI 的操作效率反而更高。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>框架 / 工具</th><th>语言</th><th>特点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>ratatui</strong></td><td>Rust</td><td>当红框架（tui-rs 的继任者），提供布局约束、区块、图表、表格等组件，声明式描述每一帧</td></tr>
+        <tr><td><strong>Textual</strong></td><td>Python</td><td>最激进的一个：<strong>用类 CSS 写终端界面样式</strong>，支持鼠标、动画、异步，甚至能一键跑成网页</td></tr>
+        <tr><td><strong>Bubble Tea</strong></td><td>Go</td><td>采用 Elm 架构（Model-Update-View），状态管理清晰，Charm 系工具链的基石</td></tr>
+        <tr><td><strong>blessed / ink</strong></td><td>Node.js</td><td>ink 让你<strong>用 React 组件和 JSX 写终端界面</strong>，npm、Jest 的输出界面就出自这一系</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最能说明趋势的是 <strong>Textual</strong> 和 <strong>ink</strong>：一个把 CSS 搬进了终端，一个把 React 搬进了终端。这意味着<mark class="key">Web 前端二十年积累的界面开发范式，正在被反向移植回字符网格</mark>。写 TUI 不再是和转义序列搏斗，而是像写网页一样声明"我要一个居中的、带边框的、占 30% 宽度的面板"。</p>
+  <p>看一眼 Textual 的写法，你几乎会以为在看前端代码：</p>
+  <pre><code>from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, Button, Static
+
+class DemoApp(App):
+    CSS = """
+    Static { border: round green; padding: 1 2; width: 60%; }
+    Button { margin: 1; }
+    """
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Static("这是一个终端里的面板，样式由 CSS 控制")
+        yield Button("点我", variant="success")
+        yield Footer()
+
+    def on_button_pressed(self) -> None:      # 事件回调
+        self.query_one(Static).update("按钮被按下了！")
+
+DemoApp().run()</code></pre>
+  <p>顺带说一句，现在你用的很多命令行工具其实已经悄悄是 TUI 了：<code>npm install</code> 那个会动的进度条、<code>docker pull</code> 里多层并行更新的下载条、AI 编程助手在终端里的对话框——它们都在用光标定位原地重写，都是 TUI 技术。<strong>TUI 早已渗透到你每天的工作流里，只是你没给它起名字。</strong></p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>TUI 的原理是三件事叠起来：<strong>把终端当成固定的字符网格当画布</strong>、<strong>用 ANSI 转义序列控制光标位置与颜色</strong>、<strong>靠差分刷新做到不闪烁的实时更新</strong>。<strong>ncurses</strong> 把这些脏活封装成了窗口和事件循环，让 <code>htop</code>、<code>vim</code>、<code>lazygit</code>、<code>mc</code>、<code>tmux</code> 这一整代工具成为可能。它真正不可替代的战场是 <strong>SSH 远程运维</strong>：带宽只要几 KB、服务器不需要桌面、断线还能续。而 <strong>ratatui / Textual / Bubble Tea / ink</strong> 的出现说明它没在衰退，而是把现代前端范式吃了进来。记住定位：<mark class="key">TUI 的编程范式已经是 GUI 的（事件驱动 + 控件 + 布局），只是它的像素是字符。</mark></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-1-cli.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">§ 1.1 · 命令行 CLI</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-3-gui.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 1.3 · 图形界面 GUI</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 1.2</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

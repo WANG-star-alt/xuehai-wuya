@@ -307,22 +307,24 @@
         'CLI / TUI / GUI 三种交互范式 + 控件、窗口、事件驱动的基本盘。',
         '约 3 小时',
         [
-          createNode('gui-01-1', '§ 1.1 · 命令行 CLI', '打字对话式交互——精准、可脚本化，但要背命令。', '30 min', []),
-          createNode('gui-01-2', '§ 1.2 · 字符界面 TUI', '终端里画界面——htop、vim、Midnight Commander。', '25 min', []),
-          createNode('gui-01-3', '§ 1.3 · 图形界面 GUI', '窗口、图标、菜单、指针——WIMP 范式的诞生。', '35 min', []),
-          createNode('gui-01-4', '§ 1.4 · 控件 Widget', '按钮、输入框、列表、滑块——界面的乐高积木。', '30 min', []),
-          createNode('gui-01-5', '§ 1.5 · 事件驱动', '程序不再"从上到下跑完"，而是"等你动手才响应"。', '35 min', [])
-        ]),
+          createNode('gui-01-1', '§ 1.1 · 命令行 CLI', '打字对话式交互——精准、可脚本化，但要背命令。', '30 min', [], { href: 'chapters/gui/01-1-cli.html' }),
+          createNode('gui-01-2', '§ 1.2 · 字符界面 TUI', '终端里画界面——htop、vim、Midnight Commander。', '25 min', [], { href: 'chapters/gui/01-2-tui.html' }),
+          createNode('gui-01-3', '§ 1.3 · 图形界面 GUI', '窗口、图标、菜单、指针——WIMP 范式的诞生。', '35 min', [], { href: 'chapters/gui/01-3-gui.html' }),
+          createNode('gui-01-4', '§ 1.4 · 控件 Widget', '按钮、输入框、列表、滑块——界面的乐高积木。', '30 min', [], { href: 'chapters/gui/01-4-widget.html' }),
+          createNode('gui-01-5', '§ 1.5 · 事件驱动', '程序不再"从上到下跑完"，而是"等你动手才响应"。', '35 min', [], { href: 'chapters/gui/01-5-event-driven.html' })
+        ],
+        { href: 'chapters/gui/01-what-is-gui.html' }),
       createNode('gui-02', '第 2 章 · 界面是怎么画出来的',
         '像素、位图与矢量、渲染管线、GPU 合成——一帧画面的诞生过程。',
         '约 3 小时',
         [
-          createNode('gui-02-1', '§ 2.1 · 像素与分辨率', '像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。', '30 min', []),
-          createNode('gui-02-2', '§ 2.2 · 位图 vs 矢量', 'PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。', '25 min', []),
-          createNode('gui-02-3', '§ 2.3 · 颜色与色彩空间', 'RGB、HSL、sRGB vs P3、透明度与混色。', '30 min', []),
-          createNode('gui-02-4', '§ 2.4 · 渲染管线', '解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。', '40 min', []),
-          createNode('gui-02-5', '§ 2.5 · GPU 合成与 60fps', '为什么动画会卡、为什么 transform 比 top 快。', '35 min', [])
-        ]),
+          createNode('gui-02-1', '§ 2.1 · 像素与分辨率', '像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。', '30 min', [], { href: 'chapters/gui/02-1-pixel.html' }),
+          createNode('gui-02-2', '§ 2.2 · 位图 vs 矢量', 'PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。', '25 min', [], { href: 'chapters/gui/02-2-bitmap-vector.html' }),
+          createNode('gui-02-3', '§ 2.3 · 颜色与色彩空间', 'RGB、HSL、sRGB vs P3、透明度与混色。', '30 min', [], { href: 'chapters/gui/02-3-color.html' }),
+          createNode('gui-02-4', '§ 2.4 · 渲染管线', '解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。', '40 min', [], { href: 'chapters/gui/02-4-render-pipeline.html' }),
+          createNode('gui-02-5', '§ 2.5 · GPU 合成与 60fps', '为什么动画会卡、为什么 transform 比 top 快。', '35 min', [], { href: 'chapters/gui/02-5-gpu-60fps.html' })
+        ],
+        { href: 'chapters/gui/02-how-pixels-happen.html' }),
       createNode('gui-03', '第 3 章 · 布局与排版',
         '盒模型、Flex / Grid、约束布局、响应式——元素为什么待在那个位置。',
         '约 3 小时',

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 2 章 · 界面是怎么画出来的 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html">界面篇</a>
+      <span class="sep">›</span>
+      <span>第 2 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 02</div>
+    <h1>第 2 章 · 界面是怎么画出来的</h1>
+    <div class="cn">How Pixels Happen · 一帧画面的诞生</div>
+  </header>
+
+  <p class="lead">
+    你按下一个按钮，它变了颜色。这中间发生了什么？<mark class="key">屏幕上的一切，最终都是几百万个小方格各自被赋予一个颜色值的结果</mark>——而这个过程每秒要重复 60 次甚至 120 次。这一章分五节，从最小的像素讲到 GPU 合成，拆开"画面是怎么出现的"这个黑盒。
+  </p>
+
+  <h3>本章要回答什么</h3>
+  <p>同一张图为什么在手机上清晰、在老显示器上发虚？为什么设计师给的图要准备 <code>@2x</code>、<code>@3x</code> 三份？PNG 放大就糊、<strong>SVG</strong> 放到多大都清晰，差别在哪？浏览器从拿到 HTML 到你看见页面，中间走了哪几步？以及最实用的一条——<strong>为什么用 <code>transform</code> 做动画比改 <code>top</code> 流畅得多</strong>？</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 譬喻</span>
+    <p>画界面就像<strong>十字绣</strong>。屏幕是一块布，横竖都是格子（像素）；你要做的事，就是决定每一格绣什么颜色的线。<br/>
+    <strong>位图</strong>像已经绣好的成品——放大只能把格子拉大，所以会糊。<br/>
+    <strong>矢量图</strong>像绣花图纸——记录的是"这里画一个半径 5 的圆"，无论布多大都能重新绣一遍，永远清晰。<br/>
+    而<strong>渲染管线</strong>就是"从图纸到成品"的那套流水线工序。</p>
+  </div>
+
+  <h3>本章的五节</h3>
+  <div class="cards">
+    <a class="card" href="./02-1-pixel.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.1</div>
+      <h4>像素与分辨率</h4>
+      <p>像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。</p>
+    </a>
+    <a class="card" href="./02-2-bitmap-vector.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.2</div>
+      <h4>位图 vs 矢量</h4>
+      <p>PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。</p>
+    </a>
+    <a class="card" href="./02-3-color.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.3</div>
+      <h4>颜色与色彩空间</h4>
+      <p>RGB、HSL、sRGB vs P3、透明度与混色。</p>
+    </a>
+    <a class="card" href="./02-4-render-pipeline.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.4</div>
+      <h4>渲染管线</h4>
+      <p>解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。</p>
+    </a>
+    <a class="card" href="./02-5-gpu-60fps.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 2.5</div>
+      <h4>GPU 合成与 60fps</h4>
+      <p>为什么动画会卡、为什么 transform 比 top 快。</p>
+    </a>
+  </div>
+
+  <h3>一帧画面的四道工序</h3>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 解析 Parse</h4>
+      <p>把 HTML/CSS 或界面描述文件读成程序内部的树形结构。</p>
+    </div>
+    <div class="step">
+      <h4>2. 布局 Layout</h4>
+      <p>算出每个元素的确切位置和尺寸——谁在哪、多大。</p>
+    </div>
+    <div class="step">
+      <h4>3. 绘制 Paint</h4>
+      <p>按顺序把背景、边框、文字、阴影画到若干图层上。</p>
+    </div>
+    <div class="step">
+      <h4>4. 合成 Composite</h4>
+      <p>GPU 把所有图层叠成最终一张图，送去屏幕显示。</p>
+    </div>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">一切都是像素</span><span class="v">再复杂的界面，最后都归结为"给每个格子填一个颜色"。</span></li>
+    <li><span class="k">16.7 毫秒是硬底线</span><span class="v">60fps 意味着每帧只有 16.7ms——超了就掉帧、就是"卡"。</span></li>
+    <li><span class="k">越靠后的工序越便宜</span><span class="v">只触发"合成"的动画最快，触发"布局"的最贵——这是所有性能优化的总纲。</span></li>
+    <li><span class="k">矢量优先</span><span class="v">图标、logo、插画能用 SVG 就别用 PNG——清晰、体积小、还能改颜色。</span></li>
+  </ul>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-5-event-driven.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 1.5 · 事件驱动</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-1-pixel.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 2.1 · 像素与分辨率</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · 第 2 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

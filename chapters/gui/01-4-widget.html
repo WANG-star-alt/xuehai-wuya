@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.4 · 控件 Widget · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-gui.html">第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.4</span>
+    </div>
+    <a href="./01-what-is-gui.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.4 · Section</div>
+    <h1>控件 Widget</h1>
+    <div class="cn">Widgets · The Lego Bricks of Interface</div>
+  </header>
+
+  <p class="lead">
+    打开任何一个软件，你看到的东西看起来千差万别，其实<mark class="key">拆开来只有二三十种零件在反复组合</mark>。按钮、输入框、下拉菜单、勾选框、滑块、列表、标签页——它们就是界面的乐高积木。学会认这些积木，再复杂的界面你都能一眼看穿它的骨架。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧱 宜家的家具其实只有几种零件</div>
+    <p>你去宜家逛一圈，几百件家具看得眼花。但翻开安装说明，会发现所有家具都是那几样东西拼出来的：板材、螺丝、插销、合页、封边条。<br/>
+    书架和衣柜的区别，不在于用了不同的零件，而在于<strong>零件的尺寸、数量和拼装方式不同</strong>。<br/>
+    界面也是这样：微信和银行 App 看起来毫无关系，但把它们拆到最底层，都是按钮、文本、图片、列表这几样东西按不同方式摆出来的。</p>
+    <div class="link">→ <strong>控件</strong> = <em>Widget / Control / Component</em>：预制好的、可复用、可配置的界面零件。</div>
+  </div>
+
+  <h3>控件到底是什么：可复用的界面积木</h3>
+  <p>先给一个不绕弯子的定义：<strong>控件是一个把"长什么样"和"怎么响应用户"打包在一起的可复用单元</strong>。</p>
+  <p>注意"打包"这个词。一个按钮不只是屏幕上那个圆角矩形——如果只是画个矩形，那叫图形，不叫控件。按钮之所以是控件，是因为它同时还知道：鼠标移上来要变亮、按下去要变暗、被点击时要通知程序、被禁用时要变灰而且不再理你。<mark class="key">外观和行为绑在一起，才叫控件</mark>。</p>
+  <p>再注意"可复用"。这是控件存在的全部理由。想象一下如果没有控件：你要在界面上放 30 个按钮，就得手写 30 遍"画矩形、画文字、检测鼠标是否在矩形内、检测是否按下、改颜色、触发回调"。有了控件，你只需要说 30 次"给我一个按钮，文字是 X，点了以后做 Y"。剩下的脏活，控件库替你干过一遍，全世界共享。</p>
+  <p>这就是软件工程里最朴素也最有效的思想——<strong>把重复的东西抽象成零件，让人只关心零件之间的差异</strong>。控件是这个思想在界面领域的产物。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 乐高积木与积木说明书</span>
+    <p>乐高的伟大之处不在于某一块积木特别精巧，而在于<strong>所有积木的接口是统一的</strong>——凸起和凹槽的尺寸标准化了，于是任意两块都能拼。<br/>
+    控件库就是一套标准化的界面积木：每个控件都有统一的"接口"（怎么设置大小、怎么放进容器、怎么绑定事件）。<br/>
+    所以你学会用一个按钮，基本就学会了用所有控件——因为它们的"凸起和凹槽"是一个模子刻的。</p>
+  </div>
+
+  <h3>常见控件的五大类</h3>
+  <p>控件的种类看起来很多，但按"它在界面里干什么活"来分，只有五类。记住这五类，以后见到任何陌生控件，都能先给它归个位。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>分类</th><th>它的职责</th><th>典型成员</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>输入类</strong></td><td>把用户的意图收进来</td><td>单行输入框、多行文本域、密码框、勾选框 Checkbox、单选组 Radio、开关 Switch、滑块 Slider、下拉选择 Select、日期选择器、数字步进器、文件选择器</td></tr>
+        <tr><td><strong>展示类</strong></td><td>把信息摆出来给人看</td><td>文本标签 Label、图片 Image、图标 Icon、分割线 Divider、徽标 Badge、头像 Avatar、表格 Table、树 Tree、代码块、二维码</td></tr>
+        <tr><td><strong>容器类</strong></td><td>装别的控件，负责排布</td><td>面板 Panel、卡片 Card、分组框 GroupBox、滚动区域 ScrollView、栅格 Grid、行/列布局 Row/Column、可折叠面板 Collapse、分栏 Splitter</td></tr>
+        <tr><td><strong>导航类</strong></td><td>决定"你现在在哪、能去哪"</td><td>菜单栏 Menu、右键菜单、标签页 Tabs、侧边栏 Sidebar、面包屑 Breadcrumb、分页器 Pagination、步骤条 Steps、工具栏 Toolbar</td></tr>
+        <tr><td><strong>反馈类</strong></td><td>告诉用户"发生了什么"</td><td>对话框 Dialog、轻提示 Toast、进度条 ProgressBar、加载转圈 Spinner、气泡提示 Tooltip、通知 Notification、骨架屏 Skeleton</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>这五类之间的关系很像一家餐厅的分工：<strong>输入类</strong>是点单的服务员，负责把你的要求记下来；<strong>展示类</strong>是端上桌的菜品和菜单，让你看到东西；<strong>容器类</strong>是桌子和托盘，决定东西怎么摆；<strong>导航类</strong>是门口的指引牌和楼层图，告诉你哪儿是包间哪儿是散台；<strong>反馈类</strong>是那句"您的菜已经在做了，请稍等十分钟"——不干实事，但少了它你会焦虑。</p>
+  <p>特别值得说的是<strong>反馈类</strong>。新手做界面最容易漏掉的就是这一类。功能都做对了，点击后要等三秒才有结果，中间什么提示都没有——用户会以为程序卡死了，然后疯狂重复点击。<mark class="key">反馈类控件不产生任何"功能"，但它决定了软件用起来是否让人安心</mark>。</p>
+
+  <h3>控件三要素：外观 + 状态 + 行为</h3>
+  <p>任何一个控件，无论多简单多复杂，都可以拆成三个部分来理解。这是本节最值得记住的一个模型。</p>
+
+  <ul class="keylist">
+    <li><span class="k">外观 Appearance</span><span class="v">它长什么样：尺寸、颜色、圆角、字体、边框、阴影、图标。外观是"给眼睛看的部分"，通常由样式表或主题统一控制，改起来最便宜。</span></li>
+    <li><span class="k">状态 State</span><span class="v">它现在处于什么情况：勾选框是选中还是未选中、输入框里现在是什么文字、按钮是可用还是禁用、列表选中了第几行。状态是"控件的记忆"，是数据。</span></li>
+    <li><span class="k">行为 Behavior</span><span class="v">它对用户动作怎么反应：点击了要做什么、输入了要校验什么、拖动了要更新什么。行为是"控件的脾气"，通常通过回调函数交给你来定义。</span></li>
+  </ul>
+
+  <p>这三者的关系是有方向的：<strong>用户操作触发行为 → 行为改变状态 → 状态决定外观</strong>。</p>
+  <p>拿一个勾选框举例。你点它一下（用户操作），触发了"切换选中"这个行为，行为把状态从"未选中"改成"选中"，然后外观自动从空方框变成打钩的方框。整条链是单向流动的。现代界面框架（React、Vue、Flutter、SwiftUI 等）之所以都强调"状态驱动 UI"，本质就是把这条链明确成规矩：<mark class="key">你只管改状态，界面长什么样由框架自动推导</mark>，不许手动去改外观。</p>
+  <p>为什么这条规矩重要？因为一旦允许手动改外观，就会出现"状态说没选中，但界面上打着钩"这种自相矛盾的 bug。这类 bug 极难查，因为真相有两份，而且它们不一致。</p>
+
+  <pre><code>// 控件三要素在代码里的样子（伪代码）
+
+Button {
+  // ① 外观
+  text:     "提交订单",
+  width:    120,
+  color:    "#556b3d",
+  radius:   6,
+
+  // ② 状态
+  enabled:  false,      // 现在是禁用的
+  loading:  false,      // 没有在转圈
+
+  // ③ 行为
+  onClick:  function () {
+      this.loading = true;      // 改状态
+      submitOrder();            // 干实事
+  }
+}</code></pre>
+
+  <h3>控件树：界面是一棵嵌套的树</h3>
+  <p>控件从来不是散落一地的，它们是<strong>嵌套</strong>的——容器类控件里可以放别的控件，而放进去的那个如果也是容器，里面又能再放。层层套下去，整个界面就成了一棵<strong>树</strong>。</p>
+  <p>这棵树有一个根（通常是窗口），中间是各种容器（面板、卡片、布局），叶子是那些实心的控件（按钮、文字、图片）。你在屏幕上看到的每一个像素，都归属于这棵树上的某个节点。</p>
+
+  <pre><code>Window（窗口，根节点）
+└── Column（竖向排布容器）
+    ├── Toolbar（工具栏）
+    │   ├── Button "新建"
+    │   ├── Button "打开"
+    │   └── Button "保存"
+    ├── Row（横向排布容器）
+    │   ├── Sidebar（侧边栏，宽 200）
+    │   │   └── Tree（文件树）
+    │   └── ScrollView（可滚动区域，占剩余空间）
+    │       └── TextArea（正文编辑区）
+    └── StatusBar（状态栏）
+        ├── Label "第 12 行，第 4 列"
+        └── Label "UTF-8"</code></pre>
+
+  <p>树形结构不是为了好看，它带来三个实实在在的好处。</p>
+  <p><strong>第一，位置可以继承推算。</strong>子控件的坐标通常是相对父控件的。父控件整体移动 100 像素，所有子孙自动跟着移动，你不需要逐个去改。这就像搬桌子——桌上的杯子盘子不用一个个搬。</p>
+  <p><strong>第二，属性可以向下传递。</strong>父容器设置了字体、颜色主题、是否禁用，子控件默认继承。所以切换深色模式时，你只要改根节点的主题，整棵树跟着变。</p>
+  <p><strong>第三，事件可以顺着树跑。</strong>你点在按钮上，这个点击事件先从根节点往下"捕获"，找到最深的那个被点中的控件，再从它往上"冒泡"。这套机制让"点击子元素时父元素也能知道"变得非常自然——比如点卡片里的任意位置都算点了整张卡片。这一点在下一节讲事件驱动时会展开。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 俄罗斯套娃与行政区划</span>
+    <p>控件树最像<strong>行政区划</strong>：国 → 省 → 市 → 区 → 街道 → 门牌号。<br/>
+    你的地址（坐标）是相对上一级说的，"3 号楼"只有在某个小区里才有意义。<br/>
+    政策（样式主题）从上往下发，省里定的规矩市里默认执行，除非市里特别声明例外——这就是"样式继承"和"局部覆盖"。<br/>
+    而一件事情上报（事件冒泡），是从门牌号一级级往上传的。</p>
+  </div>
+
+  <h3>原生控件 vs 自绘控件：一道永恒的取舍</h3>
+  <p>做界面时有个绕不开的选择：按钮到底用<strong>操作系统提供的那个</strong>，还是<strong>自己画一个</strong>？</p>
+  <p><strong>原生控件（Native）</strong>是操作系统自带的。你要一个按钮，系统就给你一个 Windows 味或者 macOS 味的按钮，长相、动画、字体、无障碍支持全是系统那一套。<br/>
+  <strong>自绘控件（Custom-drawn）</strong>是框架自己从零画的——只借用系统的"一块空白画布"，然后所有像素都自己填。Flutter、Qt 的 QML、游戏引擎里的 UI、浏览器里的绝大多数组件库，走的都是这条路。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比维度</th><th>原生控件</th><th>自绘控件</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>视觉一致性</td><td>和系统其他软件浑然一体</td><td>和自己家产品在各平台一致</td></tr>
+        <tr><td>跨平台表现</td><td>各平台长得不一样，得分别适配</td><td>一套代码，各平台像素级相同</td></tr>
+        <tr><td>定制自由度</td><td>低，改个圆角都可能很别扭</td><td>极高，想画成什么样就什么样</td></tr>
+        <tr><td>无障碍 / 输入法</td><td>免费获得屏幕阅读器、中文输入法、放大镜支持</td><td>要自己实现，很容易做不全</td></tr>
+        <tr><td>性能与体积</td><td>轻，系统已经加载好了</td><td>需要带渲染引擎，包体更大</td></tr>
+        <tr><td>随系统进化</td><td>系统换新设计语言，你自动跟上</td><td>系统更新了，你还是老样子</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>怎么选？给一条实用的判断标准：<mark class="key">工具类软件优先原生，品牌类软件优先自绘</mark>。</p>
+  <p>系统设置、文件管理器、开发工具这类东西，用户希望它"像本地软件"，快、稳、不出戏，原生控件最合适。而设计工具、音乐播放器、游戏、需要强品牌调性的 App，用户期待的是"独特的视觉体验"，自绘更能表达设计。</p>
+  <p>顺便说一句，这两条路正在互相靠近。原生控件库越来越可定制，自绘框架也在拼命补齐无障碍和输入法这块短板。但这道取舍本身不会消失——它是"融入环境"和"保持自我"之间的永恒张力。</p>
+
+  <h3>控件状态：一个按钮至少有五张脸</h3>
+  <p>最后一个容易被新手忽略的点：<strong>控件不是只有一个样子</strong>。同一个按钮，在不同情况下要长得不一样，用户才能读懂"我现在能不能点、点了有没有反应"。</p>
+
+  <ul class="keylist">
+    <li><span class="k">默认 Default / Normal</span><span class="v">什么都没发生时的样子。这是基准状态，其余状态都是在它基础上做加减。</span></li>
+    <li><span class="k">悬浮 Hover</span><span class="v">鼠标移上去、但还没按下。作用是"预告"——告诉你这块东西是可以点的、而且你正瞄准着它。触摸屏没有鼠标，所以这个状态在手机上基本不存在，这也是移动端设计要额外强调"可点击感"的原因。</span></li>
+    <li><span class="k">按下 Active / Pressed</span><span class="v">正在按住的瞬间。通常颜色变深、稍微内缩、或者加一层水波纹。这个状态给的是"物理确认感"——像真实按键被压下去了。缺了它，界面会显得死板。</span></li>
+    <li><span class="k">禁用 Disabled</span><span class="v">功能暂时不可用。表现是变灰、降低透明度，并且完全不响应点击和悬浮。禁用比"隐藏"更友好：它让用户知道这个功能存在，只是条件还不满足。</span></li>
+    <li><span class="k">焦点 Focus</span><span class="v">键盘当前选中的是它。表现是一圈外发光或轮廓线。这个状态对鼠标用户几乎无感，但对纯键盘用户和屏幕阅读器用户是<strong>生命线</strong>——没有焦点样式，他们就完全不知道自己在哪。千万不要为了"好看"把它去掉。</span></li>
+  </ul>
+
+  <p>除这五个之外，很多控件还有更多状态：加载中（Loading）、选中（Selected / Checked）、错误（Error / Invalid）、只读（Readonly）、展开（Expanded）。而这些状态还会<strong>叠加</strong>——"禁用 + 选中"的勾选框、"错误 + 焦点"的输入框，都得有明确的样子。</p>
+  <p>所以做一个看起来简单的按钮，真正的工作量往往不在"默认那张脸"，而在<strong>剩下那十几种组合</strong>。这也是为什么成熟的控件库很有价值：它替你把所有状态组合都推敲过、测试过了。</p>
+
+  <pre><code>/* 一个按钮的五种状态（CSS 写法） */
+
+.btn                { background:#556b3d; color:#fff; }   /* 默认 */
+.btn:hover          { background:#657d4a; }               /* 悬浮 */
+.btn:active         { background:#44562f; transform:translateY(1px); } /* 按下 */
+.btn:focus-visible  { outline:2px solid #a05a2c; outline-offset:2px; } /* 焦点 */
+.btn:disabled       { background:#c9c6bd; cursor:not-allowed; opacity:.6; } /* 禁用 */</code></pre>
+
+  <h3>回到最开始的那个问题</h3>
+  <p>为什么要花一整节讲控件？因为<strong>控件是界面世界的"词汇表"</strong>。</p>
+  <p>你学一门外语，语法再熟，没词汇也说不出话。做界面同理：知道控件有哪几类、每类解决什么问题，你才能在拿到一个需求时立刻反应过来"这里该用下拉选择还是单选组"、"这个提示该用 Toast 还是 Dialog"。选对了控件，界面自然清晰；选错了控件，怎么调样式都别扭。</p>
+  <p>而更深一层的价值是：<mark class="key">控件把界面从"画画"变成了"搭建"</mark>。画画依赖天赋，搭建可以靠工程方法。这是界面开发能够规模化、能够协作、能够沉淀设计系统的根本前提。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>控件是<strong>把外观和行为打包在一起的可复用界面零件</strong>，按职责分为输入、展示、容器、导航、反馈五类。<br/>
+    理解任何控件都可以用<strong>三要素</strong>模型：外观（长什么样）、状态（现在怎么样）、行为（怎么响应你）；而三者的流向是单向的——操作改状态，状态定外观。<br/>
+    控件通过容器层层嵌套成<strong>控件树</strong>，坐标、样式、事件都顺着这棵树传递。<br/>
+    在<strong>原生与自绘</strong>之间选择，本质是在"融入系统"和"保持品牌"之间做取舍。<br/>
+    最后别忘了：一个控件至少有<strong>五张脸</strong>——默认、悬浮、按下、禁用、焦点。真正专业的界面，差距往往就藏在这些"非默认状态"里。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-3-gui.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 1.3 · 图形界面 GUI</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-5-event-driven.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 1.5 · 事件驱动</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 1.4</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

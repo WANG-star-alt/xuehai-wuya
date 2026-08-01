@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.3 · 颜色与色彩空间 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-how-pixels-happen.html">第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.3</span>
+    </div>
+    <a href="./02-how-pixels-happen.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.3 · Section</div>
+    <h1>颜色与色彩空间</h1>
+    <div class="cn">Color &amp; Color Spaces</div>
+  </header>
+
+  <p class="lead">
+    你在设计稿里选了一个漂亮的橙色，做成网页后在同事的电脑上看起来发土，在你手机上又特别艳。谁错了？其实<mark class="key">谁都没错——"颜色"从来不是一个绝对的东西，它是一组数字，加上一份"这组数字该怎么解读"的说明书</mark>。这一节把这份说明书摊开来看：三个数字怎么变成一种颜色，透明是怎么算出来的，以及为什么同一个色号在不同屏幕上会长得不一样。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔴 舞台上的三盏灯</div>
+    <p>你在剧场后台，面前有三盏聚光灯：一盏红、一盏绿、一盏蓝，每盏都有一个从 0 到 255 的亮度旋钮。<br/>
+    三盏全关 → 舞台漆黑，那是<strong>黑色</strong>。<br/>
+    三盏全开到底 → 光叠在一起，舞台一片<strong>白</strong>。<br/>
+    红绿全开、蓝关掉 → 你得到刺眼的<strong>黄色</strong>。<br/>
+    红开一半、绿开三成、蓝几乎不开 → 一种沉稳的<strong>土棕色</strong>。<br/>
+    你从没碰过一罐"黄色颜料"，却调出了黄色——你调的是<em>光</em>。</p>
+    <div class="link">→ 这就是屏幕的工作方式：<strong>RGB 加色混合</strong>，光越加越亮。</div>
+  </div>
+
+  <h3>RGB：为什么是红绿蓝这三个</h3>
+  <p>屏幕上每一个像素，其实是三个挨得极近的微型灯：红（Red）、绿（Green）、蓝（Blue）。它们各自独立发光，因为距离太近，你的眼睛无法分辨，只会把三束光混合后的结果当成"一个颜色"。</p>
+  <p>选这三个颜色不是随便定的，而是<strong>照着人眼的构造抄的</strong>。人的视网膜上有三种视锥细胞，分别对长波（偏红）、中波（偏绿）、短波（偏蓝）最敏感。屏幕要骗过眼睛，最省事的办法就是直接给这三种细胞分别投喂对应的光——只要三种细胞收到的刺激比例和看真实物体时一致，大脑就认为"我看到了同一个颜色"。<mark class="key">屏幕不是在复制颜色，是在复制眼睛对颜色的反应</mark>。</p>
+  <p>因为混合的是光，所以叫<strong>加色混合</strong>（additive）：加得越多越亮，全加满是白。这和小学美术课上颜料的规律正好相反——颜料是<strong>减色混合</strong>（subtractive），每加一种颜料就多吸收一部分光，混到最后是脏黑色。打印机用的 CMYK 就是减色体系，这也是"屏幕上鲜艳的荧光绿印出来永远发闷"的根本原因：印刷用的是吸光的墨，压根做不出发光的效果。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 三盏灯 vs 三罐颜料</span>
+    <p><strong>加色（屏幕）</strong>：往黑暗的房间里打光。开的灯越多，房间越亮，全开是白天。<br/>
+    <strong>减色（颜料 / 印刷）</strong>：往一张白纸上刷颜料。刷的颜料越多，反射回来的光越少，全刷满是黑。<br/>
+    所以：屏幕的"底色"是黑（什么都不发光），纸的"底色"是白（什么都不吸收）。同一个色号在两个体系里能表达的范围也天然不同。</p>
+  </div>
+
+  <h3>十六进制：#FF6B35 到底在说什么</h3>
+  <p>三个通道各 0~255，写成 <code>rgb(255, 107, 53)</code> 已经很清楚，但代码里更常见的是 <code>#FF6B35</code>。这两个是<strong>同一个东西的两种写法</strong>，只是后者把十进制换成了十六进制。</p>
+  <p>十六进制用 0-9 和 A-F 共十六个符号表示一位，好处是：<strong>0~255 刚好能用两位十六进制表示完（00 到 FF）</strong>，不多不少。于是三个通道 = 六个字符，整齐得像身份证号。</p>
+<pre><code>#FF6B35
+ └┬┘└┬┘└┬┘
+  R  G  B
+
+FF = 15×16 + 15 = 255   → 红：拉满
+6B =  6×16 + 11 = 107   → 绿：中等偏低
+35 =  3×16 +  5 =  53   → 蓝：很少
+结果：一个饱和的橙红色</code></pre>
+  <p>几个记忆锚点，看到就能秒懂：</p>
+  <ul class="keylist">
+    <li><span class="k">#000000 / #FFFFFF</span><span class="v">全关是黑，全开是白。这是加色混合最直接的两个端点。</span></li>
+    <li><span class="k">三通道数值相等</span><span class="v"><code>#888888</code>、<code>#CCCCCC</code>——只要 R=G=B，一定是灰色。数值越大越浅。</span></li>
+    <li><span class="k">缩写形式</span><span class="v"><code>#F60</code> 等于 <code>#FF6600</code>，每位自我复制一次。只是省字，能力没变。</span></li>
+    <li><span class="k">带 Alpha 的八位写法</span><span class="v"><code>#FF6B3580</code> 最后两位是透明度，<code>80</code> ≈ 50%。现代浏览器都支持。</span></li>
+  </ul>
+
+  <h3>HSL：更符合人脑的调色方式</h3>
+  <p>RGB 对机器友好，对人非常不友好。请回答：把 <code>#FF6B35</code> 变浅一点，该怎么改？你得同时提高三个通道，还得维持它们的比例，才不会连色相一起改掉。这在实际工作中几乎无法手算。</p>
+  <p>于是有了 <strong>HSL</strong>，它把颜色拆成三个人类真正会用的维度：</p>
+  <ul class="keylist">
+    <li><span class="k">H · 色相 Hue</span><span class="v">0~360 度，是"哪一种颜色"。想象一个圆盘：0° 红、60° 黄、120° 绿、180° 青、240° 蓝、300° 品红，转一圈回到红。</span></li>
+    <li><span class="k">S · 饱和度 Saturation</span><span class="v">0%~100%，是"颜色有多浓"。100% 是最纯的原色，0% 变成灰——相当于给颜色兑多少水。</span></li>
+    <li><span class="k">L · 亮度 Lightness</span><span class="v">0%~100%，是"加了多少白或黑"。0% 一律是黑，100% 一律是白，50% 是这个色相最饱满的状态。</span></li>
+  </ul>
+  <p>有了这套坐标，设计系统里那些"同色系深浅梯度"就变成了小学算术——只动 L，色相和浓度自动保持一致：</p>
+<pre><code>/* 一整套按钮配色，只改亮度 L */
+--brand-100: hsl(24 92% 92%);   /* 极浅底色 */
+--brand-300: hsl(24 92% 72%);   /* 浅色边框 */
+--brand-500: hsl(24 92% 52%);   /* 主色 */
+--brand-700: hsl(24 92% 36%);   /* hover 加深 */
+--brand-900: hsl(24 92% 20%);   /* 深色文字 */
+
+/* 想换整站主色调？只改这一个数 */
+/* 把 24 改成 210，全套变成蓝色系 */</code></pre>
+  <p>注意 HSL 和 RGB <strong>描述的是同一批颜色</strong>，只是换了坐标系——就像"经纬度"和"街道门牌号"都能定位同一栋楼。浏览器内部会把 HSL 换算回 RGB 再点亮那三盏灯。</p>
+
+  <h3>Alpha 通道：透明是怎么被"算"出来的</h3>
+  <p>屏幕上没有"半透明的灯"这种硬件。像素只能发出一个确定的颜色，不存在"发一半"。所以<mark class="key">透明不是一种颜色，而是一次运算</mark>——系统把上层颜色和下层颜色按比例混合，算出一个新颜色，然后把这个新颜色点上去。</p>
+  <p>这个运算叫 <strong>Alpha 混合</strong>（alpha blending），公式朴素得让人安心：</p>
+<pre><code>结果 = 前景色 × α + 背景色 × (1 − α)
+
+举个具体的：
+  前景 红色 rgb(255, 0, 0)，α = 0.5
+  背景 白色 rgb(255, 255, 255)
+
+R = 255 × 0.5 + 255 × 0.5 = 255
+G =   0 × 0.5 + 255 × 0.5 = 128
+B =   0 × 0.5 + 255 × 0.5 = 128
+
+结果 = rgb(255, 128, 128) —— 粉色
+
+同样这个半透明红色，压在黑色背景上：
+R = 255 × 0.5 +   0 × 0.5 = 128
+G =   0 × 0.5 +   0 × 0.5 =   0
+结果 = rgb(128, 0, 0) —— 暗红</code></pre>
+  <p>这就解释了一个常见困惑：<strong>同一个半透明色，放在不同背景上看起来完全是两种颜色</strong>。因为它压根不是一个颜色，而是一个"和背景做加权平均"的指令。也因此，半透明的 UI 元素在深色模式下往往需要重新调整 α 值，否则会显得过重或过淡。</p>
+  <p>顺带说清三个容易混淆的透明相关属性：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>影响范围</th><th>典型用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rgba() / #RRGGBBAA</code></td><td>只影响这一个颜色值</td><td>半透明背景、半透明边框，文字仍然全不透明</td></tr>
+        <tr><td><code>opacity: 0.5</code></td><td>整个元素及其所有子元素</td><td>整块淡入淡出、禁用态置灰</td></tr>
+        <tr><td><code>visibility / display</code></td><td>不是透明，是隐藏</td><td>彻底移除可见性，前者仍占位，后者不占位</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>踩坑提示：给容器加 <code>opacity</code> 会把里面的文字一起变淡，而且<strong>会让这个元素成为一个新的合成层</strong>——这一点在下一节讲 GPU 时会再遇到。想只让背景透明、文字清晰，请用 <code>background: rgba(...)</code>。</p>
+
+  <h3>色彩空间：同一组数字，不同的"说明书"</h3>
+  <p>现在到了最容易被忽略、也最能解释"为什么颜色不一致"的地方。<code>rgb(255, 0, 0)</code> 说的是"把红灯开到最大"——但<strong>最大到底有多红？</strong>不同屏幕的红灯本身就不一样红。这台设备的"最红"可能只是那台设备的"八成红"。</p>
+  <p>为了让颜色能跨设备沟通，就需要一份约定：<strong>色彩空间</strong>（color space）。它规定了 R、G、B 三个"原色"到底指物理世界里哪三束光，以及数值和亮度之间的换算曲线。同一组数字配不同说明书，出来的颜色就不同。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>色彩空间</th><th>范围</th><th>诞生背景</th><th>今天用在哪</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>sRGB</strong></td><td>最小（约覆盖人眼可见色 35%）</td><td>1996 年为 CRT 显示器和早期互联网制定</td><td>网页默认、绝大多数普通显示器、所有"安全"的场合</td></tr>
+        <tr><td><strong>Display P3</strong></td><td>比 sRGB 大约 25%，红绿方向明显更宽</td><td>源自数字电影标准 DCI-P3</td><td>近年的手机、平板、笔记本屏幕，HDR 内容</td></tr>
+        <tr><td><strong>Adobe RGB</strong></td><td>与 P3 相当，但更偏青绿方向</td><td>1998 年为对接 CMYK 印刷制定</td><td>专业修图、印前设计；网页上几乎不用</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里有两个词要分清：<strong>色彩空间</strong>是那份说明书（包含原色定义、白点、传递曲线），<strong>色域</strong>（gamut）是这份说明书<em>能表达的颜色范围</em>。P3 的色域比 sRGB 大，意味着它能表达一些 sRGB 里根本"写不出来"的鲜艳红和翠绿。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一盒 24 色蜡笔 vs 一盒 48 色</span>
+    <p><strong>sRGB</strong> 像一盒 24 色蜡笔，<strong>Display P3</strong> 像同一系列的 48 色装——多出来的那些是更鲜、更纯的颜色。<br/>
+    麻烦在于：两盒蜡笔的<strong>编号是重叠的</strong>。你说"3 号笔"，24 色盒里拿出的是这个红，48 色盒里拿出的是另一个更艳的红。<br/>
+    所以光说编号不够，必须同时说清"我用的是哪一盒"——这份"哪一盒"的声明，就是<strong>色彩管理</strong>。图片文件里的 ICC Profile、CSS 里的 <code>color(display-p3 ...)</code>，都是在做这件事。</p>
+  </div>
+
+  <h3>色彩管理：让颜色在设备间正确翻译</h3>
+  <p>色彩管理的核心工作只有一件：<strong>把"在 A 空间里的这个数值"翻译成"在 B 空间里看起来一样的那个数值"</strong>。当一张标注了 Adobe RGB 的照片显示在 sRGB 屏幕上，系统会做一次换算，尽量让观感接近；如果原图颜色超出了目标屏幕能力，就只能压回边界内（这叫 gamut clipping，通常表现为鲜艳区域细节变平）。</p>
+  <p>如果这份声明丢了会怎样？系统只能猜，通常默认按 sRGB 解读。一张实际是 P3 的图被当成 sRGB 显示，颜色就会<strong>整体偏淡、发灰</strong>；反过来一张 sRGB 图被当 P3 解读，就会<strong>过饱和、发荧光</strong>。这就是"为什么我导出的图颜色变了"最常见的原因——不是画质丢了，是说明书丢了。</p>
+  <p>在 CSS 里，你可以显式声明用宽色域，并给不支持的设备留好退路：</p>
+<pre><code>.hero {
+  /* 第一行：所有设备都能理解的 sRGB 兜底 */
+  background: #ff3b30;
+  /* 第二行：支持宽色域的设备会覆盖上面那行 */
+  background: color(display-p3 1 0.18 0.13);
+}
+
+/* 也可以显式检测能力 */
+@media (color-gamut: p3) {
+  .hero { background: color(display-p3 1 0.18 0.13); }
+}</code></pre>
+  <p>实用建议：<strong>网页交付一律以 sRGB 为基准</strong>，需要惊艳效果的品牌色再叠加 P3 增强。设计软件里请把工作空间设成 sRGB，导出时勾选"嵌入色彩配置文件"，这两步能挡掉九成的"颜色对不上"问题。</p>
+
+  <h3>对比度：颜色好不好看之外，还得看得清</h3>
+  <p>配色最容易被忽略的一半是<strong>可读性</strong>。浅灰字配白底，在你的高亮度屏幕上看着很高级，用户在阳光下的手机上可能完全读不到。这不是审美问题，是功能失效。</p>
+  <p>行业有一套量化标准：<strong>WCAG 对比度</strong>。它根据前景色和背景色的相对亮度算出一个比值，最低 1:1（完全同色，不可读），最高 21:1（纯黑配纯白）。要求是：</p>
+  <ul class="keylist">
+    <li><span class="k">4.5:1</span><span class="v">正文文字的合格线（AA 级）。这是最该记住的一个数字——绝大多数设计评审卡的就是它。</span></li>
+    <li><span class="k">3:1</span><span class="v">大号文字（约 18pt 以上，或 14pt 加粗）的合格线，以及图标、输入框边框等非文字元素的最低要求。</span></li>
+    <li><span class="k">7:1</span><span class="v">更严格的 AAA 级正文标准。政务、医疗、金融、教育类产品常被要求达到。</span></li>
+    <li><span class="k">注意亮度而非色相</span><span class="v">对比度算的是<strong>明暗差</strong>。红字配绿底色相反差极大，但两者亮度接近，对比度可能低到 1.5:1，实际非常难读。</span></li>
+  </ul>
+  <p>几条能立刻落地的做法：正文别用低于 <code>#767676</code> 的灰配白底（这大约刚好卡在 4.5:1）；禁用态可以放宽，但不要让"占位提示文字"也变得读不清；深色模式下不要直接把颜色取反，纯白字配纯黑底会产生光晕感（halation），通常用 <code>#e8e8e8</code> 配 <code>#1a1a1a</code> 更舒服；最后，永远别只用颜色传达信息——红绿色觉障碍人群约占男性 8%，"红色表示错误"必须同时配上图标或文字。</p>
+
+  <h3>把这一节串起来看</h3>
+  <p>一个颜色从你手里走到用户眼里，要过四道关：<strong>第一关，你用某种坐标系（RGB / HSL）写下三个数字</strong>；<strong>第二关，这些数字要配上一份说明书（sRGB / P3）才有确定含义</strong>；<strong>第三关，如果涉及透明，系统会用 alpha 公式把它和背景混合成一个实际颜色</strong>；<strong>第四关，屏幕按自己的能力把它点亮，色彩管理负责在中间做翻译，超出能力的部分被压回边界</strong>。任何一关的信息丢失或误解，都会表现为"颜色变了"。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>颜色在计算机里就是<strong>三个数字加一份说明书</strong>。RGB 是给机器看的坐标（加色混合，全开是白），十六进制只是它的紧凑写法；HSL 是给人看的坐标（色相/饱和度/亮度），做配色梯度时只动 L 最省心。<mark class="key">透明不是颜色，是一次和背景的加权平均</mark>，所以同一个半透明色在不同底色上必然长得不一样。sRGB 是最保险的通用说明书，Display P3 更宽但需要声明才有意义——丢了声明就是"图导出后颜色变了"的真凶。最后别忘了功能性的那一半：<strong>正文对比度不低于 4.5:1</strong>，而且信息永远不要只靠颜色传达。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-2-bitmap-vector.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 2.2 · 位图 vs 矢量</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-4-render-pipeline.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 2.4 · 渲染管线</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 2.3</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

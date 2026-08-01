@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.2 · 位图 vs 矢量 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-how-pixels-happen.html">第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.2</span>
+    </div>
+    <a href="./02-how-pixels-happen.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.2 · Section</div>
+    <h1>位图 vs 矢量</h1>
+    <div class="cn">Bitmap vs Vector</div>
+  </header>
+
+  <p class="lead">
+    同一个 Logo，你把它放大十倍，一个变成了满屏的马赛克方块，另一个边缘依然刀切一样锐利。它们看起来是"同一张图"，其实<mark class="key">在计算机内部是两种完全不同的东西——一种存的是结果，一种存的是做法</mark>。搞清这个区别，你就明白了为什么设计师给你 SVG 而不是 PNG，也明白了为什么截图放大永远救不回来。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧵 十字绣成品 vs 十字绣图纸</div>
+    <p>你妈妈绣了一幅十字绣的猫，绣在一块 100×100 格的布上。<br/>
+    现在你想要一幅 400×400 格的大猫。<br/>
+    <strong>方案 A</strong>：把绣好的成品拍照，用放大镜投影到大布上照着描——每一格线变成 4×4 格，猫的轮廓变成了阶梯状的锯齿。<br/>
+    <strong>方案 B</strong>：你妈妈手里还有那张<strong>图纸</strong>，上面写着"耳朵是一个 30° 的三角形，眼睛是半径 4 格的圆"。拿图纸重新在大布上按比例绣一遍——大猫和小猫一样精致。</p>
+    <div class="link">→ 方案 A 就是<strong>位图</strong>（Bitmap / Raster），方案 B 就是<strong>矢量图</strong>（Vector）。</div>
+  </div>
+
+  <h3>位图：一张巨大的颜色表格</h3>
+  <p>位图的原理朴素到近乎粗暴：<strong>它就是一个像素矩阵</strong>。一张 1920×1080 的图片，本质上是一张有 1920 列、1080 行的表格，一共 2,073,600 个格子，每个格子里填了一个颜色值。文件里存的就是这两百多万个颜色值，按顺序排成一长串数字。</p>
+  <p>如果每个像素用 R、G、B 三个通道、每个通道 8 位（0~255）来记，那一个像素占 3 个字节；再加一个透明通道 A 就是 4 个字节。所以一张 1920×1080 的<strong>未压缩</strong>图片，理论大小是 1920 × 1080 × 4 ≈ 8.3 MB。你平时下载的图片只有几百 KB，是因为所有图片格式都做了<strong>压缩</strong>——这也是各种格式差异的核心来源。</p>
+  <p>位图最大的软肋，就来自"它只存结果"这个事实。图片里根本没有"这是一条直线"的概念，只有"第 300 行第 47 到 92 个格子是黑色"这种记录。当你要放大它，程序面对的是一道无解的题：<mark class="key">原图只有 100 个格子的信息，现在要填 400 个格子，多出来的信息从哪来？</mark>只能靠猜——这个猜的过程叫<strong>插值</strong>（interpolation）。猜得再好也是猜，所以放大后必然发虚、发糊，或者出现阶梯锯齿。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 冲好的咖啡 vs 咖啡配方</span>
+    <p><strong>位图</strong>像一杯已经冲好的咖啡：你能直接喝，但想把它变成两杯，只能加水稀释——味道就淡了。<br/>
+    <strong>矢量图</strong>像一张写着"18 克豆、1:15 水粉比、92℃"的<strong>配方卡</strong>：想要两杯，按配方翻倍再冲一次，浓度分毫不差。<br/>
+    代价是：配方卡不能直接喝，得先冲（这一步叫<strong>栅格化</strong>，rasterize）。</p>
+  </div>
+
+  <h3>常见位图格式对比：各有各的活</h3>
+  <p>位图格式的区别，几乎全在"怎么压缩"这一件事上。压缩分两大流派：<strong>无损压缩</strong>（把数据换一种更紧凑的写法，解开后和原来一模一样）和<strong>有损压缩</strong>（丢掉人眼不敏感的细节，换取小得多的体积，且丢掉的永远回不来）。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>格式</th><th>压缩</th><th>透明</th><th>典型体积</th><th>最适合</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>PNG</strong></td><td>无损</td><td>支持（8 位 Alpha）</td><td>大</td><td>截图、UI 切图、需要透明的素材、纯色/线条图</td></tr>
+        <tr><td><strong>JPG</strong></td><td>有损</td><td>不支持</td><td>小</td><td>照片、复杂渐变的实拍图</td></tr>
+        <tr><td><strong>WebP</strong></td><td>有损 + 无损两种模式</td><td>支持</td><td>比 JPG 小 25~35%</td><td>网页通用主力，现代浏览器全支持</td></tr>
+        <tr><td><strong>AVIF</strong></td><td>有损 + 无损</td><td>支持</td><td>比 WebP 再小 20~50%</td><td>追求极致体积的网页大图，编码较慢</td></tr>
+        <tr><td><strong>GIF</strong></td><td>无损但限 256 色</td><td>只有"全透/全不透"</td><td>动图偏大</td><td>已过时的简单动图，现在应换成视频或 WebP</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>逐个说清它们的性格：</p>
+  <ul class="keylist">
+    <li><span class="k">PNG · 老实人</span><span class="v">无损，一根像素都不丢，支持 256 级半透明。缺点是照片类图片体积会大得离谱——因为照片里几乎没有"重复的色块"可供无损压缩利用。所以 PNG 存截图、图标、带透明的素材是王道，存风景照就是浪费。</span></li>
+    <li><span class="k">JPG · 照片专家</span><span class="v">有损，利用"人眼对亮度敏感、对色彩细节不敏感"的特性，把颜色信息大幅简化。照片上效果极好，但遇到<strong>文字和硬边线条</strong>就会在边缘产生一圈脏兮兮的"蚊子噪点"。所以：截图千万别存 JPG。另外 JPG 完全不支持透明，透明区域会被填成黑色或白色。</span></li>
+    <li><span class="k">WebP · 全能新人</span><span class="v">Google 推的格式，同时具备有损、无损、透明、动画四种能力，同画质下比 JPG 小三成左右。今天所有主流浏览器都支持它，是网页图片的默认首选。</span></li>
+    <li><span class="k">AVIF · 极限压缩</span><span class="v">基于视频编码 AV1 的静态图格式，压缩率目前最强，同画质能比 WebP 再小一大截。代价是编码耗时长、部分老设备和老软件打不开，所以通常配合 <code>&lt;picture&gt;</code> 做降级方案。</span></li>
+    <li><span class="k">GIF · 历史包袱</span><span class="v">只能存 256 种颜色，透明只有"透"和"不透"两档（所以边缘常有难看的白毛边），动图体积却比同等视频大好几倍。它今天唯一的价值是兼容性和文化惯性——技术上应当被 WebP 动图或 <code>&lt;video&gt;</code> 取代。</span></li>
+  </ul>
+
+  <p>网页里最推荐的做法是让浏览器自己挑它能吃的那一种，前面的格式优先，不支持就往后退：</p>
+<pre><code>&lt;picture&gt;
+  &lt;source srcset="hero.avif" type="image/avif"&gt;
+  &lt;source srcset="hero.webp" type="image/webp"&gt;
+  &lt;img src="hero.jpg" alt="首页主图" width="1200" height="630"&gt;
+&lt;/picture&gt;</code></pre>
+  <p>浏览器从上往下试：认识 AVIF 就用 AVIF，不认识就看 WebP，都不行才落到最后那个 <code>&lt;img&gt;</code>。这样新设备享受小体积，老设备也不会白屏。</p>
+
+  <h3>矢量：存的是"怎么画"，而不是"画成什么样"</h3>
+  <p>矢量图彻底换了个思路：它不记录任何像素，而是<strong>用数学描述图形的构造方式</strong>。一个圆，它记的是"圆心在 (50, 50)，半径 40，填充红色"；一条曲线，它记的是几个控制点和一段贝塞尔曲线公式。文件里全是坐标和参数，没有一个像素。</p>
+  <p>这带来一个近乎魔法的性质：<mark class="key">因为它存的是公式，所以在任何尺寸下都可以现场重新算一遍、重新画一遍</mark>。放大 100 倍？把所有坐标乘 100，重新算，边缘依然是完美的数学曲线。这就是"矢量图无限缩放不失真"的全部秘密——它不是"压缩得好"，而是<strong>根本没有分辨率这个概念</strong>。</p>
+  <p>当然，屏幕本身是像素做的，最终还是得把矢量变成像素才能显示。这个"按当前尺寸现场算出像素"的动作叫<strong>栅格化</strong>。关键区别在于：位图是<em>出厂时就栅格化好了</em>，矢量图是<em>每次显示时按当前需要的尺寸重新栅格化</em>。前者一次成型无法回头，后者永远新鲜。</p>
+
+  <h3>SVG：网页里的矢量标准</h3>
+  <p>网页上的矢量格式叫 <strong>SVG</strong>（Scalable Vector Graphics，可缩放矢量图形）。它有个非常特殊的身份：<strong>SVG 不是二进制图片文件，它是一段 XML 文本</strong>——你能用记事本打开它、读懂它、直接改它。</p>
+<pre><code>&lt;svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;!-- 一个圆：圆心 50,50 半径 40 --&gt;
+  &lt;circle cx="50" cy="50" r="40" fill="#556b3d"/&gt;
+  &lt;!-- 一条折线路径：M 移动到, L 画直线到 --&gt;
+  &lt;path d="M30 55 L45 70 L72 38"
+        stroke="#fff" stroke-width="8"
+        fill="none" stroke-linecap="round"/&gt;
+&lt;/svg&gt;</code></pre>
+  <p>这十来行文本就是一个"绿底白勾"的对号图标，无论显示成 16px 还是 1600px 都同样锐利，而文件只有两百来个字节。里面几个关键概念值得记住：</p>
+  <ul class="keylist">
+    <li><span class="k">viewBox</span><span class="v">定义了一个"内部坐标系"。上面写的 <code>0 0 100 100</code> 意思是"我这幅画的画布是 100×100 单位"。之后所有坐标都在这个虚拟单位里写，而实际显示多大由 CSS 决定——这就是缩放自由的来源。</span></li>
+    <li><span class="k">path 的 d 属性</span><span class="v">矢量图的核心，一串画笔指令：<code>M</code> 抬笔移动、<code>L</code> 画直线、<code>C</code> 画三次贝塞尔曲线、<code>Z</code> 闭合。复杂的插画就是一堆这样的指令。</span></li>
+    <li><span class="k">fill / stroke</span><span class="v">填充色和描边色。它们可以被 CSS 覆盖，也可以设成 <code>currentColor</code> 来自动跟随文字颜色——这是图标换色最优雅的方案。</span></li>
+    <li><span class="k">可被 CSS 和 JS 操作</span><span class="v">SVG 内的每个图形都是真实的 DOM 节点，能加 class、能 hover 变色、能加过渡动画、能被脚本改坐标。位图做不到这一点。</span></li>
+  </ul>
+
+  <p>因为是 DOM，改颜色就跟改文字颜色一样简单：</p>
+<pre><code>/* 让图标自动跟随按钮文字颜色 */
+.btn svg { width: 1em; height: 1em; fill: currentColor; }
+.btn:hover { color: #a05a2c; }   /* 图标也一起变色 */</code></pre>
+
+  <h3>什么时候用哪种：一条清楚的分界线</h3>
+  <p>判断规则其实非常简单，问自己一句话：<strong>这张图能不能用有限条几何指令描述清楚？</strong></p>
+  <ul class="keylist">
+    <li><span class="k">用矢量（SVG）</span><span class="v">图标、Logo、几何插画、图表、地图轮廓、加载动画、装饰性花纹——这些都是"有明确边界的形状"，用公式描述又准又小。</span></li>
+    <li><span class="k">用位图</span><span class="v">照片、写实渲染图、复杂纹理、带真实景深与噪点的画面。你没法用几十条曲线描述一片树叶上的光斑，硬要矢量化文件会比位图大得多。</span></li>
+    <li><span class="k">混合场景</span><span class="v">带照片的宣传图用位图，压在上面的文字和 Logo 用矢量或直接用 HTML 文字——各取所长。</span></li>
+  </ul>
+  <p>还有一个常被忽略的现实理由：矢量图<strong>不需要准备 @2x / @3x 三份</strong>。上一节讲过，位图要在高清屏上清晰，必须准备多倍图；矢量图天生适配任何像素密度，一份文件通吃所有屏幕，工程和设计的维护成本直接砍掉三分之二。</p>
+
+  <h3>图标方案的三次进化</h3>
+  <p>"怎么在界面里放图标"这个小问题，行业整整折腾了二十年，正好是位图与矢量之争的活化石。</p>
+  <div class="journey">
+    <div class="step">
+      <h4>第一代 · 图片切图（PNG Sprite）</h4>
+      <p>每个图标切成一张小 PNG。图标一多，页面就要发几十个网络请求，于是发明了"雪碧图"——把几十个图标拼成一张大图，再用 <code>background-position</code> 把需要的那一小块露出来。问题：换颜色要重新出图，换尺寸就模糊，高清屏还得再出一套 @2x，改一个图标要重新拼整张图。</p>
+    </div>
+    <div class="step">
+      <h4>第二代 · 字体图标（Icon Font）</h4>
+      <p>聪明的取巧：把图标画成"字"，做成一个字体文件，用一个特殊字符来"打出"图标。因为字体本身就是矢量的，于是图标突然可以任意缩放、可以用 <code>color</code> 直接改色、可以加 <code>text-shadow</code>。代价也很真实：图标被当成文字，字体没加载完会闪出方框或乱码；无法做多色图标；对屏幕阅读器不友好，会念出奇怪的字符。</p>
+    </div>
+    <div class="step">
+      <h4>第三代 · SVG（今天的标准答案）</h4>
+      <p>直接把矢量图形放进页面。多色、渐变、局部动画、无障碍标签（<code>&lt;title&gt;</code>）全都支持，可以按需只加载用到的那几个，还能用 <code>&lt;symbol&gt;</code> + <code>&lt;use&gt;</code> 做复用。现在几乎所有主流图标库都以 SVG 为第一交付格式。</p>
+    </div>
+  </div>
+
+  <p>SVG 复用的经典写法是把所有图标定义在页面里一次，之后到处引用：</p>
+<pre><code>&lt;!-- 定义一次（可以藏在页面顶部） --&gt;
+&lt;svg style="display:none"&gt;
+  &lt;symbol id="i-check" viewBox="0 0 24 24"&gt;
+    &lt;path d="M4 13l5 5L20 7" stroke="currentColor"
+          stroke-width="2" fill="none"/&gt;
+  &lt;/symbol&gt;
+&lt;/svg&gt;
+
+&lt;!-- 之后任意处引用，想用几次用几次 --&gt;
+&lt;svg class="icon"&gt;&lt;use href="#i-check"/&gt;&lt;/svg&gt;</code></pre>
+
+  <h3>几条能立刻用上的实用建议</h3>
+  <ul class="keylist">
+    <li><span class="k">截图永远别存 JPG</span><span class="v">截图里全是文字和硬边框，JPG 的有损压缩会在边缘糊出一圈噪点。用 PNG 或 WebP 无损模式。</span></li>
+    <li><span class="k">照片永远别存 PNG</span><span class="v">照片没有可无损压缩的重复色块，PNG 会让文件大出好几倍却看不出画质差别。用 JPG / WebP / AVIF。</span></li>
+    <li><span class="k">SVG 上线前先压一遍</span><span class="v">设计软件导出的 SVG 常带一堆无用的编辑器元数据、冗余小数位。用 SVGO 之类的工具清一遍，体积常能砍掉一半以上。</span></li>
+    <li><span class="k">给 img 写上宽高</span><span class="v">无论位图矢量，都在标签上写明 <code>width</code>/<code>height</code> 或用 CSS 定好比例。否则图片加载完成的瞬间会把下面内容撑开，造成页面跳动。</span></li>
+    <li><span class="k">别用 SVG 存照片</span><span class="v">把照片"嵌进" SVG（base64 内联）不会让它变成矢量，只是套了个壳，还额外胖了三成。矢量的能力来自几何描述，不是文件后缀。</span></li>
+    <li><span class="k">图表优先 SVG</span><span class="v">折线图、柱状图本质就是线和矩形，用 SVG 渲染既清晰又能给每根柱子挂上交互事件。</span></li>
+  </ul>
+
+  <h3>一个容易混淆的点：分辨率无关 ≠ 无限精细</h3>
+  <p>矢量图"无限放大不失真"说的是<strong>已有的几何信息在任何尺寸下都能精确重绘</strong>，不是"能凭空长出更多细节"。一个只用 8 条直线画成的粗糙图标，放大到墙那么大，依然是那个只有 8 条边的粗糙图标——只不过每条边都很锐利。矢量解决的是<em>清晰度</em>问题，不解决<em>细节量</em>问题。同理，把位图用工具"转成矢量"（描摹）只是让程序去猜边界并生成路径，猜错了就会变形，这不是真正的还原。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>位图存结果，矢量存做法</strong>——这一句话是本节的全部。位图是一张写满颜色值的巨型表格，出厂即定型，放大只能靠猜，所以会糊；它的各种格式（PNG/JPG/WebP/AVIF/GIF）差别几乎全在压缩策略上，选错格式就是白扛体积或白丢画质。矢量是一份几何配方，每次显示都按当前尺寸重新算一遍，因此天然适配所有屏幕密度，一份文件通吃 @1x 到 @3x。<mark class="key">凡是能用形状描述清楚的（图标、Logo、图表）就上 SVG，凡是真实世界拍下来的（照片、纹理）就用位图</mark>。剩下的功夫，就是给每种图选对格式、压对大小、写好宽高。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-1-pixel.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 2.1 · 像素与分辨率</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-3-color.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 2.3 · 颜色与色彩空间</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 2.2</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

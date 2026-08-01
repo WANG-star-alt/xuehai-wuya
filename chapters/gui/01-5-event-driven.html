@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.5 · 事件驱动 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-gui.html">第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.5</span>
+    </div>
+    <a href="./01-what-is-gui.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.5 · Section</div>
+    <h1>事件驱动</h1>
+    <div class="cn">Event-Driven · Who Is in Charge of the Flow</div>
+  </header>
+
+  <p class="lead">
+    这是学界面编程最需要转的那个弯：<mark class="key">写普通程序时，流程由你控制；写界面程序时，流程由用户控制</mark>。你不再是"指挥官"，而变成了"值班员"——坐在那里等事情发生，事情来了就处理，没事就闲着。这个思维反转，比任何 API 都重要。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔔 前台服务员 vs 流水线工人</div>
+    <p><strong>流水线工人</strong>的一天是写死的：装第一个零件、装第二个、拧螺丝、贴标签、下一件。顺序固定，从头跑到尾，跑完下班。<br/>
+    <strong>酒店前台</strong>的一天完全不同：他不知道接下来会发生什么。可能来客人办入住，可能电话响，可能有人来问路，可能什么都不发生、闲坐十分钟。<br/>
+    他的工作模式是：<em>盯着，来事就处理，处理完继续盯着</em>。而且有一条铁律——处理任何一件事都不能占太久，否则后面排队的客人就全被卡住了。</p>
+    <div class="link">→ <strong>事件驱动</strong> = <em>Event-Driven</em>：程序不主动推进流程，而是等待事件、响应事件。</div>
+  </div>
+
+  <h3>命令式脚本 vs 事件驱动：根本区别在哪</h3>
+  <p>先看一段最普通的脚本。它体现的是"命令式"思维：我说一步，机器做一步，做完就结束。</p>
+
+  <pre><code># 命令式脚本：控制权在我手上，从上到下跑完就退出
+
+data  = read_file("orders.csv")      # 1. 读文件
+clean = remove_duplicates(data)      # 2. 去重
+total = sum(row.amount for row in clean)  # 3. 求和
+print("总金额：", total)              # 4. 输出
+# 程序结束 —— 谁也没法"插话"</code></pre>
+
+  <p>这段代码的特点是：<strong>执行顺序在写代码的时候就完全确定了</strong>。你读代码，从第一行读到最后一行，就知道程序的一生。中途没有任何"外人"能插手。</p>
+  <p>现在看界面程序。它的结构完全变了：</p>
+
+  <pre><code># 事件驱动：我只登记"什么情况下做什么"，然后把控制权交出去
+
+button_save.on_click   = lambda: save_file()          # 登记：点保存 → 存盘
+button_cancel.on_click = lambda: window.close()       # 登记：点取消 → 关窗
+input_name.on_change   = lambda t: validate_name(t)   # 登记：改文字 → 校验
+window.on_resize       = lambda w, h: relayout(w, h)  # 登记：窗口变了 → 重排
+
+app.run()   # ← 关键的一行：控制权从此交给框架，它会一直循环等事件</code></pre>
+
+  <p>差别在哪？<mark class="key">代码的书写顺序，不再等于执行顺序</mark>。</p>
+  <p>上面四行登记代码，谁先执行完全取决于用户先点了什么。用户可能先改名字、再点保存、再改窗口大小；也可能进来直接点取消，那么另外三个函数一次都不会执行。你在写代码的时候，<strong>根本不知道也不需要知道</strong>它们的执行顺序。</p>
+  <p>这带来一个非常重要的心态转变：<strong>你的代码从"一段流程"变成了"一堆规则"</strong>。你不再描述"先干什么后干什么"，而是描述"如果发生 A，就做 X；如果发生 B，就做 Y"。程序的实际行为，是这些规则被用户以随机顺序触发出来的结果。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 菜谱 vs 消防队值班表</span>
+    <p><strong>命令式脚本像菜谱</strong>：热锅、下油、放葱姜、倒肉、翻炒三分钟、加盐、出锅。步骤固定，照做就行，顺序错了菜就毁了。<br/>
+    <strong>事件驱动像消防队的值班规程</strong>：接到火警 → 出车；接到猫上树 → 派云梯；接到误报 → 记录挂断。<br/>
+    没人能预知今天会来几个电话、什么顺序来。消防队的工作不是"跑一遍流程"，而是<em>保持待命，随时响应</em>。<br/>
+    而且值班规程里最重要的一条往往是：<strong>不许一个人占着总机不放</strong>——这就是后面要讲的"主线程不能阻塞"。</p>
+  </div>
+
+  <h3>事件循环：整个界面世界的心跳</h3>
+  <p>那么"等事件"这件事，在代码层面到底是怎么实现的？答案朴素到令人意外：<strong>一个永不结束的 while 循环</strong>。</p>
+  <p>这个循环叫<strong>事件循环（Event Loop）</strong>，也叫消息循环、主循环。你调用的 <code>app.run()</code>、<code>mainloop()</code>、<code>app.exec()</code>，进去以后就是它。所有 GUI 程序，从 1984 年的 Macintosh 到今天的浏览器和手机 App，骨架都是这个循环。</p>
+
+  <pre><code>// 事件循环的本质（所有 GUI 框架的核心，简化版）
+
+while (程序还没被要求退出) {
+
+    event = 事件队列.取出下一个();     // ① 取事件（队列空就在这儿睡着，不耗 CPU）
+
+    if (event == null) continue;
+
+    target = 根据坐标或焦点.找到目标控件(event);   // ② 分发 Dispatch
+
+    target.处理(event);              // ③ 处理 Handle —— 你写的回调在这里被调用
+
+    if (有控件被标记为"脏了") {
+        重新布局();
+        重新绘制();                   // ④ 重绘 Repaint
+        提交给屏幕();
+    }
+}</code></pre>
+
+  <p>四个步骤，逐个说清楚。</p>
+  <p><strong>① 取事件。</strong>操作系统会把键盘、鼠标、触摸、窗口变化等硬件和系统消息，塞进属于你这个程序的一个<strong>队列</strong>里。循环每一轮从队头拿一个。注意：队列空的时候，循环不是在疯狂空转，而是被操作系统<em>挂起休眠</em>——所以一个没人操作的窗口，CPU 占用是 0%。这也是为什么你的编辑器开着一整天也不烫手。</p>
+  <p><strong>② 分发。</strong>拿到一个"鼠标在 (420, 310) 处按下"，框架得回答：这个坐标落在谁身上？于是它顺着上一节讲的<strong>控件树</strong>从根往下找，找到最深的那个覆盖该坐标的控件。键盘事件不看坐标，看<strong>焦点</strong>——谁持有焦点就给谁。</p>
+  <p><strong>③ 处理。</strong>目标控件先自己处理（比如按钮把自己画成按下状态），然后调用你注册的回调。如果它不处理或者处理完不拦着，事件还会顺着树往上<strong>冒泡</strong>给父控件，直到有人"消费"掉它。</p>
+  <p><strong>④ 重绘。</strong>回调可能改了状态（文字变了、颜色变了、多了一行）。框架不会立刻重画——那太浪费了。它只是给受影响的控件打个"脏"标记，等这一轮事件处理完，一次性把所有脏区域重新布局、绘制、送屏。这叫<strong>批量重绘</strong>，是性能的关键。</p>
+  <p>然后回到 ①，继续。<mark class="key">这个循环每秒转几十到几百轮，界面的"活着"就是它在转</mark>。</p>
+
+  <h3>回调函数与监听器：把代码"寄存"起来</h3>
+  <p>事件驱动能成立，靠的是一个语言机制：<strong>函数本身可以被当成数据传来传去</strong>。</p>
+  <p>你写 <code>button.onClick = saveFile</code>，注意这里 <code>saveFile</code> 后面<strong>没有括号</strong>——你不是在"调用"它，而是把这个函数本身<em>交给</em>按钮保管。按钮把它存起来，等到真的被点击的那一刻，才由框架替你调用。这种"我交出去、别人在合适的时机替我调用"的函数，就叫<strong>回调函数（Callback）</strong>。</p>
+  <p><strong>监听器（Listener / Observer）</strong>是回调的组织形式。它解决了一个实际问题：一个事件可能有多个人关心。比如"文档被修改了"这件事，标题栏想加个星号、自动保存想重置计时器、撤销栈想记一笔——三个互不相干的模块。于是框架允许挂多个回调，事件发生时按顺序全都通知一遍。</p>
+
+  <pre><code>// 一个事件挂多个监听器，互不干扰
+
+doc.addEventListener('change', () => titleBar.showModifiedMark());
+doc.addEventListener('change', () => autoSave.resetTimer());
+doc.addEventListener('change', () => undoStack.push(doc.snapshot()));
+
+// 不再关心时，可以摘掉（这一步新手常忘，是内存泄漏的常见原因）
+doc.removeEventListener('change', someHandler);</code></pre>
+
+  <p>这套机制的妙处是<strong>解耦</strong>：文档模块完全不知道标题栏、自动保存、撤销栈的存在，它只负责喊一声"我变了"。谁想听谁自己来登记。这让各个模块可以独立开发、独立删除，互不牵连。这个模式在设计模式里叫<strong>观察者模式</strong>，是整个事件驱动世界的理论底座。</p>
+
+  <h3>主线程不能阻塞：为什么界面会"未响应"</h3>
+  <p>现在讲本节最有实用价值的一段。你一定见过这个场景：点了个按钮，窗口整个白掉、变灰、标题栏出现"（未响应）"、鼠标转圈、点哪儿都没反应。</p>
+  <p><strong>这是怎么造成的？</strong>回到事件循环那段代码看第 ③ 步——<code>target.处理(event)</code>。这一行是<em>同步调用</em>：你的回调不返回，循环就走不到下一轮。</p>
+  <p>假设你在按钮回调里写了一个耗时 8 秒的操作（下载文件、读一个巨大的 Excel、跑一段复杂计算）：</p>
+
+  <pre><code>// ❌ 灾难写法：把主线程占死 8 秒
+button.onClick = () => {
+    const data = downloadHugeFile();   // 同步等待，8 秒不返回
+    render(data);
+};</code></pre>
+
+  <p>在这 8 秒里，事件循环<strong>卡在第 ③ 步动不了</strong>。后果是连锁的：</p>
+  <ul class="keylist">
+    <li><span class="k">新事件只进不出</span><span class="v">你移鼠标、点其他按钮、按键盘，这些事件都乖乖排进队列，但没人来取——因为取事件的那个循环正被你占着。</span></li>
+    <li><span class="k">画面彻底冻结</span><span class="v">重绘也在循环里（第 ④ 步）。循环不转就不重绘，于是窗口被别的窗口遮挡后再露出来，那块区域是空白或者花的。</span></li>
+    <li><span class="k">系统判定"假死"</span><span class="v">操作系统会定期给窗口发一个探测消息，若几秒内没被处理，就认为程序挂了，于是给标题栏加上"未响应"，并弹出"结束进程"的选项。</span></li>
+  </ul>
+
+  <p>所以有一条铁律：<mark class="key">主线程（UI 线程）上的每个回调，都必须在十几毫秒内返回</mark>。为什么是十几毫秒？因为屏幕通常每秒刷新 60 次，每帧的预算只有 16.7 毫秒。超过这个数，就会掉帧、就是"卡"；超过几百毫秒，用户就明确感到"顿"；超过几秒，就是"未响应"。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 收银台与那个掏零钱的顾客</span>
+    <p>超市只开一个收银台（主线程），后面排着长队（事件队列）。<br/>
+    正常情况每个顾客十几秒结完，队伍流畅。<br/>
+    突然有个顾客要用一袋硬币付款，慢慢数了八分钟——他没做错什么，但<strong>整条队伍全部停滞</strong>。后面的人不是"被拒绝服务"，而是"根本轮不到"。<br/>
+    正确的做法是：收银员把这位顾客请到旁边的服务台慢慢数（<em>后台线程</em>），自己继续给下一位结账；数完了服务台再来通知一声（<em>回到主线程更新界面</em>）。<br/>
+    这就是异步编程的全部思想。</p>
+  </div>
+
+  <h3>常见事件类型：都有哪些"事"会来</h3>
+  <p>事件的种类看着杂，其实按来源分四大类，认清来源就不会乱。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>来源</th><th>典型事件</th><th>要注意的坑</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>鼠标 / 指针</strong></td><td>按下 down、松开 up、点击 click、双击、移动 move、进入 enter、离开 leave、滚轮 wheel、拖拽 drag</td><td>move 触发极其频繁（每秒可上百次），里面绝不能做重活；click 其实是 down+up 的组合，顺序有讲究</td></tr>
+        <tr><td><strong>键盘</strong></td><td>按下 keydown、松开 keyup、字符输入 input / textInput</td><td>keydown 给的是"物理按键"，输入中文时要靠 input 事件才能拿到最终文字——输入法有个"合成中"的中间态</td></tr>
+        <tr><td><strong>窗口 / 系统</strong></td><td>尺寸变化 resize、移动 move、最小化、获得/失去焦点、关闭请求 close、系统主题切换、休眠唤醒</td><td>resize 在拖动边框时会连续触发几百次，必须做防抖，否则每次都重排会卡死</td></tr>
+        <tr><td><strong>定时器 / 异步完成</strong></td><td>超时 timeout、周期 interval、动画帧 requestAnimationFrame、网络请求返回、文件读写完成</td><td>定时器只保证"不早于"，不保证"准时"；如果主线程正忙，它会迟到</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>另外还有一类容易被忽略的：<strong>自定义事件</strong>。框架允许你自己定义"购物车已更新"、"登录状态变化"这类业务事件，走同一套监听器机制。这让事件驱动不只是"处理用户输入"的工具，而成为整个程序内部模块通信的骨架。</p>
+
+  <h3>异步与后台线程：为什么它们是必需品</h3>
+  <p>既然主线程不能占，耗时的活儿放哪？两条路。</p>
+  <p><strong>第一条：异步（Async）。</strong>适用于"等待型"任务——网络请求、读写文件、等定时器。这类任务的特点是 CPU 其实没在算，只是在等外部返回。异步的做法是：发起请求后<strong>立刻返回</strong>，把"结果回来以后干什么"登记成一个回调。等结果真的到了，操作系统往事件队列里塞一个"完成"事件，事件循环取到它，再执行你的回调。</p>
+
+  <pre><code>// ✅ 异步写法：发起后立刻返回，不占主线程
+
+button.onClick = async () => {
+    spinner.show();                          // 立刻给反馈（反馈类控件的价值）
+    try {
+        const data = await fetchHugeFile();  // 这里"让出"主线程，循环继续转
+        render(data);                        // 结果回来后，自动回到主线程继续
+    } finally {
+        spinner.hide();
+    }
+};</code></pre>
+
+  <p>关键在 <code>await</code> 那一行：它不是"停在这里等"，而是"把函数剩下的部分登记成回调，然后返回，让事件循环去干别的"。所以在等待的这段时间里，界面依然能滚动、能响应、动画照转。这就是所谓的<strong>非阻塞</strong>。</p>
+  <p><strong>第二条：后台线程（Worker Thread）。</strong>适用于"计算型"任务——图片处理、数据压缩、大规模排序、模型推理。这类任务 CPU 是真的在满负荷算，光靠异步没用，必须换个 CPU 核心去跑。做法是把任务丢给一个独立线程，算完了通过消息通知主线程。</p>
+  <p>但这里有一条<strong>几乎所有 GUI 框架都强制的铁律</strong>：<mark class="key">只有主线程可以碰界面</mark>。后台线程算完了，不能自己去改控件的文字或颜色，必须把结果"投递"回主线程，由主线程更新。违反这条规则，轻则界面画错，重则直接崩溃。</p>
+  <p>为什么这么严格？因为界面的状态是一棵共享的树，如果两个线程同时改它，就会出现"一个线程正在遍历这棵树画画，另一个线程把节点删了"这种灾难。框架的解决办法很干脆：<strong>不给你并发的机会</strong>——所有界面修改都排成一队，交给主线程串行执行。</p>
+
+  <h3>把三节内容串起来</h3>
+  <p>到这里，第 1 章的骨架就完整了：<strong>GUI</strong> 提供了窗口、图标、菜单、指针这套视觉语言；<strong>控件</strong> 是搭建界面的可复用积木，并按树形嵌套组织；而<strong>事件驱动</strong> 是让这棵静态的树"活起来"的发动机。</p>
+  <p>三者的关系可以这样理解：控件树是<em>身体</em>，事件循环是<em>心跳</em>，你写的回调是<em>反射</em>。心跳不停，身体才有反应；而反射必须够快，快不了就得把活儿交给别人干——这就是异步存在的全部理由。</p>
+  <p>下一章开始，我们往下钻一层：这些控件最终是<strong>怎么变成屏幕上的像素</strong>的。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>命令式脚本</strong>的控制权在你手里，从上到下跑完；<strong>事件驱动</strong>把控制权交给框架，你只登记"发生什么就做什么"，代码顺序不等于执行顺序。<br/>
+    所有 GUI 程序的骨架都是一个<strong>事件循环</strong>：取事件 → 分发到控件 → 执行回调 → 批量重绘，无限循环；队列空时它休眠，所以不耗电。<br/>
+    <strong>回调与监听器</strong>让"事件"和"处理"彻底解耦，一个事件可以被多方独立关注。<br/>
+    最重要的实践底线是：<strong>主线程不能阻塞</strong>。回调超过 16.7ms 就掉帧，超过几秒就"未响应"。<br/>
+    因此等待型任务用<strong>异步</strong>，计算型任务用<strong>后台线程</strong>；但无论走哪条路，<strong>最终更新界面的必须是主线程</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-4-widget.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 1.4 · 控件 Widget</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./02-how-pixels-happen.html">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 2 章 · 界面是怎么画出来的</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 1.5</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 2.5 · GPU 合成与 60fps · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./02-how-pixels-happen.html">第 2 章</a>
+      <span class="sep">›</span>
+      <span>§ 2.5</span>
+    </div>
+    <a href="./02-how-pixels-happen.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 2.5 · Section</div>
+    <h1>GPU 合成与 60fps</h1>
+    <div class="cn">GPU Compositing &amp; 60fps</div>
+  </header>
+
+  <p class="lead">
+    "卡"这个字，用户说得含糊，但它在技术上有一个精确到小数点的定义：<mark class="key">你只有 16.7 毫秒来准备好每一帧，超时就丢帧，丢帧就是卡</mark>。这一节把这笔时间账算清楚，讲明白 CPU 和 GPU 各干什么、图层提升到底提升了什么、为什么同样的动画换个写法就从卡成幻灯片变成丝滑，以及怎么用浏览器自带的工具当场抓到凶手。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎞️ 翻页动画本与那个手忙脚乱的画师</div>
+    <p>你手里有一本翻页动画本，每秒要翻过 60 页，才能让小人跑得自然流畅。<br/>
+    问题是：<strong>每一页都得有人现场画出来</strong>，而且必须在你翻到之前画好。<br/>
+    也就是说画师只有 <strong>1/60 秒 ≈ 16.7 毫秒</strong> 画一页。<br/>
+    如果某一页他画了 30 毫秒——你翻过去时那页还是白的，只能把上一页多举一会儿。小人就"顿"了一下。<br/>
+    如果他每页都画 30 毫秒，实际帧率就掉到 30fps，小人一路都在抽搐。<br/>
+    聪明的画师会怎么做？<strong>把不动的背景单独画在一张纸上，只在透明片上画会动的小人</strong>——工作量瞬间降到十分之一。</p>
+    <div class="link">→ 那张不动的背景纸和那些透明片，就是<strong>图层</strong>；"只挪透明片不重画"就是<strong>GPU 合成</strong>。</div>
+  </div>
+
+  <h3>为什么偏偏是 60fps</h3>
+  <p>60 这个数字不是设计师拍脑袋定的，它来自硬件：绝大多数显示器的<strong>刷新率</strong>是每秒 60 次，即每 16.7 毫秒把屏幕内容整体更新一遍。屏幕就像那本翻页本，它按固定节奏翻，不会等你。</p>
+  <p>再往上追一层，是人眼的特性。大约 10~12fps 时人开始感知到"这是连续动作"而不是一张张图；24fps 是电影标准，够看但快速运动时会有拖影；到 60fps，视觉上基本感觉不到离散感，手指拖动界面时的跟手感也才成立。所以 60fps 是"硬件能给、人眼够用"的交汇点。</p>
+  <p>这条时间预算算下来更让人紧张：16.7 毫秒里，浏览器自己的内务（合成、上屏、和系统交互）要占掉几毫秒，<mark class="key">真正留给你的 JS 逻辑、样式计算、布局和绘制的时间，大约只有 10 毫秒</mark>。而现在的手机上，一次全页布局就可能吃掉 5 毫秒以上。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>帧率</th><th>每帧预算</th><th>主观感受</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>120 fps</td><td>8.3 ms</td><td>高刷设备，拖动极其跟手</td></tr>
+        <tr><td><strong>60 fps</strong></td><td><strong>16.7 ms</strong></td><td>流畅，行业基线</td></tr>
+        <tr><td>30 fps</td><td>33.3 ms</td><td>明显不顺，滑动时能感到台阶感</td></tr>
+        <tr><td>24 fps</td><td>41.7 ms</td><td>电影可以，交互界面已经难受</td></tr>
+        <tr><td>&lt; 15 fps</td><td>&gt; 66 ms</td><td>用户会认为"这个应用坏了"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>还有一个容易忽略的点：<strong>帧率的稳定性比绝对值更重要</strong>。稳定的 30fps 比在 60 和 25 之间反复跳动的画面感觉更好，因为后者的节奏不可预测，大脑会持续感到别扭。所以优化目标不是"平均帧率高"，而是"没有超时的长帧"。</p>
+
+  <h3>CPU 与 GPU 的分工</h3>
+  <p>要理解为什么某些动画快得离谱，必须先理解这两个处理器的性格差异。</p>
+  <ul class="keylist">
+    <li><span class="k">CPU · 少数全能选手</span><span class="v">核心数少（几个到几十个），但每个都极其聪明，擅长复杂的逻辑判断、分支跳转、串行推理。上一节讲的解析、布局、绘制指令生成，全是 CPU 的活。</span></li>
+    <li><span class="k">GPU · 海量专才</span><span class="v">核心数成千上万，每个都很"笨"，只会做简单的数学运算，但能同时对海量数据做<strong>同一件事</strong>。它天生就是为"把这几百万个像素统一乘上一个矩阵"这类任务设计的。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一位教授 vs 一千个小学生</span>
+    <p>要解一道复杂的证明题——找<strong>教授</strong>（CPU），一千个小学生也解不出来。<br/>
+    要算一万道"两位数乘法"——找<strong>一千个小学生</strong>（GPU），每人十道，一分钟搞定；教授一个人算得抓狂。<br/>
+    界面渲染刚好两种活都有：<em>"这段文字该在哪折行、这个 flex 容器怎么分配空间"</em> 是证明题，交给 CPU；<em>"把这张 300 万像素的贴图整体缩放 1.2 倍再叠上去"</em> 是一万道乘法题，交给 GPU。<br/>
+    <strong>性能优化的本质，就是尽量把活从教授桌上挪到小学生那边去。</strong></p>
+  </div>
+
+  <p>具体的分工边界是这样的：CPU 负责跑 JavaScript、计算样式、执行布局、生成绘制指令、把纹理数据上传给 GPU；GPU 负责栅格化部分工作、以及最关键的——<strong>把所有图层按变换矩阵和透明度叠成最终画面</strong>。合成这件事对 GPU 来说轻如鸿毛，因为它就是干这个的。</p>
+
+  <h3>图层提升：给会动的东西一张独立的纸</h3>
+  <p>上一节提到过图层。这里把它和性能直接挂钩：<strong>一个元素被提升为独立图层后，它的移动、缩放、淡入淡出就不再需要重画任何内容，只需要 GPU 用新的矩阵重新叠一次</strong>。</p>
+  <p>怎么触发提升？有两种主流写法：</p>
+<pre><code>/* 写法一：声明意图（推荐） */
+.card {
+  will-change: transform;
+}
+
+/* 写法二：老技巧，用 3D 变换"骗"出图层 */
+.card {
+  transform: translateZ(0);
+  /* 或 transform: translate3d(0, 0, 0); */
+}</code></pre>
+  <p><code>will-change</code> 是标准做法，它的语义是"我接下来要改这个属性，你提前准备"。<code>translateZ(0)</code> 是 <code>will-change</code> 出现之前的 hack——因为涉及 3D 变换的元素必须走 GPU，浏览器只好给它单独开一层。两者效果相近，但语义清晰的前者更值得用。</p>
+  <p>关键纪律：<strong><code>will-change</code> 不能到处撒</strong>。它是一张"预约显存"的申请单，每张独立图层都要在显存里存一份完整位图。给列表的 200 个卡片全加上 <code>will-change: transform</code>，等于一次性申请几百 MB 显存，结果往往是整页更卡甚至标签页崩溃。正确姿势是<strong>只在真正要动的元素上加，动画结束后撤掉</strong>：</p>
+<pre><code>/* ✓ 只在交互即将发生时提升 */
+.card:hover { will-change: transform; }
+.card { transition: transform .25s ease; }
+.card:hover { transform: translateY(-4px); }
+
+/* ✓ JS 控制的动画，结束后主动撤销 */
+el.style.willChange = 'transform';
+el.addEventListener('transitionend', () => {
+  el.style.willChange = 'auto';   // 释放图层
+}, { once: true });</code></pre>
+
+  <h3>为什么 transform + opacity 就是快</h3>
+  <p>现在可以把答案说透了。对比两种写法在每一帧里发生的事：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>做法</th><th>解析</th><th>布局</th><th>绘制</th><th>合成</th><th>每帧代价</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>left: 0 → 200px</code></td><td>—</td><td>✔ CPU</td><td>✔ CPU</td><td>✔ GPU</td><td>可能 5~15 ms</td></tr>
+        <tr><td><code>margin-top</code> 动画</td><td>—</td><td>✔ CPU</td><td>✔ CPU</td><td>✔ GPU</td><td>同上，且影响兄弟元素</td></tr>
+        <tr><td><code>background-color</code> 渐变</td><td>—</td><td>—</td><td>✔ CPU</td><td>✔ GPU</td><td>约 1~5 ms</td></tr>
+        <tr><td><strong><code>transform</code></strong></td><td>—</td><td>—</td><td>—</td><td>✔ GPU</td><td><strong>&lt; 1 ms</strong></td></tr>
+        <tr><td><strong><code>opacity</code></strong></td><td>—</td><td>—</td><td>—</td><td>✔ GPU</td><td><strong>&lt; 1 ms</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>道理其实很朴素：<code>left</code> 改的是元素在<strong>文档流里的真实位置</strong>，所以浏览器必须重新算所有相关元素的几何关系，然后重画，然后合成——整条流水线走一遍，而且大部分在 CPU 上。而 <code>transform</code> 改的只是<strong>这一层贴图在屏幕上的呈现方式</strong>，元素在文档流里根本没动，兄弟元素毫不知情。<mark class="key">前者改的是"事实"，后者改的是"看起来"——而画面这件事，看起来就够了</mark>。</p>
+  <p><code>opacity</code> 同理：图层内容一个像素都没变，只是叠加时乘了一个系数。这正好是 GPU 最擅长的那类乘法题。</p>
+  <p>由此得出一个可以背下来的替换表：</p>
+  <ul class="keylist">
+    <li><span class="k">位移动画</span><span class="v">别用 <code>left/top/margin</code>，用 <code>transform: translate(x, y)</code>。</span></li>
+    <li><span class="k">缩放动画</span><span class="v">别用 <code>width/height</code>，用 <code>transform: scale(n)</code>。</span></li>
+    <li><span class="k">显隐动画</span><span class="v">别用 <code>display</code>（它根本没法过渡），用 <code>opacity</code> 配合 <code>visibility</code> 或 <code>pointer-events</code>。</span></li>
+    <li><span class="k">旋转动画</span><span class="v">用 <code>transform: rotate()</code>，本来就只走合成，放心用。</span></li>
+    <li><span class="k">列表重排动画</span><span class="v">用 FLIP 思路：先读取首末位置，用 <code>transform</code> 把元素"假装"放回原处，再让它过渡到零——全程只走合成。</span></li>
+  </ul>
+
+  <h3>常见卡顿的四类原因</h3>
+  <p>知道了预算和分工，卡顿的诊断就有了框架。绝大多数卡顿逃不出这四类。</p>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 长任务阻塞主线程</h4>
+      <p>JavaScript 和渲染共用一个主线程。一段跑了 200 毫秒的 JS（大数组循环、复杂 JSON 解析、同步的加密计算）执行期间，浏览器<strong>完全无法渲染任何东西</strong>，连点击都不响应，这叫"掉帧"甚至"假死"。任何超过 50 毫秒的任务都算<strong>长任务</strong>。解法：拆成小片用 <code>requestIdleCallback</code> / <code>setTimeout</code> 分批执行，或挪到 <strong>Web Worker</strong> 里去跑。</p>
+    </div>
+    <div class="step">
+      <h4>2. 频繁回流 / 布局抖动</h4>
+      <p>在滚动或 resize 回调里读 <code>getBoundingClientRect()</code>、循环里读写交替、给动画用几何属性——都会让布局这一步在每帧反复执行。解法：读写分批（上一节讲过）、事件回调加节流、动画改用 <code>transform</code>。</p>
+    </div>
+    <div class="step">
+      <h4>3. 图层过多导致显存与合成压力</h4>
+      <p>滥用 <code>will-change</code> 或 <code>translateZ(0)</code>，让几百个元素各占一张位图。显存吃紧后，光是"把这么多层叠起来"就超预算了，低端机可能直接崩。解法：只给真正在动的元素提层，动画完就撤。</p>
+    </div>
+    <div class="step">
+      <h4>4. 大图解码与巨型绘制</h4>
+      <p>一张 4000×3000 的原图，浏览器要先解码成未压缩位图（约 48 MB）才能显示，解码本身就是一次耗时的 CPU 工作。此外满屏的 <code>box-shadow</code> 大模糊、<code>backdrop-filter</code> 毛玻璃、复杂渐变也都是绘制阶段的重活。解法：图片按实际显示尺寸出图并用 <code>srcset</code> 提供多档、用 <code>loading="lazy"</code> 延后加载、给非首屏的重效果做降级。</p>
+    </div>
+  </div>
+
+  <p>还有几个容易忽略的隐形杀手：滚动事件里没加 <code>passive: true</code>（导致浏览器必须等你的回调执行完才敢滚动）；用 <code>setInterval</code> 而不是 <code>requestAnimationFrame</code> 驱动动画（节奏和屏幕刷新不同步，必然抖动）；以及在动画进行中触发了字体加载（字体一到就整页回流重排）。</p>
+
+  <h3>用 DevTools Performance 面板抓凶手</h3>
+  <p>猜是最低效的调试方式。浏览器自带的性能面板能把这 16.7 毫秒里发生的一切摊在你眼前。基本流程只有四步：</p>
+  <ul class="keylist">
+    <li><span class="k">第一步 · 录制</span><span class="v">打开 DevTools → Performance，点圆形录制按钮，然后<strong>复现卡顿操作</strong>（滚动、点开抽屉、切换 tab），停止录制。录制时间控制在 3~5 秒，太长了不好看。</span></li>
+    <li><span class="k">第二步 · 看 FPS 与红条</span><span class="v">最上方是帧率图，绿色柱越高越好；柱子上方出现<strong>红色横条</strong>的地方就是丢帧区间——直接把注意力放在那儿。</span></li>
+    <li><span class="k">第三步 · 展开 Main 火焰图</span><span class="v">Main 轨道显示主线程在干什么。宽的色块 = 耗时长的任务，右上角带红色三角的是被标记的长任务。颜色有约定：黄色是 <em>Scripting</em>（JS），紫色是 <em>Rendering</em>（样式计算 + 布局），绿色是 <em>Painting</em>（绘制 + 合成）。哪种颜色占得宽，方向就明确了。</span></li>
+    <li><span class="k">第四步 · 对症下药</span><span class="v">黄色过宽 → 优化 JS、拆分长任务、上 Worker。紫色过宽 → 找强制同步布局（面板会直接标 <em>Forced reflow</em> 警告并给出触发它的代码行）。绿色过宽 → 减少大面积重绘、检查阴影和滤镜、缩小图片。</span></li>
+  </ul>
+  <p>几个配套的小工具也很值得知道：</p>
+  <ul class="keylist">
+    <li><span class="k">Rendering 面板</span><span class="v">在 DevTools 里按 Esc 打开抽屉 → Rendering。勾选 <em>Paint flashing</em>，凡是被重绘的区域会闪绿框——如果你只改了一个按钮却看到整屏闪绿，说明重绘范围失控了。勾选 <em>Frame Rendering Stats</em> 可以实时看帧率。</span></li>
+    <li><span class="k">Layers 面板</span><span class="v">3D 可视化当前所有合成图层，并显示每层占用的显存。怀疑图层爆炸时先看这里。</span></li>
+    <li><span class="k">CPU 降速模拟</span><span class="v">Performance 面板顶部可以把 CPU 调成 4x / 6x slowdown，模拟中低端手机。在你的开发机上流畅不代表用户流畅，这个开关能把问题提前暴露出来。</span></li>
+    <li><span class="k">Long Animation Frames</span><span class="v">较新的浏览器提供 LoAF 指标，能直接告出"这一帧超时了，主要时间花在哪个脚本上"，比人工翻火焰图更省事。</span></li>
+  </ul>
+
+  <p>最后给一段最常用的动画骨架代码，把这一节的所有原则都用上了：</p>
+<pre><code>/* 只用 transform + opacity，只在需要时提层 */
+.panel {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform .28s cubic-bezier(.2,.8,.2,1),
+              opacity .28s linear;
+}
+.panel.is-open {
+  transform: translateX(0);
+  opacity: 1;
+}
+.panel.is-animating { will-change: transform, opacity; }
+
+/* 尊重用户的"减少动态效果"设置 */
+@media (prefers-reduced-motion: reduce) {
+  .panel { transition: none; }
+}</code></pre>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>流畅的定义是硬的：<strong>每帧 16.7 毫秒，实际留给你的只有约 10 毫秒</strong>，超时就丢帧。CPU 像一位教授，擅长布局、样式、逻辑这些"证明题"；GPU 像一千个小学生，擅长把海量像素统一变换这类"乘法题"。<mark class="key">优化的本质就是把活从 CPU 挪到 GPU：把会动的元素提升为独立图层，然后只用 transform 和 opacity 驱动它</mark>——因为这两者只触发合成，改的是"看起来"而不是"事实"。反过来，卡顿基本只有四个源头：长任务堵住主线程、频繁回流、图层爆炸、大图解码与重绘过大。而找出它们不需要猜，打开 DevTools Performance 录一段，看红条、看火焰图的颜色宽度，凶手自己就站出来了。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-4-render-pipeline.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 2.4 · 渲染管线</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 3 章 · 布局与排版（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 2.5</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

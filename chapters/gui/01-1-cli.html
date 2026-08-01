@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 1.1 · 命令行 CLI · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./01-what-is-gui.html">第 1 章</a>
+      <span class="sep">›</span>
+      <span>§ 1.1</span>
+    </div>
+    <a href="./01-what-is-gui.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 1.1 · Section</div>
+    <h1>命令行 CLI</h1>
+    <div class="cn">Command Line Interface</div>
+  </header>
+
+  <p class="lead">
+    很多人第一次看到那个黑底白字、只有一个光标在闪的窗口时，第一反应是"这不是上世纪的东西吗"。恰恰相反：<mark class="key">命令行不是被淘汰的过去，而是至今没有替代品的现在</mark>。所有服务器、所有代码仓库、所有自动化流水线的底层，跑的都是一行行命令。这一节我们把它彻底讲清楚：它是什么、它凭什么活到今天、以及它真正的短板在哪。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍜 点菜的两种方式</div>
+    <p>你走进一家面馆。<br/>
+    第一种点法：拿起<strong>带图的菜单</strong>，一页页翻，看到想吃的用手一指——这是图形界面。不用记菜名，但要翻页，一次也只能指一个。<br/>
+    第二种点法：直接对老板说"一碗牛肉面，加辣、不要香菜、面要硬、打包"——这是命令行。你得先知道有哪些选项能说，但一口气就把所有要求交代完了，而且下次来还能说一句"跟上次一样"。</p>
+    <div class="link">→ <strong>命令行</strong> = <em>用一行文字，把"做什么"和"怎么做"一次说完。</em></div>
+  </div>
+
+  <h3>什么是命令行</h3>
+  <p>命令行界面（<strong>CLI</strong>，Command Line Interface）是一种<strong>以纯文本为唯一媒介</strong>的人机交互方式。它的运行循环极其简单，只有三步，来回重复：</p>
+  <ul class="keylist">
+    <li><span class="k">提示符等待</span><span class="v">屏幕上出现一个 <code>$</code> 或 <code>&gt;</code>，意思是"我准备好了，请说话"。</span></li>
+    <li><span class="k">你敲一行字并回车</span><span class="v">这一行字就是一条完整的指令，包含你要做的事和所有细节。</span></li>
+    <li><span class="k">机器执行并把结果打印成文字</span><span class="v">成功了通常安静无声，失败了才吐出一段错误。然后提示符再次出现。</span></li>
+  </ul>
+  <p>这个循环有个专门的名字叫 <strong>REPL</strong>（Read-Eval-Print Loop，读取—求值—打印—循环）。它像两个人在对讲机上一问一答：你说一句，它答一句，绝不抢话。整个过程没有像素、没有图标、没有动画，输入输出<strong>全是字符流</strong>。</p>
+  <p>需要先分清三个经常被混为一谈的东西：<strong>终端</strong>是那个窗口（负责显示字符、接收键盘），<strong>shell</strong> 是窗口里跑的那个解释程序（负责读懂你的话），<strong>命令</strong>是 shell 帮你启动的一个个具体程序。就像：显示器是终端，服务员是 shell，厨师是命令。你冲着显示器喊没用，是服务员在听、厨师在做。</p>
+
+  <h3>shell 是什么：那个"听懂人话"的中间人</h3>
+  <p>shell 这个词字面意思是"外壳"。它包在操作系统内核（kernel）外面，是<mark class="key">你和内核之间唯一的翻译官</mark>。内核只认系统调用这种极其底层的接口，人类不可能直接手写；shell 的工作就是把你输入的那行人类可读的文字，拆解、展开、翻译成一串系统调用，然后启动进程、等它跑完、把结果送回你眼前。</p>
+  <p>常见的 shell 有这么几家：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Shell</th><th>主要平台</th><th>特点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>bash</code></td><td>Linux 默认、几乎所有服务器</td><td>最通用、教程最多、脚本兼容性最好，事实标准</td></tr>
+        <tr><td><code>zsh</code></td><td>macOS 默认</td><td>补全和主题极强，配上 oh-my-zsh 后体验华丽</td></tr>
+        <tr><td><code>fish</code></td><td>跨平台，自选</td><td>开箱即用的智能提示，但语法不兼容 bash 脚本</td></tr>
+        <tr><td><code>PowerShell</code></td><td>Windows 默认，也跨平台</td><td>管道里流动的是<strong>对象</strong>而不是文本，与 .NET 深度整合</td></tr>
+        <tr><td><code>cmd.exe</code></td><td>Windows 旧版</td><td>DOS 时代的遗产，能力弱，只为兼容老脚本而存在</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里有个关键区别值得单独说：<strong>bash 系的管道里流的是纯文本</strong>，所以下游命令要靠切列、正则去"猜"数据结构；而 <strong>PowerShell 的管道里流的是结构化对象</strong>，下游可以直接 <code>.Name</code>、<code>.Length</code> 取字段，不用解析文本。这是两套哲学的分野：Unix 相信"文本是万能的通用接口"，微软相信"类型信息不该在管道里丢掉"。两边各有代价，前者简单但脆弱，后者严谨但笨重。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · shell 就是餐厅前台</span>
+    <p>你不会闯进后厨对着炉子喊话——那太危险，也不知道该按哪个钮。<br/>
+    <strong>shell</strong> 就是那个前台：它记得你说过什么（历史记录）、知道店里有哪些菜（PATH 里的可执行文件）、能帮你把"跟上次一样"翻译成完整订单（别名和变量），还能安排"先炒菜后上汤"这种顺序（管道和分号）。<br/>
+    换一家店（换 shell），前台的脾气和话术会变，但后厨（内核）其实是同一个。</p>
+  </div>
+
+  <h3>命令的三段结构：命令 + 选项 + 参数</h3>
+  <p>几乎所有命令都遵守同一个语法骨架。认清这三段，你就能读懂 90% 的命令，哪怕从没见过那个程序：</p>
+  <pre><code>ls        -l -a        /home/user
+│         │            │
+命令      选项         参数
+(做什么)  (怎么做)     (对谁做)</code></pre>
+  <ul class="keylist">
+    <li><span class="k">命令（command）</span><span class="v">第一个词，就是要运行的程序名。shell 会在 PATH 列出的那些目录里逐个找同名的可执行文件。</span></li>
+    <li><span class="k">选项（option / flag）</span><span class="v">以 <code>-</code> 或 <code>--</code> 开头，用来调整行为。单字母短选项可以合写：<code>-l -a</code> 等于 <code>-la</code>。长选项更易读：<code>--all</code>。</span></li>
+    <li><span class="k">参数（argument）</span><span class="v">操作的对象，通常是文件名、路径、URL 或一段文字。可以有零个、一个或很多个。</span></li>
+  </ul>
+  <p>把这三段套到具体例子上，你会发现一切都变得可读：</p>
+  <pre><code># 复制：把 a.txt 复制成 b.txt，-v 表示边做边报告
+cp -v a.txt b.txt
+
+# 打包：c=create  z=gzip压缩  f=指定文件名
+tar -czf backup.tar.gz ./project
+
+# 查找：在当前目录往下找所有 .log 文件，且大于 10MB
+find . -name "*.log" -size +10M
+
+# 下载：-O 表示用远端的文件名保存到本地
+curl -O https://example.com/data.csv</code></pre>
+  <p>还有一个隐藏的第四段：<strong>返回码</strong>（exit code）。命令跑完会悄悄留下一个数字，<code>0</code> 表示成功，非 <code>0</code> 表示各种失败。你平时看不见它，但它是自动化的命脉——脚本正是靠它判断"上一步成了没有，要不要继续"。</p>
+
+  <h3>管道与重定向：Unix 的组合哲学</h3>
+  <p>如果只讲到上面，命令行只是"用打字代替点击"，没什么了不起。真正让它降维打击图形界面的，是<mark class="key">组合能力</mark>。</p>
+  <p>Unix 有一条祖训："<strong>写一个只做一件事、并且把它做好的程序；让程序之间通过文本流协作。</strong>"于是每个命令都被设计成一个只管一件事的小零件，然后用三种胶水把它们粘起来：</p>
+  <ul class="keylist">
+    <li><span class="k">管道 <code>|</code></span><span class="v">把左边命令的输出，直接当成右边命令的输入。像把两根水管接在一起，数据在中间流动，不落地成文件。</span></li>
+    <li><span class="k">输出重定向 <code>&gt;</code> <code>&gt;&gt;</code></span><span class="v">把本该打印到屏幕的内容改写进文件。<code>&gt;</code> 是覆盖，<code>&gt;&gt;</code> 是追加。</span></li>
+    <li><span class="k">输入重定向 <code>&lt;</code></span><span class="v">让命令不从键盘读，而从文件读。省掉手动粘贴的过程。</span></li>
+  </ul>
+  <p>看一个真实的例子。假设你要从一份几百万行的服务器日志里，找出访问次数最多的前 10 个 IP：</p>
+  <pre><code>cat access.log | awk '{print $1}' | sort | uniq -c | sort -rn | head -10</code></pre>
+  <p>拆开看，这一行其实是六个小工人在流水线上接力：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>环节</th><th>它干的事</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>cat access.log</code></td><td>把日志内容倒进管道</td></tr>
+        <tr><td><code>awk '{print $1}'</code></td><td>只留下每行的第一列，也就是 IP</td></tr>
+        <tr><td><code>sort</code></td><td>排序，让相同 IP 挨在一起</td></tr>
+        <tr><td><code>uniq -c</code></td><td>合并重复行并在前面标上出现次数</td></tr>
+        <tr><td><code>sort -rn</code></td><td>按数字从大到小重排</td></tr>
+        <tr><td><code>head -10</code></td><td>只取前 10 行</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>请认真想一想：<strong>如果用图形界面做同一件事，你要怎么做？</strong>大概是打开 Excel、导入几百万行文本、按分隔符切列、建数据透视表、排序、截图……十几分钟，而且明天日志更新了得从头再来一遍。而这一行命令，写一次，明天按一下方向键把它调出来，回车，两秒钟出结果。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 瑞士军刀 vs 一整套专用刀</span>
+    <p>图形界面软件像<strong>一把功能越堆越多的瑞士军刀</strong>：什么都想包进去，于是菜单越来越深，你要的那个功能永远藏在第四层子菜单里；而作者没想到的用法，你永远做不了。<br/>
+    命令行像<strong>一整抽屉各司其职的小刀</strong>：一把只切、一把只削、一把只挑。看起来简陋，但你可以任意排列组合，拼出作者从来没设想过的用法。<mark class="key">图形界面的能力上限由开发者决定，命令行的能力上限由使用者决定。</mark></p>
+  </div>
+
+  <h3>为什么程序员离不开它</h3>
+  <p>不是因为怀旧，也不是为了显得高深。是因为有四件事，图形界面在原理上就做不到。</p>
+  <ul class="keylist">
+    <li><span class="k">可脚本化</span><span class="v">命令是文本，文本可以存成文件、可以加 <code>if</code> 和循环、可以被另一个程序生成。你今天手敲的操作，明天就能变成半夜两点自动跑的定时任务。鼠标点击无法被存成文件，也无法被复制粘贴。</span></li>
+    <li><span class="k">可远程</span><span class="v">服务器躺在几千公里外的机房里，没有显示器、没有鼠标。你通过 SSH 连上去，带宽只需要传输几十字节的字符；要是传图形界面画面，那是几十兆的视频流，网络稍差就完全不可用。</span></li>
+    <li><span class="k">省资源</span><span class="v">一个 shell 会话占几 MB 内存，一整套桌面环境要占几百 MB 到几 GB。服务器的每一分内存都该留给业务程序，而不是留给一个没人看的桌面壁纸。</span></li>
+    <li><span class="k">可复现</span><span class="v">这是最被低估的一条。命令可以原封不动地写进文档、贴进工单、发给同事、提交进 Git。"我在设置里点了几下然后就好了"没法复现，也没法追责；<code>docker build -t app:v2 .</code> 谁执行都是同一个结果。</span></li>
+  </ul>
+  <p>正因如此，整个现代软件工程的地基全是命令行：Git 的每一次提交、CI/CD 流水线的每一步、Docker 镜像的每一层、Kubernetes 的每一次部署——它们的<strong>原生形态都是命令</strong>，图形界面只是后来贴上去的一层包装。当包装出问题时，你必须能掀开它，直接对底下的命令说话。</p>
+  <pre><code># 一个再普通不过的部署脚本：写一次，跑一千次
+git pull origin main
+npm ci
+npm run build
+docker build -t myapp:latest .
+docker compose up -d
+echo "部署完成，返回码 $?"</code></pre>
+
+  <h3>CLI 的真实短板</h3>
+  <p>吹完优点，必须诚实地讲缺点。命令行绝不是"更高级"，它只是<strong>另一种权衡</strong>，代价相当明确：</p>
+  <ul class="keylist">
+    <li><span class="k">不可发现</span><span class="v">图形界面把所有能做的事都摆在菜单里，你可以靠"逛"来学习。命令行的屏幕上什么都没有——<strong>你不知道自己不知道什么</strong>。这是新手最大的痛苦来源。</span></li>
+    <li><span class="k">记忆负担重</span><span class="v"><code>tar -czf</code> 和 <code>tar -xzf</code> 差一个字母，一个是打包一个是解包。选项字母在不同命令里含义还常常不一样，只能靠记和查。</span></li>
+    <li><span class="k">容错性差且无撤销</span><span class="v">图形界面里删文件会进回收站、会弹确认框；命令行里 <code>rm -rf</code> 敲错一个空格，可能直接把系统删了，而且没有 Ctrl+Z。它默认假设"你知道自己在干什么"。</span></li>
+    <li><span class="k">不擅长空间信息</span><span class="v">调色、看图、比对设计稿、拖时间轴剪视频——这些本质上是二维甚至连续量的任务。用文本描述"把这个色块往左移三个像素"是荒谬的，用鼠标一拖就完了。</span></li>
+    <li><span class="k">反馈是滞后的</span><span class="v">你敲完一整行才回车，回车前无法预览效果。图形界面里拖动滑块是实时看到变化的，这种即时反馈对探索性工作极其重要。</span></li>
+  </ul>
+  <p>所以结论不是"命令行更好"，而是：<mark class="key">任务性质决定界面形态</mark>。重复、批量、需要精确表达和留痕的工作，交给 CLI；探索性、空间性、一次性的工作，交给 GUI。真正熟练的人两手都会用，并且清楚地知道什么时候该切换到哪一边——这也是下一节 TUI 和第三节 GUI 要继续展开的话题。</p>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>命令行是<strong>"读取—执行—打印"的文本对话循环</strong>：终端是窗口，shell 是翻译官，命令是干活的小程序；每条命令都是"命令 + 选项 + 参数"的三段式；<strong>管道和重定向</strong>让一堆小工具组合出无穷用法，这才是它真正的护城河。它靠<strong>可脚本化、可远程、省资源、可复现</strong>四条支柱牢牢占住服务器与工程自动化的生态位；代价是<strong>不可发现、记忆负担重、误操作不可撤销、不擅长空间任务</strong>。记住一句话：<mark class="key">图形界面的上限由开发者决定，命令行的上限由你决定。</mark></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./01-what-is-gui.html">
+      <span class="dir">← 上一篇</span>
+      <span class="title">第 1 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./01-2-tui.html">
+      <span class="dir">下一篇 →</span>
+      <span class="title">§ 1.2 · 字符界面 TUI</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 1.1</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>
