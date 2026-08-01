@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>学海无涯 · 人工智能</title>
+  <title>学海无涯 · 智能 · 网络 · 界面</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='6' y='6' width='88' height='88' rx='14' fill='%23faf7f2' stroke='%23556b3d' stroke-width='4'/%3E%3Cpath d='M22 40 Q34 32 50 40 T78 40' fill='none' stroke='%234a6d8c' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M22 55 Q34 47 50 55 T78 55' fill='none' stroke='%23556b3d' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M22 70 Q34 62 50 70 T78 70' fill='none' stroke='%238a5a7a' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
 
   <style>
     /* === Font faces === */
@@ -42,34 +43,68 @@
     }
 
     /* === Cover === */
+    /* === Cover · 简洁印章式 === */
     .cover {
       text-align: center;
-      padding: 1.5rem 0 2rem;
+      padding: 2.2rem 0 2.4rem;
       border-bottom: 1px solid var(--rule);
       margin-bottom: 2rem;
     }
-    .cover .brand {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.3em;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 1rem;
+    .cover .logo {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 1.1rem;
+      display: block;
     }
     .cover h1 {
       font-family: var(--font-serif);
-      font-size: clamp(2rem, 5vw, 3rem);
+      font-size: clamp(2.1rem, 5.6vw, 3.1rem);
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.22em;
+      text-indent: 0.22em;      /* 抵消末字右侧字距，保持视觉居中 */
       color: var(--ink);
-      margin-bottom: 0.6rem;
+      line-height: 1.15;
+      margin-bottom: 0.7rem;
     }
-    .cover h1 .sep { color: var(--accent); margin: 0 .35em; font-weight: 400; }
+    .cover .romanized {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.42em;
+      text-indent: 0.42em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 1.1rem;
+    }
+    /* 三色分隔线——对应智能/网络/界面三篇 */
+    .cover .rule-tri {
+      width: 96px;
+      height: 2px;
+      margin: 0 auto 1rem;
+      border-radius: 2px;
+      background: linear-gradient(90deg,
+        #4a6d8c 0%, #4a6d8c 33.33%,
+        #556b3d 33.33%, #556b3d 66.66%,
+        #8a5a7a 66.66%, #8a5a7a 100%);
+      opacity: 0.85;
+    }
     .cover .subtitle {
-      font-size: 0.98rem;
+      font-size: 0.9rem;
       color: var(--ink-soft);
-      font-style: italic;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.14em;
+    }
+    .cover .subtitle b {
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .cover .subtitle .dot {
+      color: var(--rule);
+      margin: 0 0.5em;
+    }
+    @media (max-width: 720px) {
+      .cover { padding: 1.6rem 0 1.8rem; }
+      .cover .logo { width: 62px; height: 62px; margin-bottom: 0.9rem; }
+      .cover .romanized { font-size: 0.58rem; letter-spacing: 0.3em; text-indent: 0.3em; }
+      .cover .subtitle { font-size: 0.8rem; letter-spacing: 0.08em; }
     }
 
     /* === Knowledge Map === */
@@ -375,9 +410,41 @@
 
     <!-- ======= Cover ======= -->
     <header class="cover">
-      <div class="brand">Xue Hai Wu Ya · 学 · 海 · 无 · 涯</div>
-      <h1>学 <span class="sep">·</span> 海 <span class="sep">·</span> 无 <span class="sep">·</span> 涯</h1>
-      <div class="subtitle">智能篇 · 网络篇 · 界面篇 —— 一份可以随时展开的知识地图</div>
+      <!-- 印章式 Logo：方章 + 三色水波（智能/网络/界面）+ 书卷 -->
+      <svg class="logo" viewBox="0 0 100 100" role="img" aria-label="学海无涯">
+        <defs>
+          <linearGradient id="lg-seal" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#4a6d8c"/>
+            <stop offset="50%" stop-color="#556b3d"/>
+            <stop offset="100%" stop-color="#8a5a7a"/>
+          </linearGradient>
+        </defs>
+
+        <!-- 外框方章 -->
+        <rect x="6" y="6" width="88" height="88" rx="14"
+              fill="none" stroke="url(#lg-seal)" stroke-width="2.5" opacity="0.9"/>
+        <!-- 内细框 -->
+        <rect x="13" y="13" width="74" height="74" rx="9"
+              fill="none" stroke="#e2dccf" stroke-width="1"/>
+
+        <!-- 三道水波：由上到下 蓝(智能) 绿(网络) 紫(界面) -->
+        <path d="M22 40 Q34 32 50 40 T78 40" fill="none"
+              stroke="#4a6d8c" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+        <path d="M22 53 Q34 45 50 53 T78 53" fill="none"
+              stroke="#556b3d" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+        <path d="M22 66 Q34 58 50 66 T78 66" fill="none"
+              stroke="#8a5a7a" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+
+        <!-- 顶部一点：书卷/舟——"学海泛舟"意象 -->
+        <circle cx="50" cy="26" r="3.4" fill="#a05a2c"/>
+      </svg>
+
+      <h1>学海无涯</h1>
+      <div class="romanized">Xue Hai Wu Ya</div>
+      <div class="rule-tri"></div>
+      <div class="subtitle">
+        <b>智能</b><span class="dot">·</span><b>网络</b><span class="dot">·</span><b>界面</b>
+      </div>
     </header>
 
     <!-- ======= Cognition Tree · 认知知识树 ======= -->
@@ -765,11 +832,11 @@
       </a>
     </div>
 
-    <div class="page-foot">Xue Hai Wu Ya · Intelligence &amp; Network &amp; Interface · 2026</div>
+    <div class="page-foot">学海无涯 · 2026</div>
 
   </article>
 
-  <script src="./assets/tree-data.js?v=ct-14"></script>
-  <script src="./assets/cognition-tree.js?v=ct-14"></script>
+  <script src="./assets/tree-data.js?v=ct-15"></script>
+  <script src="./assets/cognition-tree.js?v=ct-15"></script>
 </body>
 </html>

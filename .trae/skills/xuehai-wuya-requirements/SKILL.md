@@ -317,6 +317,14 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 - **2026-08-01**: 全站统一 **篇 → 章 → 节** 三级命名（见 §0 规范），最小单位是"节"
 - **2026-08-01**: 认知树工具栏加**框宽滑块**（120-420px），可自由调节节点框宽度
 - **2026-08-01**: **界面篇第 5 章是用户重点学习目标**——从 5 节扩到 **14 节**，覆盖 Python / C++ / C# / Web / Rust 五大技术栈：Tkinter、PySide6/PyQt6、Qt Designer、CustomTkinter、Flet、NiceGUI、Dear PyGui、Streamlit/Gradio、Windows 原生栈、Avalonia/.NET MAUI、Electron、Tauri、打包分发。写这一章时要**多给可运行代码示例**。
+- **2026-08-01**: **封面改为简洁印章式**——不要重复堆字。结构：SVG 印章 logo（方章 + 三色水波对应三篇 + 橙点书舟）→ `学海无涯`（只出现一次，字距 0.22em）→ `Xue Hai Wu Ya` 小字 → 三色分隔线 → `智能 · 网络 · 界面`。页脚也精简为`学海无涯 · 2026`。已加同款 SVG favicon（内联 data URI）。
+
+### 品牌视觉规范
+
+- **Logo 意象**：方形印章（圆角 14）+ 三道水波（上蓝 `#4a6d8c` 智能 / 中绿 `#556b3d` 网络 / 下紫 `#8a5a7a` 界面）+ 顶部橙点 `#a05a2c`（书舟，"学海泛舟"）
+- **禁止**：标题重复出现同一组字（如既写 `学 · 海 · 无 · 涯` 又写 `Xue Hai Wu Ya · 学 · 海 · 无 · 涯`）
+- **三色分隔线** `.rule-tri`：96×2px，三等分渐变，用于封面标题下方
+- 中文标题用字距（`letter-spacing`）营造高级感，必须配同值 `text-indent` 抵消末字右侧空白以保持视觉居中
 
 ## 待办事项
 
