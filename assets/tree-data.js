@@ -100,13 +100,78 @@
         ],
         { href: 'chapters/ai/07-transformer.html' }
       ),
-      createNode('ai-08', '第 8 章 · 大语言模型 LLM', 'Token、上下文窗口、Temperature、CoT、推理模型 o1/R1。', '约 3 小时', []),
-      createNode('ai-09', '第 9 章 · 多模态', '文/图/视频/语音——AI 打破单一模态边界。', '约 2 小时', []),
-      createNode('ai-10', '第 10 章 · 提示词工程', '角色、任务、Few-shot、CoT——怎么问 AI 才能拿到好答案。', '约 2 小时', []),
-      createNode('ai-11', '第 11 章 · AI 智能体 Agent', '大脑+记忆+工具+循环——AI 从"答题"到"办事"。', '约 3 小时', []),
-      createNode('ai-12', '第 12 章 · 生态地图', 'OpenAI、Anthropic、DeepSeek、Qwen——2026 年的玩家地图。', '约 2 小时', []),
-      createNode('ai-13', '第 13 章 · 局限与风险', '幻觉、偏见、版权、深度伪造、Prompt 注入——AI 的暗面。', '约 2 小时', []),
-      createNode('ai-14', '第 14 章 · 与 AI 共处', '把 AI 当学习助手、写作伙伴、编程搭档——但保留人类判断。', '约 2 小时', [])
+      createNode('ai-08', '第 8 章 · 大语言模型 LLM',
+        'Token、上下文窗口、Temperature、CoT、推理模型 o1/R1。',
+        '约 3 小时',
+        [
+          createNode('ai-08-1', '§ 8.1 · Token 与分词篇', '模型眼里没有汉字，只有 token——为什么按 token 计费。', '35 min', []),
+          createNode('ai-08-2', '§ 8.2 · 自回归生成篇', '一个字一个字往后猜——生成的本质就是接话。', '30 min', []),
+          createNode('ai-08-3', '§ 8.3 · 上下文窗口篇', '从 4K 到 100 万 token——记忆边界与"失忆"现象。', '35 min', []),
+          createNode('ai-08-4', '§ 8.4 · 采样参数篇', 'Temperature、Top-p、Top-k——控制"发散还是保守"。', '30 min', []),
+          createNode('ai-08-5', '§ 8.5 · 思维链 CoT 篇', '"让我们一步一步想"——为什么加这句话正确率会涨。', '35 min', []),
+          createNode('ai-08-6', '§ 8.6 · 推理模型篇', 'o1 / R1 / DeepSeek——先想很久再答的新一代模型。', '40 min', [])
+        ]),
+      createNode('ai-09', '第 9 章 · 多模态',
+        '文/图/视频/语音——AI 打破单一模态边界。',
+        '约 2 小时',
+        [
+          createNode('ai-09-1', '§ 9.1 · 什么是多模态篇', '文字、图像、音频、视频——模态之间怎么打通。', '30 min', []),
+          createNode('ai-09-2', '§ 9.2 · Embedding 向量篇', '把万物变成一串数字——语义搜索的底层原理。', '35 min', []),
+          createNode('ai-09-3', '§ 9.3 · CLIP 与跨模态对齐篇', '让"猫的图"和"猫这个词"落在同一个空间。', '35 min', []),
+          createNode('ai-09-4', '§ 9.4 · 视觉理解篇', 'ViT、视觉编码器——GPT-4V 怎么"看懂"截图。', '30 min', []),
+          createNode('ai-09-5', '§ 9.5 · 语音与视频生成篇', 'TTS、ASR、Sora——听得懂也说得出、还能拍片。', '30 min', [])
+        ]),
+      createNode('ai-10', '第 10 章 · 提示词工程',
+        '角色、任务、Few-shot、CoT——怎么问 AI 才能拿到好答案。',
+        '约 2 小时',
+        [
+          createNode('ai-10-1', '§ 10.1 · 提示词四要素篇', '角色 + 任务 + 上下文 + 输出格式——万能模板。', '30 min', []),
+          createNode('ai-10-2', '§ 10.2 · Few-shot 示例篇', '给两三个例子，比写一千字说明更有效。', '30 min', []),
+          createNode('ai-10-3', '§ 10.3 · 思维链提示篇', '拆步骤、列前提、要过程——复杂任务的解法。', '30 min', []),
+          createNode('ai-10-4', '§ 10.4 · 结构化输出篇', 'JSON、表格、Markdown——让结果能直接被程序用。', '25 min', []),
+          createNode('ai-10-5', '§ 10.5 · 迭代与反模式篇', '追问、纠错、拆任务 + 常见的六个坑。', '30 min', [])
+        ]),
+      createNode('ai-11', '第 11 章 · AI 智能体 Agent',
+        '大脑+记忆+工具+循环——AI 从"答题"到"办事"。',
+        '约 3 小时',
+        [
+          createNode('ai-11-1', '§ 11.1 · Agent 是什么篇', '从"回答问题"到"自己干完一件事"的跨越。', '30 min', []),
+          createNode('ai-11-2', '§ 11.2 · 工具调用篇', 'Function Calling——让模型学会用计算器和搜索。', '35 min', []),
+          createNode('ai-11-3', '§ 11.3 · 记忆系统篇', '短期上下文 + 长期向量库——Agent 怎么"记事"。', '35 min', []),
+          createNode('ai-11-4', '§ 11.4 · RAG 检索增强篇', '先查资料再回答——治幻觉最实用的一招。', '40 min', []),
+          createNode('ai-11-5', '§ 11.5 · ReAct 与规划篇', '想 → 做 → 观察 → 再想——Agent 的执行循环。', '35 min', []),
+          createNode('ai-11-6', '§ 11.6 · MCP 与多 Agent 篇', '标准化工具协议 + 多个 Agent 分工协作。', '35 min', [])
+        ]),
+      createNode('ai-12', '第 12 章 · 生态地图',
+        'OpenAI、Anthropic、DeepSeek、Qwen——2026 年的玩家地图。',
+        '约 2 小时',
+        [
+          createNode('ai-12-1', '§ 12.1 · 芯片与算力篇', 'NVIDIA、华为昇腾、TPU——AI 的石油与发电厂。', '30 min', []),
+          createNode('ai-12-2', '§ 12.2 · 海外基础模型篇', 'OpenAI、Anthropic、Google、Meta——第一梯队格局。', '35 min', []),
+          createNode('ai-12-3', '§ 12.3 · 中国阵营篇', 'DeepSeek、Qwen、豆包、Kimi、GLM——本土玩家。', '35 min', []),
+          createNode('ai-12-4', '§ 12.4 · 开源生态篇', 'Llama、Mistral、Hugging Face、Ollama——自己也能跑。', '30 min', []),
+          createNode('ai-12-5', '§ 12.5 · 应用与工具层篇', 'Cursor、TRAE、Perplexity、Midjourney——落地产品。', '30 min', [])
+        ]),
+      createNode('ai-13', '第 13 章 · 局限与风险',
+        '幻觉、偏见、版权、深度伪造、Prompt 注入——AI 的暗面。',
+        '约 2 小时',
+        [
+          createNode('ai-13-1', '§ 13.1 · 幻觉篇', '它不是在骗你，它是在"合理地猜"——原理与缓解。', '35 min', []),
+          createNode('ai-13-2', '§ 13.2 · 偏见与公平性篇', '训练数据里的偏见会被模型放大。', '30 min', []),
+          createNode('ai-13-3', '§ 13.3 · 隐私与版权篇', '你输入的内容去哪了、生成物归谁。', '30 min', []),
+          createNode('ai-13-4', '§ 13.4 · 深度伪造篇', '换脸、拟声、假视频——如何识别与防范。', '30 min', []),
+          createNode('ai-13-5', '§ 13.5 · Prompt 注入与安全篇', '越狱、间接注入——大模型时代的新攻击面。', '35 min', [])
+        ]),
+      createNode('ai-14', '第 14 章 · 与 AI 共处',
+        '把 AI 当学习助手、写作伙伴、编程搭档——但保留人类判断。',
+        '约 2 小时',
+        [
+          createNode('ai-14-1', '§ 14.1 · AI 当学习助手篇', '费曼式提问、生成练习、讲不清就是没懂。', '30 min', []),
+          createNode('ai-14-2', '§ 14.2 · AI 当写作与研究伙伴篇', '大纲、改写、找反例——但结论要自己下。', '30 min', []),
+          createNode('ai-14-3', '§ 14.3 · AI 当编程搭档篇', 'Vibe Coding 与代码审查——效率与风险并存。', '35 min', []),
+          createNode('ai-14-4', '§ 14.4 · 批判性思维篇', '怎么判断 AI 在胡说——三步验证法。', '30 min', []),
+          createNode('ai-14-5', '§ 14.5 · 保留人类判断篇', '哪些决定永远不该外包给 AI。', '25 min', [])
+        ])
     ],
     { color: '#4a6d8c' }
   );
@@ -148,19 +213,85 @@
           createNode('net-03-1', '§ 3.1 · HTTP / HTTPS 篇', '浏览网页的协议——请求响应、状态码、Cookie、加密。', '45 min', [], { href: 'chapters/network/03-1-http.html' }),
           createNode('net-03-2', '§ 3.2 · TCP 篇', '可靠传输——三次握手、四次挥手、流量控制。', '45 min', [], { href: 'chapters/network/03-2-tcp.html' }),
           createNode('net-03-3', '§ 3.3 · UDP 篇', '快速但不保证——视频、直播、游戏为什么用它。', '30 min', [], { href: 'chapters/network/03-3-udp.html' }),
-          createNode('net-03-dns', 'DNS 篇（未上线）', '域名翻译成 IP——递归查询、缓存、污染。', '待更新', []),
-          createNode('net-03-ip', 'IP 篇（未上线）', 'IPv4/IPv6、公网私网、子网、NAT。', '待更新', []),
-          createNode('net-03-other', '其他协议（未上线）', 'ARP、ICMP、DHCP、SSH、FTP、SMTP。', '待更新', [])
+          createNode('net-03-4', '§ 3.4 · DNS 篇', '域名翻译成 IP——递归查询、缓存、DNS 污染与 DoH。', '40 min', []),
+          createNode('net-03-5', '§ 3.5 · IP 篇', 'IPv4 / IPv6、公网私网、子网划分与 CIDR、NAT。', '45 min', []),
+          createNode('net-03-6', '§ 3.6 · 其他常用协议篇', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '35 min', [])
         ],
         { href: 'chapters/network/03-protocols.html' }
       ),
-      createNode('net-04', '第 4 章 · 一次访问的旅程', '输入网址到网页显示——完整数据流走一遍。', '约 2 小时', []),
-      createNode('net-05', '第 5 章 · 网络设备', '路由器、交换机、网关、防火墙、光猫——机房里的角色。', '约 2 小时', []),
-      createNode('net-06', '第 6 章 · 无线与移动', 'WiFi、蓝牙、4G/5G、卫星互联网——切断电缆的自由。', '约 2 小时', []),
-      createNode('net-07', '第 7 章 · 云与边缘', 'CDN、VPC、边缘节点、K8s、Serverless——现代云网络。', '约 3 小时', []),
-      createNode('net-08', '第 8 章 · 网络安全', '加密、证书、XSS、CSRF、DDoS、零信任——防御网络攻击。', '约 3 小时', []),
-      createNode('net-09', '第 9 章 · 排错工具箱', 'ping、traceroute、curl、Wireshark——工程师的诊断工具。', '约 2 小时', []),
-      createNode('net-10', '第 10 章 · 现代协议演进', 'HTTP/3、IPv6、DoH、BBR——网络协议的最新进化。', '约 2 小时', [])
+      createNode('net-04', '第 4 章 · 一次访问的旅程',
+        '输入网址到网页显示——完整数据流走一遍。',
+        '约 2 小时',
+        [
+          createNode('net-04-1', '§ 4.1 · 输入网址与 URL 解析篇', 'URL 的七个部分 + 浏览器先干了什么。', '25 min', []),
+          createNode('net-04-2', '§ 4.2 · DNS 查询篇', '本地缓存 → hosts → 递归解析 → 拿到 IP。', '30 min', []),
+          createNode('net-04-3', '§ 4.3 · 建立 TCP 连接篇', '三次握手 + 端口分配——通道打通的瞬间。', '30 min', []),
+          createNode('net-04-4', '§ 4.4 · TLS 握手篇', '证书验证、密钥协商——HTTPS 加密怎么建立。', '35 min', []),
+          createNode('net-04-5', '§ 4.5 · 发送请求与服务器响应篇', '请求行、请求头、服务器处理、返回 HTML。', '30 min', []),
+          createNode('net-04-6', '§ 4.6 · 浏览器渲染篇', '解析 HTML/CSS → 构建 DOM/CSSOM → 布局 → 绘制。', '35 min', [])
+        ]),
+      createNode('net-05', '第 5 章 · 网络设备',
+        '路由器、交换机、网关、防火墙、光猫——机房里的角色。',
+        '约 2 小时',
+        [
+          createNode('net-05-1', '§ 5.1 · 交换机 Switch 篇', '二层设备——靠 MAC 地址在局域网内转发数据帧。', '30 min', []),
+          createNode('net-05-2', '§ 5.2 · 路由器 Router 篇', '三层设备——靠 IP 和路由表在不同网络间寻路。', '35 min', []),
+          createNode('net-05-3', '§ 5.3 · 网关与光猫篇', '网关 = 出口关卡；光猫 = 光信号与电信号的翻译官。', '25 min', []),
+          createNode('net-05-4', '§ 5.4 · 防火墙 Firewall 篇', '包过滤、状态检测、下一代防火墙——谁能进谁不能。', '30 min', []),
+          createNode('net-05-5', '§ 5.5 · 负载均衡 LB 篇', '四层 vs 七层、轮询/最少连接/一致性哈希。', '30 min', [])
+        ]),
+      createNode('net-06', '第 6 章 · 无线与移动',
+        'WiFi、蓝牙、4G/5G、卫星互联网——切断电缆的自由。',
+        '约 2 小时',
+        [
+          createNode('net-06-1', '§ 6.1 · WiFi 原理篇', '2.4G vs 5G vs 6G 频段、信道干扰、WiFi 6/7 新特性。', '35 min', []),
+          createNode('net-06-2', '§ 6.2 · 蓝牙与近场篇', '蓝牙、BLE 低功耗、NFC——短距离通信三兄弟。', '25 min', []),
+          createNode('net-06-3', '§ 6.3 · 移动蜂窝网络篇', '基站、小区切换、2G 到 5G 的演进逻辑。', '35 min', []),
+          createNode('net-06-4', '§ 6.4 · 5G 与 6G 展望篇', '大带宽、低时延、海量连接——切片与边缘计算。', '30 min', []),
+          createNode('net-06-5', '§ 6.5 · 卫星互联网篇', 'Starlink、低轨星座——把网络铺到没有基站的地方。', '25 min', [])
+        ]),
+      createNode('net-07', '第 7 章 · 云与边缘',
+        'CDN、VPC、边缘节点、K8s、Serverless——现代云网络。',
+        '约 3 小时',
+        [
+          createNode('net-07-1', '§ 7.1 · CDN 内容分发篇', '把内容缓存到离用户最近的节点——为什么视频不卡。', '35 min', []),
+          createNode('net-07-2', '§ 7.2 · 云网络 VPC 篇', '虚拟私有云、子网、安全组、路由表——云上的机房。', '40 min', []),
+          createNode('net-07-3', '§ 7.3 · 容器网络篇', 'Docker 网络模式、K8s Service 与 Ingress。', '40 min', []),
+          createNode('net-07-4', '§ 7.4 · 服务网格篇', 'Istio / Envoy——微服务之间的流量治理层。', '35 min', []),
+          createNode('net-07-5', '§ 7.5 · Serverless 与边缘计算篇', 'Cloudflare Workers、边缘函数——代码跑在离用户 10ms 的地方。', '35 min', [])
+        ]),
+      createNode('net-08', '第 8 章 · 网络安全',
+        '加密、证书、XSS、CSRF、DDoS、零信任——防御网络攻击。',
+        '约 3 小时',
+        [
+          createNode('net-08-1', '§ 8.1 · 对称与非对称加密篇', 'AES vs RSA——一把钥匙 vs 一对钥匙。', '35 min', []),
+          createNode('net-08-2', '§ 8.2 · 数字证书与 CA 篇', '证书链、根证书、自签名——凭什么信任一个网站。', '35 min', []),
+          createNode('net-08-3', '§ 8.3 · Web 攻击篇', 'XSS、CSRF、SQL 注入、SSRF——最常见的四种打法。', '40 min', []),
+          createNode('net-08-4', '§ 8.4 · DDoS 与防护篇', '流量型 vs 应用型攻击、清洗中心、限流策略。', '30 min', []),
+          createNode('net-08-5', '§ 8.5 · VPN 与代理篇', 'VPN、正向/反向代理、隧道协议——流量怎么绕路。', '30 min', []),
+          createNode('net-08-6', '§ 8.6 · 零信任架构篇', '"默认不信任、始终验证"——边界安全模型的终结。', '30 min', [])
+        ]),
+      createNode('net-09', '第 9 章 · 排错工具箱',
+        'ping、traceroute、curl、Wireshark——工程师的诊断工具。',
+        '约 2 小时',
+        [
+          createNode('net-09-1', '§ 9.1 · ping 与 ICMP 篇', '通不通、延迟多少、丢包多少——第一诊断命令。', '25 min', []),
+          createNode('net-09-2', '§ 9.2 · traceroute 路径追踪篇', '数据包走了哪几跳、卡在哪一跳。', '25 min', []),
+          createNode('net-09-3', '§ 9.3 · nslookup / dig 篇', 'DNS 解析结果排查——域名到底指向哪。', '25 min', []),
+          createNode('net-09-4', '§ 9.4 · curl / wget 篇', '命令行发 HTTP 请求——看原始响应头和状态码。', '30 min', []),
+          createNode('net-09-5', '§ 9.5 · netstat / ss 篇', '本机端口占用、连接状态——谁在监听、谁连着谁。', '25 min', []),
+          createNode('net-09-6', '§ 9.6 · Wireshark 抓包篇', '逐包分析——网络排错的终极武器。', '35 min', [])
+        ]),
+      createNode('net-10', '第 10 章 · 现代协议演进',
+        'HTTP/3、IPv6、DoH、BBR——网络协议的最新进化。',
+        '约 2 小时',
+        [
+          createNode('net-10-1', '§ 10.1 · HTTP/2 与 HTTP/3 篇', '多路复用、头部压缩、QUIC 基于 UDP 重造可靠传输。', '40 min', []),
+          createNode('net-10-2', '§ 10.2 · QUIC 协议篇', '0-RTT 握手、连接迁移——为什么抛弃 TCP。', '35 min', []),
+          createNode('net-10-3', '§ 10.3 · IPv6 全面部署篇', '地址耗尽、双栈过渡、为什么推了二十年还没完。', '30 min', []),
+          createNode('net-10-4', '§ 10.4 · 加密 DNS 篇', 'DoH / DoT / DoQ——DNS 查询也要加密。', '30 min', []),
+          createNode('net-10-5', '§ 10.5 · BBR 拥塞控制篇', 'Google 的新算法——测带宽而不是等丢包。', '30 min', [])
+        ])
     ],
     { color: '#556b3d' }
   );
