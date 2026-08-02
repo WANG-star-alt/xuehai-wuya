@@ -40,6 +40,41 @@
     <div class="link">→ <strong>TUI</strong> = <em>把终端的字符网格当画布，用字符当像素画出来的界面。</em></div>
   </div>
 
+  <h3>先把这一节的黑话全翻译一遍</h3>
+  <p>这节的术语密度比上一节高，而且大多是缩写。先一次性换成大白话，后面就不会卡。</p>
+  <ul class="keylist">
+    <li><span class="k">TUI</span><span class="v"><strong>TUI</strong>（Text-based User Interface，文本用户界面——在只能显示文字的黑窗口里，用字符拼出来的界面）。说白了就是：<strong>拿一个个汉字和符号当积木，在屏幕上摆出边框、按钮和图表的样子。</strong></span></li>
+    <li><span class="k">CLI</span><span class="v"><strong>CLI</strong>（Command-Line Interface，命令行界面——你说一句、它答一句，不重画屏幕的那种）。上一节讲过，这里当参照物用。</span></li>
+    <li><span class="k">GUI</span><span class="v"><strong>GUI</strong>（Graphical User Interface，图形用户界面——有窗口、图标、鼠标箭头的那种）。下一节的主角。</span></li>
+    <li><span class="k">字符网格</span><span class="v">终端窗口的本质：一张<strong>横多少格、竖多少格</strong>的方格纸，每格只能填一个字符。听着玄，其实就是<strong>小学生用的田字格本</strong>，只不过它有 80 列 24 行。</span></li>
+    <li><span class="k">ANSI 转义序列</span><span class="v"><strong>ANSI 转义序列</strong>（ANSI Escape Sequence，一串以特殊字符开头的"暗号"，用来指挥终端把光标挪到哪、换成什么颜色）。打个比方，这就是<strong>写在稿件旁边的红笔批注</strong>："此处换红色""跳到第 5 行"——批注本身不印出来，但它决定了印出来的样子。</span></li>
+    <li><span class="k">光标</span><span class="v"><strong>光标</strong>（Cursor——下一个字符将要落在哪一格的那个标记）。它相当于<strong>你手里那支笔的笔尖位置</strong>。TUI 的一切魔法，本质都是"把笔尖挪到指定格子，然后写一个字"。</span></li>
+    <li><span class="k">ASCII</span><span class="v"><strong>ASCII</strong>（American Standard Code for Information Interchange，美国信息交换标准代码——最早的一套字符编号表，一共 128 个字符）。简单说就是<strong>最初那份"字符花名册"</strong>：英文字母、数字、标点、几个控制符号，仅此而已，连汉字都没有。</span></li>
+    <li><span class="k">ncurses</span><span class="v"><strong>ncurses</strong>（new curses，一个替你处理转义序列和屏幕刷新的老牌 C 语言库）。它干的活儿相当于<strong>装修队里的工头</strong>：你说"这儿要一面隔断墙"，他去决定用什么料、怎么砌、几点收工。</span></li>
+    <li><span class="k">终端复用器</span><span class="v"><strong>终端复用器</strong>（Terminal Multiplexer，比如 <code>tmux</code>——把一个终端窗口切成好几块，还能在你断线后替你保管现场）。好比<strong>把一间办公室用隔断分成四个工位，而且你下班后东西不会被收走</strong>。</span></li>
+  </ul>
+
+  <h3>TUI 卡在哪个位置：CLI 和 GUI 之间的那一格</h3>
+  <p>很多人对 TUI 的疑惑其实是"它到底算命令行还是算图形界面"。答案是<strong>都不算，它是独立的第三种</strong>。用一张表把三者钉在各自的格子上：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>CLI 命令行</th><th>TUI 字符界面</th><th>GUI 图形界面</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>屏幕怎么用</td><td>只往下追加，写过不回头</td><td><strong>整屏当画布，随时擦了重画</strong></td><td>自由像素画布，任意坐标</td></tr>
+        <tr><td>最小显示单位</td><td>一个字符</td><td>一个字符</td><td>一个像素</td></tr>
+        <tr><td>交互节奏</td><td>你说一句它答一句</td><td><strong>你按一下它立刻反应</strong></td><td>你按一下它立刻反应</td></tr>
+        <tr><td>输入方式</td><td>打字 + 回车</td><td>单键、方向键、快捷键（有的支持鼠标）</td><td>鼠标 / 触摸为主</td></tr>
+        <tr><td>编程范式</td><td>从上到下跑完退出</td><td><strong>事件循环，等你动作</strong></td><td>事件循环，等你动作</td></tr>
+        <tr><td>远程一次刷新的流量</td><td>几十字节</td><td><strong>几 KB</strong></td><td>几百 KB 到几 MB</td></tr>
+        <tr><td>会不会看菜单</td><td>没菜单，全靠记</td><td>有功能键提示条，算半个菜单</td><td>菜单全摊在眼前</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看第 3 行和第 5 行你就会发现一件有意思的事：<mark class="key">TUI 在"长相"上像 CLI，在"骨架"上像 GUI。</mark>它显示的东西是字符，所以能塞进 SSH 这种窄通道；但它的程序结构是"停在那儿等你按键"，跟图形界面一模一样。</p>
+  <p>换成大白话打个比方。CLI 好比<strong>窗口办事的柜台</strong>：你递一张单子，办事员盖章还你，一次一来一回，办完各走。GUI 好比<strong>装修好的自助大厅</strong>：所有业务的指引牌、取号机、显示屏都摆在那儿，你随便逛随便点。而 TUI 是<strong>那种老式的电话客服</strong>：全程只有声音（只有字符），但你能"按 1 查余额、按 2 转人工"，界面一直在，随时响应——它的通道极窄，交互却是活的。</p>
+
   <h3>终端里怎么"画"界面：字符网格</h3>
   <p>要理解 TUI，先要接受一件事：<strong>终端窗口本质上是一个二维字符网格</strong>。它不像浏览器那样有一个自由的像素坐标系，它只有"第几行第几列"。一个典型终端是 80 列 × 24 行，也就是 1920 个格子，每个格子只能装一个字符，外加几个属性：前景色、背景色、粗体、下划线、反色。</p>
   <p>普通命令行程序对这个网格的用法非常保守：<mark class="key">只在最后一行往下追加，写过的地方永不回头</mark>。像一条只会往前流的河，历史内容滚上去就不管了。</p>
@@ -55,6 +90,40 @@
 │ MEM [||||||||............]    41%        │
 └──────────────────────────────────────────┘
  F1 Help  F5 Tree  F9 Kill  F10 Quit          ← 底部功能键提示条</code></pre>
+
+  <h3>1920 个格子到底是多是少：把数字换算成能摸到的量</h3>
+  <p>上面提到"80 列 × 24 行 = 1920 个格子"，这个数字听着没感觉。换算一下你才知道 TUI 是在多窄的地方施展本事。</p>
+  <ul class="keylist">
+    <li><span class="k">1920 个格子有多少</span><span class="v">相当于<strong>一张 A4 纸上手写 24 行、每行 80 个字</strong>——差不多是一页信纸的容量。TUI 要在这一页纸上同时放下标题、边框、表格、进度条、状态栏和功能键提示，还要能滚动、能高亮、能选中。<strong>这就像在一张便签上画完整栋楼的平面图，每一格都得算计。</strong></span></li>
+    <li><span class="k">同一块屏幕，GUI 有多少格</span><span class="v">同样大小的窗口，图形界面按像素算大约是 640 × 384，也就是 <strong>24 万多个可独立上色的点</strong>。也就是说 GUI 手里的"格子"是 TUI 的<strong>一百多倍</strong>。换算成画画：TUI 手里是一盒 24 色蜡笔在便签上画，GUI 手里是喷枪在整面墙上画。</span></li>
+    <li><span class="k">4K 屏幕的差距更夸张</span><span class="v">一块 4K 屏有 3840 × 2160 约 <strong>830 万个像素点</strong>。这是个什么量级？如果让你在方格纸上手工给每个格子涂色，一秒涂一个不休息，需要<strong>连续涂 96 天</strong>；把这些格子摊开成方格纸，大约要用掉<strong>2000 多张 A4 纸</strong>。而 TUI 只用其中不到两千格就把一个可交互的监控面板做出来了。</span></li>
+    <li><span class="k">传输量的差距</span><span class="v">TUI 刷一次全屏，最多传 1920 个字符加上颜色暗号，几 KB 而已，<strong>相当于一条短消息的体量</strong>。GUI 远程传一帧 4K 画面，压缩后还有几百 KB 到几 MB，<strong>相当于发一张高清照片</strong>。你在信号只有一格的地方，短消息发得出去，照片就卡在那儿转圈——这就是 SSH 场景下 TUI 完胜的全部原因。</span></li>
+  </ul>
+  <p>所以 TUI 的设计哲学可以一句话概括：<mark class="key">格子极少，所以每一格都必须有信息量。</mark>这也解释了为什么 <code>htop</code> 那种界面看着"密"——不是设计师不懂留白，是他真的没有格子可以浪费。好比在一间只有六平米的小屋里装修，你不会摆装饰品，每一寸都得是收纳。</p>
+
+  <h3>字符画怎么"画"出边框：那些不是图形的图形</h3>
+  <p>看回上面那个 <code>htop</code> 样子的例子，那些漂亮的框线是怎么来的？答案很朴素：<strong>它们就是字符，跟"啊"和"A"是同一类东西</strong>，只不过长得像线。</p>
+  <p>这批字符分三代，一代比一代好看：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>代际</th><th>用到的字符</th><th>画出来的效果</th><th>什么时候用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>第一代 · 纯 ASCII</strong></td><td><code>+ - | =</code></td><td><code>+-----+</code> 这种，粗糙但绝对到处都能显示</td><td>不确定对方终端支不支持时的保险选择</td></tr>
+        <tr><td><strong>第二代 · 制表符</strong></td><td><code>─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼</code></td><td>连贯的单线框，还有双线版 <code>═ ║ ╔ ╗</code></td><td>今天的主流。这套字符专门为"画框"而设计</td></tr>
+        <tr><td><strong>第三代 · 方块与半格</strong></td><td><code>█ ▓ ▒ ░ ▀ ▄ ▌ ▐</code></td><td>实心块、不同浓度的灰、上下半格、左右半格</td><td>画进度条、柱状图、甚至用半格字符做出"半像素"精度的图表</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第三代那个"半格"技巧特别值得说，因为它是 TUI 里最巧的一手。<strong>▀</strong> 这个字符只占格子的上半部分，<strong>▄</strong> 只占下半部分。于是聪明的做法出现了：把上半格设一个前景色，下半格设背景色，<mark class="key">一个格子就变成了两个独立可上色的点</mark>。垂直分辨率凭空翻倍。<code>btop</code> 那种看着像真正折线图的曲线，就是这么榨出来的。</p>
+  <p>这一手<strong>就像</strong>宿舍里搭上下铺：房间面积没变，睡的人翻了一倍。技术上什么都没多，只是把原来"一格一个用途"的假设打破了。</p>
+  <pre><code>纯 ASCII 版（最保守）        制表符版（主流）           方块图表版（最花）
++---------------+          ┌───────────────┐          ▁▃▅▇█▇▅▃▁▁▃▅▇
+| CPU  [####..] |          │ CPU  ████░░░░ │          ▂▄▆█▆▄▂▁▂▄▆██
+| MEM  [##....] |          │ MEM  ███░░░░░ │          CPU 72%  MEM 41%
++---------------+          └───────────────┘          用半格字符逼近折线</code></pre>
+  <p>还有一个必须提醒的坑：<strong>汉字占两格</strong>。一个英文字母占一格，一个汉字在终端里占两格宽。所以你用汉字做界面，算宽度时得按两倍算，否则框线会错位——这就是很多中文 TUI 界面框线歪掉的原因。好比装修贴瓷砖，你按小砖的尺寸排好了图，结果送来的是大砖，整面墙的缝就全对不上了。</p>
 
   <h3>ANSI 转义序列：控制光标的那套暗号</h3>
   <p>问题来了：字符是通过一根管道流进终端的，程序怎么告诉终端"接下来这个字符请写到第 5 行第 12 列，用红色"？管道里只能流字符，没有额外的控制通道。</p>
@@ -126,6 +195,49 @@ int main(void) {
 }</code></pre>
   <p>请留意 <code>while ((ch = getch()) != 'q')</code> 这一行——这是一个<strong>事件循环</strong>：程序不再从上往下跑完就退出，而是停在那里等你动作，你按一下它响应一下。这个思路和后面 § 1.5 要讲的 GUI 事件驱动<mark class="key">本质上是同一件事</mark>。也就是说，TUI 虽然长得像命令行，但它的编程范式已经站到 GUI 那一边了。</p>
 
+  <h3>TUI 的操作范式：为什么全靠键盘，还搞出"模态"</h3>
+  <p>TUI 没有鼠标（大多数情况下），这不是缺陷，而是逼出了一套完全不同的操作哲学。理解它，你才不会觉得 <code>vim</code> 是反人类。</p>
+  <p>核心矛盾是这样：<strong>键盘只有一百来个键，但一个软件要提供几百个功能。</strong>怎么办？三条路。</p>
+  <ul class="keylist">
+    <li><span class="k">路一：组合键</span><span class="v">用 <code>Ctrl</code>、<code>Alt</code>、<code>Shift</code> 当"档位"，把一个键变成好几个。<code>Ctrl</code>+<code>S</code> 和 <code>S</code> 是两回事。这就像汽车的<strong>挂档</strong>：油门只有一个，但一档和五档下踩同样深度，车的反应完全不同。</span></li>
+    <li><span class="k">路二：前缀键</span><span class="v">先按一个"引导键"进入某个分类，再按第二个键选具体功能。<code>tmux</code> 全靠这一招：先按 <code>Ctrl</code>+<code>B</code>，再按 <code>%</code> 竖着切窗、按 <code>"</code> 横着切窗、按 <code>D</code> 离开。<strong>这就是电话客服的"按 1 转账、按 2 查询"</strong>：先进一层菜单，再选具体项。</span></li>
+    <li><span class="k">路三：模态</span><span class="v">最激进的一招，也是 <code>vim</code> 的招牌。<strong>模态</strong>（Modal，模式——同一个键在不同模式下含义完全不同）说白了就是：<strong>给键盘装了个"档位开关"。</strong>在"普通模式"下按 <code>D</code> 是删除，在"插入模式"下按 <code>D</code> 就是打出一个字母 d。</span></li>
+  </ul>
+  <p>模态这件事新手最反感，但它的逻辑其实很硬：<mark class="key">既然键不够用，那就让同一批键在不同场合复用。</mark>打个比方，这好比<strong>医院里同一间诊室，上午是内科门诊、下午是抽血室</strong>——房间没变，挂的牌子变了，进去要办的事就完全不同。你要是不看牌子就闯进去，当然会懵。<code>vim</code> 屏幕左下角那个 <code>-- INSERT --</code>，就是那块牌子。</p>
+  <p><code>vim</code> 的三个主要模式，用一句人话各自说清：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模式</th><th>键盘此时是什么</th><th>生活对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>普通模式</strong>（Normal）</td><td>一整套遥控器：每个键是一条编辑命令</td><td>你手里拿着<strong>装修图纸和红笔</strong>，在标注"这儿拆、那儿改"</td></tr>
+        <tr><td><strong>插入模式</strong>（Insert）</td><td>就是普通打字机，按什么出什么</td><td>你放下红笔，<strong>亲自上手砌墙</strong></td></tr>
+        <tr><td><strong>命令模式</strong>（Command，以 <code>:</code> 开头）</td><td>临时开一个小命令行，输入整句指令</td><td>你走到<strong>项目部办公室，填一张变更申请单</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么专业用户愿意付这个学习成本？因为收益是<strong>可组合性</strong>。<code>d</code> 是删，<code>w</code> 是一个词，<code>3</code> 是三次——于是 <code>d3w</code> 就是"删掉后面三个词"。你没有单独学过 <code>d3w</code> 这个功能，它是三个零件拼出来的。<strong>这和上一节命令行的管道是同一个思路</strong>：给你一堆小零件，让你自己组装，而不是给你一个装好的按钮。图形界面里"删掉后面三个词"这个功能，如果开发者没做，你就永远做不到。</p>
+
+  <h3>TUI 与 GUI 的效率之争：谁快其实取决于问谁</h3>
+  <p>这个争论吵了三十年，之所以吵不清，是因为双方在比不同的东西。把它拆成三个不同的问题，答案立刻清楚。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你到底在问什么</th><th>谁赢</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>第一次上手要多久</strong></td><td>GUI 大胜</td><td>菜单把所有能干的事摊在眼前，你逛一圈就会了。TUI 屏幕上只有个提示条，剩下的全靠查文档</td></tr>
+        <tr><td><strong>用熟以后单次操作多快</strong></td><td>TUI 大胜</td><td>手不离键盘。鼠标操作要经过"眼睛找目标 → 手移过去 → 校准 → 点击"，全套约 1 到 2 秒；一个快捷键约 0.2 秒</td></tr>
+        <tr><td><strong>批量重复一千次</strong></td><td>TUI / CLI 完胜</td><td>键盘操作可以录成宏、写成脚本；鼠标点击没法存成文件，只能一次次点</td></tr>
+        <tr><td><strong>空间性任务（调色、拖时间轴）</strong></td><td>GUI 完胜</td><td>这类任务需要连续量的边看边调，字符网格根本表达不了"往左 3 个像素"</td></tr>
+        <tr><td><strong>窄带宽远程</strong></td><td>TUI 完胜</td><td>几 KB 对几 MB，差三个数量级</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>关于那个"鼠标 1 到 2 秒、快捷键 0.2 秒"的差距，值得换算一下才有感觉。假设你每天做 300 次这种小操作，每次省 1 秒，一天省 5 分钟，一年省下大约 <strong>30 个小时</strong>——差不多是<strong>四个完整工作日</strong>。这就是为什么重度用户愿意花两周去啃 <code>vim</code> 的快捷键：<mark class="key">学习成本是一次性的，效率收益是每天复利的。</mark></p>
+  <p>但请不要把这条推到荒谬的地步。<strong>打个比方</strong>：专业厨师用中式菜刀能同时切片、拍蒜、剁馅，比一柜子专用工具都快；但你只是周末做一次饭，买一把菜刀再练三个月刀工，完全不值。<mark class="key">工具的效率上限，只对天天用它的人有意义。</mark>判断标准很简单：这件事你一年做几次？做三次就用图形界面，做三千次就该学快捷键。</p>
+
   <h3>那些你一定见过的 TUI 代表作</h3>
   <div class="table-wrap">
     <table>
@@ -144,6 +256,25 @@ int main(void) {
     </table>
   </div>
   <p>这里面 <code>tmux</code> 值得多说一句，因为它是"TUI 里再跑 TUI"的典型：它自己是一个字符界面程序，同时又把屏幕切成好几块，每块里再跑别的程序（可能又是一个 TUI）。它扮演的角色，其实就是终端世界里的<strong>窗口管理器</strong>——和桌面上负责给窗口排版、切换焦点的那个组件一模一样。</p>
+
+  <h3>五个代表作巡礼：它们各自解决了什么问题</h3>
+  <p>上面那张表只说了"是什么"，这里说"为什么它值得存在"。挑五个最有代表性的，各配一个生活场景。</p>
+  <ul class="keylist">
+    <li><span class="k">htop / btop · 实时资源监视</span><span class="v">它替代的是"每隔两秒敲一次 <code>ps</code>"这种傻办法。<strong>它干的活儿相当于医院监护室床头那台仪器</strong>：心率、血压、血氧连续画在屏幕上，护士一眼扫过就知道有没有异常。<code>btop</code> 更进一步，用半格字符画出了真正的折线趋势图。</span></li>
+    <li><span class="k">vim / neovim · 文本编辑器</span><span class="v">它解决的是"服务器上没有图形编辑器，但我得改一个配置文件"。<strong>好比工地上没有办公室，工头就在墙上贴张图纸直接改</strong>——工具简陋，但现场就能办完，不用跑回公司。</span></li>
+    <li><span class="k">lazygit · Git 可视化操作</span><span class="v">Git 的命令行很强但很绕，图形客户端又装不到服务器上。<code>lazygit</code> 把分支、提交历史、暂存区并排摆成几块面板，按空格就能把某一行代码单独加入暂存。<strong>这就像超市收银台的分拣：一堆商品摆在传送带上，你挑哪几件先结账，看着挑、点着来，不用背商品编号。</strong></span></li>
+    <li><span class="k">Midnight Commander · 双栏文件管理器</span><span class="v">左右两栏，左边源、右边目标，按一个键就对拷。这个布局是 1986 年 Norton Commander 定下来的，四十年没人能改进——因为它精确匹配了人搬东西的心智模型：<strong>好比搬家时地上摊开两个纸箱，从这箱拿到那箱</strong>。</span></li>
+    <li><span class="k">tmux · 终端复用与会话保管</span><span class="v">它解决两件事：把一个窗口切成多块，以及断线后现场还在。第二件才是杀手级的。<strong>它相当于快递驿站</strong>：你人不在家（网断了），包裹（正在跑的任务）不会被退回，寄存在那儿，你什么时候回来什么时候取。没有 tmux，网一断任务就死，这在跨国运维里是致命的。</span></li>
+  </ul>
+  <p>看完这五个，你会发现一个共同点：<mark class="key">它们全都出现在"人在这头、机器在那头，中间只有一根细管子"的场景里。</mark>这不是巧合，这就是 TUI 的生态位。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 老式火车站的"人工播报 + 翻页牌"</span>
+    <p>如果只让你记一个画面来理解 TUI，就记这个：<strong>三十年前的火车站候车厅。</strong></p>
+    <p>那时候没有大彩屏。信息全靠两样东西传递：墙上那块<strong>翻页式的列车时刻牌</strong>，和头顶那个<strong>喇叭</strong>。时刻牌由无数个小格子拼成，每个格子只能翻出十个数字里的一个，工作人员在后面用手一格格拨。就这么点手段，它却把"车次、始发、终到、几点、晚点多久、哪个站台、开始检票了"这一整套动态信息，同时呈现给整个候车厅上千人看。</p>
+    <p>把三者对上：CLI 是那个<strong>喇叭</strong>——播一次就散，你没听见就没了，也不能回头看；GUI 是今天车站里那块<strong>全彩大屏</strong>，图文视频广告都能放；TUI 就是那块<strong>翻页牌</strong>：格子固定、字符有限、颜色寡淡，但它<mark class="key">是"一直在那儿、随时能看、并且会更新"的</mark>——这三条加起来，就是一个"界面"的最低定义，而它用最少的资源满足了。</p>
+    <p>更妙的是翻页牌的另外几个优点，恰好也是 TUI 的优点：极省电（几 KB 流量）、极耐用（几十年的老工具还在用）、远看极清楚（信息密度高）、坏一格不影响整块牌（一个字符错了不会让程序崩）。所以别把 TUI 当"落后"，它是<strong>在极端约束下把每一分资源都榨干的工程典范</strong>。</p>
+  </div>
 
   <h3>为什么 SSH 场景下 TUI 无可替代</h3>
   <p>这是 TUI 存在的最硬的理由，也是它永远不会消失的原因。设想一个真实场景：凌晨三点，你收到告警，要连到新加坡机房的一台服务器上排查内存暴涨。你手上只有笔记本和一个不太稳的网络。</p>
@@ -187,17 +318,67 @@ class DemoApp(App):
     Static { border: round green; padding: 1 2; width: 60%; }
     Button { margin: 1; }
     """
-    def compose(self) -> ComposeResult:
+    def compose(self) -&gt; ComposeResult:
         yield Header()
         yield Static("这是一个终端里的面板，样式由 CSS 控制")
         yield Button("点我", variant="success")
         yield Footer()
 
-    def on_button_pressed(self) -> None:      # 事件回调
+    def on_button_pressed(self) -&gt; None:      # 事件回调
         self.query_one(Static).update("按钮被按下了！")
 
 DemoApp().run()</code></pre>
   <p>顺带说一句，现在你用的很多命令行工具其实已经悄悄是 TUI 了：<code>npm install</code> 那个会动的进度条、<code>docker pull</code> 里多层并行更新的下载条、AI 编程助手在终端里的对话框——它们都在用光标定位原地重写，都是 TUI 技术。<strong>TUI 早已渗透到你每天的工作流里，只是你没给它起名字。</strong></p>
+
+  <h3>自己动手做一个 TUI：三条难度不同的路</h3>
+  <p>看到这儿你可能想试试。Python 生态里正好有三条路，难度从"折磨"到"愉快"依次排开，正好对应了 TUI 开发四十年的进化史。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>路子</th><th>它替你干了什么</th><th>难度</th><th>装修类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>curses</code>（标准库）</td><td>只封装了最基础的"挪光标、写字符、读按键"。布局、边框、组件全靠你自己算坐标</td><td>高</td><td><strong>给你砖、水泥和一把瓦刀</strong>，墙自己砌，尺寸自己量</td></tr>
+        <tr><td><code>rich</code></td><td>把"漂亮地输出内容"这件事包圆了：彩色表格、进度条、语法高亮、树形结构，一行调用就有</td><td>低</td><td><strong>给你成品的门窗和柜子</strong>，直接往墙上装，但整体格局还得你定</td></tr>
+        <tr><td><code>textual</code></td><td>完整的界面框架：用类 CSS 写样式、有布局引擎、有现成控件、有事件系统、支持鼠标和动画</td><td>低到中</td><td><strong>整装公司</strong>：你说要几室几厅什么风格，剩下全包，还能随时改软装</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>给一条实用建议：<strong>只想让脚本的输出好看点，用 <code>rich</code>；想做一个能上下选择、有多个面板的真界面，用 <code>textual</code>；除了学习和维护老代码，别再从零写 <code>curses</code> 了。</strong>这就像今天没人会自己烧砖建房——不是因为烧砖不光荣，而是有更好的现成材料。</p>
+  <p>下面是三条路各写一小段，你可以直接感受一下代码量的差距。同样一件事：<strong>在屏幕上显示一个带边框的面板，里面写一行字。</strong></p>
+  <pre><code># 路一：curses —— 坐标全靠自己算
+import curses
+
+def main(scr):
+    curses.curs_set(0)                      # 隐藏光标
+    h, w = scr.getmaxyx()                   # 先问清屏幕多大
+    box = scr.subwin(5, 40, h//2 - 2, w//2 - 20)   # 自己算居中位置
+    box.box()                               # 画边框
+    box.addstr(2, 4, "Hello from curses")   # 自己算文字位置
+    scr.refresh(); box.refresh()
+    scr.getch()                             # 等一个按键
+
+curses.wrapper(main)
+
+
+# 路二：rich —— 一行就有边框和居中
+from rich.console import Console
+from rich.panel import Panel
+
+Console().print(Panel("Hello from rich", title="面板", expand=False))
+
+
+# 路三：textual —— 声明式，写起来像网页
+from textual.app import App, ComposeResult
+from textual.widgets import Static
+
+class Demo(App):
+    CSS = "Static { border: round green; width: 40; align: center middle; }"
+    def compose(self) -&gt; ComposeResult:
+        yield Static("Hello from textual")
+
+Demo().run()</code></pre>
+  <p>注意这三段的<strong>心智负担</strong>差别，而不是代码行数。<code>curses</code> 那段里，你脑子里得同时装着"屏幕多大、面板多大、除以二居中、文字往里缩几格"这一堆算术；<code>textual</code> 那段你只是说"我要一个 40 宽、绿色圆角边框、居中的东西"，剩下的框架去算。<mark class="key">这个转变就是从"手工计算"到"声明意图"，也是整个界面开发史的主线。</mark>好比点菜：一个是你自己进厨房按克数配料，一个是你只说"要一份微辣的"。</p>
 
   <div class="lab" data-lab="quiz" data-q="TUI 程序能在终端里画出"界面"，最关键的技术手段是？" data-opts="调用显卡驱动|发送 ANSI 转义序列控制光标和颜色|嵌入一个浏览器内核|直接写显存" data-answer="1" data-explain="TUI 靠向终端输出 ANSI 转义序列（如 <code>\033[2J</code> 清屏、<code>\033[H</code> 归位）来定位光标、设置颜色，在字符网格上"画"出界面。ncurses 就是把这套序列封装成了易用的 API。"></div>
 

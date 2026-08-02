@@ -302,17 +302,17 @@
     'interface',
     '界面篇',
     '从"GUI 是什么"到"AI 时代的生成式界面"——10 章讲透人和机器之间那层看得见、摸得着的皮肤；第 5 章重点铺开 14 种主流 GUI 工具。',
-    '约 3.6 万字',
+    '约 6.4 万字',
     [
       createNode('gui-01', '第 1 章 · GUI 是什么',
         'CLI / TUI / GUI 三种交互范式 + 控件、窗口、事件驱动的基本盘。',
-        '约 1.8 万字',
+        '约 4.6 万字',
         [
-          createNode('gui-01-1', '§ 1.1 · 命令行 CLI', '打字对话式交互——精准、可脚本化，但要背命令。', '3181 字', [], { href: 'chapters/gui/01-1-cli.html' }),
-          createNode('gui-01-2', '§ 1.2 · 字符界面 TUI', '终端里画界面——htop、vim、Midnight Commander。', '3311 字', [], { href: 'chapters/gui/01-2-tui.html' }),
-          createNode('gui-01-3', '§ 1.3 · 图形界面 GUI', '窗口、图标、菜单、指针——WIMP 范式的诞生。', '3625 字', [], { href: 'chapters/gui/01-3-gui.html' }),
-          createNode('gui-01-4', '§ 1.4 · 控件 Widget', '按钮、输入框、列表、滑块——界面的乐高积木。', '3826 字', [], { href: 'chapters/gui/01-4-widget.html' }),
-          createNode('gui-01-5', '§ 1.5 · 事件驱动', '程序不再"从上到下跑完"，而是"等你动手才响应"。', '3817 字', [], { href: 'chapters/gui/01-5-event-driven.html' })
+          createNode('gui-01-1', '§ 1.1 · 命令行 CLI', '打字对话式交互——精准、可脚本化，但要背命令。', '9957 字', [], { href: 'chapters/gui/01-1-cli.html' }),
+          createNode('gui-01-2', '§ 1.2 · 字符界面 TUI', '终端里画界面——htop、vim、Midnight Commander。', '8139 字', [], { href: 'chapters/gui/01-2-tui.html' }),
+          createNode('gui-01-3', '§ 1.3 · 图形界面 GUI', '窗口、图标、菜单、指针——WIMP 范式的诞生。', '8685 字', [], { href: 'chapters/gui/01-3-gui.html' }),
+          createNode('gui-01-4', '§ 1.4 · 控件 Widget', '按钮、输入框、列表、滑块——界面的乐高积木。', '9460 字', [], { href: 'chapters/gui/01-4-widget.html' }),
+          createNode('gui-01-5', '§ 1.5 · 事件驱动', '程序不再"从上到下跑完"，而是"等你动手才响应"。', '9792 字', [], { href: 'chapters/gui/01-5-event-driven.html' })
         ],
         { href: 'chapters/gui/01-what-is-gui.html' }),
       createNode('gui-02', '第 2 章 · 界面是怎么画出来的',
@@ -427,7 +427,7 @@
     'root',
     '学海无涯',
     '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '全站约 38.5 万字',
+    '全站约 41.4 万字',
     [branchIntelligence, branchNetwork, branchInterface]
   );
 

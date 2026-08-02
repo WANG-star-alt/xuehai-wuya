@@ -40,6 +40,20 @@
     <div class="link">→ <strong>命令行</strong> = <em>用一行文字，把"做什么"和"怎么做"一次说完。</em></div>
   </div>
 
+  <h3>开篇先把这些词翻译成人话</h3>
+  <p>这一节会反复出现几个词。为了后面读得顺，先一次性把它们换成大白话，每个词后面那句括号才是你真正要记住的东西。</p>
+  <ul class="keylist">
+    <li><span class="k">CLI</span><span class="v"><strong>CLI</strong>（Command-Line Interface，命令行界面——只能打字、没有图标可点的那种界面）。说白了就是：屏幕上除了一个光标啥也没有，你想让机器干活，只能把要求打成一行字。</span></li>
+    <li><span class="k">终端 Terminal</span><span class="v"><strong>终端</strong>（Terminal，终端窗口——负责显示字符、接收你敲的键盘）。它干的活儿相当于餐厅里那张<strong>点菜的桌子加一支笔</strong>：本身不做菜，只提供写字和看字的地方。</span></li>
+    <li><span class="k">Shell</span><span class="v"><strong>Shell</strong>（外壳——你敲的命令先交给它，由它转达给操作系统内核，好比前台接待）。听着玄，其实就是一个专门"听人话、说机器话"的翻译员。</span></li>
+    <li><span class="k">内核 Kernel</span><span class="v"><strong>内核</strong>（Kernel，操作系统的核心——真正管硬件、管内存、管文件的那一层）。它好比餐厅后厨：只认标准工单，不接待客人，也不跟客人聊天。</span></li>
+    <li><span class="k">提示符 Prompt</span><span class="v"><strong>提示符</strong>（Prompt——屏幕上那个 <code>$</code> 或 <code>&gt;</code> 符号）。简单说，它就是柜台窗口上那块"正在办理"的牌子：牌子亮着，说明现在可以跟它说话。</span></li>
+    <li><span class="k">REPL</span><span class="v"><strong>REPL</strong>（Read-Eval-Print Loop，读取—求值—打印—循环）。换成大白话：<strong>你说一句、它办一句、它回一句、再等你下一句</strong>，跟医院分诊台一问一答一个节奏。</span></li>
+    <li><span class="k">进程 Process</span><span class="v"><strong>进程</strong>（Process，正在运行中的程序）。程序装在硬盘里好比菜谱躺在抽屉里；进程是<strong>厨师照着菜谱正在炒的那一锅菜</strong>——同一份菜谱可以同时炒三锅，那就是三个进程。</span></li>
+    <li><span class="k">返回码</span><span class="v"><strong>返回码</strong>（Exit Code，退出状态码——命令干完活留下的一个数字，0 代表成功）。打个比方，这就是快递员送完件在系统里点的那一下"已签收"或"客户拒收"：你不一定看得见，但后面的流程全看它。</span></li>
+  </ul>
+  <p>把这八个词记住，这一节剩下的内容基本就没有黑话了。真的遇到新词，我们会在它第一次出现时立刻用一句人话兜住。</p>
+
   <h3>什么是命令行</h3>
   <p>命令行界面（<strong>CLI</strong>，Command Line Interface）是一种<strong>以纯文本为唯一媒介</strong>的人机交互方式。它的运行循环极其简单，只有三步，来回重复：</p>
   <ul class="keylist">
@@ -49,6 +63,24 @@
   </ul>
   <p>这个循环有个专门的名字叫 <strong>REPL</strong>（Read-Eval-Print Loop，读取—求值—打印—循环）。它像两个人在对讲机上一问一答：你说一句，它答一句，绝不抢话。整个过程没有像素、没有图标、没有动画，输入输出<strong>全是字符流</strong>。</p>
   <p>需要先分清三个经常被混为一谈的东西：<strong>终端</strong>是那个窗口（负责显示字符、接收键盘），<strong>shell</strong> 是窗口里跑的那个解释程序（负责读懂你的话），<strong>命令</strong>是 shell 帮你启动的一个个具体程序。就像：显示器是终端，服务员是 shell，厨师是命令。你冲着显示器喊没用，是服务员在听、厨师在做。</p>
+
+  <h3>终端、Shell、内核：一家餐厅的三个角色</h3>
+  <p>上面那句话很多人看完就忘，因为三个词长得太像。我们把它彻底展开成一家餐厅，把每个角色的边界画清楚。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>技术名词</th><th>它到底管什么</th><th>餐厅里对应谁</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>终端</strong>（Terminal）</td><td>把你按的键变成字符送出去；把回来的字符画到屏幕上。它不理解内容，只负责"传话和显示"</td><td>桌上的<strong>菜单纸和笔</strong>：你写什么它就承载什么，它自己不懂菜</td></tr>
+        <tr><td><strong>Shell</strong></td><td>读你那行字、拆成命令和参数、展开通配符、查 PATH 找程序、启动进程、收结果</td><td><strong>前台接待兼服务员</strong>：听懂"少辣多醋"，翻译成后厨看得懂的工单</td></tr>
+        <tr><td><strong>命令</strong>（可执行程序）</td><td>真正干活的那个小程序，比如 <code>ls</code>、<code>cp</code>、<code>git</code></td><td><strong>各岗位的厨师</strong>：一个只管凉菜，一个只管炒锅，一个只管面点</td></tr>
+        <tr><td><strong>内核</strong>（Kernel）</td><td>分配 CPU 和内存、读写硬盘、收发网络包。所有真实动作最终都得它批准</td><td><strong>后厨的库房和火源</strong>：谁要用食材、要用几号灶，都得走它这儿</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么非要分这么多层？因为这样才能<strong>任意替换</strong>。想象一下你在餐厅：换一支笔（换终端软件，比如从系统自带终端换成 Windows Terminal 或 iTerm2），菜还是那些菜；换一个前台接待（把 <code>bash</code> 换成 <code>zsh</code>），说话习惯变了但后厨没变；换一家后厨（换操作系统），前台的话术却大体通用。<mark class="key">这种"各层各管一段、互不绑死"的设计，是命令行能活五十年的结构性原因。</mark></p>
+  <p>再补一个常被问到的细节：<strong>终端里跑的第一个程序就是 shell</strong>。你打开终端窗口的那一瞬间，它做的事是"启动一个 shell 进程，把窗口的输入输出接到它身上"。所以关掉终端窗口，里面的 shell 也就没了——好比餐厅打烊，前台自然下班。这也解释了一个新手困惑：为什么在终端里跑的任务，一关窗口就断了？因为你把它的"接待"给辞退了。要让任务活下去，就得让它换个不依赖窗口的地方待着（这就是 <code>nohup</code>、<code>tmux</code> 这类工具存在的理由，下一节会碰到）。</p>
 
   <h3>shell 是什么：那个"听懂人话"的中间人</h3>
   <p>shell 这个词字面意思是"外壳"。它包在操作系统内核（kernel）外面，是<mark class="key">你和内核之间唯一的翻译官</mark>。内核只认系统调用这种极其底层的接口，人类不可能直接手写；shell 的工作就是把你输入的那行人类可读的文字，拆解、展开、翻译成一串系统调用，然后启动进程、等它跑完、把结果送回你眼前。</p>
@@ -75,6 +107,30 @@
     <strong>shell</strong> 就是那个前台：它记得你说过什么（历史记录）、知道店里有哪些菜（PATH 里的可执行文件）、能帮你把"跟上次一样"翻译成完整订单（别名和变量），还能安排"先炒菜后上汤"这种顺序（管道和分号）。<br/>
     换一家店（换 shell），前台的脾气和话术会变，但后厨（内核）其实是同一个。</p>
   </div>
+
+  <h3>常用命令分类速查：先认门类，再认名字</h3>
+  <p>新手最大的恐慌是"命令有几千个，怎么记得完"。其实不用记完。命令这东西<strong>和菜市场的摊位是一个道理</strong>：卖菜的、卖肉的、卖调料的、卖干货的，分区固定。你只要知道"要买葱去蔬菜区"，具体哪个摊现问就行。下面这张表就是命令行的"分区图"。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>门类</th><th>常见命令</th><th>一句话说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>逛与看</strong></td><td><code>pwd</code> <code>ls</code> <code>cd</code> <code>tree</code></td><td>我在哪、这儿有啥、我要去哪。相当于在办事大厅先看楼层导览图</td></tr>
+        <tr><td><strong>读内容</strong></td><td><code>cat</code> <code>less</code> <code>head</code> <code>tail</code></td><td><code>cat</code> 一口气全倒出来；<code>less</code> 能翻页；<code>head</code>/<code>tail</code> 只看开头或结尾若干行</td></tr>
+        <tr><td><strong>搬与改</strong></td><td><code>cp</code> <code>mv</code> <code>rm</code> <code>mkdir</code> <code>touch</code></td><td>复制、移动（顺带兼任改名）、删除、建文件夹、建空文件</td></tr>
+        <tr><td><strong>找东西</strong></td><td><code>find</code> <code>grep</code> <code>which</code> <code>locate</code></td><td><code>find</code> 按名字和属性找文件；<code>grep</code> 按内容找文字。前者是查书名，后者是查书里的句子</td></tr>
+        <tr><td><strong>加工文本</strong></td><td><code>sort</code> <code>uniq</code> <code>wc</code> <code>cut</code> <code>awk</code> <code>sed</code></td><td>排序、去重、计数、切列、按列处理、批量替换。这一组是流水线上的核心工位</td></tr>
+        <tr><td><strong>看进程</strong></td><td><code>ps</code> <code>top</code> <code>kill</code> <code>jobs</code></td><td>谁在跑、吃了多少资源、把某个掐掉、后台有哪些活儿</td></tr>
+        <tr><td><strong>打包压缩</strong></td><td><code>tar</code> <code>zip</code> <code>gzip</code></td><td>把一堆文件塞进一个包，好比搬家时把零碎东西装纸箱贴标签</td></tr>
+        <tr><td><strong>网络</strong></td><td><code>curl</code> <code>wget</code> <code>ping</code> <code>ssh</code> <code>scp</code></td><td>取网页、下文件、测通不通、远程登录、远程传文件</td></tr>
+        <tr><td><strong>权限与身份</strong></td><td><code>chmod</code> <code>chown</code> <code>sudo</code> <code>whoami</code></td><td>改可读可写可执行、改归属、临时借管理员身份、我是谁</td></tr>
+        <tr><td><strong>问路</strong></td><td><code>man</code> <code>--help</code> <code>tldr</code></td><td>每个命令自带说明书。<code>man ls</code> 就是"把 ls 的产品手册翻出来"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里要特别推销一下最后那一类。<strong>命令行不是没有菜单，它的菜单叫 <code>man</code></strong>（manual，手册）。区别只在于：图形界面的菜单是主动摊在你眼前的，而 <code>man</code> 要你主动去翻。打个比方，图形界面是<strong>自助餐台，菜都摆着</strong>；命令行是<strong>点菜制，菜单要你伸手拿</strong>。菜其实一样多，只是取用方式不同。</p>
+  <p>还有一条极实用的经验：<strong>记不住选项就用长选项</strong>。<code>rm -r</code> 你三天后会忘，<code>rm --recursive</code> 你一眼就懂。写在脚本里的命令尤其应该用长选项，因为脚本是给未来的自己和同事看的，不是给现在的手指省事的。这一条相当于装修时在配电箱上贴标签：多花十秒，往后省两小时。</p>
 
   <h3>命令的三段结构：命令 + 选项 + 参数</h3>
   <p>几乎所有命令都遵守同一个语法骨架。认清这三段，你就能读懂 90% 的命令，哪怕从没见过那个程序：</p>
@@ -137,6 +193,157 @@ curl -O https://example.com/data.csv</code></pre>
     命令行像<strong>一整抽屉各司其职的小刀</strong>：一把只切、一把只削、一把只挑。看起来简陋，但你可以任意排列组合，拼出作者从来没设想过的用法。<mark class="key">图形界面的能力上限由开发者决定，命令行的能力上限由使用者决定。</mark></p>
   </div>
 
+  <h3>管道再讲透一点：流水线上的一道工序</h3>
+  <p>上面那一行六段命令，值得再用一个更具体的画面固定下来。<strong>管道</strong>（Pipe，符号是 <code>|</code>——把左边的输出直接接到右边的输入）干的活儿相当于<strong>食品厂的流水线</strong>。</p>
+  <p>想象一下一个洗切菜车间：第一道工位从大筐里往传送带上倒白菜（<code>cat</code>），第二道只把菜叶掐下来、菜根扔掉（<code>awk</code> 取某一列），第三道按大小归堆（<code>sort</code>），第四道把同样大小的捆成一把并写上数量（<code>uniq -c</code>），第五道按数量从多到少重新排（<code>sort -rn</code>），最后一道只取最前面十把装箱（<code>head -10</code>）。</p>
+  <p>这条流水线的三个特性，恰好就是管道的三个特性：</p>
+  <ul class="keylist">
+    <li><span class="k">工位之间只认"半成品"</span><span class="v">第三道工位不需要知道第一道是从筐里倒的还是从车上卸的，它只管接住传送带上过来的东西。换成技术话：<strong>命令之间只约定"文本流"这一种接口</strong>。这就是所谓的松耦合，说白了就是拆下任何一道工位换成另一台机器，整条线照跑。</span></li>
+    <li><span class="k">东西边走边加工，不落地</span><span class="v">白菜不会先全部堆到地上再进下一道。管道也是<strong>边产边消</strong>：上游吐一行，下游就能处理一行。所以哪怕日志有 50 GB，管道也不会把 50 GB 全读进内存——这是它能啃超大文件的关键。</span></li>
+    <li><span class="k">任一工位卡住，全线等它</span><span class="v">如果第四道工位手慢，传送带就会堵住。管道也一样：下游处理不过来，上游会被自动按住暂停（术语叫背压）。所以整条命令的速度，由最慢的那一段决定。</span></li>
+  </ul>
+  <p>顺便认识管道的几个近亲，它们经常一起出现：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>大白话</th><th>生活对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>a | b</code></td><td>a 的产出直接进 b 的入口</td><td>洗菜工位接切菜工位，中间不落地</td></tr>
+        <tr><td><code>a &gt; f.txt</code></td><td>本该打到屏幕上的话改写进文件，<strong>原内容清空</strong></td><td>拿一张新纸重抄一遍，旧纸扔掉</td></tr>
+        <tr><td><code>a &gt;&gt; f.txt</code></td><td>同上，但是<strong>接在文件末尾</strong></td><td>在原来那页纸下面继续往下写</td></tr>
+        <tr><td><code>a &lt; f.txt</code></td><td>a 不等你敲键盘了，直接从文件里读</td><td>不再口述，把填好的申请单递进窗口</td></tr>
+        <tr><td><code>a 2&gt; err.txt</code></td><td>只把<strong>错误信息</strong>单独存到另一个文件</td><td>正常单据放一个筐，问题单据放另一个筐，回头好查</td></tr>
+        <tr><td><code>a | tee f.txt</code></td><td>一边存进文件，一边照样显示在屏幕上</td><td>开发票时一联给客户、一联留存根</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>特别说一下 <code>2&gt;</code> 里那个 2。每个命令天生有三条通道，术语叫标准输入、标准输出、标准错误，编号分别是 0、1、2。<strong>标准输出</strong>（编号 1）走的是"正常结果"，<strong>标准错误</strong>（编号 2）走的是"抱怨和报错"。它们默认都打在同一块屏幕上，所以你以为只有一条路，其实是两条。这个设计好比医院的<strong>分诊</strong>：普通号和急诊号排两条队，只不过挂号大厅是同一个。分开的好处很实在：你可以把正常结果送进流水线，同时把错误单独存档，两者互不污染。</p>
+
+  <h3>通配符与正则：一次说清"一批"而不是"一个"</h3>
+  <p>命令行的另一个杠杆，是<strong>一句话点一批东西</strong>。这靠两套语法，很多人一辈子把它们搞混，其实分界线特别清楚。</p>
+  <p><strong>通配符</strong>（Glob，文件名匹配——由 shell 负责展开的一套简写符号）。它只管一件事：<strong>挑文件名</strong>。你写 <code>*.log</code>，shell 在把命令交出去之前，先自己去目录里扫一圈，把所有匹配上的文件名一个个铺开写进命令里。听着玄，其实就是<strong>你在菜市场说"这一排西红柿我全要"，摊主替你一个个装袋</strong>——最后拿到袋子的那个人（也就是那个命令）看到的是十个具体的西红柿，而不是"这一排"这句话。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>通配符</th><th>含义</th><th>例子</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>*</code></td><td>任意长度的任意字符（可以是空）</td><td><code>*.txt</code> 匹配所有 txt 文件</td></tr>
+        <tr><td><code>?</code></td><td><strong>恰好一个</strong>任意字符</td><td><code>img?.png</code> 匹配 img1.png，不匹配 img12.png</td></tr>
+        <tr><td><code>[abc]</code></td><td>方括号里任选一个</td><td><code>report[123].pdf</code> 只匹配这三份</td></tr>
+        <tr><td><code>[0-9]</code></td><td>一个范围里任选一个</td><td><code>log[0-9].txt</code></td></tr>
+        <tr><td><code>{a,b}</code></td><td>花括号展开成多份（不要求文件真存在）</td><td><code>touch file{1,2,3}.txt</code> 一次建三个</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>正则表达式</strong>（Regular Expression，正则——一套描述"文字长什么样"的规则语言）。它管的不是文件名，而是<strong>文件里的内容</strong>，由 <code>grep</code>、<code>sed</code>、<code>awk</code> 这些程序自己解释。简单说：<mark class="key">通配符是"点哪几个文件"，正则是"文件里挑哪几行字"</mark>。一个在门口筛人，一个进屋后筛话。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>正则片段</th><th>含义</th><th>读成人话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>^abc</code></td><td>以 abc 开头</td><td>"这一行的开头必须是 abc"</td></tr>
+        <tr><td><code>abc$</code></td><td>以 abc 结尾</td><td>"这一行的末尾必须是 abc"</td></tr>
+        <tr><td><code>.</code></td><td>任意一个字符</td><td>"这儿有个格子，填什么都行"</td></tr>
+        <tr><td><code>a+</code></td><td>一个或多个连续的 a</td><td>"至少一个 a，多了也算"</td></tr>
+        <tr><td><code>a*</code></td><td>零个或多个 a</td><td>"有没有都行，有几个都行"</td></tr>
+        <tr><td><code>[0-9]{3}</code></td><td>连续三个数字</td><td>"这儿必须是三位数"</td></tr>
+        <tr><td><code>(cat|dog)</code></td><td>cat 或者 dog</td><td>"这两个词，来一个就算"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意一个极其常见的坑：<code>*</code> 在这两套语法里<strong>意思完全不同</strong>。在通配符里 <code>*</code> 自己就代表"任意一串字符"；在正则里 <code>*</code> 是<strong>修饰前一个字符</strong>的，意思是"前面那个东西重复零次或多次"。所以在正则里想表达"任意一串"，得写 <code>.*</code>。这就好比"红烧"两个字在菜单上和在厨房黑板上写着一样，但一个是菜名一个是做法——同样的字，语境不同含义就变了。</p>
+  <pre><code># 通配符：由 shell 展开成一堆文件名
+grep "ERROR" *.log
+
+# 正则：由 grep 自己解释，用来筛内容
+grep -E "^2024-0[1-3].*ERROR.*timeout" app.log
+
+# 两者同时出现：文件名靠通配符挑，内容靠正则筛
+grep -E "[0-9]{3}-[0-9]{4}" contacts/*.csv</code></pre>
+
+  <h3>环境变量与 PATH：系统找程序的"搜索顺序清单"</h3>
+  <p><strong>环境变量</strong>（Environment Variable，环境变量——挂在 shell 身上、所有程序都能读到的一组键值对）。听着玄，其实就是<strong>贴在办公室墙上的公告板</strong>：不针对某个人，谁进来都能看一眼，照着上面写的规矩办事。</p>
+  <p>其中最重要的一条公告叫 <strong>PATH</strong>（可执行文件搜索路径）。它的作用可以用一句话概括：<mark class="key">你敲一个命令名，shell 照着 PATH 上的目录顺序一个个去翻，翻到第一个同名的可执行文件就用它，剩下的不再看。</mark></p>
+  <p>打个比方：这就是<strong>图书馆的找书顺序单</strong>。你说"给我一本《活着》"，管理员不会把全馆翻遍，而是照着规定顺序去查：先查新书架、再查一楼开架区、再查二楼、最后查库房。哪个架子上先摸到就先拿哪本，后面的同名书压根不看。所以<strong>顺序决定了谁生效</strong>——这解释了一个经典困惑：明明装了两个版本的 Python，为什么敲 <code>python</code> 出来的总是那个旧的？因为旧的所在的目录在清单上排得更靠前。</p>
+  <pre><code># 看看清单本身（Linux/macOS 用冒号分隔）
+echo $PATH
+# /usr/local/bin:/usr/bin:/bin:/home/me/.local/bin
+
+# 查"这个命令到底用的是哪一个文件"
+which python
+type -a python      # 把所有同名的都列出来，按优先级排
+
+# 临时把自己的目录插到最前面（只在当前这个窗口有效）
+export PATH="$HOME/mytools:$PATH"</code></pre>
+  <p>注意最后那行的写法：<code>$HOME/mytools:$PATH</code> 是把新目录放在<strong>清单最前面</strong>，相当于插队；如果写成 <code>$PATH:$HOME/mytools</code>，就是排在最后，只有前面都找不到时才轮到它。<strong>插队还是排队末尾，是两个完全不同的效果</strong>，改错了会导致"我明明装了新版本，怎么还是老的"。</p>
+  <p>另外几个你会天天见到的环境变量，一句话各自说清：</p>
+  <ul class="keylist">
+    <li><span class="k">HOME</span><span class="v">你的家目录，也就是 <code>~</code> 指的那个地方。相当于你在公司里的<strong>那个工位</strong>：默认东西都放这儿。</span></li>
+    <li><span class="k">PWD</span><span class="v">当前所在目录。相当于"我现在站在办公楼的哪一层哪个房间"。</span></li>
+    <li><span class="k">LANG / LC_ALL</span><span class="v">语言和字符编码设置。它决定报错信息说中文还是英文、中文文件名会不会显示成一堆问号。</span></li>
+    <li><span class="k">EDITOR</span><span class="v">默认用哪个编辑器。很多命令（比如 <code>git commit</code>）要你写文字时，就照这个变量决定弹出谁。</span></li>
+    <li><span class="k">HTTP_PROXY / HTTPS_PROXY</span><span class="v">代理服务器地址。命令行工具不看系统设置里的代理开关，它们只认这两个变量——这是"浏览器能上网但 <code>curl</code> 不行"的最常见原因。</span></li>
+  </ul>
+  <p>最后一个要点：<strong>环境变量是会"继承"的</strong>。shell 启动一个命令时，会把自己身上的变量复印一份交给它；那个命令再启动别的程序，又复印一份传下去。所以它像<strong>公司里层层下发的通知</strong>：总部发到部门，部门发到小组，小组发到个人。反过来不成立——子进程改了变量，父进程完全不知道。这就是为什么在脚本里 <code>cd</code> 到某个目录，脚本跑完你还站在原地：脚本是另一个人，他挪窝跟你没关系。</p>
+
+  <h3>相对路径与绝对路径：地址的两种写法</h3>
+  <p><strong>绝对路径</strong>（Absolute Path，从根目录写起的完整地址）就像<strong>快递单上的完整地址</strong>：省、市、区、街道、门牌号，一字不缺。谁拿到这张单子，站在哪儿，都能找到同一个地方。</p>
+  <p><strong>相对路径</strong>（Relative Path，从"当前所在位置"算起的地址）则像<strong>口头指路</strong>："出门左转，第二个路口右拐，那栋楼三层。"说得对不对，取决于你现在站在哪。同样一句话，换个起点就指向另一个地方了。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>含义</th><th>指路版说法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/home/me/docs/a.txt</code></td><td>绝对路径，开头是 <code>/</code></td><td>"XX 省 XX 市 XX 街 3 号"</td></tr>
+        <tr><td><code>docs/a.txt</code></td><td>相对当前目录往下一层</td><td>"进旁边这个屋，桌上那份"</td></tr>
+        <tr><td><code>./a.txt</code></td><td><code>.</code> 表示当前目录</td><td>"就在你手边这份"</td></tr>
+        <tr><td><code>../a.txt</code></td><td><code>..</code> 表示上一级目录</td><td>"退回走廊，那边那份"</td></tr>
+        <tr><td><code>../../logs/</code></td><td>往上退两级再进 logs</td><td>"下两层楼，进档案室"</td></tr>
+        <tr><td><code>~/Downloads</code></td><td><code>~</code> 是你的家目录</td><td>"回我工位，抽屉里那份"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>什么时候用哪种？给两条硬规矩：<strong>手敲操作用相对路径</strong>，因为短、快、不容易打错；<strong>写进脚本和定时任务一律用绝对路径</strong>，因为脚本被别人、被系统、被半夜两点的定时器执行时，"当前目录"完全不是你写代码时那个目录。这条坑坑过无数人：脚本在自己电脑上跑得好好的，扔到服务器上定时执行就报"文件不存在"——问题从来不在文件，在起点。</p>
+  <p>还有一个必须点出来的细节：<code>./a.txt</code> 里的那个 <code>./</code> 平时可以省，但<strong>执行程序时不能省</strong>。你在当前目录下写了个 <code>deploy.sh</code>，直接敲 <code>deploy.sh</code> 通常会报"命令找不到"，必须写 <code>./deploy.sh</code>。原因就在上面讲的 PATH：shell 只照清单上的目录找程序，<strong>当前目录默认不在清单里</strong>。这是一条故意的安全设计——否则有人在某个共享目录里放一个叫 <code>ls</code> 的坏程序，你一进去敲 <code>ls</code> 就中招了。好比图书馆规定"只从正规书架取书，地上捡到的书一律不算馆藏"。</p>
+
+  <h3>命令历史与快捷键：手不离键盘的那些省时招</h3>
+  <p>命令行的效率有一半不来自命令本身，而来自<strong>你不用把同一句话敲第二遍</strong>。shell 会把你敲过的每一行都记在一个历史文件里（bash 是 <code>~/.bash_history</code>），默认存几千条。这相当于餐厅前台<strong>记着你的历史订单</strong>：你说一句"跟上次一样"，他就能复现。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>按键 / 写法</th><th>作用</th><th>省掉的动作</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>↑</code> / <code>↓</code></td><td>翻上一条 / 下一条历史命令</td><td>重新敲整行</td></tr>
+        <tr><td><code>Ctrl</code>+<code>R</code></td><td>反向搜索历史（敲几个字就能捞出那条长命令）</td><td>回忆和翻找</td></tr>
+        <tr><td><code>Tab</code></td><td>自动补全命令名、文件名、分支名</td><td>拼写和打错</td></tr>
+        <tr><td><code>Ctrl</code>+<code>A</code> / <code>Ctrl</code>+<code>E</code></td><td>光标跳到行首 / 行尾</td><td>按几十次方向键</td></tr>
+        <tr><td><code>Ctrl</code>+<code>W</code></td><td>往左删掉一个词</td><td>连按退格</td></tr>
+        <tr><td><code>Ctrl</code>+<code>U</code></td><td>清空整行（打错了想重来）</td><td>一路删回去</td></tr>
+        <tr><td><code>Ctrl</code>+<code>C</code></td><td>掐掉当前正在跑的命令</td><td>等它跑完或关窗口</td></tr>
+        <tr><td><code>Ctrl</code>+<code>L</code></td><td>清屏（等同于 <code>clear</code>）</td><td>滚屏找位置</td></tr>
+        <tr><td><code>!!</code></td><td>代指"上一条命令"，最常见用法是 <code>sudo !!</code></td><td>忘加 sudo 后重打一遍</td></tr>
+        <tr><td><code>!$</code></td><td>代指"上一条命令的最后一个参数"</td><td>重复粘贴长路径</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><code>sudo !!</code> 这一招值得单独说，因为它是命令行里最解气的两个字符。场景是这样：你敲了个命令，回车，屏幕回一句"权限不足"。这时候你不需要把整行重打一遍加个 <code>sudo</code>，只要敲 <code>sudo !!</code>——<code>!!</code> 会被自动替换成刚才那一整行。<strong>就像</strong>在窗口办事被告知"这个得主管签字"，你不用重新填一张申请单，直接把原单子递给主管即可。</p>
+  <p>另外强烈建议养成一个习惯：<strong>把常用的长命令做成别名</strong>（alias，别名——给一串长命令起个短名字）。</p>
+  <pre><code># 写进 ~/.bashrc 或 ~/.zshrc，以后每次开窗口都自动生效
+alias ll='ls -alh'
+alias gs='git status'
+alias gl='git log --oneline --graph -20'
+alias ..='cd ..'
+alias serve='python3 -m http.server 8000'
+
+# 危险操作加一层确认，相当于给删除加个"确定吗"弹窗
+alias rm='rm -i'</code></pre>
+  <p>最后那条 <code>alias rm='rm -i'</code> 是给自己上的保险绳，下面讲坑的时候会解释它为什么重要。</p>
+
   <h3>为什么程序员离不开它</h3>
   <p>不是因为怀旧，也不是为了显得高深。是因为有四件事，图形界面在原理上就做不到。</p>
   <ul class="keylist">
@@ -154,6 +361,45 @@ docker build -t myapp:latest .
 docker compose up -d
 echo "部署完成，返回码 $?"</code></pre>
 
+  <h3>Windows 上的 CMD、PowerShell、WSL：三家店的区别</h3>
+  <p>Windows 用户一打开"终端"就懵：菜单里怎么有三四个选项？它们的关系，用<strong>同一栋楼里三家风格不同的餐厅</strong>来说最清楚。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>名字</th><th>它是什么</th><th>一句话定位</th><th>什么时候用它</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>cmd.exe</code></td><td><strong>CMD</strong>（Command Prompt，命令提示符——DOS 时代留下的老 shell）</td><td>楼里那家<strong>开了三十年的老面馆</strong>：菜少、味道固定、只为老顾客留着</td><td>只跑祖传的 <code>.bat</code> 批处理脚本时。新东西一律别用它</td></tr>
+        <tr><td><code>PowerShell</code></td><td>微软新一代 shell，管道里流的是<strong>对象</strong>而不是纯文本</td><td>楼里那家<strong>正规连锁店</strong>：菜单规范、有标准流程、和后厨（.NET 系统能力）打通</td><td>管理 Windows 系统、批量改注册表、调 Windows 各种服务</td></tr>
+        <tr><td><code>WSL</code></td><td><strong>WSL</strong>（Windows Subsystem for Linux，Windows 里的 Linux 子系统）</td><td>楼里<strong>新开的一家真·外国餐厅</strong>：厨师、食材、做法全套照搬，不是仿的</td><td>做开发、跑服务器那套工具链、照着 Linux 教程一字不改地敲</td></tr>
+        <tr><td><code>Windows Terminal</code></td><td>它<strong>不是 shell</strong>，只是一个窗口</td><td>就是那栋<strong>楼本身</strong>：里面可以开上面任意一家店，还能开多个标签页</td><td>永远推荐用它当外壳，具体开哪家店随你</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后一行是新手最容易混淆的地方，值得重复：<mark class="key">Windows Terminal 是终端（窗口），不是 shell（翻译官）。</mark>它自己不懂任何命令，只负责画字符和开标签页。你在里面选 PowerShell 还是 Ubuntu，才决定了谁来听你说话。这正是本节开头那个"终端和 shell 是两回事"的最好例证。</p>
+  <p>再补一个最实用的差异对照。同一件事——"列出当前目录里最大的三个文件"——三家店的说法完全不同：</p>
+  <pre><code># CMD：能做，但写起来很别扭，基本没人这么干
+dir /o-s
+
+# PowerShell：管道里流的是对象，可以直接点字段名取值
+Get-ChildItem | Sort-Object Length -Descending | Select-Object -First 3 Name, Length
+
+# WSL / Linux：管道里流的是文本，靠切列和排序
+ls -lS | head -4</code></pre>
+  <p>PowerShell 那行为什么能写 <code>Length</code>？因为它传下去的是一个个"文件对象"，对象上本来就挂着大小、时间、名字这些字段，下游直接取就行。<strong>就像</strong>菜市场摊主递给你的是一筐贴好标签的菜（品种、重量、产地都写着），你要按重量挑，看标签即可。而 Linux 那行传下去的是一行行文字，下游得自己数"第几列是大小"——相当于摊主递给你一张手写的清单，你得自己从字里认出哪个数字是重量。<mark class="key">前者省事但笨重，后者简陋但万能，这就是两套哲学的分野。</mark></p>
+
+  <h3>新手最容易踩的六个坑</h3>
+  <p>这些坑不是"知识点"，是<strong>血泪</strong>。每一条都建议现在就记住，因为踩过一次都很疼。</p>
+  <ul class="keylist">
+    <li><span class="k">坑一：路径里有空格，不加引号</span><span class="v">你写 <code>cd D:\我的 文档</code>，shell 会把它当成两个参数——一个是 <code>D:\我的</code>，一个是 <code>文档</code>，然后报路径不存在。<strong>正确做法是加引号</strong>：<code>cd "D:\我的 文档"</code>。原因很朴素：空格是 shell 用来分隔参数的符号，好比餐厅点菜时说"我要 番茄 炒蛋"，服务员听成了两道菜。加引号相当于说"这是一道菜，叫番茄炒蛋"。</span></li>
+    <li><span class="k">坑二：<code>rm</code> 没有回收站</span><span class="v">图形界面里删文件会进回收站，还能翻回来；命令行的 <code>rm</code> 是<strong>直接销毁</strong>，没有确认、没有回收站、没有 Ctrl+Z。它干的活儿相当于<strong>把文件扔进碎纸机</strong>，而不是扔进垃圾桶。所以建议给自己加个 <code>alias rm='rm -i'</code>，让它每次删都问一句。更狠的做法是装一个带回收站功能的替代工具。</span></li>
+    <li><span class="k">坑三：<code>rm -rf</code> 后面多打一个空格</span><span class="v">这是命令行最著名的灾难。<code>rm -rf ./build</code> 是删 build 目录；<code>rm -rf . /build</code>（点后面多了个空格）就变成"删掉当前目录的一切，再删 /build"。变量为空时同理危险：<code>rm -rf $DIR/</code> 里如果 <code>DIR</code> 恰好是空的，这一行就成了 <code>rm -rf /</code>。<strong>凡是要写 <code>rm -rf</code>，先用 <code>ls</code> 把同样的路径列一遍，确认删的是你以为的东西再动手。</strong>这就像装修工砸墙前先敲一敲确认不是承重墙。</span></li>
+    <li><span class="k">坑四：<code>&gt;</code> 会先把文件清空</span><span class="v">最经典的踩法是 <code>sort a.txt &gt; a.txt</code>，想给文件排序后存回原处。结果是文件变成空的。因为 shell 会<strong>先把输出文件清空</strong>，然后才开始跑 <code>sort</code>，而 <code>sort</code> 一读，发现文件已经空了。好比你想整理一个抽屉，结果先把抽屉倒空了才开始分类——东西已经没了。正确做法是先写到临时文件再改名。</span></li>
+    <li><span class="k">坑五：以为 <code>Ctrl+C</code> 是复制</span><span class="v">在终端里 <code>Ctrl</code>+<code>C</code> 的历史含义是"中断当前程序"，不是复制。你在终端里跑着一个任务，随手按了它想复制，任务就被掐了。复制通常是 <code>Ctrl</code>+<code>Shift</code>+<code>C</code>，或者直接选中即自动复制（取决于终端软件）。</span></li>
+    <li><span class="k">坑六：直接从网页复制命令就回车</span><span class="v">网页上的命令可能带着看不见的字符（比如全角空格、智能引号），也可能故意藏了一段恶意内容——用 CSS 把危险部分设成不可见，你复制到的其实比看到的多。<strong>凡是要 <code>sudo</code> 的命令，先粘到编辑器里看一眼再执行。</strong>这一条相当于快递到手先验货再签收，别直接往嘴里放。</span></li>
+  </ul>
+  <p>把这六条合起来，其实指向同一条底层原则：<mark class="key">命令行默认假设"你知道自己在干什么"，它不会替你确认，也不会替你兜底。</mark>这种"不啰嗦"是它高效的来源，也是它危险的来源。同一枚硬币的两面，没法只要一面。</p>
+
   <h3>CLI 的真实短板</h3>
   <p>吹完优点，必须诚实地讲缺点。命令行绝不是"更高级"，它只是<strong>另一种权衡</strong>，代价相当明确：</p>
   <ul class="keylist">
@@ -164,6 +410,14 @@ echo "部署完成，返回码 $?"</code></pre>
     <li><span class="k">反馈是滞后的</span><span class="v">你敲完一整行才回车，回车前无法预览效果。图形界面里拖动滑块是实时看到变化的，这种即时反馈对探索性工作极其重要。</span></li>
   </ul>
   <p>所以结论不是"命令行更好"，而是：<mark class="key">任务性质决定界面形态</mark>。重复、批量、需要精确表达和留痕的工作，交给 CLI；探索性、空间性、一次性的工作，交给 GUI。真正熟练的人两手都会用，并且清楚地知道什么时候该切换到哪一边——这也是下一节 TUI 和第三节 GUI 要继续展开的话题。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 中央厨房与家庭厨房</span>
+    <p>把这一整节压成一个画面：<strong>命令行是中央厨房，图形界面是家庭厨房。</strong></p>
+    <p>家庭厨房里，你打开冰箱看一眼有什么，随手抓一把，凭感觉放盐，边尝边调。工具都摆在手边，动作全靠眼和手——<strong>这就是图形界面</strong>：所见即所得，适合一次性、探索性、"看着来"的活儿。你要做一顿饭，它是最快的路。</p>
+    <p>中央厨房完全是另一套逻辑。这里没人凭感觉，一切写成配方单：某菜 2.5 千克、盐 18 克、翻炒 90 秒、出锅温度 82 度。配方单可以复印一千份、可以发给十个分店、可以存档追溯、可以让新员工照做出一模一样的味道。<strong>这就是命令行</strong>：慢在第一次（你得把配方写清楚），但从第二次起，成本几乎为零，而且谁做都一样。</p>
+    <p>现在你就能理解那个看起来矛盾的现象了：为什么专业厨师做家常菜也用手感，但开连锁店必须上配方单？<mark class="key">不是配方单更"高级"，而是当同一件事要做一千遍、要交给别人做、要出问题时能查回去的时候，只有配方单这条路走得通。</mark>命令行在软件工程里的地位，一模一样。</p>
+  </div>
 
   <div class="lab" data-lab="quiz" data-q="在命令 <code>ls -la /home</code> 里，<code>-la</code> 属于哪一部分？" data-opts="命令|选项|参数|管道" data-answer="1" data-explain="以短横线开头的是选项（option），用来开启某种行为；<code>/home</code> 才是参数（argument），是命令要操作的对象。"></div>
 

@@ -40,6 +40,21 @@
     <div class="link">→ <strong>事件驱动</strong> = <em>Event-Driven</em>：程序不主动推进流程，而是等待事件、响应事件。</div>
   </div>
 
+  <h3>先把这一节的词全翻成人话</h3>
+  <p>这一节的概念最抽象，所以术语必须先钉死。每个词后面那句括号才是你要记的东西。</p>
+  <ul class="keylist">
+    <li><span class="k">事件驱动</span><span class="v"><strong>事件驱动</strong>（Event-Driven——程序不主动往前走，而是坐着等事情发生，来一件处理一件）。说白了就是<strong>酒店前台的工作模式</strong>：他不知道下一分钟会发生什么，只是坐在那儿盯着，来客人就办入住，电话响就接，没事就闲着。</span></li>
+    <li><span class="k">事件</span><span class="v"><strong>事件</strong>（Event，一件"刚刚发生了什么"的通知，比如鼠标按下了、窗口大小变了、网络请求回来了）。它相当于<strong>递到前台窗口的一张单子</strong>：上面写着谁、什么时候、要办什么。</span></li>
+    <li><span class="k">事件循环</span><span class="v"><strong>事件循环</strong>（Event Loop，一个永不结束的循环，反复做"取一件事、处理它、画一下屏幕"）。听着玄，其实就是<strong>叫号机加办事员的那套流程</strong>：叫下一号、办、办完再叫下一号。</span></li>
+    <li><span class="k">事件队列</span><span class="v"><strong>事件队列</strong>（Event Queue，还没被处理的事件排成的一条队）。就是<strong>取号机后面那排等着的人</strong>，先来先办。</span></li>
+    <li><span class="k">回调函数</span><span class="v"><strong>回调函数</strong>（Callback，你事先写好、交出去、等时机到了由别人替你调用的一段代码）。好比你在餐厅门口留了手机号说"有位置了打给我"——号码交出去了，什么时候打不由你决定。</span></li>
+    <li><span class="k">监听器</span><span class="v"><strong>监听器</strong>（Listener / Observer，登记了"我关心某件事"的那一方）。简单说就是<strong>订阅了小区通知群的人</strong>：物业发一条消息，所有订阅的人都收到，谁看不看是自己的事。</span></li>
+    <li><span class="k">主线程 / UI 线程</span><span class="v"><strong>主线程</strong>（Main Thread / UI Thread，唯一被允许更新界面的那条执行线路）。它干的活儿相当于<strong>超市里唯一开着的那个收银台</strong>：所有人必须从它这儿过。</span></li>
+    <li><span class="k">阻塞</span><span class="v"><strong>阻塞</strong>（Blocking，一段代码占着不放、后面的全等着）。就是<strong>那个用一袋硬币付款、慢慢数了八分钟的顾客</strong>。</span></li>
+    <li><span class="k">异步</span><span class="v"><strong>异步</strong>（Asynchronous，发起一件要等的事之后立刻返回，等结果到了再来处理）。本质上就是<strong>去餐厅取号后先去逛街，号到了手机通知你</strong>，而不是傻站在门口。</span></li>
+    <li><span class="k">并发</span><span class="v"><strong>并发</strong>（Concurrency，同时"在办"很多件事，但不一定同时"在动手"）。后面有专门一节讲它和异步的区别。</span></li>
+  </ul>
+
   <h3>命令式脚本 vs 事件驱动：根本区别在哪</h3>
   <p>先看一段最普通的脚本。它体现的是"命令式"思维：我说一步，机器做一步，做完就结束。</p>
 
@@ -105,6 +120,83 @@ while (程序还没被要求退出) {
   <p><strong>④ 重绘。</strong>回调可能改了状态（文字变了、颜色变了、多了一行）。框架不会立刻重画——那太浪费了。它只是给受影响的控件打个"脏"标记，等这一轮事件处理完，一次性把所有脏区域重新布局、绘制、送屏。这叫<strong>批量重绘</strong>，是性能的关键。</p>
   <p>然后回到 ①，继续。<mark class="key">这个循环每秒转几十到几百轮，界面的"活着"就是它在转</mark>。</p>
 
+  <h3>把事件循环搬进办事大厅：取号排队处理</h3>
+  <p>上面那段伪代码有点干。我们把它整个搬进一间政务服务大厅，你会发现每一行都能对上一个现实动作。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>代码里的那一步</th><th>大厅里对应什么</th><th>关键细节</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>事件被塞进队列</strong></td><td>市民在门口<strong>取号机取一张号</strong>，然后坐着等</td><td>取号是操作系统干的，不是你的程序干的。你只管从队头拿</td></tr>
+        <tr><td><code>事件队列.取出下一个()</code></td><td>办事员按叫号器：<strong>"请 A032 号到 3 号窗口"</strong></td><td>严格按先来后到。没人排队时，办事员是<strong>趴着睡</strong>，不是空转打转</td></tr>
+        <tr><td><strong>分发到目标控件</strong></td><td>看单子上写的业务类型，<strong>分给对应的科室</strong></td><td>鼠标事件按"点在哪儿"分，键盘事件按"焦点在谁手上"分</td></tr>
+        <tr><td><code>target.处理(event)</code></td><td>那个科室<strong>真正把这件事办掉</strong>——盖章、录入、打凭证</td><td>这一步是同步的：这个人没办完，办事员绝不叫下一号</td></tr>
+        <tr><td><strong>批量重绘</strong></td><td>这一轮办完后，<strong>统一更新大厅那块显示屏</strong></td><td>不是每办一件就刷一次屏，而是攒一攒一次性刷。这是性能的关键</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这个类比里有三个细节，恰好对应三个初学者最容易搞错的点，值得逐个说清。</p>
+  <p><strong>第一，队列空的时候，程序不烧 CPU。</strong>很多人以为 <code>while (true)</code> 就意味着 CPU 一直被占满。其实不是：取事件那一步在队列空时会被操作系统<strong>挂起休眠</strong>，直到有新事件才被唤醒。换成大白话：<mark class="key">办事员没人来的时候是趴着睡，不是原地跑圈。</mark>所以你的编辑器开一整天不动它，CPU 占用是 0%，笔记本也不烫。</p>
+  <p><strong>第二，一次只办一件，没有插队。</strong>大厅里那个办事员是单人，所以第 4 行的"办掉"必须办完才叫下一号。这就是后面那节"主线程不能阻塞"的全部原因——<strong>不是因为程序脆弱，是因为窗口只有一个。</strong></p>
+  <p><strong>第三，显示屏是攒着刷的。</strong>假设一轮里同时发生了"文字变了、颜色变了、多了一行"三件事。框架不会画三遍，而是给这几个地方打上"待更新"的标记，等这一轮事件全处理完，一次性重画。<strong>好比办事大厅不会每办完一个人就重印一次公告板，而是每隔一小会儿统一更新一次。</strong>这个技巧的学名叫批量重绘，省下的开销非常可观。</p>
+
+  <h3>事件的三个阶段：公文层层下发再层层上报</h3>
+  <p>现在讲一个几乎所有人第一次都会绕晕的机制：一个点击事件，从屏幕传到你的代码，中间要走<strong>三个阶段</strong>。</p>
+  <p>先说为什么需要三个阶段。上一节讲过界面是一棵<strong>控件树</strong>：窗口里套着面板，面板里套着卡片，卡片里套着按钮。现在你点了那个按钮——问题是，<strong>除了按钮本身，外面那三层要不要知道这件事？</strong></p>
+  <p>答案往往是"要"。比如点卡片里任意位置都该算点了整张卡片；比如点了页面上任何地方，弹出的下拉菜单都该收起来。所以事件不能只送给最里面那个控件，得让整条路径上的人都有机会知道。于是有了这套三段式：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>阶段</th><th>方向</th><th>大白话</th><th>公文类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>捕获</strong>（Capture）</td><td>从最外层<strong>往里</strong>走</td><td>从窗口 → 面板 → 卡片 → 按钮，一层层往下问"你要不要先管一下这件事"</td><td><strong>公文层层下发</strong>：总部收到文件，转给分公司，分公司转给部门，部门转给小组</td></tr>
+        <tr><td><strong>目标</strong>（Target）</td><td>停在被点中的那个</td><td>真正被点中的那个按钮，它是这件事的主角</td><td><strong>文件到了具体经办人手里</strong>，他是真正要干活的人</td></tr>
+        <tr><td><strong>冒泡</strong>（Bubble）</td><td>从里面<strong>往外</strong>走</td><td>从按钮 → 卡片 → 面板 → 窗口，一层层往上报"这件事发生过了"</td><td><strong>办完层层上报</strong>：经办人办完汇报给小组，小组报部门，部门报总部</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre><code>你点了最里面那个按钮，事件走的完整路线：
+
+  window                ① 捕获 ↓                 ⑦ 冒泡 ↑
+    └── panel           ② 捕获 ↓                 ⑥ 冒泡 ↑
+          └── card      ③ 捕获 ↓                 ⑤ 冒泡 ↑
+                └── button        ④ 到达目标（Target）
+
+顺序：window → panel → card → button → card → panel → window
+        └────── 往下发文 ──────┘   └───── 往上汇报 ─────┘</code></pre>
+  <p>为什么"冒泡"这个词？<strong>因为它就像一杯水里从底下冒起来的气泡</strong>：从最深处生成，一路往上，最后到水面。事件也是从最深的那个控件出发，一层层往外浮。</p>
+  <p>实际开发中，<strong>百分之九十的时候你只用得到冒泡阶段</strong>，捕获阶段是留给"我要在事情办成之前先拦一下"的特殊场合。这也符合公文类比：下发阶段各级领导通常只是转发，真正的动作发生在经办人手里；但如果某一级觉得"这事儿不能往下发"，他也有权在下发阶段就截住。</p>
+  <p>顺带解释两个非常容易混的方法名：</p>
+  <ul class="keylist">
+    <li><span class="k">阻止冒泡</span><span class="v">意思是"这件事我办了，<strong>别再往上报</strong>了"。典型场景：卡片整体点了会展开，但卡片里那个"删除"按钮点了不该展开——所以删除按钮处理完之后要阻止冒泡。<strong>好比经办人办完一件小事，觉得没必要惊动上级，就不往上汇报了。</strong></span></li>
+    <li><span class="k">阻止默认行为</span><span class="v">意思是"<strong>浏览器或系统本来会自动干的那件事，别干</strong>"。典型场景：点一个链接默认会跳转，你想改成弹窗，就得阻止默认行为。<strong>好比窗口办事时按流程本该自动打印一张凭条，你说"这次不用打"。</strong></span></li>
+  </ul>
+  <p>这两件事完全独立，很多 bug 就来自把它们搞混：<mark class="key">阻止冒泡管的是"事件还往不往上走"，阻止默认行为管的是"系统自带的那个动作做不做"。</mark>一个管路线，一个管动作。</p>
+
+  <h3>事件对象里装了什么：单子上写着的那些字段</h3>
+  <p>事件不只是"发生了"这三个字，它是一张<strong>填好了内容的单子</strong>。你的回调函数拿到的那个参数，就是这张单子。看看上面写了些什么：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>字段</th><th>装的是什么</th><th>对应单子上哪一栏</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>type</code></td><td>事件类型，比如 click、keydown、resize</td><td><strong>业务类型</strong>：办居住证还是办社保</td></tr>
+        <tr><td><code>target</code></td><td>真正被点中的那个最里层控件</td><td><strong>具体经办人</strong>是谁</td></tr>
+        <tr><td><code>currentTarget</code></td><td>当前正在处理这个事件的那一层（会随冒泡变化）</td><td><strong>这张单子此刻在谁手上</strong></td></tr>
+        <tr><td><code>clientX</code> / <code>clientY</code></td><td>鼠标在窗口里的坐标</td><td><strong>发生地点</strong>的精确位置</td></tr>
+        <tr><td><code>key</code> / <code>code</code></td><td>按了哪个键（前者是字符，后者是物理位置）</td><td>如果是键盘事件，<strong>按的是哪个键</strong></td></tr>
+        <tr><td><code>ctrlKey</code> / <code>shiftKey</code> / <code>altKey</code></td><td>点击的同时有没有按住这些修饰键</td><td><strong>附加条件</strong>：加急、代办、免费办</td></tr>
+        <tr><td><code>timeStamp</code></td><td>发生的时刻</td><td><strong>受理时间</strong>，用来算双击间隔或防抖</td></tr>
+        <tr><td><code>button</code></td><td>按的是左键、中键还是右键</td><td>用哪只手、从哪个窗口递进来的</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><code>target</code> 和 <code>currentTarget</code> 的区别是最经典的困惑点，用公文类比一句话就清楚了：<mark class="key"><code>target</code> 是"这事儿是谁引起的"（固定不变），<code>currentTarget</code> 是"这张单子现在在谁手上"（一路往上传，一路在变）。</mark></p>
+  <p>举一个具体场景说明它为什么有用。你有一个列表，一百行，每行都能点。<strong>笨办法是给一百行各挂一个监听器</strong>；聪明办法是只在整个列表上挂一个，事件冒泡上来时，看 <code>target</code> 是哪一行，就知道用户点了第几行。这个技巧后面有一节专门讲，叫事件委托。</p>
+
   <h3>回调函数与监听器：把代码"寄存"起来</h3>
   <p>事件驱动能成立，靠的是一个语言机制：<strong>函数本身可以被当成数据传来传去</strong>。</p>
   <p>你写 <code>button.onClick = saveFile</code>，注意这里 <code>saveFile</code> 后面<strong>没有括号</strong>——你不是在"调用"它，而是把这个函数本身<em>交给</em>按钮保管。按钮把它存起来，等到真的被点击的那一刻，才由框架替你调用。这种"我交出去、别人在合适的时机替我调用"的函数，就叫<strong>回调函数（Callback）</strong>。</p>
@@ -112,9 +204,9 @@ while (程序还没被要求退出) {
 
   <pre><code>// 一个事件挂多个监听器，互不干扰
 
-doc.addEventListener('change', () => titleBar.showModifiedMark());
-doc.addEventListener('change', () => autoSave.resetTimer());
-doc.addEventListener('change', () => undoStack.push(doc.snapshot()));
+doc.addEventListener('change', () =&gt; titleBar.showModifiedMark());
+doc.addEventListener('change', () =&gt; autoSave.resetTimer());
+doc.addEventListener('change', () =&gt; undoStack.push(doc.snapshot()));
 
 // 不再关心时，可以摘掉（这一步新手常忘，是内存泄漏的常见原因）
 doc.removeEventListener('change', someHandler);</code></pre>
@@ -127,7 +219,7 @@ doc.removeEventListener('change', someHandler);</code></pre>
   <p>假设你在按钮回调里写了一个耗时 8 秒的操作（下载文件、读一个巨大的 Excel、跑一段复杂计算）：</p>
 
   <pre><code>// ❌ 灾难写法：把主线程占死 8 秒
-button.onClick = () => {
+button.onClick = () =&gt; {
     const data = downloadHugeFile();   // 同步等待，8 秒不返回
     render(data);
 };</code></pre>
@@ -175,7 +267,7 @@ button.onClick = () => {
 
   <pre><code>// ✅ 异步写法：发起后立刻返回，不占主线程
 
-button.onClick = async () => {
+button.onClick = async () =&gt; {
     spinner.show();                          // 立刻给反馈（反馈类控件的价值）
     try {
         const data = await fetchHugeFile();  // 这里"让出"主线程，循环继续转
@@ -189,6 +281,132 @@ button.onClick = async () => {
   <p><strong>第二条：后台线程（Worker Thread）。</strong>适用于"计算型"任务——图片处理、数据压缩、大规模排序、模型推理。这类任务 CPU 是真的在满负荷算，光靠异步没用，必须换个 CPU 核心去跑。做法是把任务丢给一个独立线程，算完了通过消息通知主线程。</p>
   <p>但这里有一条<strong>几乎所有 GUI 框架都强制的铁律</strong>：<mark class="key">只有主线程可以碰界面</mark>。后台线程算完了，不能自己去改控件的文字或颜色，必须把结果"投递"回主线程，由主线程更新。违反这条规则，轻则界面画错，重则直接崩溃。</p>
   <p>为什么这么严格？因为界面的状态是一棵共享的树，如果两个线程同时改它，就会出现"一个线程正在遍历这棵树画画，另一个线程把节点删了"这种灾难。框架的解决办法很干脆：<strong>不给你并发的机会</strong>——所有界面修改都排成一队，交给主线程串行执行。</p>
+
+  <h3>异步和并发不是一回事：一个厨师还是三个厨师</h3>
+  <p>这两个词几乎所有人都混用，但它们回答的是两个不同的问题。用厨房来分最清楚。</p>
+  <p><strong>异步</strong>（Asynchronous，发起一件要等的事之后不傻等，先去干别的）。它的本质是<mark class="key">一个人，通过"不傻等"来提高利用率</mark>。</p>
+  <p>想象一下厨房里只有一个厨师。他要做三道菜：一锅需要炖 40 分钟的汤、一盘炒青菜、一碗凉面。<strong>笨办法（同步）</strong>是：先把汤炖上，然后守着锅盯 40 分钟，炖好了再去炒菜、再去做凉面。全程一小时。<strong>异步办法</strong>是：汤炖上，定个闹钟，转身去炒青菜、拌凉面，闹钟响了再回去处理汤。全程四十分钟出头。</p>
+  <p>注意关键点：<strong>厨师还是一个，他的手也还是一双。</strong>省下的时间不是来自"同时炒两个锅"，而是来自"炖汤那 40 分钟里他没有站着发呆"。这就是异步：<strong>把等待的空档利用起来。</strong></p>
+  <p><strong>并发</strong>（Concurrency，同时有多件事在办）与<strong>并行</strong>（Parallelism，同一时刻真的有多件事在动手）。区别是：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>概念</th><th>厨房里对应</th><th>技术上对应</th><th>能省什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>同步阻塞</strong></td><td>一个厨师，守着汤锅站 40 分钟</td><td>主线程被一个耗时操作占死</td><td>什么都省不了，还把界面卡死了</td></tr>
+        <tr><td><strong>异步</strong></td><td>一个厨师，炖汤时去炒别的菜</td><td>发起请求后立刻返回，结果到了再回调</td><td>省掉<strong>等待</strong>的空档。适合网络、读文件</td></tr>
+        <tr><td><strong>并发</strong></td><td>一个厨师同时"在做"三道菜（来回切换）</td><td>单线程上有很多个异步任务在推进</td><td>看起来同时在办，其实靠快速切换</td></tr>
+        <tr><td><strong>并行</strong></td><td><strong>三个厨师，三个灶，真的同时炒</strong></td><td>多线程 / 多核，或后台 Worker 线程</td><td>省掉<strong>计算</strong>时间。适合图片处理、大量排序</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么必须分清？因为<mark class="key">用错了工具，一点效果都没有。</mark></p>
+  <p>假设你的按钮回调里要做一件事：<strong>把一张一亿像素的图片做模糊处理</strong>，纯计算，要算 8 秒。你把它改成异步的 <code>async / await</code> 写法，界面会不会不卡？<strong>不会。</strong>因为异步只能省掉"等"的时间，而这里根本没有等——CPU 在实打实地算。<strong>好比一个厨师要手工剁八分钟肉馅，你让他"剁的时候顺便去炒菜"，他做不到，他的手就一双。</strong>这时候唯一的办法是找第二个厨师（后台线程）。</p>
+  <p>反过来，如果你的任务是"从网络下载一个文件，等 8 秒"，那就完全不需要开新线程。因为这 8 秒里 CPU 是闲着的，只是在等对方回话。<strong>好比等外卖送到，你不需要雇第二个人陪着一起等。</strong></p>
+  <p>所以判断标准一句话：<mark class="key">在等别人，用异步；在自己算，用后台线程。</mark>看一眼任务管理器就知道该用哪个——如果这 8 秒里 CPU 占用接近满，那是在算；如果几乎为 0，那是在等。</p>
+
+  <h3>防抖与节流：电梯等人 和 公交发车间隔</h3>
+  <p>有一类事件触发得极其频繁：鼠标移动每秒上百次、拖动窗口边框每秒几百次、在搜索框里打字每敲一个字母一次。如果每次都老老实实处理，界面必卡。</p>
+  <p>解决办法有两个，名字很唬人，但原理各对应一个日常场景。</p>
+  <p><strong>防抖</strong>（Debounce——事件不停地来，就一直往后推；等它彻底安静下来一小会儿，才真正执行一次）。</p>
+  <p>它<strong>就像电梯等人</strong>：门要关了，又有人跑过来按开门键，于是重新等三秒；又有人来，再重新等三秒。<mark class="key">只要还有人不断进来，电梯就一直不走；直到三秒内没人再来，门才关，电梯才开动。</mark></p>
+  <p>典型用法：<strong>搜索框的自动联想</strong>。用户打"北京天气"四个字要敲十几下，你不该发十几次网络请求。用防抖包一下，就变成"用户停下手 300 毫秒后，只发一次请求"。还有<strong>窗口大小变化</strong>：用户拖着边框来回调，中间那几百次都不用管，只在他松手停下后重新排一次版。</p>
+  <p><strong>节流</strong>（Throttle——事件来得再密，也按固定间隔执行，中间的忽略掉）。</p>
+  <p>它<strong>好比公交车的发车间隔</strong>：规定每 5 分钟发一班。这 5 分钟里站台上来了两个人还是两百个人，车都不会提前开；到点就发一班，不到点就等着。<mark class="key">保证的是"频率上限"，而不是"等安静"。</mark></p>
+  <p>典型用法：<strong>监听页面滚动</strong>。滚动事件每秒能触发上百次，但你只需要每 100 毫秒判断一次"要不要显示返回顶部按钮"。还有<strong>拖拽时的实时预览</strong>：每 16 毫秒更新一次画面就够了（那正好是一帧），更密没有意义，因为屏幕也刷不出来。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比</th><th>防抖 Debounce</th><th>节流 Throttle</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>生活模型</td><td><strong>电梯等人</strong>：有人来就重新等</td><td><strong>公交发车</strong>：到点就走，人多人少不管</td></tr>
+        <tr><td>触发时机</td><td>事件<strong>停下来之后</strong>才执行一次</td><td>事件<strong>持续期间</strong>就按固定频率执行</td></tr>
+        <tr><td>如果事件一直不停</td><td><strong>永远不执行</strong>（电梯永远不走）</td><td>照常按间隔执行（车照发）</td></tr>
+        <tr><td>适合什么</td><td>只关心"最终结果"：搜索联想、窗口调完大小、表单校验</td><td>需要"过程中也有反馈"：滚动、拖拽、实时进度</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre><code>// 防抖：等安静了才干活（电梯等人）
+function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);                       // 又有人来了，把上次的等待作废
+    timer = setTimeout(() =&gt; fn(...args), delay);  // 重新开始等
+  };
+}
+
+// 节流：到点就干活，中间的忽略（公交发车）
+function throttle(fn, interval) {
+  let last = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - last &lt; interval) return;         // 还没到发车时间，这一位不上车
+    last = now;
+    fn(...args);
+  };
+}
+
+// 用法
+searchBox.oninput = debounce(e =&gt; sendSearchRequest(e.target.value), 300);
+window.onscroll   = throttle(() =&gt; updateBackToTopButton(), 100);</code></pre>
+  <p>选哪个？给一句判断：<mark class="key">只要最后那一次结果，用防抖；过程中也得有反应，用节流。</mark>搜索联想只要用户打完的那一串，用防抖；滚动条位置指示器必须一路跟着动，用节流。</p>
+
+  <h3>事件委托：一个楼长收全楼的快递</h3>
+  <p>还剩一个非常实用的技巧，它是"事件冒泡"这个机制最漂亮的应用。</p>
+  <p>问题场景：你有一个待办清单，一千条，每条右边有个删除按钮。<strong>笨办法是给一千个按钮各挂一个监听器。</strong>后果有三个：注册这一千个监听器本身要花时间和内存；新增一条时得记着给它也挂上；删掉一条时得记着把监听器摘掉，忘了就是内存泄漏。</p>
+  <p><strong>事件委托</strong>（Event Delegation——不给每个子元素挂监听器，只在它们共同的父容器上挂一个，靠事件冒泡上来时看 <code>target</code> 判断具体是谁）。</p>
+  <p>它干的活儿相当于<strong>小区门口的快递代收点</strong>。不需要给一千户人家各装一个门铃和收件箱，只在门口设一个代收点：所有快递都送到这儿，工作人员看包裹上写的门牌号（也就是 <code>target</code>），再决定通知谁。<mark class="key">新搬来一户不用改造任何设施，搬走一户也不用拆什么，代收点的逻辑一行不动。</mark></p>
+  <pre><code>// ❌ 笨办法：一千个监听器
+document.querySelectorAll('.todo-item .delete-btn').forEach(btn =&gt; {
+  btn.addEventListener('click', handleDelete);
+});
+// 问题：新增的条目没有监听器；删除的条目忘了摘监听器会泄漏
+
+// ✅ 事件委托：整个列表只挂一个
+todoList.addEventListener('click', function (e) {
+  const btn = e.target.closest('.delete-btn');   // 看看点的是不是某个删除按钮
+  if (!btn) return;                              // 点在别处，不管
+  const item = btn.closest('.todo-item');
+  deleteTodo(item.dataset.id);                   // 从被点中的那一条上取 id
+});
+// 好处：新增一万条也不用改代码，一个监听器全包</code></pre>
+  <p>这里 <code>e.target</code> 就是上面那节讲过的"这事儿是谁引起的"，而挂监听器的那个列表容器是 <code>e.currentTarget</code>。<strong>两者不是同一个东西，这正是事件委托能成立的全部前提。</strong></p>
+  <p>顺带说一个反例，帮你知道边界：<strong>不是所有事件都会冒泡。</strong>比如 <code>focus</code>（获得焦点）和 <code>blur</code>（失去焦点）这两个默认就不冒泡，所以不能直接用委托（需要用它们的冒泡版本 <code>focusin</code> / <code>focusout</code>）。<strong>好比有些挂号快递必须本人签收，代收点不能替签。</strong>用之前查一下这个事件冒不冒泡，是个好习惯。</p>
+
+  <h3>事件循环在 GUI 框架里的位置</h3>
+  <p>最后把镜头拉远，看看这个循环在整台机器里坐在哪一层。因为这决定了你写代码时哪些事管得着、哪些事管不着。</p>
+  <pre><code>┌─────────────────────────────────────────────┐
+│  你的代码：只写"发生什么 → 做什么"的规则       │  ← 你在这里
+│  btn.onClick = save;  input.onChange = check;│
+├─────────────────────────────────────────────┤
+│  框架的事件循环（Qt/GTK/浏览器/Flutter）      │  ← 你调 app.run() 就进了这里
+│  取事件 → 找目标控件 → 调你的回调 → 批量重绘  │     进去之后再也不出来
+├─────────────────────────────────────────────┤
+│  操作系统的窗口系统（DWM/Wayland/Quartz）     │  ← 它把硬件消息塞进你的队列
+│  分配画布、按 Z 序合成、判断鼠标该给哪个窗口   │
+├─────────────────────────────────────────────┤
+│  硬件与驱动：鼠标、键盘、触摸屏、显示器        │  ← 事件的源头在这里
+└─────────────────────────────────────────────┘</code></pre>
+  <p>看清这张图，三个常见困惑就解开了。</p>
+  <ul class="keylist">
+    <li><span class="k">为什么 <code>app.run()</code> 后面的代码不执行了</span><span class="v">因为那一行是<strong>把控制权交出去</strong>，事件循环进去就不再返回，直到程序退出。所以初始化的活儿必须写在它前面。<strong>好比开会时你把主持权交给主持人，之后就得等他叫你，不能自己接着往下讲。</strong></span></li>
+    <li><span class="k">为什么不同框架的事件名不一样，但脾气一样</span><span class="v">因为第二层的实现虽然各家不同（Qt 叫 <code>exec()</code>、Python 的 tkinter 叫 <code>mainloop()</code>、浏览器你根本看不到它），但<strong>结构完全相同</strong>：取、分发、处理、重绘。学会一套，换框架只是换名字。</span></li>
+    <li><span class="k">为什么有些事你想管也管不了</span><span class="v">比如"用户把窗口拖到第二块屏幕上"这件事，是第三层窗口系统在处理，你只能收到一个"位置变了"的通知，改不了它的行为。<strong>好比商场的中央空调开几度不是店铺能决定的，你只能收到"今天有点冷"的反馈然后自己加个暖风。</strong></span></li>
+  </ul>
+  <p>最后再补一个容易忽略的点：<strong>事件是有优先级和合并的。</strong>比如鼠标移动事件如果堆积了二十个，很多框架会只保留最新那一个——因为你只关心鼠标现在在哪，不关心它路上经过了哪些点。这个策略叫事件压缩。<strong>就像医院叫号，如果一个人挂了五个重复的号，护士会只留一个，剩下的作废。</strong>不这么做的话，界面一卡就会积压出一堆过期的移动事件，卡完之后鼠标还得"追"半天才追上你的手。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 酒店前台的一整天</span>
+    <p>把这一整节压成一个画面，就是<strong>酒店前台的一整天</strong>。这个类比能装下本节几乎所有概念，所以值得完整讲一遍。</p>
+    <p><strong>先看他的工作模式。</strong>前台不知道今天会发生什么，也不能提前排好流程。他只有一本《应对手册》，上面写着"有人来办入住 → 查房、登记、给卡""电话响 → 接起来问需求""有人来问路 → 指方向"。<mark class="key">这本手册就是你注册的那一堆回调，而"坐在那儿盯着，来事就翻手册"这个动作就是事件循环。</mark></p>
+    <p><strong>再看队列。</strong>大堂里排着几个人，还有电话在响、还有客房打来的内线。这些都是<strong>事件队列</strong>。前台严格按顺序办，不允许后来的插队（除了少数标了"加急"的）。没人来的时候他不是原地转圈，而是靠着台子歇着——<strong>这就是队列空时程序休眠不耗 CPU。</strong></p>
+    <p><strong>然后看最要命的那条铁律。</strong>假设来了一位客人，要办一件极其复杂的事：改十天的预订、拆成三间房、还要一张能报销的发票、外加协调机场接送。这件事办四十分钟。这四十分钟里，<strong>后面所有人全都干等着</strong>，电话没人接，问路的没人答，大堂开始乱。这就是<strong>主线程被阻塞</strong>，也就是你在电脑上看到的"（未响应）"。客人没做错，前台也没做错——错在<strong>把一件长活儿放在了唯一的窗口上办。</strong></p>
+    <p><strong>正确做法有两种，正好对应异步和后台线程。</strong>如果这件事的耗时是"要等别的部门回话"（比如等机场接送公司回复），前台应该说"您先坐，我这边一有消息就叫您"，然后继续接待下一位——<strong>这就是异步</strong>。如果这件事是"必须有人埋头算四十分钟"，那就该请客户经理带客人去旁边的洽谈室处理，前台窗口腾出来——<strong>这就是后台线程</strong>。</p>
+    <p><strong>最后连上防抖和节流。</strong>有位客人反复过来改需求，一分钟改了六次。前台聪明的做法不是每次都去系统里改一遍，而是说"您想清楚了我一次性录"——<strong>这就是防抖</strong>。而大堂那块显示屏上的房态信息，不管期间办了多少笔业务，都是<strong>每五分钟统一刷一次</strong>——<strong>这就是节流</strong>。</p>
+    <p>所以这一节真正要你转的那个弯，可以用一句话说完：<mark class="key">你不再是那个安排全天流程的人，你是那个写《应对手册》的人；而手册里每一条的第一要求，永远是"别占着窗口太久"。</mark></p>
+  </div>
 
   <h3>把三节内容串起来</h3>
   <p>到这里，第 1 章的骨架就完整了：<strong>GUI</strong> 提供了窗口、图标、菜单、指针这套视觉语言；<strong>控件</strong> 是搭建界面的可复用积木，并按树形嵌套组织；而<strong>事件驱动</strong> 是让这棵静态的树"活起来"的发动机。</p>
