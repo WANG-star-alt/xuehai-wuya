@@ -15,14 +15,14 @@
     'intelligence',
     '智能篇',
     '认识 AI 的过去、现在与未来。从"AI 是什么"到大模型、Agent、多模态——14 章串起完整的 AI 认知地图。',
-    '待撰写',
+    '约 26.3 万字',
     [
       createNode('ai-01', '第 1 章 · AI 是什么',
         'ANI / AGI / ASI 三种 AI 层级 + AI 的四种核心能力。',
-        '约 2.4 万字',
+        '约 3.0 万字',
         [
-          createNode('ai-01-1', '§ 1.1 · 弱 AI · ANI', '狭义人工智能——今天所有能用的 AI 都属于这一类。', '5548 字', [], { href: 'chapters/ai/01-1-ani.html', spec: 'todo'}),
-          createNode('ai-01-2', '§ 1.2 · 通用 AI · AGI', '像人类一样能做任何智力任务的 AI，尚未实现。', '5842 字', [], { href: 'chapters/ai/01-2-agi.html', spec: 'todo'}),
+          createNode('ai-01-1', '§ 1.1 · 弱 AI · ANI', '狭义人工智能——今天所有能用的 AI 都属于这一类。', '8885 字', [], { href: 'chapters/ai/01-1-ani.html', spec: 'pass'}),
+          createNode('ai-01-2', '§ 1.2 · 通用 AI · AGI', '像人类一样能做任何智力任务的 AI，尚未实现。', '8983 字', [], { href: 'chapters/ai/01-2-agi.html', spec: 'pass'}),
           createNode('ai-01-3', '§ 1.3 · 超级 AI · ASI', '在所有领域全面超越人类的假想 AI。', '6401 字', [], { href: 'chapters/ai/01-3-asi.html', spec: 'todo'}),
           createNode('ai-01-4', '§ 1.4 · AI 的四种能力', '感知 / 理解 / 决策 / 生成——AI 做的事都可以归到这四类。', '6125 字', [], { href: 'chapters/ai/01-4-abilities.html', spec: 'todo'})
         ],
@@ -182,28 +182,28 @@
     'network',
     '网络篇',
     '从"什么是网络"到"数据怎么从你的手机跑到百度服务器"——10 章讲透互联网工作原理。',
-    '待撰写',
+    '约 12.7 万字',
     [
       createNode('net-01', '第 1 章 · 网络是什么',
         '主机、协议、地址、客户端服务器、数据包、带宽时延丢包——建立最基础的认识。',
-        '约 4.2 万字',
+        '约 6.4 万字',
         [
-          createNode('net-01-1', '§ 1.1 · 主机 Host', '每台联网设备都叫主机——从手机到服务器。', '6690 字', [], { href: 'chapters/network/01-1-host.html', spec: 'todo'}),
-          createNode('net-01-2', '§ 1.2 · 协议 Protocol', '协议 = 通信的"共同语言"——TCP/IP、HTTP、DNS。', '7816 字', [], { href: 'chapters/network/01-2-protocol.html', spec: 'todo'}),
-          createNode('net-01-3', '§ 1.3 · 地址 Address', 'IP + MAC + 端口——网络世界的三种"地址"。', '7067 字', [], { href: 'chapters/network/01-3-address.html', spec: 'todo'}),
-          createNode('net-01-4', '§ 1.4 · 客户端 vs 服务器', '谁发起、谁响应——互联网的基本分工模式。', '5949 字', [], { href: 'chapters/network/01-4-client-server.html', spec: 'todo'}),
-          createNode('net-01-5', '§ 1.5 · 数据包 Packet', '把数据切成小包裹分批传输——为什么不整块发。', '7677 字', [], { href: 'chapters/network/01-5-packet.html', spec: 'todo'}),
-          createNode('net-01-6', '§ 1.6 · 带宽/时延/丢包', '衡量网络好坏的三个核心指标。', '7171 字', [], { href: 'chapters/network/01-6-metrics.html', spec: 'todo'})
+          createNode('net-01-1', '§ 1.1 · 主机 Host', '每台联网设备都叫主机——从手机到服务器。', '10085 字', [], { href: 'chapters/network/01-1-host.html', spec: 'pass'}),
+          createNode('net-01-2', '§ 1.2 · 协议 Protocol', '协议 = 通信的"共同语言"——TCP/IP、HTTP、DNS。', '11311 字', [], { href: 'chapters/network/01-2-protocol.html', spec: 'pass'}),
+          createNode('net-01-3', '§ 1.3 · 地址 Address', 'IP + MAC + 端口——网络世界的三种"地址"。', '10673 字', [], { href: 'chapters/network/01-3-address.html', spec: 'pass'}),
+          createNode('net-01-4', '§ 1.4 · 客户端 vs 服务器', '谁发起、谁响应——互联网的基本分工模式。', '9313 字', [], { href: 'chapters/network/01-4-client-server.html', spec: 'pass'}),
+          createNode('net-01-5', '§ 1.5 · 数据包 Packet', '把数据切成小包裹分批传输——为什么不整块发。', '11860 字', [], { href: 'chapters/network/01-5-packet.html', spec: 'pass'}),
+          createNode('net-01-6', '§ 1.6 · 带宽/时延/丢包', '衡量网络好坏的三个核心指标。', '11179 字', [], { href: 'chapters/network/01-6-metrics.html', spec: 'pass'})
         ],
         { href: 'chapters/network/01-what-is-network.html' }
       ),
       createNode('net-02', '第 2 章 · 分层模型',
         'OSI 七层 vs TCP/IP 四层——网络设计的"分工艺术"。',
-        '约 2.2 万字',
+        '约 3.4 万字',
         [
-          createNode('net-02-1', '§ 2.1 · OSI 七层模型', '国际标准化组织的"理想分层"——教学必学。', '9006 字', [], { href: 'chapters/network/02-1-osi.html', spec: 'todo'}),
-          createNode('net-02-2', '§ 2.2 · TCP/IP 四层模型', '互联网实际在用的模型——比 OSI 简洁。', '6769 字', [], { href: 'chapters/network/02-2-tcpip.html', spec: 'todo'}),
-          createNode('net-02-3', '§ 2.3 · 分层实战', '把协议"对号入座"——每个协议在哪一层。', '6209 字', [], { href: 'chapters/network/02-3-layers-in-action.html', spec: 'todo'})
+          createNode('net-02-1', '§ 2.1 · OSI 七层模型', '国际标准化组织的"理想分层"——教学必学。', '13082 字', [], { href: 'chapters/network/02-1-osi.html', spec: 'pass'}),
+          createNode('net-02-2', '§ 2.2 · TCP/IP 四层模型', '互联网实际在用的模型——比 OSI 简洁。', '10932 字', [], { href: 'chapters/network/02-2-tcpip.html', spec: 'pass'}),
+          createNode('net-02-3', '§ 2.3 · 分层实战', '把协议"对号入座"——每个协议在哪一层。', '9585 字', [], { href: 'chapters/network/02-3-layers-in-action.html', spec: 'pass'})
         ],
         { href: 'chapters/network/02-layered-models.html' }
       ),
@@ -302,7 +302,7 @@
     'interface',
     '界面篇',
     '从"GUI 是什么"到"AI 时代的生成式界面"——10 章讲透人和机器之间那层看得见、摸得着的皮肤；第 5 章重点铺开 14 种主流 GUI 工具。',
-    '待撰写',
+    '约 8.4 万字',
     [
       createNode('gui-01', '第 1 章 · GUI 是什么',
         'CLI / TUI / GUI 三种交互范式 + 控件、窗口、事件驱动的基本盘。',
@@ -317,13 +317,13 @@
         { href: 'chapters/gui/01-what-is-gui.html' }),
       createNode('gui-02', '第 2 章 · 界面是怎么画出来的',
         '像素、位图与矢量、渲染管线、GPU 合成——一帧画面的诞生过程。',
-        '约 1.7 万字',
+        '约 3.6 万字',
         [
-          createNode('gui-02-1', '§ 2.1 · 像素与分辨率', '像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。', '3487 字', [], { href: 'chapters/gui/02-1-pixel.html', spec: 'todo'}),
-          createNode('gui-02-2', '§ 2.2 · 位图 vs 矢量', 'PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。', '3430 字', [], { href: 'chapters/gui/02-2-bitmap-vector.html', spec: 'todo'}),
-          createNode('gui-02-3', '§ 2.3 · 颜色与色彩空间', 'RGB、HSL、sRGB vs P3、透明度与混色。', '3368 字', [], { href: 'chapters/gui/02-3-color.html', spec: 'todo'}),
-          createNode('gui-02-4', '§ 2.4 · 渲染管线', '解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。', '3163 字', [], { href: 'chapters/gui/02-4-render-pipeline.html', spec: 'todo'}),
-          createNode('gui-02-5', '§ 2.5 · GPU 合成与 60fps', '为什么动画会卡、为什么 transform 比 top 快。', '3086 字', [], { href: 'chapters/gui/02-5-gpu-60fps.html', spec: 'todo'})
+          createNode('gui-02-1', '§ 2.1 · 像素与分辨率', '像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。', '7539 字', [], { href: 'chapters/gui/02-1-pixel.html', spec: 'pass'}),
+          createNode('gui-02-2', '§ 2.2 · 位图 vs 矢量', 'PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。', '7189 字', [], { href: 'chapters/gui/02-2-bitmap-vector.html', spec: 'pass'}),
+          createNode('gui-02-3', '§ 2.3 · 颜色与色彩空间', 'RGB、HSL、sRGB vs P3、透明度与混色。', '7421 字', [], { href: 'chapters/gui/02-3-color.html', spec: 'pass'}),
+          createNode('gui-02-4', '§ 2.4 · 渲染管线', '解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。', '6895 字', [], { href: 'chapters/gui/02-4-render-pipeline.html', spec: 'pass'}),
+          createNode('gui-02-5', '§ 2.5 · GPU 合成与 60fps', '为什么动画会卡、为什么 transform 比 top 快。', '7245 字', [], { href: 'chapters/gui/02-5-gpu-60fps.html', spec: 'pass'})
         ],
         { href: 'chapters/gui/02-how-pixels-happen.html' }),
       createNode('gui-03', '第 3 章 · 布局与排版',
@@ -427,7 +427,7 @@
     'root',
     '学海无涯',
     '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '待撰写',
+    '全站约 47.4 万字',
     [branchIntelligence, branchNetwork, branchInterface]
   );
 
