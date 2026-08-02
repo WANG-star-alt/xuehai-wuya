@@ -121,6 +121,8 @@ Self-Attention          O(n² · d)            O(1)  ← 关键    O(1)  ← 关
   <p>Transformer 里真正撑起大梁的，是 <strong>Self-Attention（自注意力）</strong>——一句话内部，每个词都对其他每个词做 Attention。这是它最核心的创新。<em>Attention 概念其实 2014 年就有了</em>，但真正把它推到"只用它就够了"这种极端的，是 2017 年的 Transformer。</p>
 
   <h3>Attention 带来的三个改变</h3>
+  <p>这三条<strong>翻译成人话</strong>各是一句话。<strong>一、能同时开工。</strong><mark class="key">好比一沓一百份的表格要盖章，从"一个人挨着盖"变成"雇一百个人同时盖"。</mark><strong>二、远近不再有区别。</strong><strong>好比</strong><strong>办公室</strong>里从"话要经过五级转达"变成"所有人在一个群里，谁跟谁说话都是一步"。<strong>三、能看出它在想什么。</strong><strong>说白了就是</strong>每个词看了谁、看得多重，都能画成一张亮度图——<strong>你能亲眼看见"它"这个字和"猫"之间那条线亮起来。</strong></p>
+
   <ul class="keylist">
     <li><span class="k">彻底并行</span><span class="v">每个词算自己的 Attention 时，不依赖别的词先算完——可以一次性放到 GPU 上万个核心里并行算。训练速度快了几十倍。</span></li>
     <li><span class="k">距离不再是问题</span><span class="v">句首到句尾的信息传递变成"一步跳"，中间不再有几十步的稀释。长文本理解能力质变。</span></li>
@@ -138,11 +140,15 @@ Self-Attention          O(n² · d)            O(1)  ← 关键    O(1)  ← 关
   这话在 2017 年是极其大胆的宣言。但接下来五年发生的事情证明了它——BERT 用 Encoder 堆叠出了 SOTA，GPT 用 Decoder 堆叠出了 ChatGPT，Vision Transformer 甚至把图像也变成了"一串词"来处理。<em>Attention 真的就是全部所需</em>。</p>
 
   <h3>从"读一句话"到"读一整本书"</h3>
+  <p>先把那串"8K、128K、100 万 Token"<strong>翻译成人话</strong>：<mark class="key">100 万 Token 大约相当于 150 万个汉字——差不多是《红楼梦》全本再加上两本长篇小说，一口气全塞进去。</mark>而 2017 年之前的模型，能记住的量<strong>大概只有一条微博那么长</strong>。</p>
+  <p>那个"平方成本"也得<strong>换成大白话</strong>说清。<strong>打个比方</strong>，这是一场规定"每位客人必须和每位客人都握一次手"的<strong>开会</strong>：<mark class="key">10 个人握 45 次还行；1000 个人就是近 50 万次握手；10 万个人是 50 亿次——会场直接瘫了。</mark><strong>这就是为什么"上下文越长越贵"不是厂商在收智商税，而是数学上躲不掉的账。</strong>后来那一堆优化技术（稀疏、滑动窗口之类），<strong>本质上就是</strong>在想办法"别让每个人都跟每个人握手，只跟邻座和几位关键人物握"。</p>
   <p>Attention 的威力，在句子级别就已经很明显了；但真正把它推到极致的，是<strong>长上下文</strong>时代——如今 GPT-4、Claude、Gemini、Kimi、DeepSeek 都在拼谁能塞下更长的输入：8K、32K、128K、200K、100 万 Token。<br/>
   这些让人眼花的数字背后，是同一件事：<em>Attention 让每个词都能一步跳到任何位置</em>。你把一整本《红楼梦》喂给模型，它读到第 80 回"贾母去世"这四个字时，可以直接一步跳回第 3 回去看贾母第一次出场的描写——中间隔了几十万字，都不掉信息。这在 RNN 时代是完全不可能的事：几十步的传声筒里，早就把贾母忘光了。</p>
   <p>当然，长上下文也带来新的问题——Attention 的计算量是<mark class="key">序列长度的平方</mark>（O(n²)）。1000 个词要算 100 万次匹配、10 万个词要算 100 亿次——所以后来又衍生出稀疏 Attention、Flash Attention、滑动窗口 Attention 等等一大批优化技术。但底层的思想没变：<em>让每个位置都能任意跳跃</em>。</p>
 
   <h3>Attention 是通用的——不止用在语言上</h3>
+  <p>它能跨这么多领域，原因<strong>说白了就是</strong>一句：<mark class="key">只要你能把一样东西切成一串小块，Attention 就能干活。</mark>它压根不在乎那些小块原来是字、是像素、是声音还是氨基酸。</p>
+  <p><strong>好比</strong>一位<strong>图书馆</strong>的老管理员：<strong>他不需要懂化学、懂音乐、懂医学，他只需要会一件事——把任何东西编号、归类、建立索引，然后回答"这一项跟哪几项关系最近"。</strong><mark class="key">正因为他只掌握这一项通用技能，所以化学书、乐谱、病历、地图他都能管。</mark>Attention 的通用性就来自这里：<strong>它学的不是"语言的规律"，而是"一串东西里谁跟谁有关系"这件更底层的事。</strong></p>
   <p>你可能以为 Attention 只是为文字设计的，其实它已经彻底征服了 AI 的其他领域：</p>
   <ul class="keylist">
     <li><span class="k">视觉 · Vision Transformer</span><span class="v">把一张图片切成 16×16 的小块（Patch），每个 Patch 当作一个"词"，用 Self-Attention 让每个 Patch 都能看到其他所有 Patch——图像分类、检测、分割全都被 Transformer 拿下。</span></li>

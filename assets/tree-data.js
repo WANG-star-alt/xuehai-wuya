@@ -15,7 +15,7 @@
     'intelligence',
     '智能篇',
     '认识 AI 的过去、现在与未来。从"AI 是什么"到大模型、Agent、多模态——14 章串起完整的 AI 认知地图。',
-    '约 26.3 万字',
+    '约 27.2 万字',
     [
       createNode('ai-01', '第 1 章 · AI 是什么',
         'ANI / AGI / ASI 三种 AI 层级 + AI 的四种核心能力。',
@@ -42,13 +42,13 @@
       ),
       createNode('ai-03', '第 3 章 · 简史',
         '从 1943 神经元到 2026 推理模型——70 年 AI 发展全景。',
-        '约 2.1 万字',
+        '约 3.5 万字',
         [
-          createNode('ai-03-early', '§ 3.1 · 早期探索 · 1943-1956', '神经元数学模型、图灵测试、达特茅斯会议。', '4296 字', [], { href: 'chapters/ai/03-history.html#early', spec: 'todo'}),
-          createNode('ai-03-expert', '§ 3.2 · 专家系统与寒冬 · 1969-1993', '感知机撞墙、专家系统兴衰、两次 AI 寒冬。', '4296 字', [], { href: 'chapters/ai/03-history.html#expert-winter', spec: 'todo'}),
-          createNode('ai-03-dl', '§ 3.3 · 深度学习革命 · 1997-2017', '深蓝、Hinton 复活神经网络、AlexNet、AlphaGo、Transformer。', '4296 字', [], { href: 'chapters/ai/03-history.html#dl-revolution', spec: 'todo'}),
-          createNode('ai-03-llm', '§ 3.4 · 大模型时代 · 2018-2026', 'BERT/GPT、ChatGPT、多模态、推理模型、Agent 元年。', '4296 字', [], { href: 'chapters/ai/03-history.html#llm-era', spec: 'todo'}),
-          createNode('ai-03-lessons', '§ 3.5 · 历史启示', '三次浪潮的共同规律——技术、算力、数据缺一不可。', '4296 字', [], { href: 'chapters/ai/03-history.html#lessons', spec: 'todo'})
+          createNode('ai-03-early', '§ 3.1 · 早期探索 · 1943-1956', '神经元数学模型、图灵测试、达特茅斯会议。', '7024 字', [], { href: 'chapters/ai/03-history.html#early', spec: 'pass'}),
+          createNode('ai-03-expert', '§ 3.2 · 专家系统与寒冬 · 1969-1993', '感知机撞墙、专家系统兴衰、两次 AI 寒冬。', '7024 字', [], { href: 'chapters/ai/03-history.html#expert-winter', spec: 'pass'}),
+          createNode('ai-03-dl', '§ 3.3 · 深度学习革命 · 1997-2017', '深蓝、Hinton 复活神经网络、AlexNet、AlphaGo、Transformer。', '7024 字', [], { href: 'chapters/ai/03-history.html#dl-revolution', spec: 'pass'}),
+          createNode('ai-03-llm', '§ 3.4 · 大模型时代 · 2018-2026', 'BERT/GPT、ChatGPT、多模态、推理模型、Agent 元年。', '7024 字', [], { href: 'chapters/ai/03-history.html#llm-era', spec: 'pass'}),
+          createNode('ai-03-lessons', '§ 3.5 · 历史启示', '三次浪潮的共同规律——技术、算力、数据缺一不可。', '7024 字', [], { href: 'chapters/ai/03-history.html#lessons', spec: 'pass'})
         ],
         { href: 'chapters/ai/03-history.html' }
       ),
@@ -66,12 +66,12 @@
       ),
       createNode('ai-05', '第 5 章 · 神经网络',
         '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。',
-        '约 6.7 万字',
+        '约 7.0 万字',
         [
-          createNode('ai-05-1', '§ 5.1 · 神经元', '加权求和 + 激活函数——一个"人工神经元"的全部。', '4333 字', [], { href: 'chapters/ai/05-1-neuron.html', spec: 'todo'}),
+          createNode('ai-05-1', '§ 5.1 · 神经元', '加权求和 + 激活函数——一个"人工神经元"的全部。', '6524 字', [], { href: 'chapters/ai/05-1-neuron.html', spec: 'pass'}),
           createNode('ai-05-2', '§ 5.2 · 前向 & 反向传播', '数据怎么流动、错误怎么反传——学习的引擎。', '10230 字', [], { href: 'chapters/ai/05-2-propagation.html', spec: 'pass'}),
           createNode('ai-05-3', '§ 5.3 · CNN 卷积网络', '图像专家——从 AlexNet 到 YOLO，看图靠它。', '11237 字', [], { href: 'chapters/ai/05-3-cnn.html', spec: 'pass'}),
-          createNode('ai-05-4', '§ 5.4 · RNN / LSTM', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '10705 字', [], { href: 'chapters/ai/05-4-rnn.html', spec: 'todo'}),
+          createNode('ai-05-4', '§ 5.4 · RNN / LSTM', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '12005 字', [], { href: 'chapters/ai/05-4-rnn.html', spec: 'pass'}),
           createNode('ai-05-5', '§ 5.5 · GAN 对抗网络', '假币贩子 vs 警察——两个网络较量学会造假。', '14485 字', [], { href: 'chapters/ai/05-5-gan.html', spec: 'pass'}),
           createNode('ai-05-6', '§ 5.6 · Diffusion 扩散模型', 'Midjourney / Sora 背后——从噪声一步步生成图像。', '15635 字', [], { href: 'chapters/ai/05-6-diffusion.html', spec: 'pass'})
         ],
@@ -79,9 +79,9 @@
       ),
       createNode('ai-06', '第 6 章 · 训练三部曲',
         '数据、模型、损失——训练一个 AI 到底在干什么；预训练/SFT/RLHF/DPO 全解。',
-        '约 3.9 万字',
+        '约 4.1 万字',
         [
-          createNode('ai-06-1', '§ 6.1 · 数据 · Dataset', '规模+质量+多样性、训练/验证/测试三集分离。', '8372 字', [], { href: 'chapters/ai/06-1-dataset.html', spec: 'todo'}),
+          createNode('ai-06-1', '§ 6.1 · 数据 · Dataset', '规模+质量+多样性、训练/验证/测试三集分离。', '10611 字', [], { href: 'chapters/ai/06-1-dataset.html', spec: 'pass'}),
           createNode('ai-06-2', '§ 6.2 · 模型 · Model', '参数量、架构、初始化、超参数——待训练的神经网络。', '6635 字', [], { href: 'chapters/ai/06-2-model.html', spec: 'todo'}),
           createNode('ai-06-3', '§ 6.3 · 损失 & 梯度下降', '交叉熵/MSE + 蒙眼下山——让损失越来越小。', '7987 字', [], { href: 'chapters/ai/06-3-loss.html', spec: 'todo'}),
           createNode('ai-06-4', '§ 6.4 · 预训练', '几十T 语料预测下一词——基座大模型的诞生。', '7029 字', [], { href: 'chapters/ai/06-4-pretrain.html', spec: 'todo'}),
@@ -93,7 +93,7 @@
         'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。',
         '约 4.2 万字',
         [
-          createNode('ai-07-1', '§ 7.1 · Attention 注意力', '每个词都能"看到"其他所有词——图书馆式加权。', '3487 字', [], { href: 'chapters/ai/07-1-attention.html', spec: 'todo'}),
+          createNode('ai-07-1', '§ 7.1 · Attention 注意力', '每个词都能"看到"其他所有词——图书馆式加权。', '4042 字', [], { href: 'chapters/ai/07-1-attention.html', spec: 'pass'}),
           createNode('ai-07-2', '§ 7.2 · QKV 三兄弟', '打分 → Softmax → 加权求和——Attention 完整公式。', '9037 字', [], { href: 'chapters/ai/07-2-qkv.html', spec: 'pass'}),
           createNode('ai-07-3', '§ 7.3 · Multi-head 多头', '多组 QKV 并行——像多个专家同时会诊。', '9022 字', [], { href: 'chapters/ai/07-3-multihead.html', spec: 'pass'}),
           createNode('ai-07-4', '§ 7.4 · Encoder / Decoder 派系', 'BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。', '9910 字', [], { href: 'chapters/ai/07-4-variants.html', spec: 'pass'}),
@@ -182,7 +182,7 @@
     'network',
     '网络篇',
     '从"什么是网络"到"数据怎么从你的手机跑到百度服务器"——10 章讲透互联网工作原理。',
-    '约 12.7 万字',
+    '约 14.4 万字',
     [
       createNode('net-01', '第 1 章 · 网络是什么',
         '主机、协议、地址、客户端服务器、数据包、带宽时延丢包——建立最基础的认识。',
@@ -209,11 +209,11 @@
       ),
       createNode('net-03', '第 3 章 · 关键协议',
         'HTTP、TCP、UDP、DNS、IP——你天天在用的六个协议。',
-        '约 2.7 万字',
+        '约 4.3 万字',
         [
-          createNode('net-03-1', '§ 3.1 · HTTP / HTTPS', '浏览网页的协议——请求响应、状态码、Cookie、加密。', '9052 字', [], { href: 'chapters/network/03-1-http.html', spec: 'todo'}),
-          createNode('net-03-2', '§ 3.2 · TCP', '可靠传输——三次握手、四次挥手、流量控制。', '9072 字', [], { href: 'chapters/network/03-2-tcp.html', spec: 'todo'}),
-          createNode('net-03-3', '§ 3.3 · UDP', '快速但不保证——视频、直播、游戏为什么用它。', '8378 字', [], { href: 'chapters/network/03-3-udp.html', spec: 'todo'}),
+          createNode('net-03-1', '§ 3.1 · HTTP / HTTPS', '浏览网页的协议——请求响应、状态码、Cookie、加密。', '14158 字', [], { href: 'chapters/network/03-1-http.html', spec: 'pass'}),
+          createNode('net-03-2', '§ 3.2 · TCP', '可靠传输——三次握手、四次挥手、流量控制。', '15764 字', [], { href: 'chapters/network/03-2-tcp.html', spec: 'pass'}),
+          createNode('net-03-3', '§ 3.3 · UDP', '快速但不保证——视频、直播、游戏为什么用它。', '12883 字', [], { href: 'chapters/network/03-3-udp.html', spec: 'pass'}),
           createNode('net-03-4', '§ 3.4 · DNS', '域名翻译成 IP——递归查询、缓存、DNS 污染与 DoH。', '待撰写', []),
           createNode('net-03-5', '§ 3.5 · IP', 'IPv4 / IPv6、公网私网、子网划分与 CIDR、NAT。', '待撰写', []),
           createNode('net-03-6', '§ 3.6 · 其他常用协议', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '待撰写', [])
@@ -427,7 +427,7 @@
     'root',
     '学海无涯',
     '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '全站约 47.4 万字',
+    '全站约 49.9 万字',
     [branchIntelligence, branchNetwork, branchInterface]
   );
 

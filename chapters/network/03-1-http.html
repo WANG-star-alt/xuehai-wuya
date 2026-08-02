@@ -42,6 +42,29 @@
     整个过程有固定格式——你不能上来就喊"面！"，得说"我要一份……"——这就是 HTTP 的"协议格式"。</p>
   </div>
 
+  <h3>先把这一篇的术语翻译成人话</h3>
+  <p>这一篇会冒出十几个英文缩写，看着吓人。但只要<strong>翻译成人话</strong>，你会发现它们全是你生活里早就用惯的东西，只不过被套了个洋名字。下面这张表先过一遍，后面再遇到就不慌了。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活里对应的东西</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>协议</strong>（Protocol，通信双方事先约定好的说话格式）</td><td>说白了就是"咱俩先约好怎么开口"</td><td>在<strong>餐厅点菜</strong>要说"我要一份牛肉面"，光喊一声"面！"服务员没法记单</td></tr>
+        <tr><td><strong>请求</strong>（Request，客户端主动发出的一次询问）</td><td>说白了就是你张嘴问的那句话</td><td>在<strong>银行</strong>柜台说"我要取五百块"</td></tr>
+        <tr><td><strong>响应</strong>（Response，服务器针对请求回的那一份内容）</td><td>说白了就是对方回你的那句话加东西</td><td>柜员把五百块和一张凭条推给你</td></tr>
+        <tr><td><strong>报文</strong>（Message，一次请求或响应的完整文字内容）</td><td>说白了就是一整张写满字的单子</td><td><strong>快递</strong>面单：上面有寄件人、收件人、物品、重量，缺一栏就没法发</td></tr>
+        <tr><td><strong>头部</strong>（Header，报文正文之前那些说明性的字段）</td><td>说白了就是箱子外面贴的那张标签</td><td><strong>快递</strong>纸箱外面的面单——不用拆箱就知道里面大概是什么、寄给谁</td></tr>
+        <tr><td><strong>请求体 / 响应体</strong>（Body，报文里真正的内容部分）</td><td>说白了就是箱子里装的东西本身</td><td>纸箱里那双鞋</td></tr>
+        <tr><td><strong>状态码</strong>（Status Code，服务器用三位数字表示这次办得怎么样）</td><td>说白了就是办事窗口给你的一个结果编号</td><td><strong>医院</strong>挂号机吐出的小票：叫到号是成功，"该科室今日已满"是失败</td></tr>
+        <tr><td><strong>方法</strong>（Method，这次请求想干什么动作）</td><td>说白了就是你到窗口是要"取"、要"存"还是要"销户"</td><td>去<strong>邮局</strong>可以寄件、可以取件、可以退件——动作不同，单子也不同</td></tr>
+        <tr><td><strong>无状态</strong>（Stateless，服务器默认不记得你上次来过）</td><td>说白了就是每次去人家都当你是生面孔</td><td>一家<strong>超市</strong>的收银员每天见几千人，绝不可能记住你昨天买了什么</td></tr>
+        <tr><td><strong>缓存</strong>（Cache，把拿过的东西先存在近处，下次直接用）</td><td>说白了就是把常用的东西先搁手边，别每次都跑一趟</td><td><strong>厨房</strong>灶台边那一小罐盐——不用每次炒菜都去储物间取整袋</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看完这张表你大概已经感觉到了：<mark class="key">HTTP 这套东西，本质上就是把"人到窗口办事"这件事，写成了机器能严格执行的格式。</mark>后面所有细节，都可以往这个画面上套。</p>
+
   <h3>HTTP 请求长什么样</h3>
   <p>你在浏览器输 <code>baidu.com</code>，浏览器实际发了这么一段文字给服务器：</p>
 
@@ -83,6 +106,15 @@ Connection: keep-alive&lt;CR&gt;&lt;LF&gt;
 {"user":"alice","password":"s3cret!"}     ← 正好 41 字节</code></pre>
   <p>这里有三个容易被忽略但极其重要的细节。<strong>第一，换行必须是 CRLF（\r\n）而不是单独的 \n</strong>——虽然多数服务器出于宽容会同时接受，但规范写的是 CRLF，跨平台手写协议时踩过坑的人都记得这一点。<strong>第二，那个空行是唯一的头部终止标志</strong>，服务器就是靠连续两个 CRLF（<code>\r\n\r\n</code>）判断"该开始读正文了"。<strong>第三，<code>Content-Length</code> 必须准确</strong>：写大了服务器会一直等到超时，写小了多出来的字节会被当成下一个请求的开头，整条连接彻底错乱——这类错配正是"HTTP 请求走私"（Request Smuggling）攻击的原理。</p>
   <p>再说"请求目标"这个字段，它有四种形式，平时只见到第一种，但另外三种在特定场景下会出现：</p>
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一份请求就是一张快递面单</span>
+    <p><strong>打个比方</strong>，你要寄一箱苹果，得先在<strong>快递</strong>网点填一张面单。这张面单的结构，和 HTTP 请求是一模一样的四段：</p>
+    <p><strong>第一行写"寄什么件"</strong>——是普通件、生鲜件还是退货件（这就是<code>请求行</code>里的"方法"）；<br/>
+    <strong>接下来一串栏目</strong>写收件人、地址、电话、重量、是否易碎（这就是一行行的<code>请求头部</code>，每行一个"字段名: 值"）；<br/>
+    <strong>栏目填完要留一道横线</strong>，横线以下才是"内件清单"（这就是那个必须存在的<code>空行</code>——快递员靠横线知道"表格填完了，下面是货物描述"）；<br/>
+    <strong>横线以下写具体装了什么</strong>（这就是<code>请求体</code>）。</p>
+    <p>那个 <code>Content-Length: 41</code>（内容长度，正文一共多少字节）<strong>干的活儿相当于</strong>面单上的"重量：3.2 公斤"。<mark class="key">写错重量会出什么事？写大了，快递员在传送带前一直等剩下那部分货，等到超时；写小了，多出来的货被当成下一位客人的东西，整条传送带上的包裹从此全部错位。</mark>HTTP 上这个错位有个专门的名字，叫"请求走私"——一个填错重量的箱子，能把后面所有人的箱子都送错地方。</p>
+  </div>
   <div class="table-wrap">
     <table>
       <thead>
@@ -99,6 +131,7 @@ Connection: keep-alive&lt;CR&gt;&lt;LF&gt;
 
   <h3>HTTP 的三十年演进史</h3>
   <p>在深入细节之前，先看清 HTTP 是怎么一步步长成今天这样的——因为它今天的每一个古怪之处，几乎都能在历史里找到原因。</p>
+  <p>这段演进史<strong>换成大白话</strong>就一句：<mark class="key">一家小饭馆，从"只卖一种面、老板一个人跑堂"，慢慢开成了"几百桌同时上菜、后厨流水线作业"的大酒楼。</mark>每一代 HTTP 改的都是"上菜的组织方式"，不是"菜品本身"。往下看表格时，你可以一边想这家饭馆：0.9 是只有一张纸条的路边摊，1.0 学会了开发票，1.1 学会了"一个服务员招呼你整桌所有菜"，2 学会了"多个服务员端着托盘交错穿行"，3 干脆把整条走廊重修了一遍。</p>
   <div class="table-wrap">
     <table>
       <thead>
@@ -115,6 +148,7 @@ Connection: keep-alive&lt;CR&gt;&lt;LF&gt;
   </div>
   <p>注意 HTTP/1.1 那一行的 RFC 编号变迁：<strong>RFC 2616（1999）曾经是最著名的一份网络规范</strong>，长达 176 页，但因为把太多东西糅在一起导致歧义丛生。2014 年 IETF 把它拆成了 RFC 7230~7235 六份文档，2022 年又重整为 RFC 9110（语义）、9111（缓存）、9112（HTTP/1.1 语法）、9113（HTTP/2）、9114（HTTP/3）。<mark class="key">这次重构最重要的成果是把"HTTP 的语义"和"HTTP 的传输语法"彻底分开了</mark>——方法、状态码、头部的含义（9110）对 1.1/2/3 通用，各版本只是用不同的方式在线路上表达它们。</p>
   <p>还有一个有意思的历史细节：<strong>HTTP/1.1 强制要求 Host 头，是整个 Web 商业化的技术前提</strong>。HTTP/1.0 时代，服务器只知道你请求了 <code>/index.html</code>，不知道你想访问哪个域名——因为域名在建立 TCP 连接时就已经被解析成 IP 了，报文里没有它。这意味着<strong>一个 IP 只能放一个网站</strong>。加了 Host 头之后，虚拟主机成为可能，一台机器托管几千个小网站的廉价虚拟主机行业才得以诞生。</p>
+  <p>Host 头这件事<strong>好比</strong>一栋写字楼的<strong>门牌</strong>号。HTTP/1.0 那会儿，快递员只知道"送到人民路 88 号"，进了大门就傻眼了——这栋楼里有三百家公司，到底给谁？所以早期只能一栋楼放一家公司，太浪费。<strong>Host 头</strong>（Host Header，请求里那一行"我要找哪个域名"）<strong>干的活儿相当于</strong>在面单上补一句"12 层 1203 室"。<mark class="key">有了这一行，一栋楼才能塞进三百家公司——这就是"一台服务器托管几千个网站"的全部秘密。</mark></p>
 
   <h3>HTTP 响应长什么样</h3>
   <p>服务器收到后，回一段文字 + 网页内容：</p>
@@ -162,9 +196,11 @@ Connection: close
 （服务器发完就断开 TCP，接收方靠 FIN 判断结束
   致命缺陷：无法区分"传完了"和"传到一半网断了"）</code></pre>
   <p>方式三的缺陷值得特意记住：<mark class="key">如果只靠连接关闭来判断结束，接收方永远无法确定自己拿到的是完整数据还是被截断的残片。</mark>这就是为什么 HTTP/1.1 把 <code>Content-Length</code> 或 <code>chunked</code> 变成了实质上的必须项。</p>
+  <p>这三种方式<strong>换成大白话</strong>，就是<strong>餐厅</strong>上菜的三种告知方式。<strong>方式一（Content-Length）好比</strong>服务员上菜前先说"您这桌一共八道菜"——你数到第八道就知道齐了，心里有底，还能看着进度条估时间。<strong>方式二（分块传输 Transfer-Encoding: chunked，一边做好一道就先端一道，不预告总数）好比</strong>自助烤肉店：厨房烤好一串就端一串，最后端上来一个空盘子表示"没了"。<mark class="key">好处是不用等全部做完才开始吃，坏处是你永远不知道还剩几串，进度条只能一直转圈。</mark>网页上那些"边加载边显示"的长列表、直播弹幕、AI 一个字一个字往外吐的回答，走的全是这一种。<strong>方式三（发完就断开连接）好比</strong>服务员端完最后一道菜就默默下班了，连"上齐了"都不说一声——你只能靠"半天没人来"猜菜齐了。<strong>可万一是厨房失火了他跑了呢？</strong>你根本分不清"上齐了"和"出事了"，这就是它被淘汰的原因。</p>
 
   <h3>九种方法：安全性与幂等性</h3>
   <p>HTTP 定义了九个标准方法（RFC 9110 第 9 章）。但真正需要理解的不是它们"叫什么"，而是两个属性：<strong>安全（Safe）</strong>和<strong>幂等（Idempotent）</strong>。这两个概念决定了浏览器、代理、CDN 敢对你的请求做什么。</p>
+  <p>这两个词听着玄，其实就是<strong>银行</strong>柜台上两件最朴素的事。<strong>安全</strong>（Safe，只查不改）<strong>说白了就是</strong>"我只是来查余额的"——查一百遍，你账上的钱一分不变，所以随便查、让谁帮你查都无所谓。<strong>幂等</strong>（Idempotent，做一次和做十次的最终结果一样）<strong>说白了就是</strong>"我来把地址改成人民路 88 号"——你改一次是这个地址，连着改十次还是这个地址，重复提交不会出岔子。<mark class="key">而"存进五百块"既不安全也不幂等——它改了余额，而且做十次你账上会多出五千。</mark>这就是为什么柜员会盯着确认"您只提交了一次吧？"</p>
   <ul class="keylist">
     <li><span class="k">安全 · Safe</span><span class="v">这个请求<strong>只读，不会改变服务器状态</strong>。安全的方法可以被浏览器随意预取、被爬虫随意访问、被代理随意缓存。<strong>把"删除"功能做成 GET 是经典事故</strong>——某公司做过一个 GET 形式的删除接口，结果 Google 爬虫把全站数据删了个精光。</span></li>
     <li><span class="k">幂等 · Idempotent</span><span class="v"><strong>执行一次和执行 N 次的最终结果相同</strong>。注意"结果相同"指的是服务器状态，不是返回值。<code>DELETE /post/1</code> 第一次返回 204、第二次返回 404，但服务器状态都是"这篇文章不存在"，所以它是幂等的。幂等的意义在于：<strong>超时后客户端可以放心重试</strong>。</span></li>
@@ -202,6 +238,7 @@ Content-Type: application/json
 #   3. 未命中 → 执行扣款，把结果连同 key 存进 Redis（存 24h）
 # 这就是"在不幂等的方法上人为造出幂等性"</code></pre>
   <p>PUT 和 POST 的区别也常被问到，一句话说清：<strong>PUT 是"把这个 URL 的内容替换成我给的东西"，所以客户端要自己决定 URL；POST 是"把这个东西交给这个端点去处理"，URL 由服务端决定。</strong>所以 <code>PUT /users/123</code> 是合理的（我知道要改 123），<code>POST /users</code> 是合理的（服务端分配新 ID）；而 <code>POST /users/123</code> 通常意味着"对 123 做某个动作"而不是"替换 123"。</p>
+  <p><strong>幂等键</strong>（Idempotency Key，客户端给每笔业务生成的一个唯一编号）这套做法，<strong>好比</strong>去<strong>医院挂号</strong>。你在自助机上点了"挂号"，机器却卡住了没吐小票——你不知道到底挂上没有，于是又点了一次。要是医院没有防重机制，你就被扣了两次挂号费、占了两个号。<mark class="key">医院的解法很朴素：把你的身份证号 + 今天的日期 + 科室，合起来当作一个唯一标识。</mark>系统一看"这个人今天这个科室已经有号了"，就直接把第一次那张号推给你，绝不重复收钱。幂等键<strong>干的活儿相当于</strong>这个"身份证号 + 日期 + 科室"的组合——支付宝、Stripe 的所有支付接口，靠的都是这一招。</p>
 
   <h3>常见状态码速查</h3>
   <div class="table-wrap">
@@ -225,6 +262,7 @@ Content-Type: application/json
 
   <h3>状态码的五大类：第一位数字定性质</h3>
   <p>状态码是三位数，<strong>第一位就决定了这个响应的"性质"</strong>。哪怕你遇到一个没见过的状态码（比如 451、418、511），只看第一位也能立刻判断该怎么处理：</p>
+  <p><strong>想象一下</strong>你在<strong>医院</strong>大厅里<strong>排队挂号</strong>，窗口里的护士只会说五种话。<strong>1 开头</strong>——"材料收到了，您先坐着等"（还没办完，别急）。<strong>2 开头</strong>——"办好了，这是您的号"（成事了）。<strong>3 开头</strong>——"这个不在我这办，您去走廊尽头那个窗口"（换个地方）。<strong>4 开头</strong>——"您这表填错了 / 忘带身份证了"（<mark class="key">是你自己的问题，你不改，再排一百次队还是同样的答复</mark>）。<strong>5 开头</strong>——"我们系统崩了，您稍后再来"（是他们的问题，等会儿再来说不定就好了）。<strong>说白了就是</strong>：4 开头别重试，5 开头可以重试。这一条判断，比背下几十个数字有用得多。</p>
   <div class="table-wrap">
     <table>
       <thead>
@@ -240,6 +278,7 @@ Content-Type: application/json
     </table>
   </div>
   <p>4xx 和 5xx 的分界线极其重要，因为它决定了<strong>要不要重试</strong>。收到 4xx 时重试是毫无意义的——你的请求本身就有毛病，重发一百次还是一样的错。收到 5xx 时重试是合理的，但必须配合<strong>指数退避（Exponential Backoff）</strong>：第一次等 1 秒、第二次 2 秒、第四次 4 秒，并加一点随机抖动，否则所有客户端会在同一时刻涌回来把刚喘上气的服务器再次打垮（这叫"惊群"）。</p>
+  <p><strong>指数退避</strong>（Exponential Backoff，每次重试都把等待时间翻倍）这个词<strong>听着玄，其实就是</strong>你去<strong>银行</strong>发现今天系统故障后的正常反应：第一次隔一会儿再问，第二次隔久一点，第三次干脆下午再来——总不能站在窗口前每秒问一遍。<strong>那个"随机抖动"又是干什么的？</strong><mark class="key">因为如果全城两千个客户都被告知"一小时后再来"，那一小时后这两千人会同时挤在门口，把刚修好的系统再次压垮。</mark>所以正确做法是让每个人的等待时间上再随机加减几分钟，把人流摊开——这在技术上叫防"惊群"，在<strong>银行</strong>里叫错峰。</p>
   <p>下面这些状态码是日常最容易搞混的几组，值得逐一辨析：</p>
   <div class="table-wrap">
     <table>
@@ -261,6 +300,7 @@ Content-Type: application/json
 
   <h3>Cookie · HTTP 的"记忆机制"</h3>
   <p>HTTP 协议本身是<strong>无状态</strong>的——服务器不记得你上次来过。每次请求都是"陌生人"。但网站需要"记住"你——登录状态、购物车、浏览记录。Cookie 就是干这个的。</p>
+  <p><strong>无状态</strong>（Stateless，服务器默认不记得你上一次来干了什么）这件事<strong>好比</strong>一家生意极好的<strong>超市</strong>：收银员一天扫两千个人的码，你昨天买了什么、上周有没有来过，他一概不记得，也不可能记得。<strong>那超市怎么做会员权益？</strong>给你一张会员卡，你每次结账主动掏出来刷一下。<mark class="key">Cookie（浏览器帮你保存、每次访问自动带上的一小段凭证）干的活儿相当于这张会员卡——不是超市记住了你，而是你自己随身带着证明。</mark>这就是"无状态协议上人为补出状态"的全部含义。</p>
 
   <div class="lab" data-lab="status-code"></div>
 
@@ -414,6 +454,7 @@ Content-Type: image/png
 
   <h3>Cookie vs Session vs Token：三种存"记忆"的方式</h3>
   <p>Cookie 只是"运输工具"，真正的问题是<strong>会话状态存在哪</strong>。这里有三种主流方案，是后端架构面试的必考题：</p>
+  <p>这三种方案<strong>换成大白话</strong>，就是<strong>图书馆</strong>管借书证的三种办法。<strong>方案一（Session，状态存在服务器内存里）好比</strong>：图书馆给你一张只印了编号的塑料卡，你借了哪些书全记在管理员桌上那个本子里。<mark class="key">缺点很致命——这个本子只在这一个窗口有，你换到分馆去就查不到；管理员下班把本子锁进抽屉（服务器重启），所有人的借阅记录当场清零。</mark><strong>方案二（JWT Token，信息直接写在凭证上并盖章防伪）好比</strong>：图书馆发给你一张写满字的纸——"张三，可借 10 本，有效期到年底"，还盖了个防伪钢印。任何一个分馆看一眼钢印就能验真，根本不用查本子。<strong>但它有个绕不过的毛病</strong>：你的卡丢了、或者你被取消了借书资格，图书馆也没法把已经发出去的那张纸收回来——只能等它自己到期。<strong>方案三（Session + Redis，把本子挪到一个所有分馆共用的中央档案室）好比</strong>：还是发塑料卡，但那个本子改放在总馆，所有分馆联网查同一本。<strong>这样既能随时销卡，又不怕某个窗口下班。</strong>代价是必须多养一个总馆档案室。</p>
   <div class="table-wrap">
     <table>
       <thead>
@@ -434,6 +475,7 @@ Content-Type: image/png
 
   <h3>缓存机制：强缓存与协商缓存</h3>
   <p>HTTP 缓存是整个 Web 性能优化里投入产出比最高的一件事——<mark class="key">命中缓存的请求根本不产生网络流量，比任何压缩和加速都快。</mark>它分两层，理解顺序很重要：先判断强缓存，不命中才走协商缓存。</p>
+  <p><strong>打个比方</strong>，你在<strong>厨房</strong>做菜要用盐。<strong>强缓存</strong>（Strong Cache，本地副本没过期就直接用，一次都不问服务器）<strong>说白了就是</strong>：灶台边那个小盐罐里还有盐，你抓一把就撒——<strong>压根没往储物间跑过一趟</strong>，零延迟。<strong>协商缓存</strong>（Conditional Cache，先问一句"我手上这份还能用吗"，能用就不重新拿）<strong>说白了就是</strong>：盐罐见底了，你走到储物间门口问一嘴"上次那袋盐还是那个牌子吗？"——<mark class="key">对方说"没换"，你就把手上的空罐拎回来接着用（这就是 304，只回一句话，不搬东西）；对方说"换了新的"，才递给你一整袋新盐（这就是 200 + 完整内容）。</mark><strong>两层的区别，就是"一趟没跑"和"跑了一趟但没搬东西"。</strong>一个网页有几十个静态资源，这个差距在信号差的地方极其明显。</p>
   <pre><code>浏览器要一个资源时的完整决策流程：
 
 ① 有本地副本吗？ ── 没有 ──→ 直接发请求
@@ -471,6 +513,7 @@ Content-Type: image/png
   </div>
   <p><strong><code>no-cache</code> 和 <code>no-store</code> 是最常被搞混的一对。</strong>记住这句：<code>no-cache</code> 是"存下来，但每次都要验证"（还能享受 304 省流量），<code>no-store</code> 才是真正的"一点都别存"。想禁止缓存敏感数据，必须用 <code>no-store</code>。</p>
   <p>ETag 和 Last-Modified 的取舍也值得说清。<strong>Last-Modified 的精度只到秒</strong>，所以一秒内改了两次的文件它分辨不出来；而且分布式部署时不同机器上的文件修改时间可能不一致。<strong>ETag 是内容的指纹</strong>（通常是哈希或版本号），精确得多，但计算它有成本。规范规定<strong>两者同时存在时 ETag 优先</strong>。ETag 还有强弱之分：<code>"abc"</code> 是强验证器（字节级完全相同），<code>W/"abc"</code> 是弱验证器（语义相同就行，比如只改了注释的 JS）。</p>
+  <p>这两者的差别<strong>翻译成人话</strong>：<strong>Last-Modified</strong>（最后修改时间）<strong>好比</strong>看<strong>洗衣</strong>房门口那张"上次换水时间：14:30"的牌子——你只能判断"是不是我上次来之后换过"，可要是同一分钟内换了两次水，牌子上根本看不出来。<strong>ETag</strong>（Entity Tag，内容指纹，内容变一个字它就变）<strong>好比</strong>直接看水样的颜色和气味：<mark class="key">不看时间，只看东西本身到底一样不一样——所以它比时间牌子可靠得多，代价是每次都得取一次样。</mark>规范说两者同时有就听 ETag 的，道理就在这。</p>
   <p>实践中最常用的组合策略叫<strong>"HTML 不缓存 + 资源永久缓存 + 文件名带哈希"</strong>，这是所有现代前端构建工具的默认方案：</p>
   <pre><code># 入口 HTML：绝不缓存，每次都要拿最新的
 Cache-Control: no-cache
@@ -519,6 +562,8 @@ Cache-Control: public, max-age=31536000, immutable
 
   <h3>TLS 握手：那把小锁是怎么挂上的</h3>
   <p>"HTTPS = HTTP + TLS"这句话太简略了。真正值得理解的是<strong>那几个来回里到底交换了什么</strong>，因为它同时解决了三个看似矛盾的难题：怎么在公开信道上商定一个只有双方知道的密钥、怎么确认对面不是冒充的、怎么保证内容没被改过。</p>
+  <p>这三件事<strong>换成大白话</strong>，就是你去<strong>银行</strong>办事时下意识会做的三件确认。<strong>第一，机密性</strong>——你和柜员说话得压低声音，别让后面排队的人听见（这就是加密）。<strong>第二，身份认证</strong>——你怎么知道对面这人真是银行职员，不是穿了件白衬衫的骗子？<mark class="key">你看的是他胸前那张工牌，而工牌之所以可信，是因为它由这家银行统一发放，银行又受金融监管部门认证——这一层层往上追的信任链，就是 HTTPS 证书的全部原理。</mark><strong>第三，完整性</strong>——柜员递给你的凭条上有一串防伪校验码，你能确认这张纸中途没被人改过数字。<strong>三件事凑齐，那把小锁才算真的挂上了。</strong></p>
+  <p>顺便把那些握手回合的耗时<strong>翻译成人话</strong>。北京到美国西海岸，一个来回大约 180 毫秒——差不多是你眨一次眼的时间。<strong>老版本 TLS 1.2 要来回三趟</strong>，加起来 540 毫秒，<mark class="key">相当于你在窗口前站着，一句正事没说，先寒暄了半秒钟。</mark>TLS 1.3 把它压到两趟（360 毫秒），QUIC 压到一趟（180 毫秒），而 QUIC 的 0-RTT 模式<strong>好比</strong>你是这家网点的熟客——<strong>推门进去连招呼都不用打，第一句话直接就是"取五百"</strong>。一个网页上有几十个资源要拿，这半秒钟乘上几十倍，就是"网站快"和"网站卡"的分界线。</p>
   <pre><code>【TLS 1.2 握手：2 个 RTT】
 
 客户端                                          服务器
@@ -555,6 +600,7 @@ Cache-Control: public, max-age=31536000, immutable
 
   <h3>跨域与 CORS：为什么浏览器要挡你</h3>
   <p>跨域是前端最常撞墙的问题，而它的根源不是 HTTP 的限制，而是<strong>浏览器自己给自己加的一道锁</strong>：同源策略（Same-Origin Policy）。判断"同源"要求三件事全部相同：</p>
+  <p><strong>同源</strong>（Same Origin，协议、主机、端口三样全都一模一样）这个判断标准，<strong>好比</strong>寄<strong>快递</strong>时核对<strong>门牌</strong>：<mark class="key">"人民路 88 号 12 层 1203 室"和"人民路 88 号 12 层 1205 室"是两家人，哪怕只差最后一个数字，也绝不能把包裹放错。</mark><strong>而"哪一层楼的哪个房间"这个细节之后的东西（也就是网址里的路径）反而不算</strong>——你是把包裹放门口还是玄关，不影响它是不是同一家。所以 <code>www.example.com</code> 和 <code>api.example.com</code> 虽然看着像亲戚，在浏览器眼里就是两户人家，这一点最反直觉，也最容易踩坑。</p>
   <pre><code>基准 URL：  https://www.example.com:443/app/index.html
 
 https://www.example.com/other.html    ✔ 同源（路径不算）
@@ -566,6 +612,8 @@ https://www.example.com:8443/         ✘ 端口不同
 # 判断标准：协议 + 主机 + 端口，三者必须完全一致</code></pre>
   <p>同源策略存在的理由值得想清楚。假设没有它：你在浏览器里登录了网上银行（Cookie 已存），然后打开一个恶意页面——那个页面里的 JS 就能直接 <code>fetch('https://bank.com/api/balance')</code>，浏览器会自动带上你的银行 Cookie，然后把余额、交易记录全都读走发到攻击者服务器。<mark class="key">同源策略的本质是"防止 A 网站的脚本用你的身份去读 B 网站的数据"。</mark></p>
   <p>那正常的跨域需求怎么办？答案是 <strong>CORS（Cross-Origin Resource Sharing）</strong>——由<strong>被访问的那一方</strong>用响应头明确授权。注意这个方向：<strong>不是前端"绕过"限制，而是后端"点头同意"</strong>。CORS 把请求分成两类：</p>
+  <p><strong>预检请求</strong>（Preflight，浏览器在正式请求之前先发一个 OPTIONS 去问一句"我能这么干吗"）这个机制，<strong>好比</strong>你要去某栋写字楼办事，<strong>先在前台问一句"我能上 12 楼吗？能带这个包吗？"</strong>——前台点头你才刷卡上电梯。<mark class="key">那个 Access-Control-Max-Age: 86400，翻译成人话就是"这个答复一天内有效，你今天再来不用重复问"</mark>——相当于前台给你办了张临时通行证，省掉一天里后续每一次的询问。</p>
+  <p>还有一件事必须提前掰清楚，因为它是所有 CORS 报错里最误导人的一点：<strong>浏览器拦下的是"读取响应"这一步，不是"发出请求"这一步。</strong><strong>打个比方</strong>：你在<strong>邮局</strong>寄了一封信，收件方老老实实按信里的要求把钱转走了，只是回信在邮局门口被保安扣下没交到你手上。<mark class="key">你以为"信没寄出去"，其实事情早就办完了。</mark>这就是为什么 CORS 绝不能当权限校验用——一个不幂等的 POST 即使响应被拦，服务端该扣的款已经扣了。</p>
   <pre><code>【简单请求】满足全部条件时，浏览器直接发，不预检：
   · 方法是 GET / HEAD / POST 之一
   · Content-Type 只能是 text/plain、
@@ -601,6 +649,14 @@ Access-Control-Max-Age: 86400     ← 这个授权结果可缓存一天，
 
   <h3>队头阻塞：HTTP/1.1 最大的病根</h3>
   <p>要理解 HTTP/2 和 HTTP/3 为什么必须出现，就得先把"队头阻塞"（Head-of-Line Blocking）这件事讲透。它其实有两个不同层次的版本，很多人会混为一谈。</p>
+  <div class="callout analogy">
+    <span class="tag">Analogy · 超市结账队伍的三代进化</span>
+    <p><strong>队头阻塞</strong>（Head-of-Line Blocking，最前面那一个卡住了，后面全部跟着卡）这个词<strong>听着玄，其实就是</strong>你在<strong>超市排队</strong>结账时最恨的那一幕：<mark class="key">你手上只有一瓶水，可前面那位大爷正为一袋标价不对的白菜跟收银员理论三分钟——你和后面十个人只能干等，明明你们的东西一秒就能扫完。</mark></p>
+    <p><strong>第一代 · HTTP/1.1 的做法</strong>：一条队伍、一个收银员、严格按顺序结账。前面那位争执三分钟，后面全体陪站。浏览器的土办法是<strong>同时去六条不同的队伍排</strong>——听着聪明，实际上每开一条队都要重新走一遍"打招呼 + 验身份"的流程，而且六条队各自都得从慢慢起步开始。要是你要买八十样东西，还是得来回排十四轮。前端圈甚至发明过更邪的招：<strong>把商品分散到六家不同的超市去买</strong>（域名分片），骗浏览器多开几条队。</p>
+    <p><strong>第二代 · HTTP/2 的做法</strong>：还是一条队伍，但改成<strong>把每个人的商品拆成一件一件轮着扫</strong>——你的水扫一下、大爷的白菜扫一下、后面那位的牛奶扫一下，交错进行，谁也不用等谁扫完。<strong>八十样东西可以在一条队伍上同时推进。</strong>这就是"多路复用"。</p>
+    <p><strong>但第二代还留了一个病根</strong>：这条队伍用的是同一条传送带（TCP 字节流），传送带要求货物<strong>必须严格按放上去的顺序取下来</strong>。<mark class="key">一旦第五个包裹在半路掉了，第六到第九个包裹明明已经到了，也得全部扣在传送带尽头不许取——哪怕它们是完全不相干的另一位客人的东西。</mark>这就是"TCP 层的队头阻塞"，HTTP/2 在应用层怎么折腾都绕不过去。</p>
+    <p><strong>第三代 · HTTP/3 的做法</strong>：干脆把整条传送带拆成很多条互不干扰的小传送带（QUIC 的多个流）。<strong>你那条带上掉了东西，只影响你自己；旁边那条带上的货照常往下走。</strong>两层队头阻塞到这里才算真正治好。</p>
+  </div>
   <pre><code>【第一层·HTTP 层的队头阻塞】HTTP/1.1 的问题
 
 一条 TCP 连接上，HTTP/1.1 要求"请求必须按发出顺序应答"：
@@ -675,7 +731,10 @@ QUIC 在 UDP 上自己实现可靠传输，但按"流"独立保序：
     </table>
   </div>
   <p>头部压缩带来的收益比想象中大。一个典型的 HTTP 请求头有 500~800 字节，其中 <code>User-Agent</code>、<code>Accept</code>、<code>Cookie</code> 这些字段在同一个页面的几十个请求里<strong>几乎一字不差地重复了几十遍</strong>。HPACK 用一张动态索引表让第二次之后只发一个索引号，实测能把头部压到原来的十分之一以下。对于移动端上行带宽有限的场景，这个优化的效果甚至超过多路复用。</p>
+  <p><strong>头部压缩</strong>（HPACK / QPACK，把重复出现的头部字段换成一个短编号）这套办法，<strong>好比</strong><strong>餐厅点菜</strong>时的一个小习惯：<mark class="key">第一次你得完整说"一份牛肉面，加香菜不加葱，中辣"，第二碗你只要说"再来一碗一样的"就行了。</mark>头部字段就是那句啰嗦的完整描述——同一个网页要拿几十个资源，这句话原本要一字不差地重复几十遍。改成"跟刚才那个一样"之后，能压到原来的十分之一以下。</p>
+  <p>再把"500~800 字节的头部"这个数字<strong>翻译成人话</strong>：<strong>那大概是三百到五百个汉字</strong>——差不多一条完整的朋友圈长度。<mark class="key">一个稍微复杂的网页要发八十个请求，等于你为了拿八十样东西，先抄了八十遍同一条朋友圈发过去。</mark>这就是为什么在手机上行带宽紧张的场景里，光是压掉这份重复，效果就能超过多路复用本身。</p>
   <p><strong>HTTP/2 服务器推送（Server Push）的失败</strong>是个值得记住的教训。它的设想很美好：服务器返回 HTML 时，顺便把页面需要的 CSS/JS 一起推过去，省掉一个来回。但实践中发现了致命问题——<strong>服务器不知道客户端缓存里已经有什么</strong>，于是大量推送是纯浪费带宽；而且推送优先级会挤占真正紧急的资源。Chrome 在 2022 年默认关闭了它，取而代之的是 <strong>103 Early Hints</strong>：服务器先回一个 103 告诉浏览器"你可以开始预加载这几个 URL 了"，让浏览器自己决定要不要拿。<mark class="key">这个转变体现了一条原则：与其让服务器猜，不如给客户端信息让它自己判断。</mark></p>
+  <p>服务器推送为什么失败，<strong>换成大白话</strong>就是一件很好懂的事。<strong>想象一下</strong>你去<strong>餐厅</strong>只点了一碗面，服务员却自作主张给你端来一碟小菜、一杯饮料和一份甜点，理由是"大部分人都要"。<mark class="key">问题是他不知道你包里已经带了饮料、也不知道你甜食过敏——这些菜端上来只是占了桌子、耽误了后厨做你真正想吃的那碗面。</mark>103 Early Hints（服务器先回一句"后面这几样你可能要用，先去备着"）改成了另一种方式：<strong>服务员先递给你一份菜单说"这几样通常配着好吃"，要不要由你自己定</strong>。这就是那条原则——与其让人替你猜，不如把信息给你，让你自己判断。</p>
   <p>怎么知道一个网站在用哪个版本？几种办法：浏览器开发者工具的 Network 面板右键勾选 Protocol 列（会显示 h2 / h3 / http/1.1）；或用命令行：</p>
   <pre><code># 看协议版本和 Alt-Svc 头（服务器用它宣告支持 h3）
 $ curl -I --http2 https://www.cloudflare.com
