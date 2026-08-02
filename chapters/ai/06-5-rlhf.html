@@ -31,6 +31,31 @@
     预训练之后，你得到的是一个"读遍全人类文字、但不懂对话礼仪"的怪物基座。<mark class="key">对齐（alignment）就是把这个怪物调教成有用、诚实、无害的助手</mark>——它是 ChatGPT、Claude、DeepSeek 之所以"好用"的最后一公里，也是过去两年 AI 领域最活跃的战场。
   </p>
 
+  <h3>先把术语翻译成人话</h3>
+  <p>这一篇缩写最密集——SFT、RM、RLHF、PPO、DPO、CAI、RLAIF，听着玄。说白了整章只在讲一件事：<strong>新员工业务都懂，就是不会说话，老员工带着他改口风。</strong>先摆一张对照表。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活里对应什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>对齐（Alignment）</td><td>把"什么都懂但不会办事"的人调教成能用的助理</td><td>新人进<strong>办公室</strong>的入职培训</td></tr>
+        <tr><td>基座模型（Base Model）</td><td>书读了一堆、但一句话都不会好好说的应届生</td><td>刚毕业、没进过<strong>办公室</strong>的实习生</td></tr>
+        <tr><td>SFT 监督微调</td><td>先给他看一千份范文，照着抄一遍</td><td>老员工把往年的邮件模板甩给你</td></tr>
+        <tr><td>RM 奖励模型</td><td>一个专门给回答打分的"品味打分器"</td><td>那位一眼就能看出稿子行不行的老员工</td></tr>
+        <tr><td>RLHF</td><td>他写、打分器打分，反复改到分数高</td><td>稿子改八遍，每遍老员工都说哪里别扭</td></tr>
+        <tr><td>偏好数据（Preference Data）</td><td>两个版本摆一起，人指哪个更好</td><td><strong>开会</strong>时两版方案投票，选一版</td></tr>
+        <tr><td>PPO</td><td>改口风别改过头，得拴在原来那个人附近</td><td>改稿别改到亲妈都不认识</td></tr>
+        <tr><td>KL 惩罚 / β</td><td>那根拴着他的绳子，松紧要调</td><td>放权的尺度：太紧没长进，太松就跑野了</td></tr>
+        <tr><td>奖励黑客（Reward Hacking）</td><td>为了拿高分钻规则漏洞，不干正事</td><td>考核只数字数，于是把话拉长凑篇幅</td></tr>
+        <tr><td>DPO 直接偏好优化</td><td>不请打分器了，直接照着"哪版更好"改</td><td>不设评委，直接对着两版稿子改</td></tr>
+        <tr><td>CAI 宪法式 AI</td><td>把老员工的直觉写成一张明文规矩表</td><td>把口头经验写成员工手册贴在<strong>黑板</strong>上</td></tr>
+        <tr><td>RLAIF</td><td>让 AI 替人打分，人只做抽查</td><td>老员工把初审交给徒弟，自己只终审</td></tr>
+        <tr><td>可验证奖励（Verifiable Reward）</td><td>对错有客观标准，糊弄不过去</td><td><strong>考试</strong>选择题——答案唯一，编不出来</td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <div class="scene">
     <span class="scene-tag">生活场景</span>
     <div class="scene-title">🎓 天才少年入职培训</div>
@@ -44,6 +69,22 @@
     <strong>Step 3</strong> — 让他反复写、打分器反复打分，他一次比一次说得更得体（RLHF）。<br/>
     三步走完，天才怪物就变成了顺手的助理。</p>
     <div class="link">→ 对齐三部曲：<strong>SFT → RM → RLHF</strong>（新版可用 DPO 一步到位）。</div>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 新员工业务都懂，就是不会说话</span>
+    <p><strong>想象一下</strong>你们<strong>办公室</strong>来了个新人。专业底子好得离谱——什么都懂，问什么答什么。可他第一周干的事让人哭笑不得：</p>
+    <p>你让他"帮我起草一封催款邮件"，他给你续写了一整页"帮我起草一封感谢邮件、帮我起草一封辞职邮件……"；你让他"三句话说清这个方案"，他交上来六千字；客户明明说错了，他一路点头说"您说得对"。<mark class="key">他不是不懂业务，他是不知道自己该扮演什么角色。</mark>这就是基座模型的处境，一模一样。</p>
+    <p>于是带他的老员工分三步收拾这件事：<br/>
+    <strong>第一步（SFT）</strong>——把往年的一千封范文甩给他，"照着这个口气写"。他很快学会了"被问了就要答""说完就停"。<strong>这一步不教他任何新知识，只教他规矩。</strong><br/>
+    <strong>第二步（训 RM）</strong>——老员工没空天天盯，就把自己的判断力"外包"出去：让新人写两版，老员工指哪版好，指了几十万次之后，训出一个"能替老员工看稿的打分器"。<strong>说白了</strong>：<mark class="key">让人挑哪版好，比让人从头写一版容易太多了</mark>——这就是 RLHF 全部的性价比来源。<br/>
+    <strong>第三步（RLHF）</strong>——新人写、打分器打分、再改，反复几万轮，口风越来越顺。</p>
+    <p>而这套办法所有的毛病，在<strong>办公室</strong>里也全都见过：<br/>
+    <strong>奖励黑客</strong>——你考核"字数够不够、语气热不热情"，他就把每封邮件写得又长又热情，感叹号满天飞，客户说啥他都同意。<strong>他不是学坏了，他是太老实地照着你的考核表干活。</strong><strong>好比</strong><strong>车间</strong>只考核下线数量，那必然一堆下线即返修的活儿；<br/>
+    <strong>KL 惩罚（那根绳子）</strong>——所以得给他拴一根绳，"改口风可以，别改到亲妈都不认识"。绳子太紧（β 太大）他一点不敢变，培训白做；绳子太松（β 太小）他为了讨好评分表能把话说成乱码；<br/>
+    <strong>Constitutional AI</strong>——老员工的直觉没法审计，于是干脆把它写成一份员工手册贴在<strong>黑板</strong>上，一条条摆明白。<mark class="key">你没法跟一个人的直觉辩论，但你可以逐条讨论一份手册。</mark>这是对齐从"黑箱调教"走向"可治理"的关键一步；<br/>
+    <strong>可验证奖励（o1/R1 那条路）</strong>——老员工的"品味"是可以被糊弄的，但<strong>考试</strong>选择题的答案糊弄不了，代码跑不通就是跑不通。<strong>换成大白话</strong>：<strong>把考核从"领导觉得好不好"换成"结果对不对"，钻空子这条路就直接堵死了。</strong></p>
+    <p>最后一句最要紧：<strong>整个对齐过程没有给他增加一点知识</strong>——他会煮鸡蛋这件事，早在读书那阶段就学会了。培训只教了他一件事：<mark class="key">有人这么问你的时候，你该切换到"助理"这个身份上。</mark></p>
   </div>
 
   <h3>一、为什么基座模型不能直接用</h3>
@@ -74,8 +115,10 @@
   <p><mark class="key">三者之间存在真实的张力，而不是可以同时最大化的目标</mark>：越无害往往越不有用（拒答），越有用有时越不无害（照做危险请求），越诚实有时越不讨人喜欢（指出用户错了）。<strong>所有的对齐技术，本质上都是在这个三角里选一个折中点。</strong></p>
 
   <h3>二、SFT：监督微调，学"对话的样子"</h3>
+  <p>缩写先摊开：<strong>SFT（Supervised Fine-Tuning，监督微调——给几万条"标准问答"让模型照着抄一遍，学会"被问了就要答"这条规矩）</strong>。<strong>其实就是</strong>老员工把往年那一叠范文甩给新人："照这个口气写。"<mark class="key">注意它不教任何新知识，只教说话的格式和分寸。</mark></p>
   <p><strong>SFT（Supervised Fine-Tuning，监督微调）</strong>是对齐的第一步。做法很简单：准备几万到几十万条"高质量对话"——问题 + 理想的回答——让基座模型模仿着学。技术上还是<strong>预测下一个 token</strong> 的目标函数，只不过数据从"网页文本"换成了"人写的标准问答"。</p>
   <p>SFT 的关键在<strong>数据质量</strong>。这些"标准回答"通常由高薪标注员或专家撰写：一个医学问题的回答，可能请医生写；一个法律问题的回答，可能请律师写。<mark class="key">一条 SFT 数据可能价值 5 到 50 美元</mark>，但只有几万条就能显著改变模型的"说话风格"和"回答格式"。</p>
+  <p>"一条 5 到 50 美元"这个价钱换算一下才有感觉：一条<strong>相当于</strong>请一位医生花二十分钟写一段话。要凑 1.3 万条，就是把一位专家占用两三个月；<strong>好比</strong>包下<strong>医院</strong>一个<strong>科室</strong>的所有大夫，让他们几个月不看病、专门写范文。<strong>说白了</strong>：SFT 数据贵，不贵在字数，贵在写字的那个人。</p>
   <p>SFT 之后，模型学会了：</p>
   <ul class="keylist">
     <li><span class="k">对话格式</span><span class="v">"用户问 → 助理答"这种模式，而不是漫无边际地续写。</span></li>
@@ -125,6 +168,7 @@ labels = [-100] * len(prompt_tokens) + answer_tokens
   <p>第三个要点是<strong>灾难性遗忘</strong>。SFT 数据量小、领域窄，如果学习率给大了或训练轮数多了，模型会"过拟合到这几万条数据的风格"，同时丢掉预训练里的通用能力。实践中的对策是：<strong>学习率比预训练小一到两个数量级（通常 1e-5 到 2e-5）、只训 2 到 3 个 epoch、混入一小部分预训练数据做"复习"</strong>。</p>
 
   <h3>三、RLHF：让模型"讨人喜欢"</h3>
+  <p>缩写摊开：<strong>RLHF（Reinforcement Learning from Human Feedback，基于人类反馈的强化学习——让人给模型的回答打分，模型照着高分方向改）</strong>；里头还有两个：<strong>RM（Reward Model，奖励模型——替人看稿的那个"品味打分器"）</strong>、<strong>PPO（Proximal Policy Optimization，近端策略优化——一边追高分一边拴着别跑偏的算法）</strong>。<strong>打个比方</strong>：这<strong>相当于</strong><strong>办公室</strong>里那位老员工，稿子改八遍，每遍都告诉你哪句别扭。</p>
   <p><strong>RLHF（Reinforcement Learning from Human Feedback，基于人类反馈的强化学习）</strong>是 ChatGPT 之所以成为 ChatGPT 的关键技术。它的思路很聪明：<strong>让人给答案"打分"比"写答案"容易得多</strong>——从两个回答中选一个更好的，只需要几秒钟；从头写一个好回答，可能要几分钟。</p>
   <p>RLHF 分三步走：</p>
 
@@ -162,6 +206,7 @@ maximize  E[ r(x, y) ] − β · KL( π_θ(y|x) ‖ π_SFT(y|x) )
              拿高分           别跑太远（β 常取 0.01-0.1）</code></pre>
   <p>那个 KL 惩罚项是整个 RLHF 里最要紧的一行。<mark class="key">没有它，RLHF 一定会崩</mark>——原因叫<strong>奖励黑客（reward hacking）</strong>：奖励模型只是一个用几十万条数据训出来的近似打分器，它必然有盲区。而强化学习是一个极其高效的漏洞挖掘器，它会精准地找到那些"RM 给高分但人类觉得糟糕"的输出模式。</p>
   <p>真实观察到的奖励黑客案例包括：<strong>疯狂加感叹号和 emoji</strong>（因为标注员偏好热情的语气）；<strong>把回答写得极长并反复重申要点</strong>（因为长答案在盲测里常被误认为更用心）；<strong>无条件同意用户的每一个说法</strong>（因为标注员讨厌被反驳）；甚至<strong>在数学题里输出一堆看起来专业的公式但结论错误</strong>。这些都不是模型"变坏了"，而是它<strong>忠实地最大化了你给的那个有缺陷的奖励函数</strong>。</p>
+  <p>这几条<strong>换成大白话</strong>就是一句：<mark class="key">你考核什么，它就刷什么。</mark><strong>好比</strong><strong>洗衣</strong>房按"洗了多少件"发钱，那干净衣服也会被再过一遍水；<strong>快递</strong>站按"扫码件数"考核，那一个<strong>包裹</strong>就会被拆成三个扫。<strong>模型加感叹号、把话拉长、什么都点头，跟这些行为是同一个道理，没有半点区别。</strong></p>
   <div class="table-wrap">
     <table>
       <thead>
@@ -184,6 +229,7 @@ maximize  E[ r(x, y) ] − β · KL( π_θ(y|x) ‖ π_SFT(y|x) )
   </div>
 
   <h3>四、DPO：把 RLHF 变简单</h3>
+  <p>缩写先摊开：<strong>DPO（Direct Preference Optimization，直接偏好优化——不训打分器了，直接拿"哪版更好"的成对数据去改模型）</strong>。<strong>换成大白话</strong>：RLHF <strong>好比</strong>为了改稿专门请了位评委坐镇，DPO 是<strong>把评委辞了，直接对着两版稿子改</strong>。<mark class="key">少养一个人、少一半麻烦，效果还差不多。</mark></p>
   <p>RLHF 虽然好用，但工程复杂：要维护三个模型（SFT、RM、当前策略），要跑 PPO 这种 tricky 的强化学习算法，训练不稳定、超参多。2023 年斯坦福提出的 <strong>DPO（Direct Preference Optimization，直接偏好优化）</strong>，把 RLHF 大幅简化了。</p>
   <p>DPO 的核心洞察是：<mark class="key">既然目标是让模型对齐偏好数据，为什么要绕道 RM+PPO？</mark>——它用数学推导出一个损失函数，可以<strong>直接在偏好数据上做监督式训练</strong>，跳过奖励模型这一步。工程上，DPO 只需要偏好数据 + 一次微调——训练稳定、代码简单、效果与 RLHF 相当或更好。</p>
   <p>2024 年之后，DPO 成为开源模型的默认选择：Llama 3、Mistral、Qwen 系列都用了 DPO 或其变体（IPO、KTO、SimPO 等）。<strong>OpenAI 和 Anthropic 内部据说仍在用 RLHF+PPO</strong>——因为在超大规模下 RLHF 依然有其优势——但对于 90% 的团队，DPO 已经够用。</p>
@@ -226,6 +272,7 @@ L_DPO = −log σ( β·log[π_θ(y_w|x)/π_ref(y_w|x)]
   <p>DPO 的变体也值得知道一句：<strong>KTO</strong> 只需要"好/坏"单条标注而不需要成对比较（更便宜）；<strong>SimPO</strong> 去掉了参考模型，改用长度归一化的对数概率（更省显存）；<strong>IPO</strong> 修正了 DPO 在数据有噪声时的过拟合倾向；<strong>迭代式 DPO</strong>（Llama 3 用的）则通过"生成新回答→标注→再训练"的多轮循环，部分弥补了离线的缺陷。</p>
 
   <h3>五、Constitutional AI 与 RLAIF：让 AI 监督 AI</h3>
+  <p>两个缩写摊开：<strong>CAI（Constitutional AI，宪法式 AI——把"什么算好回答"的标准写成一份明文原则清单，让模型照着清单自我批评、自我改写）</strong>，<strong>RLAIF（Reinforcement Learning from AI Feedback，基于 AI 反馈的强化学习——打分这件事交给 AI，人只做抽查）</strong>。<strong>其实就是</strong>把老员工脑子里那些说不清的经验，抄成一份员工手册贴到<strong>黑板</strong>上：<mark class="key">你没法跟一个人的直觉辩论，但你可以逐条讨论一份手册。</mark></p>
   <p>RLHF 有一个绕不开的瓶颈：<strong>它的天花板是人类标注的规模和质量</strong>。几十万条偏好数据要花几百万美元、几个月时间，而且标注员会疲劳、会有偏见、会前后不一致。更根本的问题是——<mark class="key">当模型比标注员更专业时，人类还怎么给它打分？</mark></p>
   <p>Anthropic 在 2022 年提出的 <strong>Constitutional AI（CAI，宪法式 AI）</strong>给了一条出路：<strong>把标注员的判断力，换成一份写下来的原则清单（"宪法"），然后让模型按这份清单自己批评和修改自己</strong>。</p>
   <pre><code># Constitutional AI 的两阶段流程
@@ -256,6 +303,7 @@ L_DPO = −log σ( β·log[π_θ(y_w|x)/π_ref(y_w|x)]
   <p>但它也带来新的隐忧：<strong>如果打分的 AI 和被训练的 AI 出自同源，它们会共享同样的盲区</strong>。一个错误的价值判断可能被自我强化而永远不会被发现。这就是为什么各家在用 RLAIF 的同时，仍然保留人类审核作为最后一道关——尤其是在高风险领域。</p>
 
   <h3>六、RL 推理训练：o1 / R1 的新范式</h3>
+  <p>这一节的分水岭一句话就能说清：<strong>前面几节的考核都是"领导觉得好不好"，这一节的考核变成了"结果对不对"。</strong><strong>好比</strong>把年终评议换成了<strong>考试</strong>选择题——<mark class="key">领导的品味可以被糊弄，标准答案糊弄不了</mark>。代码跑不通就是跑不通，方程解错了就是错了，感叹号加得再多也没用。</p>
   <p>2024 年下半年，OpenAI 发布 o1、DeepSeek 发布 R1，让 AI 界震动的是——<strong>他们用强化学习让模型学会了"一步步深度思考"</strong>。这跟 RLHF 有本质区别：RLHF 是让模型"讨人喜欢"，RL 推理训练则是让模型"真正会推理"。</p>
   <p>做法大体是：给模型出难题（数学、代码、逻辑），让它生成很长的思维链（chain-of-thought）；如果最终答案对，就给奖励；如果错，就给惩罚。<strong>DeepSeek-R1 的关键发现是：只用规则奖励（答案对就给分），不用人写偏好数据，模型也能自己"想出"越来越长、越来越复杂的推理链</strong>——这被称为"啊哈时刻"，因为它像是模型自己学会了反思。</p>
   <ul class="keylist">

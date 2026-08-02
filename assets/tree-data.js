@@ -15,28 +15,28 @@
     'intelligence',
     '智能篇',
     '认识 AI 的过去、现在与未来。从"AI 是什么"到大模型、Agent、多模态——14 章串起完整的 AI 认知地图。',
-    '约 27.2 万字',
+    '约 30.2 万字',
     [
       createNode('ai-01', '第 1 章 · AI 是什么',
         'ANI / AGI / ASI 三种 AI 层级 + AI 的四种核心能力。',
-        '约 3.0 万字',
+        '约 3.5 万字',
         [
           createNode('ai-01-1', '§ 1.1 · 弱 AI · ANI', '狭义人工智能——今天所有能用的 AI 都属于这一类。', '8885 字', [], { href: 'chapters/ai/01-1-ani.html', spec: 'pass'}),
           createNode('ai-01-2', '§ 1.2 · 通用 AI · AGI', '像人类一样能做任何智力任务的 AI，尚未实现。', '8983 字', [], { href: 'chapters/ai/01-2-agi.html', spec: 'pass'}),
-          createNode('ai-01-3', '§ 1.3 · 超级 AI · ASI', '在所有领域全面超越人类的假想 AI。', '6401 字', [], { href: 'chapters/ai/01-3-asi.html', spec: 'todo'}),
-          createNode('ai-01-4', '§ 1.4 · AI 的四种能力', '感知 / 理解 / 决策 / 生成——AI 做的事都可以归到这四类。', '6125 字', [], { href: 'chapters/ai/01-4-abilities.html', spec: 'todo'})
+          createNode('ai-01-3', '§ 1.3 · 超级 AI · ASI', '在所有领域全面超越人类的假想 AI。', '8293 字', [], { href: 'chapters/ai/01-3-asi.html', spec: 'pass'}),
+          createNode('ai-01-4', '§ 1.4 · AI 的四种能力', '感知 / 理解 / 决策 / 生成——AI 做的事都可以归到这四类。', '8599 字', [], { href: 'chapters/ai/01-4-abilities.html', spec: 'pass'})
         ],
         { href: 'chapters/ai/01-what-is-ai.html' }
       ),
       createNode('ai-02', '第 2 章 · 三个圈',
         'AI / ML / DL / GenAI / LLM——五个概念的包含关系。',
-        '约 3.0 万字',
+        '约 4.1 万字',
         [
-          createNode('ai-02-1', '§ 2.1 · 人工智能 · AI', '最外圈——所有让机器有智能行为的技术总称。', '5258 字', [], { href: 'chapters/ai/02-1-ai.html', spec: 'todo'}),
-          createNode('ai-02-2', '§ 2.2 · 机器学习 · ML', '让机器从数据里学规律的方法集合。', '6554 字', [], { href: 'chapters/ai/02-2-ml.html', spec: 'todo'}),
-          createNode('ai-02-3', '§ 2.3 · 深度学习 · DL', '用多层神经网络的机器学习——是 ML 的子集。', '5910 字', [], { href: 'chapters/ai/02-3-dl.html', spec: 'todo'}),
-          createNode('ai-02-4', '§ 2.4 · 生成式 AI · GenAI', '专门"造"内容的 AI——文字、图片、视频。', '5531 字', [], { href: 'chapters/ai/02-4-genai.html', spec: 'todo'}),
-          createNode('ai-02-5', '§ 2.5 · 大语言模型 · LLM', '基于 Transformer 的巨型语言模型——ChatGPT 的核心。', '7188 字', [], { href: 'chapters/ai/02-5-llm.html', spec: 'todo'})
+          createNode('ai-02-1', '§ 2.1 · 人工智能 · AI', '最外圈——所有让机器有智能行为的技术总称。', '7603 字', [], { href: 'chapters/ai/02-1-ai.html', spec: 'pass'}),
+          createNode('ai-02-2', '§ 2.2 · 机器学习 · ML', '让机器从数据里学规律的方法集合。', '8089 字', [], { href: 'chapters/ai/02-2-ml.html', spec: 'pass'}),
+          createNode('ai-02-3', '§ 2.3 · 深度学习 · DL', '用多层神经网络的机器学习——是 ML 的子集。', '8054 字', [], { href: 'chapters/ai/02-3-dl.html', spec: 'pass'}),
+          createNode('ai-02-4', '§ 2.4 · 生成式 AI · GenAI', '专门"造"内容的 AI——文字、图片、视频。', '7946 字', [], { href: 'chapters/ai/02-4-genai.html', spec: 'pass'}),
+          createNode('ai-02-5', '§ 2.5 · 大语言模型 · LLM', '基于 Transformer 的巨型语言模型——ChatGPT 的核心。', '9361 字', [], { href: 'chapters/ai/02-5-llm.html', spec: 'pass'})
         ],
         { href: 'chapters/ai/02-three-circles.html' }
       ),
@@ -54,13 +54,13 @@
       ),
       createNode('ai-04', '第 4 章 · 机器学习',
         '监督/无监督/强化/自监督——ML 的四大流派。',
-        '约 4.3 万字',
+        '约 5.2 万字',
         [
-          createNode('ai-04-1', '§ 4.1 · 监督学习', '老师批改作业式学习——工业界用得最多。', '8180 字', [], { href: 'chapters/ai/04-1-supervised.html', spec: 'todo'}),
-          createNode('ai-04-2', '§ 4.2 · 无监督学习', '自己找规律——聚类、降维、异常检测。', '8071 字', [], { href: 'chapters/ai/04-2-unsupervised.html', spec: 'todo'}),
-          createNode('ai-04-3', '§ 4.3 · 强化学习', '试错式学习——下棋 AI、自动驾驶、机器人。', '9494 字', [], { href: 'chapters/ai/04-3-reinforcement.html', spec: 'todo'}),
-          createNode('ai-04-4', '§ 4.4 · 自监督学习', '让数据自己教自己——大模型预训练的核心。', '7732 字', [], { href: 'chapters/ai/04-4-self-supervised.html', spec: 'todo'}),
-          createNode('ai-04-5', '§ 4.5 · 特征/标签/过拟合', 'ML 的三个基础术语——ABC 级别的必备概念。', '9032 字', [], { href: 'chapters/ai/04-5-overfitting.html', spec: 'todo'})
+          createNode('ai-04-1', '§ 4.1 · 监督学习', '老师批改作业式学习——工业界用得最多。', '9967 字', [], { href: 'chapters/ai/04-1-supervised.html', spec: 'pass'}),
+          createNode('ai-04-2', '§ 4.2 · 无监督学习', '自己找规律——聚类、降维、异常检测。', '9941 字', [], { href: 'chapters/ai/04-2-unsupervised.html', spec: 'pass'}),
+          createNode('ai-04-3', '§ 4.3 · 强化学习', '试错式学习——下棋 AI、自动驾驶、机器人。', '11586 字', [], { href: 'chapters/ai/04-3-reinforcement.html', spec: 'pass'}),
+          createNode('ai-04-4', '§ 4.4 · 自监督学习', '让数据自己教自己——大模型预训练的核心。', '9578 字', [], { href: 'chapters/ai/04-4-self-supervised.html', spec: 'pass'}),
+          createNode('ai-04-5', '§ 4.5 · 特征/标签/过拟合', 'ML 的三个基础术语——ABC 级别的必备概念。', '10640 字', [], { href: 'chapters/ai/04-5-overfitting.html', spec: 'pass'})
         ],
         { href: 'chapters/ai/04-machine-learning.html' }
       ),
@@ -79,13 +79,13 @@
       ),
       createNode('ai-06', '第 6 章 · 训练三部曲',
         '数据、模型、损失——训练一个 AI 到底在干什么；预训练/SFT/RLHF/DPO 全解。',
-        '约 4.1 万字',
+        '约 4.8 万字',
         [
           createNode('ai-06-1', '§ 6.1 · 数据 · Dataset', '规模+质量+多样性、训练/验证/测试三集分离。', '10611 字', [], { href: 'chapters/ai/06-1-dataset.html', spec: 'pass'}),
-          createNode('ai-06-2', '§ 6.2 · 模型 · Model', '参数量、架构、初始化、超参数——待训练的神经网络。', '6635 字', [], { href: 'chapters/ai/06-2-model.html', spec: 'todo'}),
-          createNode('ai-06-3', '§ 6.3 · 损失 & 梯度下降', '交叉熵/MSE + 蒙眼下山——让损失越来越小。', '7987 字', [], { href: 'chapters/ai/06-3-loss.html', spec: 'todo'}),
-          createNode('ai-06-4', '§ 6.4 · 预训练', '几十T 语料预测下一词——基座大模型的诞生。', '7029 字', [], { href: 'chapters/ai/06-4-pretrain.html', spec: 'todo'}),
-          createNode('ai-06-5', '§ 6.5 · SFT · RLHF · DPO 对齐', '学对话 → 学偏好 → 让模型讨人喜欢。', '8800 字', [], { href: 'chapters/ai/06-5-rlhf.html', spec: 'todo'})
+          createNode('ai-06-2', '§ 6.2 · 模型 · Model', '参数量、架构、初始化、超参数——待训练的神经网络。', '8121 字', [], { href: 'chapters/ai/06-2-model.html', spec: 'pass'}),
+          createNode('ai-06-3', '§ 6.3 · 损失 & 梯度下降', '交叉熵/MSE + 蒙眼下山——让损失越来越小。', '9581 字', [], { href: 'chapters/ai/06-3-loss.html', spec: 'pass'}),
+          createNode('ai-06-4', '§ 6.4 · 预训练', '几十T 语料预测下一词——基座大模型的诞生。', '8681 字', [], { href: 'chapters/ai/06-4-pretrain.html', spec: 'pass'}),
+          createNode('ai-06-5', '§ 6.5 · SFT · RLHF · DPO 对齐', '学对话 → 学偏好 → 让模型讨人喜欢。', '10756 字', [], { href: 'chapters/ai/06-5-rlhf.html', spec: 'pass'})
         ],
         { href: 'chapters/ai/06-training-trilogy.html' }
       ),
@@ -427,7 +427,7 @@
     'root',
     '学海无涯',
     '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '全站约 49.9 万字',
+    '全站约 53.0 万字',
     [branchIntelligence, branchNetwork, branchInterface]
   );
 

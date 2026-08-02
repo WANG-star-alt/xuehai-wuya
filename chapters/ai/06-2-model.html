@@ -31,6 +31,30 @@
     数据是教材，那学生本人呢？<mark class="key">模型就是那个等着被训练的"大脑"</mark>——它长什么样、有多少神经元、初始状态如何、以什么节奏学习，全部要在动手训练之前定下来。这些选择合起来，就是一个模型的"先天条件"。
   </p>
 
+  <h3>先把术语翻译成人话</h3>
+  <p>这一篇满屏都是 B、层数、隐藏维度、MoE，听着玄。说白了整节就在讲一件事：<strong>开一家店之前，你得先定厨房多大、灶几个、师傅几位、菜单多宽。</strong>先摆一张对照表。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活里对应什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>模型（Model）</td><td>那个等着被训练的"脑子"本身</td><td>刚盘下来还没开火的一间<strong>餐厅</strong></td></tr>
+        <tr><td>参数量（70B 之类）</td><td>这个脑子能记多少东西</td><td><strong>厨房</strong>面积——越大能同时开的锅越多</td></tr>
+        <tr><td>参数（Parameter / 权重）</td><td>脑子里一根根连线的粗细</td><td>柜子里备了多少种<strong>调料</strong></td></tr>
+        <tr><td>架构（Architecture）</td><td>脑子按什么图纸搭</td><td><strong>厨房</strong>的动线图纸：灶、水槽、<strong>案板</strong>怎么摆</td></tr>
+        <tr><td>层数 / 隐藏维度</td><td>层数=工序多少道；维度=每道工序摆得多宽</td><td><strong>流水线</strong>有几个工位、每个工位多长</td></tr>
+        <tr><td>注意力头数（Heads）</td><td>同时从几个角度看同一句话</td><td>几个<strong>厨师</strong>各盯一件事：火候、咸淡、摆盘</td></tr>
+        <tr><td>词表（Vocabulary）</td><td>模型认得多少个"字块"</td><td>菜单上一共写了多少道菜</td></tr>
+        <tr><td>MoE 混合专家</td><td>请一屋子专科师傅，每道菜只叫两三个上手</td><td>大<strong>餐厅</strong>后厨分红案白案凉菜，各管一摊</td></tr>
+        <tr><td>初始化（Initialization）</td><td>开工前所有旋钮拧到哪个位置</td><td>新店开业前把灶火、<strong>冰箱</strong>温度先调到标准档</td></tr>
+        <tr><td>超参数（Hyperparameter）</td><td>不属于脑子本身，但决定怎么训的那些设定</td><td>员工作息表：几点开工、一次备多少料</td></tr>
+        <tr><td>学习率（Learning Rate）</td><td>每次改进步子迈多大</td><td>调咸淡时一次加半勺还是一勺</td></tr>
+        <tr><td>量化（Quantization）</td><td>把参数存得糙一点，省地方</td><td>把散装货压成真空包，塞得进小<strong>冰箱</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <div class="scene">
     <span class="scene-tag">生活场景</span>
     <div class="scene-title">🧬 挑一个"要培养的孩子"</div>
@@ -77,6 +101,7 @@
     </table>
   </div>
   <p>记住这一条心算口诀就够用了：<mark class="key">半精度下，显存 GB 数 ≈ 参数 B 数 × 2</mark>。一个 7B 模型要 14 GB，塞不进 12 GB 的 RTX 3060，但量化到 4 位只需 3.5 GB，连笔记本都能跑。一个 70B 模型要 140 GB，需要两张 80 GB 的 A100/H100 并联，量化到 4 位则 35-40 GB，一张 48 GB 的 A6000 勉强够。</p>
+  <p>"140 GB"这个数换个感觉：<strong>相当于</strong>把 30 部高清电影同时塞进显存并且一刻不能挪走。而"量化到 4 位"这件事<strong>说白了</strong>就是<strong>把散装货压成真空包</strong>——同样的东西，占的地方小了四倍，口感掉一点点，但终于塞得进家用<strong>冰箱</strong>了。</p>
   <p>但这只是<strong>推理</strong>的账。训练的显存开销要大得多，因为除了权重本身，你还得存三样东西：</p>
   <pre><code># 训练一个 N 参数模型的显存账（以混合精度 + AdamW 为例）
 权重（BF16）              : 2N 字节
@@ -131,6 +156,7 @@ FP32 主权重副本           : 4N 字节
   </ul>
 
   <h3>三、稠密 vs MoE：两条放大路线</h3>
+  <p>缩写先摊开：<strong>MoE（Mixture of Experts，混合专家——请一屋子专科师傅，每道菜只叫其中两三个上手）</strong>。<strong>换成大白话</strong>，稠密模型是"每道菜全店师傅都得过一遍手"，MoE 是"红案的菜只找红案师傅"。<mark class="key">前者稳但费人，后者省人但得有个靠谱的派活儿的人（路由器）。</mark></p>
   <p>上面那些模型里，DeepSeek-V3 那一行有点特殊：<strong>6710 亿参数，但每次只激活 370 亿</strong>。这就是 <strong>MoE（Mixture of Experts，混合专家）</strong>架构，它是过去两年最重要的架构分歧点。</p>
   <p>原理并不复杂。传统"稠密"模型每生成一个 token，都要让数据流过<strong>全部</strong>参数。MoE 把每层的 FFN 拆成很多个小 FFN（叫"专家"），前面加一个<strong>路由器（router）</strong>——一个小小的线性层，负责给每个 token 打分，决定送给哪几个专家处理。</p>
   <pre><code># MoE 层的核心逻辑（简化）
@@ -167,10 +193,22 @@ def moe_layer(x, experts, router, top_k=2):
     </table>
   </div>
   <p>MoE 最麻烦的工程问题叫<strong>负载不均衡</strong>：路由器如果学"偷懒"，可能把 90% 的 token 都送给同几个专家，剩下的专家从没被训练过，等于白占参数。解法是在损失函数里加一项<strong>负载均衡惩罚</strong>，逼路由器把流量摊开。DeepSeek-V3 更进一步用了"无辅助损失的负载均衡"——通过动态调整每个专家的偏置项来平衡流量，避免辅助损失干扰主任务。<mark class="key">这类细节说明 MoE 不是"稠密模型加个开关"，它是一套需要单独调教的体系。</mark></p>
+  <p>"负载不均衡"这四个字<strong>翻译成人话</strong>就是：<strong>派活儿的人偷懒，天天只找那两三个熟手，其他师傅在后厨闲站着领工资。</strong>结果是你按 256 个人的编制付了钱，实际干活的一直是那 8 个——<strong>好比</strong><strong>车间</strong>里明明八条<strong>流水线</strong>，工单全压给一条，那条累死，另外七条空转。<strong>负载均衡惩罚</strong>干的活儿就是给派活儿的人立个规矩：必须把单子摊开发。</p>
 
   <div class="callout analogy">
     <span class="tag">Analogy · 模型架构 = 楼房结构</span>
     <p>如果说训练数据是砖头，那模型架构就是<strong>建筑蓝图</strong>。同样一堆砖，你按四合院图纸盖，就是四合院；按摩天大楼图纸盖，就是 100 层高楼。Transformer 就是当代 AI 世界里"最靠谱的摩天大楼蓝图"——扎实、可扩展、几乎所有名楼都照它盖。</p>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 模型大小 = 厨房面积，参数 = 调料种类</span>
+    <p><strong>想象一下</strong>你要开一家<strong>餐厅</strong>。<strong>参数量</strong><strong>好比</strong><strong>厨房</strong>面积：8B 是个能炒两个菜的家用<strong>厨房</strong>，70B 是能同时开八个灶的酒店后厨，405B 是那种能给婚宴出五百桌的中央<strong>车间</strong>。<strong>参数本身</strong>则<strong>好比</strong>柜子里的<strong>调料</strong>种类——只有盐和酱油，你做不出复杂的菜；备齐三百种<strong>调料</strong>，能做的菜系一下就宽了。</p>
+    <p>顺着这个场景，本节几个数字全都能落地：<br/>
+    <strong>层数 vs 宽度</strong>——层数<strong>相当于</strong><strong>流水线</strong>上有几道工序（洗、切、腌、炒、摆盘），宽度<strong>相当于</strong>每道工序摆几个<strong>案板</strong>。<mark class="key">工序太少做不出复杂的菜，工序太多、每道又太窄，前面等后面，整条线全在排队。</mark>这就是"深还是宽"要权衡的原因。<br/>
+    <strong>MoE</strong>——<strong>相当于</strong>后厨请了 256 位专科师傅（红案、白案、凉菜、面点……），但每道菜只叫其中 8 位上手。<strong>工资得给 256 个人发（显存要装全部参数），可每道菜的人力只花 8 份（算力只按激活参数算）</strong>——这就是 DeepSeek-V3 用 671B 的本事、只付 37B 的账的全部秘密。<br/>
+    <strong>量化</strong>——<strong>好比</strong>把散装食材压成真空包，同样的货塞进小得多的<strong>冰箱</strong>。压得狠了口感会掉一点，但能让原本要两台工业冰柜的货塞进家用<strong>冰箱</strong>。<br/>
+    <strong>初始化</strong>——<strong>相当于</strong>开业前把每个灶的火力、每台<strong>冰箱</strong>的温度都先拧到标准档。<mark class="key">全都拧到零，这店根本开不了火；随手乱拧，第一天就得炸厨房。</mark></p>
+    <p><strong>说白了</strong>：这一整节讲的都不是"怎么做菜"，而是"开店之前该把店盘成什么样"。菜怎么做是下一篇的事（训练），这一篇只管先天条件。</p>
   </div>
 
   <h3>四、权重初始化：出生时的"起点"</h3>
@@ -198,6 +236,7 @@ std_residual = 0.02 / math.sqrt(2 * n_layers)</code></pre>
   <p>最后那个细节在大模型上尤其关键。Transformer 是残差结构，每层的输出都加回主干上，<strong>N 层叠加会让方差涨 N 倍</strong>。GPT-2 的做法是把残差分支的输出投影权重按 <code>1/√(2N)</code> 缩小；Llama 系列则依赖 RMSNorm 和精心调过的标准差（常用 0.02）来控制。<mark class="key">初始化在小模型上是"调优"，在百层大模型上是"能不能训起来"的生死问题</mark>——一个 405B 模型跑崩一次，损失就是几十万美元的算力。</p>
 
   <h3>五、超参数：训练前的"作息表"</h3>
+  <p>"超参数"这名字最容易让人望而生畏，<strong>其实就是</strong>开工前定下的那张作息表和工作规矩：一次备多少料（批大小）、调味一次加多少（学习率）、开工前先热几分钟锅（warmup）。<mark class="key">它们不属于模型这个"脑子"，但决定这个脑子被怎么带。</mark></p>
   <p>还有一堆参数不属于模型本身，但决定训练的过程，叫<strong>超参数（hyperparameters）</strong>：</p>
   <div class="table-wrap">
     <table>
@@ -286,6 +325,7 @@ DeepMind 用 70B + 1.4T 训出的 Chinchilla 打败了 GPT-3
   <p>看最后一列的规律：<strong>宽深比长期稳定在 100 到 130 之间</strong>。这不是巧合，而是几百次实验之后收敛出来的工程共识。你要设计一个新模型，从这条线出发几乎不会错。</p>
 
   <h3>八、模型并行：一个模型怎么塞进上万张卡</h3>
+  <p>四种切法用<strong>车间</strong>就能讲明白：<strong>数据并行</strong>=开八条一样的<strong>流水线</strong>，各干一批货；<strong>张量并行</strong>=一道工序太重，四个人围着同一个<strong>案板</strong>一起干；<strong>流水线并行</strong>=按工序拆开，前十道在这个<strong>车间</strong>、后十道在那个<strong>车间</strong>；<strong>ZeRO</strong>=<mark class="key">别每个工位都备一整套工具，共用一个<strong>仓库</strong>，用的时候去取。</mark></p>
   <p>一个 405B 模型光权重就要 810 GB，训练状态要 6 TB 以上——它<strong>物理上不可能装进任何一张卡</strong>。所以"配置一个大模型"必然包含一个问题：怎么把它切开分到几千张卡上？这里有四种正交的切法，实际训练中要组合使用。</p>
   <div class="table-wrap">
     <table>
@@ -322,6 +362,7 @@ ZeRO-3    : (14+14+84)/64      ≈ 1.8 GB  ← 一张消费卡都够
 → 8 × 16 × 128 = 16384 张卡</code></pre>
   <p>为什么要这么复杂地组合？因为每种并行都有它的<strong>通信代价与拓扑约束</strong>。张量并行每层要做两次 all-reduce，通信量极大，只有节点内 NVLink 的 900 GB/s 带宽扛得住，跨节点走 InfiniBand（约 400 Gb/s）会直接把训练拖垮——所以 TP 的规模几乎永远等于单节点的卡数（通常是 8）。流水线并行通信量小，适合跨节点，但会产生"气泡"：第一张卡算完第 1 层要等最后一张卡回传梯度，中间大量空转，需要用 micro-batch 交错来填。</p>
   <p>这些并行策略最终决定了一个关键指标：<strong>MFU（Model FLOPs Utilization，模型算力利用率）</strong>——你实际用上了 GPU 峰值算力的百分之几。Llama 3 405B 训练时报告的 <strong>BF16 MFU 约为 38%-43%</strong>。听起来不高，但这已经是世界级水平：<mark class="key">超过一半的理论算力，都消耗在了搬数据、等同步、填气泡上——分布式训练的真正对手不是计算，是通信。</mark></p>
+  <p>"MFU 40%" <strong>相当于</strong>一条<strong>流水线</strong>上，工人真正动手干活的时间只占四成，另外六成在等上一道工序、等物料从<strong>仓库</strong>运到、等旁边工位对齐进度。<strong>说白了</strong>：这上万张卡里有一大半时间在<strong>排队</strong>，而不是在算。<strong>好比</strong>雇了一万个厨师，其中六千个随时都在等叫号。</p>
 
 
   <h3>九、"配置一个模型"的完整清单</h3>

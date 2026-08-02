@@ -40,6 +40,33 @@
     <div class="link">→ 更准确的说法：<mark class="key">判别式 AI 是"选择题机器"，生成式 AI 是"填空题机器"</mark>——前者从有限选项里挑，后者要从无限可能里造。</div>
   </div>
 
+  <h3>先把术语翻译成人话</h3>
+  <p>这一节的名词有一半是数学符号、一半是英文缩写，<strong>听着玄</strong>得厉害。先一次性摊平——<strong>换成大白话</strong>，再各配一个生活里的对应物：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活里对应什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GenAI</strong>（Generative AI，生成式人工智能——不做判断，直接造出新内容的程序）</td><td>它不当考官，它当写手</td><td><strong>厨师</strong>从"尝一口说这菜合不合格"，变成"自己炒一盘出来"</td></tr>
+        <tr><td><strong>判别式</strong>（Discriminative——只学"怎么把几类东西分开"）</td><td>只需要知道差在哪，不必知道全貌</td><td>门口保安只认工牌真假，他不需要会做工牌</td></tr>
+        <tr><td><strong>P(y|x)</strong>（在看到 x 的条件下 y 的概率）</td><td>"给定这张片子，这是不是肺炎"</td><td><strong>医院</strong>分诊<strong>窗口</strong>只需判断你该去哪个<strong>科室</strong></td></tr>
+        <tr><td><strong>P(x)</strong>（数据本身的分布）</td><td>"什么样的东西才算一张合理的照片"</td><td>不只是会挑菜，而是把整个<strong>菜市场</strong>什么菜长什么样全摸清了</td></tr>
+        <tr><td><strong>自回归</strong>（Autoregressive——一个接一个往后猜）</td><td>写一个字，把它当条件，再猜下一个字</td><td><strong>流水线</strong>上前一道不出件，后一道就只能干等</td></tr>
+        <tr><td><strong>扩散</strong>（Diffusion——先学会去噪，再从纯噪声里雕出图）</td><td>从一屏雪花开始，一遍遍擦，图慢慢浮出来</td><td>擦一块蒙满灰的玻璃，擦几十遍，外面的景色一点点显出来</td></tr>
+        <tr><td><strong>GAN</strong>（Generative Adversarial Network，生成对抗网络——造假的和验假的互相较劲）</td><td>一个人造假币，一个人验假币，两个人一起变强</td><td><strong>银行</strong>柜台的验钞机和造假团伙的军备竞赛</td></tr>
+        <tr><td><strong>VAE</strong>（Variational AutoEncoder，变分自编码器——先压缩成一个小向量再解压回来）</td><td>先打包再拆包，包裹小了但东西还在</td><td>寄<strong>快递</strong>前把羽绒服抽成真空袋，到了再拆开抖开</td></tr>
+        <tr><td><strong>潜空间</strong>（Latent Space——压缩之后那个小得多的表示空间）</td><td>不在原尺寸上折腾，先缩小再干活</td><td>装修先在一张缩小的平面图上排家具，而不是搬着真沙发来回试</td></tr>
+        <tr><td><strong>CLIP</strong>（Contrastive Language-Image Pre-training——让图片和文字落到同一套坐标里）</td><td>让"戴帽子的猫"这句话和那张图在数学上挨得很近</td><td><strong>图书馆</strong>把中文书和外文书按同一套主题编号上架，找起来不分语言</td></tr>
+        <tr><td><strong>Temperature</strong>（温度——控制它"多敢乱猜"的旋钮）</td><td>调低它就规规矩矩，调高它就天马行空</td><td><strong>厨师</strong>手里那把<strong>调料</strong>勺：抖一点是家常味，抖狠了就成实验菜</td></tr>
+        <tr><td><strong>Top-p</strong>（核采样——只在概率累加到 p 的那一撮候选里挑）</td><td>只在最靠前的那几个选项里选，长尾的荒唐选项直接砍掉</td><td><strong>超市</strong><strong>货架</strong>只摆最好卖的前二十款，冷门的不上架</td></tr>
+        <tr><td><strong>幻觉</strong>（Hallucination——一本正经地编造）</td><td>它追求的是"听起来像"，不是"确实是"</td><td>一个记忆模糊的人复述<strong>开会</strong>内容，逻辑通顺，细节全是自己补的</td></tr>
+        <tr><td><strong>模型自噬</strong>（Model Collapse——用 AI 生成的数据训 AI，多样性逐轮衰减）</td><td>自己抄自己，越抄越窄</td><td>复印件再去复印，印到第十代已经看不清字了</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表的关键一行是 P(y|x) 和 P(x) 那一对。<mark class="key">判别式只要知道"差在哪"，生成式必须知道"整个长什么样"</mark>——<strong>说白了</strong>：前者是保安认工牌，后者是自己有本事把工牌从零做出来。<strong>这一条难度落差，解释了生成模型为什么比判别模型晚成熟十年、参数还大一两个数量级。</strong></p>
+
   <h3>"识别式" vs "生成式"：一次数学目标的转向</h3>
   <div class="table-wrap">
     <table>
@@ -87,6 +114,42 @@
     </table>
   </div>
   <p>还有一个跨路线的关键拼图不能漏：<strong>怎么让"文字"控制"图像"</strong>。答案是 2021 年 OpenAI 的 <strong>CLIP</strong>——它用四亿组网络上的"图片 + 配文"训练，把图片和文字映射到<mark class="key">同一个语义空间</mark>，让"一只戴帽子的猫"这句话和对应的图片在向量空间里靠得很近。有了这座桥，扩散模型才能被文字牵着走。<strong>可以说没有 CLIP，就没有今天的文生图。</strong></p>
+
+  <h3>四条路线，用一家餐厅的四种出菜法来分辨</h3>
+  <p>四条路线的原理描述都很技术，但它们的差别用<strong>厨房</strong>里的四种做法一比就极清楚。<strong>打个比方</strong>，同样是"端出一盘菜"，这四位<strong>厨师</strong>的干法完全不同：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>路线</th><th>它像哪种厨师</th><th>为什么快 / 为什么慢</th><th>典型毛病长什么样</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>自回归</strong></td><td>包饺子的师傅：擀一张皮、包一个、再擀下一张，严格一个接一个</td><td>慢，因为前一个不落地，后一个的形状就定不了</td><td>第三个包歪了，后面全跟着歪——错误一旦进了链条就顺着错下去</td></tr>
+        <tr><td><strong>扩散</strong></td><td>雕萝卜花的师傅：先拿一整块粗料，一刀一刀往下修，几十刀后花才出来</td><td>慢，因为要迭代几十步；但每一步都能中途调方向</td><td>刀数不够就还是一团粗坯；刀数够了但手一抖，细节（手指、文字）就崩</td></tr>
+        <tr><td><strong>GAN</strong></td><td>两位师傅打赌：一个负责冒充招牌菜，另一个负责挑毛病，互相较劲</td><td><strong>快</strong>，出锅只需一次动作</td><td>冒充的那位发现"只做同一道菜就能骗过对方"，于是整个菜单只剩一道菜——这就是模式崩塌</td></tr>
+        <tr><td><strong>VAE</strong></td><td>打包师傅：把整锅菜抽真空压成一小包，需要时再拆开复原</td><td>快，压缩和解压都是一次性动作</td><td>复原出来的总是有点软塌、边缘发虚——所以它今天主要当别人的<strong>案板</strong>，不单独出菜</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表能顺手解答一个很常见的困惑：<mark class="key">为什么写文章是一个字一个字往外蹦，画图却是整张一起慢慢变清晰</mark>？<strong>其实就是</strong>包饺子和雕萝卜花的区别——前者的每一件成品都必须等前一件落地，后者是从一开始就有一整块料在手上，只是越修越细。</p>
+  <p>还有一条实操上的推论。既然扩散是"一刀一刀修"，那么<strong>你在中途插一句要求它是听得进去的</strong>——这就是为什么图像生成能做局部重绘、能中途换引导词、能在第 20 步开始才加上"要暖色调"。而自回归是"包完一个就定型"，<strong>它没有回头改上一个饺子的机制</strong>，所以纠错只能靠让它把整段重写。<strong>简单说：一个能返工，一个只能重做。</strong></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一家二十四小时不打烊的印刷厂</span>
+    <p><mark class="key">要理解生成式 AI 到底改变了什么，最贴身的类比是你家楼下突然开了一家二十四小时不打烊、随叫随到、几乎不要钱的印刷厂。</mark><br/>
+    你半夜想到要一张海报，走过去说一句，三十秒后拿到手。想改配色，再说一句，又是三十秒。想要二十个版本一起看，它一次全给你。<strong>这家厂的产量是没有上限的，成本低到可以忽略。</strong><br/>
+    但它有三条你必须记住的性格。<strong>第一，它从不核实内容。</strong>你说"印上《民法典》第几条"，它会印得排版精美、字体庄重，而那条条文可能根本不存在——它保证的是"看起来像一张正规文件"，不是"内容是真的"。<strong>第二，它不为印出来的东西负责。</strong>海报贴出去出了事，被追责的是你，不是这家厂。<strong>第三，它印得越快，你的活儿就越往"审校"那一头挪。</strong>以前你的时间花在画，现在花在挑错。<br/>
+    这个类比最有价值的一层在于它解释了整个行业的成本结构变化：<strong>相当于</strong>过去"生产"是瓶颈、"审校"是零头，现在完全对调了。<mark class="key">当产出变得几乎免费，稀缺的东西就变成了"判断哪一份能用"</mark>。<strong>所以这一波技术真正抬高的岗位不是会画的人，而是能一眼看出哪张不能用的人。</strong></p>
+  </div>
+
+  <h3>怎么写提示词：四个几乎万能的抓手</h3>
+  <p>这一节讲了一堆原理，但你真正每天要用的只有一件事——怎么把话说清楚。下面四个抓手不依赖任何具体工具，套在文字、图像、视频上都成立。</p>
+  <ul class="keylist">
+    <li><span class="k">① 给身份和场合，别只给任务</span><span class="v">"写一段产品介绍"和"你是一位给中老年用户写说明书的编辑，请写一段产品介绍，避免任何英文缩写"，得到的东西差一个档次。<strong>好比</strong>你去<strong>菜市场</strong>只说"给我条鱼"，和说"要清蒸的，两斤左右，帮我去鳞"——后者摊主一次就给对了。</span></li>
+    <li><span class="k">② 给例子，比给形容词有用十倍</span><span class="v">"写得活泼一点"是形容词，每个人理解都不同；直接贴两段你认可的原文说"照这个语气写"，命中率立刻翻倍。<mark class="key">它擅长模仿具体样本，不擅长揣摩抽象要求</mark>——这一点和带新人一模一样：给他看三份合格的<strong>作业</strong>，比给他讲十条标准都管用。</span></li>
+    <li><span class="k">③ 把"不要什么"也写出来</span><span class="v">它默认会往训练数据的平均值上靠，所以你要主动排除：不要排比句、不要用"赋能"这类词、图里不要出现文字、不要俯视角度。<strong>就像</strong>点菜时那句"不要香菜"——不说它就一定会放。</span></li>
+    <li><span class="k">④ 分步骤要，而不是一口气要</span><span class="v">复杂任务先要提纲，你改完提纲再要正文；图先要构图草稿，定了再要成品。<strong>相当于</strong>装修先出平面图再动工，而不是让工人直接砌墙。<strong>一次要太多，返工成本全落在你身上。</strong></span></li>
+  </ul>
+  <p>这四条背后是同一条道理：<mark class="key">它不会读心，它只会补全你写下的那部分</mark>。<strong>翻译成人话</strong>——你给的条件越具体，它需要自己瞎猜的部分就越少，而它瞎猜的那部分正好就是所有翻车的来源。</p>
 
   <h3>GenAI 的四种主要类型</h3>
   <div class="cards">
