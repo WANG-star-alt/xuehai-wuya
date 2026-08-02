@@ -15,7 +15,7 @@
     'intelligence',
     '智能篇',
     '认识 AI 的过去、现在与未来。从"AI 是什么"到大模型、Agent、多模态——14 章串起完整的 AI 认知地图。',
-    '约 17.4 万字',
+    '约 25.2 万字',
     [
       createNode('ai-01', '第 1 章 · AI 是什么',
         'ANI / AGI / ASI 三种 AI 层级 + AI 的四种核心能力。',
@@ -66,14 +66,14 @@
       ),
       createNode('ai-05', '第 5 章 · 神经网络',
         '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。',
-        '约 1.6 万字',
+        '约 6.7 万字',
         [
           createNode('ai-05-1', '§ 5.1 · 神经元', '加权求和 + 激活函数——一个"人工神经元"的全部。', '4333 字', [], { href: 'chapters/ai/05-1-neuron.html' }),
-          createNode('ai-05-2', '§ 5.2 · 前向 & 反向传播', '数据怎么流动、错误怎么反传——学习的引擎。', '2663 字', [], { href: 'chapters/ai/05-2-propagation.html' }),
-          createNode('ai-05-3', '§ 5.3 · CNN 卷积网络', '图像专家——从 AlexNet 到 YOLO，看图靠它。', '2605 字', [], { href: 'chapters/ai/05-3-cnn.html' }),
-          createNode('ai-05-4', '§ 5.4 · RNN / LSTM', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '2508 字', [], { href: 'chapters/ai/05-4-rnn.html' }),
-          createNode('ai-05-5', '§ 5.5 · GAN 对抗网络', '假币贩子 vs 警察——两个网络较量学会造假。', '2640 字', [], { href: 'chapters/ai/05-5-gan.html' }),
-          createNode('ai-05-6', '§ 5.6 · Diffusion 扩散模型', 'Midjourney / Sora 背后——从噪声一步步生成图像。', '2583 字', [], { href: 'chapters/ai/05-6-diffusion.html' })
+          createNode('ai-05-2', '§ 5.2 · 前向 & 反向传播', '数据怎么流动、错误怎么反传——学习的引擎。', '10230 字', [], { href: 'chapters/ai/05-2-propagation.html' }),
+          createNode('ai-05-3', '§ 5.3 · CNN 卷积网络', '图像专家——从 AlexNet 到 YOLO，看图靠它。', '11237 字', [], { href: 'chapters/ai/05-3-cnn.html' }),
+          createNode('ai-05-4', '§ 5.4 · RNN / LSTM', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '10705 字', [], { href: 'chapters/ai/05-4-rnn.html' }),
+          createNode('ai-05-5', '§ 5.5 · GAN 对抗网络', '假币贩子 vs 警察——两个网络较量学会造假。', '14485 字', [], { href: 'chapters/ai/05-5-gan.html' }),
+          createNode('ai-05-6', '§ 5.6 · Diffusion 扩散模型', 'Midjourney / Sora 背后——从噪声一步步生成图像。', '15635 字', [], { href: 'chapters/ai/05-6-diffusion.html' })
         ],
         { href: 'chapters/ai/05-neural-network.html' }
       ),
@@ -91,13 +91,13 @@
       ),
       createNode('ai-07', '第 7 章 · Transformer',
         'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。',
-        '约 1.3 万字',
+        '约 4.2 万字',
         [
           createNode('ai-07-1', '§ 7.1 · Attention 注意力', '每个词都能"看到"其他所有词——图书馆式加权。', '3487 字', [], { href: 'chapters/ai/07-1-attention.html' }),
-          createNode('ai-07-2', '§ 7.2 · QKV 三兄弟', '打分 → Softmax → 加权求和——Attention 完整公式。', '2531 字', [], { href: 'chapters/ai/07-2-qkv.html' }),
-          createNode('ai-07-3', '§ 7.3 · Multi-head 多头', '多组 QKV 并行——像多个专家同时会诊。', '2561 字', [], { href: 'chapters/ai/07-3-multihead.html' }),
-          createNode('ai-07-4', '§ 7.4 · Encoder / Decoder 派系', 'BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。', '2525 字', [], { href: 'chapters/ai/07-4-variants.html' }),
-          createNode('ai-07-5', '§ 7.5 · MoE 专家混合', '万亿参数只激活一小部分——DeepSeek 的降本秘籍。', '2740 字', [], { href: 'chapters/ai/07-5-moe.html' })
+          createNode('ai-07-2', '§ 7.2 · QKV 三兄弟', '打分 → Softmax → 加权求和——Attention 完整公式。', '9037 字', [], { href: 'chapters/ai/07-2-qkv.html' }),
+          createNode('ai-07-3', '§ 7.3 · Multi-head 多头', '多组 QKV 并行——像多个专家同时会诊。', '9022 字', [], { href: 'chapters/ai/07-3-multihead.html' }),
+          createNode('ai-07-4', '§ 7.4 · Encoder / Decoder 派系', 'BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。', '9910 字', [], { href: 'chapters/ai/07-4-variants.html' }),
+          createNode('ai-07-5', '§ 7.5 · MoE 专家混合', '万亿参数只激活一小部分——DeepSeek 的降本秘籍。', '10489 字', [], { href: 'chapters/ai/07-5-moe.html' })
         ],
         { href: 'chapters/ai/07-transformer.html' }
       ),
@@ -216,7 +216,7 @@
           createNode('net-03-3', '§ 3.3 · UDP', '快速但不保证——视频、直播、游戏为什么用它。', '8378 字', [], { href: 'chapters/network/03-3-udp.html' }),
           createNode('net-03-4', '§ 3.4 · DNS', '域名翻译成 IP——递归查询、缓存、DNS 污染与 DoH。', '待撰写', []),
           createNode('net-03-5', '§ 3.5 · IP', 'IPv4 / IPv6、公网私网、子网划分与 CIDR、NAT。', '待撰写', []),
-          createNode('net-03-6', '§ 3.6 · 其他常用协议', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '待撰写', [])
+          createNode('net-03-6', '§ 3.6 · 其他常用协议', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '374 字', [])
         ],
         { href: 'chapters/network/03-protocols.html' }
       ),
@@ -427,7 +427,7 @@
     'root',
     '学海无涯',
     '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '全站约 30.3 万字',
+    '全站约 38.0 万字',
     [branchIntelligence, branchNetwork, branchInterface]
   );
 
