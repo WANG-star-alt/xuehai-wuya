@@ -267,6 +267,77 @@
   pointer-events: none;
 }
 
+/* ---------- 规范改造状态徽标 ---------- */
+.tree-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  padding: 8px 14px 10px;
+  font-size: 12px;
+  color: #6f6a5e;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.tree-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tree-legend .legend-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.tree-legend .legend-badge.pass {
+  background: rgba(74, 124, 89, 0.16);
+  border: 1px solid rgba(74, 124, 89, 0.5);
+  color: #3d6b4a;
+}
+.tree-legend .legend-badge.todo {
+  background: rgba(191, 128, 64, 0.14);
+  border: 1px solid rgba(191, 128, 64, 0.45);
+  color: #a86420;
+}
+.tree-legend .legend-note {
+  color: #9a9488;
+  font-style: italic;
+}
+.tree-legend .legend-stat {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #7d7669;
+}
+
+.node .spec-badge-bg {
+  pointer-events: none;
+}
+.node .spec-badge-bg.pass {
+  fill: rgba(74, 124, 89, 0.16);
+  stroke: rgba(74, 124, 89, 0.5);
+  stroke-width: 1;
+}
+.node .spec-badge-bg.todo {
+  fill: rgba(191, 128, 64, 0.14);
+  stroke: rgba(191, 128, 64, 0.45);
+  stroke-width: 1;
+}
+.node .spec-badge-tx {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+}
+.node .spec-badge-tx.pass { fill: #3d6b4a; }
+.node .spec-badge-tx.todo { fill: #a86420; }
+
+/* 详情面板里的状态值 */
+.meta-value.spec-pass { color: #3d6b4a; font-weight: 600; }
+.meta-value.spec-todo { color: #a86420; font-weight: 600; }
+
 .node .branch-dot {
   stroke-width: 1.5;
   transition: all 0.15s;

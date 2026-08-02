@@ -403,7 +403,7 @@
       text-transform: uppercase;
     }
   </style>
-  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-13" />
+  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-18" />
 </head>
 <body>
   <article class="page">
@@ -479,6 +479,13 @@
           <button type="button" id="btn-zoom-out" title="缩小">−</button>
           <button type="button" id="btn-fit" title="适应画布">⟳ 适应</button>
         </div>
+      </div>
+
+      <div class="tree-legend">
+        <span class="legend-item"><span class="legend-badge pass">已达标</span>已按当前制作规范改造完成</span>
+        <span class="legend-item"><span class="legend-badge todo">待改造</span>字数 / 大白话 / 生活类比未达标</span>
+        <span class="legend-item legend-note">无徽标 = 尚未撰写</span>
+        <span class="legend-item legend-stat" id="legend-stat"></span>
       </div>
 
       <div class="tree-workspace">
@@ -836,7 +843,7 @@
 
   </article>
 
-  <script src="./assets/tree-data.js?v=ct-17"></script>
-  <script src="./assets/cognition-tree.js?v=ct-17"></script>
+  <script src="./assets/tree-data.js?v=ct-18"></script>
+  <script src="./assets/cognition-tree.js?v=ct-18"></script>
 </body>
 </html>

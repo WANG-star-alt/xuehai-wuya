@@ -218,6 +218,31 @@
       meta.textContent = metaText;
       g.appendChild(meta);
 
+      // 改造状态徽标（右上角）——只对有正文的节点显示
+      // spec: 'pass' 已达标 / 'todo' 待改造 / 未定义则不显示
+      if (realNode.spec) {
+        const isPass = realNode.spec === 'pass';
+        const bw = 34, bh = 15;
+        g.appendChild(svg('rect', {
+          class: 'spec-badge-bg ' + (isPass ? 'pass' : 'todo'),
+          x: NODE_W - bw - 8,
+          y: 6,
+          width: bw,
+          height: bh,
+          rx: 7,
+          ry: 7
+        }));
+        const bt = svg('text', {
+          class: 'spec-badge-tx ' + (isPass ? 'pass' : 'todo'),
+          x: NODE_W - bw / 2 - 8,
+          y: 6 + bh / 2 + 1,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle'
+        });
+        bt.textContent = isPass ? '已达标' : '待改造';
+        g.appendChild(bt);
+      }
+
       // 后面不再显示状态圆点（前面的圆点已经区分了）
 
       // 事件
@@ -324,6 +349,7 @@
         <div class="detail-meta">
           <div class="meta-item"><span class="meta-label">内容字数</span><span class="meta-value">${escapeHtml(node.words || node.time || '待撰写')}</span></div>
           <div class="meta-item"><span class="meta-label">子节点</span><span class="meta-value">${hasChildren ? node.children.length + ' 项' : '叶子节点'}</span></div>
+          ${node.spec ? `<div class="meta-item"><span class="meta-label">规范状态</span><span class="meta-value spec-${node.spec}">${node.spec === 'pass' ? '已达标' : '待改造'}</span></div>` : ''}
         </div>
         <div class="detail-path">
           <div class="path-label">完整路径</div>
@@ -551,6 +577,23 @@
     }
     buildIndexes(window.__cognitionTreeData);
     selectedNodeId = window.__cognitionTreeData.id;
+
+    // 统计规范改造进度，填到图例右侧
+    (function fillLegendStat() {
+      const el = document.getElementById('legend-stat');
+      if (!el) return;
+      let pass = 0, todo = 0, none = 0;
+      nodeIndex.forEach(node => {
+        const isLeaf = !node.children || !node.children.length;
+        if (!isLeaf) return;
+        if (node.spec === 'pass') pass++;
+        else if (node.spec === 'todo') todo++;
+        else none++;
+      });
+      const written = pass + todo;
+      const pct = written ? Math.round(pass / written * 100) : 0;
+      el.textContent = `已达标 ${pass} / 已撰写 ${written}（${pct}%）· 未撰写 ${none}`;
+    })();
 
     // 默认收起所有 depth >= 2 的分支
     nodeIndex.forEach((node, id) => {
