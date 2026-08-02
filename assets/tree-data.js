@@ -15,7 +15,7 @@
     'intelligence',
     '智能篇',
     '认识 AI 的过去、现在与未来。从"AI 是什么"到大模型、Agent、多模态——14 章串起完整的 AI 认知地图。',
-    '约 25.2 万字',
+    '约 25.6 万字',
     [
       createNode('ai-01', '第 1 章 · AI 是什么',
         'ANI / AGI / ASI 三种 AI 层级 + AI 的四种核心能力。',
@@ -24,7 +24,7 @@
           createNode('ai-01-1', '§ 1.1 · 弱 AI · ANI', '狭义人工智能——今天所有能用的 AI 都属于这一类。', '5548 字', [], { href: 'chapters/ai/01-1-ani.html' }),
           createNode('ai-01-2', '§ 1.2 · 通用 AI · AGI', '像人类一样能做任何智力任务的 AI，尚未实现。', '5842 字', [], { href: 'chapters/ai/01-2-agi.html' }),
           createNode('ai-01-3', '§ 1.3 · 超级 AI · ASI', '在所有领域全面超越人类的假想 AI。', '6401 字', [], { href: 'chapters/ai/01-3-asi.html' }),
-          createNode('ai-01-4', '§ 1.4 · AI 的四种能力', '感知 / 理解 / 决策 / 生成——AI 做的事都可以归到这四类。', '5877 字', [], { href: 'chapters/ai/01-4-abilities.html' })
+          createNode('ai-01-4', '§ 1.4 · AI 的四种能力', '感知 / 理解 / 决策 / 生成——AI 做的事都可以归到这四类。', '6125 字', [], { href: 'chapters/ai/01-4-abilities.html' })
         ],
         { href: 'chapters/ai/01-what-is-ai.html' }
       ),
@@ -182,7 +182,7 @@
     'network',
     '网络篇',
     '从"什么是网络"到"数据怎么从你的手机跑到百度服务器"——10 章讲透互联网工作原理。',
-    '约 9.3 万字',
+    '约 9.4 万字',
     [
       createNode('net-01', '第 1 章 · 网络是什么',
         '主机、协议、地址、客户端服务器、数据包、带宽时延丢包——建立最基础的认识。',
@@ -427,7 +427,7 @@
     'root',
     '学海无涯',
     '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '全站约 38.0 万字',
+    '全站约 38.5 万字',
     [branchIntelligence, branchNetwork, branchInterface]
   );
 
