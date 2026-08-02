@@ -216,7 +216,7 @@
           createNode('net-03-3', '§ 3.3 · UDP', '快速但不保证——视频、直播、游戏为什么用它。', '8378 字', [], { href: 'chapters/network/03-3-udp.html' }),
           createNode('net-03-4', '§ 3.4 · DNS', '域名翻译成 IP——递归查询、缓存、DNS 污染与 DoH。', '待撰写', []),
           createNode('net-03-5', '§ 3.5 · IP', 'IPv4 / IPv6、公网私网、子网划分与 CIDR、NAT。', '待撰写', []),
-          createNode('net-03-6', '§ 3.6 · 其他常用协议', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '374 字', [])
+          createNode('net-03-6', '§ 3.6 · 其他常用协议', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '待撰写', [])
         ],
         { href: 'chapters/network/03-protocols.html' }
       ),
