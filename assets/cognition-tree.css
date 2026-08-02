@@ -283,23 +283,20 @@
   align-items: center;
   gap: 6px;
 }
-.tree-legend .legend-badge {
+.tree-legend .legend-dot {
   display: inline-block;
-  padding: 1px 7px;
-  border-radius: 7px;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.5;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
 }
-.tree-legend .legend-badge.pass {
-  background: rgba(74, 124, 89, 0.16);
-  border: 1px solid rgba(74, 124, 89, 0.5);
-  color: #3d6b4a;
+.tree-legend .legend-dot.pass {
+  background: #5b9c6d;
+  box-shadow: 0 0 0 1.5px #ffffff, 0 0 0 2.5px rgba(91, 156, 109, 0.35);
 }
-.tree-legend .legend-badge.todo {
-  background: rgba(191, 128, 64, 0.14);
-  border: 1px solid rgba(191, 128, 64, 0.45);
-  color: #a86420;
+.tree-legend .legend-dot.todo {
+  background: #d9a34a;
+  box-shadow: 0 0 0 1.5px #ffffff, 0 0 0 2.5px rgba(217, 163, 74, 0.35);
 }
 .tree-legend .legend-note {
   color: #9a9488;
@@ -312,27 +309,22 @@
   color: #7d7669;
 }
 
-.node .spec-badge-bg {
-  pointer-events: none;
+.node .spec-dot {
+  stroke-width: 1.5;
+  pointer-events: all;
+  cursor: help;
 }
-.node .spec-badge-bg.pass {
-  fill: rgba(74, 124, 89, 0.16);
-  stroke: rgba(74, 124, 89, 0.5);
-  stroke-width: 1;
+.node .spec-dot.pass {
+  fill: #5b9c6d;
+  stroke: #ffffff;
 }
-.node .spec-badge-bg.todo {
-  fill: rgba(191, 128, 64, 0.14);
-  stroke: rgba(191, 128, 64, 0.45);
-  stroke-width: 1;
+.node .spec-dot.todo {
+  fill: #d9a34a;
+  stroke: #ffffff;
 }
-.node .spec-badge-tx {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  pointer-events: none;
+.node.selected .spec-dot {
+  stroke: #fdfcf8;
 }
-.node .spec-badge-tx.pass { fill: #3d6b4a; }
-.node .spec-badge-tx.todo { fill: #a86420; }
 
 /* 详情面板里的状态值 */
 .meta-value.spec-pass { color: #3d6b4a; font-weight: 600; }

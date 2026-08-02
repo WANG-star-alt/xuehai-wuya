@@ -23,7 +23,7 @@
 
   // ============ 状态变量 ============
   let NODE_W = NODE_W_DEFAULT;          // 节点宽度（可由滑块调节）
-  let NODE_LABEL_MAX = 16;              // 显示字符数上限，随宽度联动
+  let NODE_LABEL_MAX = 14;              // 显示字符数上限，随宽度联动
   let selectedNodeId = null;
   let scale = 1;
   let translateX = 0;
@@ -218,29 +218,21 @@
       meta.textContent = metaText;
       g.appendChild(meta);
 
-      // 改造状态徽标（右上角）——只对有正文的节点显示
-      // spec: 'pass' 已达标 / 'todo' 待改造 / 未定义则不显示
+      // 改造状态标记（右侧竖直居中的小圆点）——只对有正文的节点显示
+      // spec: 'pass' 已达标（绿） / 'todo' 待改造（橙） / 未定义则不显示
       if (realNode.spec) {
         const isPass = realNode.spec === 'pass';
-        const bw = 34, bh = 15;
-        g.appendChild(svg('rect', {
-          class: 'spec-badge-bg ' + (isPass ? 'pass' : 'todo'),
-          x: NODE_W - bw - 8,
-          y: 6,
-          width: bw,
-          height: bh,
-          rx: 7,
-          ry: 7
-        }));
-        const bt = svg('text', {
-          class: 'spec-badge-tx ' + (isPass ? 'pass' : 'todo'),
-          x: NODE_W - bw / 2 - 8,
-          y: 6 + bh / 2 + 1,
-          'text-anchor': 'middle',
-          'dominant-baseline': 'middle'
+        const dot = svg('circle', {
+          class: 'spec-dot ' + (isPass ? 'pass' : 'todo'),
+          cx: NODE_W - 11,
+          cy: NODE_H / 2,
+          r: 4
         });
-        bt.textContent = isPass ? '已达标' : '待改造';
-        g.appendChild(bt);
+        // 悬停提示
+        const tip = svg('title', {});
+        tip.textContent = isPass ? '已按当前规范改造完成' : '待改造：字数 / 大白话 / 生活类比未达标';
+        dot.appendChild(tip);
+        g.appendChild(dot);
       }
 
       // 后面不再显示状态圆点（前面的圆点已经区分了）
@@ -465,8 +457,8 @@
   // ============ 节点宽度调节 ============
   function setNodeWidth(w, doFit) {
     NODE_W = Math.max(NODE_W_MIN, Math.min(NODE_W_MAX, Math.round(w)));
-    // 字符数上限随宽度线性联动：184px ≈ 16 字
-    NODE_LABEL_MAX = Math.max(6, Math.round((NODE_W - 44) / 8.75));
+    // 字符数上限随宽度线性联动：184px ≈ 14 字（右侧留出状态圆点的位置）
+    NODE_LABEL_MAX = Math.max(6, Math.round((NODE_W - 58) / 8.75));
     const out = document.getElementById('node-width-value');
     if (out) out.textContent = NODE_W + 'px';
     render();
