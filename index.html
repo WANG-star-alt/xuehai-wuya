@@ -75,16 +75,17 @@
       text-transform: uppercase;
       margin-bottom: 1.1rem;
     }
-    /* 三色分隔线——对应智能/网络/界面三篇 */
+    /* 四色分隔线——对应智能/网络/界面/电学四篇 */
     .cover .rule-tri {
       width: 96px;
       height: 2px;
       margin: 0 auto 1rem;
       border-radius: 2px;
       background: linear-gradient(90deg,
-        #4a6d8c 0%, #4a6d8c 33.33%,
-        #556b3d 33.33%, #556b3d 66.66%,
-        #8a5a7a 66.66%, #8a5a7a 100%);
+        #4a6d8c 0%, #4a6d8c 25%,
+        #556b3d 25%, #556b3d 50%,
+        #8a5a7a 50%, #8a5a7a 75%,
+        #a0662c 75%, #a0662c 100%);
       opacity: 0.85;
     }
     .cover .subtitle {
@@ -385,6 +386,9 @@
     .vol-banner.gui {
       background: linear-gradient(90deg, #8a5a7a 0%, #a05a2c 100%);
     }
+    .vol-banner.elec {
+      background: linear-gradient(90deg, #a0662c 0%, #c08a3e 100%);
+    }
     @media (max-width: 720px) {
       .vol-banner { padding: 1rem 1.1rem; }
       .vol-banner .side { font-size: 0.66rem; }
@@ -403,7 +407,7 @@
       text-transform: uppercase;
     }
   </style>
-  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-19" />
+  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-20" />
 </head>
 <body>
   <article class="page">
@@ -415,8 +419,9 @@
         <defs>
           <linearGradient id="lg-seal" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#4a6d8c"/>
-            <stop offset="50%" stop-color="#556b3d"/>
-            <stop offset="100%" stop-color="#8a5a7a"/>
+            <stop offset="35%" stop-color="#556b3d"/>
+            <stop offset="70%" stop-color="#8a5a7a"/>
+            <stop offset="100%" stop-color="#a0662c"/>
           </linearGradient>
         </defs>
 
@@ -427,13 +432,15 @@
         <rect x="13" y="13" width="74" height="74" rx="9"
               fill="none" stroke="#e2dccf" stroke-width="1"/>
 
-        <!-- 三道水波：由上到下 蓝(智能) 绿(网络) 紫(界面) -->
-        <path d="M22 40 Q34 32 50 40 T78 40" fill="none"
-              stroke="#4a6d8c" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
-        <path d="M22 53 Q34 45 50 53 T78 53" fill="none"
-              stroke="#556b3d" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
-        <path d="M22 66 Q34 58 50 66 T78 66" fill="none"
-              stroke="#8a5a7a" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+        <!-- 四道水波：由上到下 蓝(智能) 绿(网络) 紫(界面) 铜(电学) -->
+        <path d="M22 38 Q34 30 50 38 T78 38" fill="none"
+              stroke="#4a6d8c" stroke-width="2.8" stroke-linecap="round" opacity="0.9"/>
+        <path d="M22 48 Q34 40 50 48 T78 48" fill="none"
+              stroke="#556b3d" stroke-width="2.8" stroke-linecap="round" opacity="0.9"/>
+        <path d="M22 58 Q34 50 50 58 T78 58" fill="none"
+              stroke="#8a5a7a" stroke-width="2.8" stroke-linecap="round" opacity="0.9"/>
+        <path d="M22 68 Q34 60 50 68 T78 68" fill="none"
+              stroke="#a0662c" stroke-width="2.8" stroke-linecap="round" opacity="0.9"/>
 
         <!-- 顶部一点：书卷/舟——"学海泛舟"意象 -->
         <circle cx="50" cy="26" r="3.4" fill="#a05a2c"/>
@@ -839,11 +846,120 @@
       </a>
     </div>
 
+    <div class="vol-banner elec">
+      <div>
+        <div class="no">Volume · 04</div>
+        <h2>电 学 篇</h2>
+        <div class="en">Electricity at Home · 11 Chapters</div>
+      </div>
+      <div class="side">
+        <div class="count">11</div>
+        <div>Chapters</div>
+      </div>
+    </div>
+
+    <div class="vol-divider">卷一 · 保命 · Safety First</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 01</div>
+        <h3>安全第一课</h3>
+        <div class="en">Safety First</div>
+        <p>断电三步、验电笔、触电急救，以及哪些地方一辈子都别自己碰。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 02</div>
+        <h3>电的最小认知</h3>
+        <div class="en">The Bare Minimum</div>
+        <p>用水管就能想明白的电压电流电阻，加上短路、过载、漏电三兄弟。</p>
+      </a>
+    </div>
+
+    <div class="vol-divider">卷二 · 摸清家底 · Know Your Home</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 03</div>
+        <h3>家里的电路地图</h3>
+        <div class="en">Your Home Circuit Map</div>
+        <p>从电线杆到插座走一遍，打开配电箱能说出每个开关管哪儿。</p>
+      </a>
+    </div>
+
+    <div class="vol-divider">卷三 · 动手 · Fix It Yourself</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 04</div>
+        <h3>从换灯泡开始</h3>
+        <div class="en">Start with a Light Bulb</div>
+        <p>灯泡、灯管、LED 驱动、灯座——最安全的第一次动手。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 05</div>
+        <h3>开关与插座</h3>
+        <div class="en">Switches &amp; Sockets</div>
+        <p>家里出问题最多的两个部件——怎么换、怎么选、怎么看出接错了。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 06</div>
+        <h3>跳闸了怎么查</h3>
+        <div class="en">Tracking Down a Trip</div>
+        <p>半拆法十分钟锁定回路，再揪出那台真正漏电的电器。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 07</div>
+        <h3>电器不工作怎么判断</h3>
+        <div class="en">Diagnosing Appliances</div>
+        <p>三问法通用框架、保险丝、电机与加热两大类故障，修还是换。</p>
+      </a>
+    </div>
+
+    <div class="vol-divider">卷四 · 进阶 · Tools &amp; Low Voltage</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 08</div>
+        <h3>工具箱与万用表</h3>
+        <div class="en">Toolbox &amp; Multimeter</div>
+        <p>三百块配齐工具，学会四个常用档位，从"猜"升级成"测"。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 09</div>
+        <h3>弱电与网络布线</h3>
+        <div class="en">Low Voltage &amp; Networking</div>
+        <p>网线水晶头、光猫路由器、全屋组网、电视信号与可视门铃。</p>
+      </a>
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 10</div>
+        <h3>直流的世界</h3>
+        <div class="en">The DC World</div>
+        <p>电池、快充协议、充电宝真容量，以及汽车电瓶和搭电顺序。</p>
+      </a>
+    </div>
+
+    <div class="vol-divider">卷五 · 算账 · Bills &amp; Pros</div>
+    <div class="chapters">
+      <a class="ch-card wip" href="#">
+        <span class="badge">建设中</span>
+        <div class="no">CH · 11</div>
+        <h3>电费、省电与请人</h3>
+        <div class="en">Bills, Saving &amp; Hiring</div>
+        <p>读懂账单、找出电老虎、装修前规划，以及怎么请电工不被坑。</p>
+      </a>
+    </div>
+
     <div class="page-foot">学海无涯 · 2026</div>
 
   </article>
 
-  <script src="./assets/tree-data.js?v=ct-19"></script>
-  <script src="./assets/cognition-tree.js?v=ct-19"></script>
+  <script src="./assets/tree-data.js?v=ct-20"></script>
+  <script src="./assets/cognition-tree.js?v=ct-20"></script>
 </body>
 </html>
