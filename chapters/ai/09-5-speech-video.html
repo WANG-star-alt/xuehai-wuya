@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 9.5 · 语音与视频生成 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./09-multimodal.html">智能篇 · 第 9 章</a>
+      <span class="sep">›</span>
+      <span>§ 9.5</span>
+    </div>
+    <a href="./09-multimodal.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 9.5 · Section</div>
+    <h1>语音与视频生成</h1>
+    <div class="cn">Speech &amp; Video Generation</div>
+  </header>
+
+  <p class="lead">
+    2024 年 2 月，一段"东京雪夜街头女子行走"的视频让整个互联网失声——那是 Sora 的第一次亮相，人们说影视行业要变天了。<mark class="key">而查证到今天（2026 年 8 月 6 日），Sora 已经在 2026 年 4 月 26 日停止服务，API 也定在 2026 年 9 月 24 日关闭。</mark>这一节要讲三件事：机器怎么听懂人话（一篇 68 万小时的论文）、为什么实时语音那么贵（音频 token 单价是文字的 8 倍，有官方价目为证）、以及视频生成这条路走到今天究竟做到了什么又败在哪里（厂商自己承认"投篮不中，球会自己传送到篮筐"）。所有数字都标注了来源和把握程度，<strong>没查到的地方我会明说没查到</strong>。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎙️ 会议室里那个飞快打字的记录员</div>
+    <p>你参加过那种正式会议吗？角落里坐着一位<strong>记录员</strong>，所有人说话他都在键盘上敲，散会时一份会议纪要就出来了。</p>
+    <p>这活儿有多难，试一次就知道。<em>难点一</em>：有人说话带口音、有人语速飞快、有人含着糖说。<em>难点二</em>：空调在响、走廊有人过、椅子在吱嘎。<em>难点三</em>：满嘴专业名词和公司内部缩写，听音辨字根本不够，你得<strong>懂</strong>他在说什么才敢落笔。<em>难点四</em>：两个人同时开口，你得判断先记谁。</p>
+    <p><mark class="key">语音识别这件事之所以难，不是"把声音变成字"难，而是"在一团噪声和口音里猜出说话人到底想说什么"难。</mark>而好的记录员靠的不是耳朵灵，是<strong>见得多</strong>——他在这个行业待了十年，缩写他都熟，上下文他能补。</p>
+    <p>Whisper 这个模型走的就是这条路：<strong>它没有用什么精妙的新架构，它就是听了 68 万小时的音频</strong>。68 万小时相当于一个人不吃不睡连续听 77 年。<strong>它是那位在行业里待了七十七年的记录员。</strong></p>
+    <div class="link">→ <strong>ASR</strong>（Automatic Speech Recognition，自动语音识别——把说的话变成文字）；反过来把文字变成说话声的叫 <strong>TTS</strong>（Text To Speech，语音合成）。</div>
+  </div>
+
+  <h3>先把这一节要讲的四件事分清</h3>
+  <p>"语音和视频"听起来是一坨，其实是四条方向完全不同的技术线。先分清方向，后面才不会混。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>英文缩写</th><th>方向</th><th>你日常在哪见过</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>语音识别</strong></td><td>ASR / STT</td><td>声音 → 文字</td><td>手机输入法的语音键、视频自动字幕</td></tr>
+        <tr><td><strong>语音合成</strong></td><td>TTS</td><td>文字 → 声音</td><td>导航播报、听书 App、有声读物</td></tr>
+        <tr><td><strong>实时语音对话</strong></td><td>Realtime</td><td>声音 ⇄ 声音</td><td>能打断的 AI 语音助手</td></tr>
+        <tr><td><strong>视频生成</strong></td><td>—</td><td>文字 → 视频</td><td>Sora、Veo 那类"一句话出片"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意第三行的双向箭头。<strong>实时对话不是"识别 + 合成"两步拼起来</strong>，那是老办法。新办法是<em>端到端</em>——<strong>所谓端到端，说白了就是：中间不落地成文字，声音直接进模型、声音直接出来。</strong>为什么这么做？因为落地成文字会丢掉一大堆信息：你的语气、你的犹豫、你把哪个字加重了、你是在生气还是在开玩笑。<mark class="key">文字是声音的一份"删减版摘要"，一旦转成文字，语气就永久丢失了。</mark></p>
+  <p><strong>这就像</strong>你把一通<strong>电话</strong>转成<strong>短信</strong>再转给别人。"你什么意思？"这五个字，在电话里可能是好奇、可能是不满、可能是威胁，一旦变成短信，全靠对方猜。<strong>端到端语音模型的价值就在于它不做这次转写，语气一路带到底。</strong></p>
+
+  <h3>Whisper：一篇靠"听得多"取胜的论文</h3>
+  <p>语音识别在 2022 年底被一篇论文改写了格局。这篇论文的信息可以直接引用，因为它就在 arXiv 上：</p>
+  <ul class="keylist">
+    <li><span class="k">论文标题</span><span class="v"><em>Robust Speech Recognition via Large-Scale Weak Supervision</em>（《通过大规模弱监督实现鲁棒的语音识别》）</span></li>
+    <li><span class="k">作者</span><span class="v">Alec Radford 等（OpenAI）</span></li>
+    <li><span class="k">arXiv 编号</span><span class="v"><strong>2212.04356</strong></span></li>
+    <li><span class="k">发布日期</span><span class="v"><strong>2022 年 12 月 6 日</strong></span></li>
+    <li><span class="k">训练规模（摘要原文）</span><span class="v"><strong>68 万小时（680,000 hours）多语言多任务监督数据</strong></span></li>
+    <li><span class="k">开放程度（原文）</span><span class="v">"We are releasing models and inference code."（我们正在发布模型和推理代码）</span></li>
+  </ul>
+  <p>先把标题里两个词翻译一下。<strong>Robust</strong>（鲁棒）<strong>这个词听着玄，其实就是"经得起折腾"</strong>——换个口音行不行、加点噪声行不行、换个录音设备行不行。以前的语音识别模型在实验室的干净录音上分数很漂亮，一放到真实世界就崩，就是不鲁棒。</p>
+  <p><strong>Weak Supervision</strong>（弱监督）<strong>说白了就是</strong>：训练数据的标注不那么讲究。<strong>强监督</strong>是请专业人士逐字逐句手工标注、精确到毫秒对齐——质量高，但贵到根本凑不出几万小时。弱监督则是从互联网上大量搜集"音频 + 现成字幕"的配对，字幕可能有错、有漏、时间轴可能歪，但<strong>量大</strong>。</p>
+  <p><mark class="key">这篇论文的核心主张就是：宁要 68 万小时的粗糙数据，不要几千小时的精致数据。</mark></p>
+  <p><strong>68 万小时是多少？必须换算才有感觉：</strong>一年是 8760 小时。68 万除以 8760，约等于 <strong>77.6 年</strong>。<strong>也就是说，如果一个人从出生开始就戴着耳机不停地听，一秒不歇不吃不睡，要听到 77 岁才能听完这批训练数据。</strong>而人类一生中真正花在"听人说话"上的时间，乐观估计也就几万小时量级。<strong>Whisper 听过的人话，是一个人一辈子的几十倍。</strong></p>
+
+  <h3>Zero-shot：为什么它不用你调就能直接用</h3>
+  <p>论文里最有实用价值的定位是 <strong>zero-shot transfer</strong>（零样本迁移）。<strong>这个词听着玄，其实就是"不用给它看你的例子，直接就能用"。</strong></p>
+  <p>对照一下就懂了。<strong>过去的做法（fine-tuning，微调）：</strong>你想让语音识别在你们公司的会议录音上好用，得先收集几百小时自己的录音、请人标注、再训练一遍模型。这一套下来几个月几十万。<strong>Whisper 的做法：</strong>直接拿来用，效果就能媲美那些针对特定数据集专门训练过的模型——论文原文说的是无需 fine-tuning 即可媲美有监督结果。</p>
+  <p><strong>这就像</strong>请<strong>装修</strong>师傅。<em>老办法</em>是你先花三个月培训一个学徒，教会他你家这种老房子的墙体结构、这个牌子的水管接口、这个小区的物业规矩，然后他能干得很好——但只在你家好。<em>Whisper 是那位干了三十年、全城各类房型都见过的老师傅</em>：你什么都不用教，他进门看一眼就知道怎么下手。<mark class="key">"见得足够多"本身就是一种通用能力，这是整个大模型时代最核心的那条规律，在语音上同样成立。</mark></p>
+  <p>这里必须诚实标注一件事：<strong>Whisper 的开源许可证名称、以及 tiny / base / small / medium / large 各档位的具体参数量，我这次没有从官方仓库核实到。</strong>所以本节<em>不写</em>具体许可名称、<em>不写</em>各档参数量。<strong>网上流传的那些数字很可能对，但"很可能对"不等于"可以当官方数据引用"。</strong>你要用的时候请自己去官方仓库对一遍。</p>
+
+  <h3>OpenAI 的转写模型现价：一分钱能转几分钟</h3>
+  <p>Whisper 之后，OpenAI 又推出了新一代转写模型，直接给出现价（可引用）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>输入（每 1M token）</th><th>输出（每 1M token）</th><th>折算每分钟</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>gpt-4o-transcribe</code></td><td>$2.50</td><td>$10.00</td><td><strong>约 $0.006</strong></td></tr>
+        <tr><td><code>gpt-4o-mini-transcribe</code></td><td>$1.25</td><td>$5.00</td><td><strong>约 $0.003</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>把 $0.006/分钟换算成可感知的量：</strong>一美元能转写 <strong>167 分钟</strong>，差不多是<strong>两部半电影</strong>的时长。用便宜的那档，一美元能转 <strong>333 分钟</strong>，超过五个半小时。<mark class="key">换句话说，把一整天的会议录音（8 小时）全部转成文字，成本不到 3 美元——大约是一杯咖啡的钱。</mark></p>
+  <p>再往回看一眼历史就更有感觉。<strong>十年前请人做听打转写，行业价格大约是每分钟一到两块钱人民币</strong>（而且要等几天）。现在是每分钟四分钱人民币，还是即时的。<strong>这不是"降价"，这是把一个行业的成本结构整个换掉了。</strong></p>
+  <p>顺手记一个有意思的观察：<mark class="key">OpenAI 的主力模型已经迭代到 GPT-5.x，但转写模型至今仍叫 gpt-4o-transcribe，没有随主线更名。</mark>这说明什么？说明<strong>转写这件事在 GPT-4o 那一代就基本"做完了"</strong>——它的效果已经足够好、成本已经足够低，没有强烈的迭代动力。<strong>这就像</strong>你家的<strong>电饭锅</strong>：手机每年换代，电饭锅十年没换，因为它已经把"把米煮成饭"这件事做到位了。<strong>产品命名的滞后，有时反而是"这个问题已解决"的信号。</strong></p>
+
+  <h3>Realtime API：一张能看出"为什么实时语音贵"的价目表</h3>
+  <p>接下来是本节我认为最有量化价值的一张表。OpenAI 的 Realtime API 定价（单位：美元 / 1M tokens，可引用）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>音频输入</th><th>音频缓存</th><th>音频输出</th><th>文本输入</th><th>文本缓存</th><th>文本输出</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>gpt-realtime-2</code></td><td><strong>$32.00</strong></td><td>$0.40</td><td><strong>$64.00</strong></td><td>$4.00</td><td>$0.40</td><td>$24.00</td></tr>
+        <tr><td><code>gpt-realtime-1.5</code></td><td>$32.00</td><td>$0.40</td><td>$64.00</td><td>$4.00</td><td>$0.40</td><td>$16.00</td></tr>
+        <tr><td><code>gpt-realtime-mini</code></td><td>$10.00</td><td>$0.30</td><td>$20.00</td><td>$0.60</td><td>$0.06</td><td>$2.40</td></tr>
+        <tr><td><code>gpt-realtime-translate</code></td><td colspan="6"><strong>按分钟计费：$0.034 / 分钟</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>另外 <code>gpt-realtime-2</code> 还支持图像输入，$5.00 / 1M tokens。官方特别注明：<strong>Realtime API 本身不单独收费，按你所选模型的 token 费率计。</strong></p>
+  <p>现在盯住第一行的两个数字：<strong>音频输入 $32，文本输入 $4。</strong></p>
+  <p><mark class="key">音频 token 的单价，正好是文本 token 的 8 倍。</mark>这就是"为什么实时语音那么贵"的直接证据——不是厂商想多赚，是同样"一个 token"，装音频的那个比装文字的那个贵八倍。</p>
+  <p>为什么？<strong>因为声音的信息密度低得可怕。</strong>一秒钟的语音大概能说 3 到 5 个字，而这一秒的音频要用几十个 token 去表示（对比 §9.4 里 Gemini 的音频计价：32 token/秒）。<strong>而这 3 到 5 个字如果直接打字，只有几个 token。</strong></p>
+  <p><strong>这就像</strong>寄同一件东西的两种打包方式。<em>寄文字</em>是把内容抄在一张纸上，装进普通<strong>信封</strong>。<em>寄音频</em>是把说这句话的人整个装进一个大箱子——他的音色、他的语速、他的呼吸声、背景里的空调声，全都得带上。<mark class="key">内容一样多，箱子大了几十倍，运费当然不一样。</mark>而"箱子里那些额外的东西"恰恰是有价值的（语气、情绪），所以这个成本不是浪费，是你为"保留语气"付的钱。</p>
+
+  <h3>专门的实时翻译模型：一个值得注意的信号</h3>
+  <p>上表最后一行有个容易被略过的条目：<code>gpt-realtime-translate</code>，而且它<strong>不按 token 计费，按分钟计费，$0.034/分钟</strong>。</p>
+  <p>两件事值得说。</p>
+  <p><strong>第一，为什么单独出一个翻译模型？</strong>因为实时翻译的需求量已经大到值得专门优化了。<strong>换成大白话：</strong>厂商不会为一个小众需求单开产品线。<strong>这就像</strong><strong>超市</strong>的货架——只有一样东西卖得足够多，才会从"综合区"里独立出来占一整排。</p>
+  <p><strong>第二，为什么改成按分钟计费？</strong>因为对用户来说，<strong>按分钟计费是可预测的</strong>。按 token 计费你没法事前算准（谁知道对方会说多少字、语速多快），按分钟算你一眼就知道一场一小时的会要多少钱。<mark class="key">$0.034/分钟，一小时约 2 美元——一场跨国会议的实时翻译成本，比会议室那壶咖啡便宜。</mark>对比一下：请一位同声传译，业内价格通常按半天计，量级在数千元人民币。<strong>这里的成本差是三个数量级。</strong></p>
+  <p>不过要说清楚：<strong>同传译员做的事远不止"翻译字面"</strong>——他会处理文化背景、会在发言人说错时机敏地圆过去、会照顾双方的面子。<strong>成本差三个数量级，不等于能力等价。</strong>这是本节要反复强调的态度：<em>看到便宜三个数量级时，先问它到底替代了原来那件事的哪一部分。</em></p>
+
+  <h3>★ 一条我没查到的信息，以及为什么不猜</h3>
+  <p>写到这里必须交代一件事：<strong>OpenAI 独立 TTS 模型（<code>tts-1</code>、<code>gpt-4o-mini-tts</code>）的现状与价格，我这次没有取得</strong>——访问文档时鉴权失败了。而 pricing 页的多模态区块只列了四类：<strong>Realtime、图像、视频、转写</strong>，没看到独立的 TTS 条目。</p>
+  <p>看到这个现象，一个很自然的推论是"TTS 已经并入 Realtime 了"。<strong>但我不这么写，因为这个推论没有得到官方确认。</strong>页面上没有某个条目，可能是因为它被合并了，也可能是因为它在另一个页面、在另一个分类下、或者只是那次抓取失败了。</p>
+  <p><mark class="key">"我在 A 页没看到 X"和"X 不存在"之间，隔着一整个逻辑鸿沟。</mark><strong>这就像</strong>你在<strong>医院</strong>大厅的科室牌上没找到"营养科"，正确结论是"这块牌子上没写"，而不是"这家医院取消了营养科"——也许在三号楼、也许挂在"内科"下面。<strong>技术写作里最伤读者的不是"不知道"，是把"不知道"包装成"我知道"。</strong></p>
+
+  <h3>ElevenLabs：把语音合成的账算到分</h3>
+  <p>语音合成这块最有代表性的商业产品是 ElevenLabs。它的定价体系值得完整看一遍，因为它揭示了一件很重要的事（后面会说）。</p>
+  <p>它用的是<strong>订阅制 + 统一 credit 池</strong>的模式。<strong>所谓 credit 池，说白了就是：你每月买一大桶点数，各种功能都从这一桶里扣，扣完为止。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>档位</th><th>月费</th><th>每月 credits</th><th>座席</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Free</td><td>$0</td><td>10,000</td><td>—</td><td>试水</td></tr>
+        <tr><td><strong>Starter</strong></td><td><strong>$6</strong></td><td>30,000</td><td>—</td><td><strong>即时语音克隆从这一档开放</strong></td></tr>
+        <tr><td><strong>Creator</strong></td><td><strong>$22</strong>（首月 $11）</td><td>121,000</td><td>—</td><td><strong>专业语音克隆从这一档开放</strong></td></tr>
+        <tr><td>Pro</td><td>$99</td><td>600,000</td><td>—</td><td>—</td></tr>
+        <tr><td>Scale</td><td>$299</td><td>1,800,000</td><td>3</td><td>—</td></tr>
+        <tr><td>Business</td><td>$990</td><td>6,000,000</td><td>10</td><td>低延迟 TTS 官方称「低至 5 美分/分钟」</td></tr>
+        <tr><td>Enterprise</td><td>定制</td><td>定制</td><td>定制</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>另外，<strong>年付相当于免两个月</strong>——这是个通行做法，相当于打八三折。</p>
+  <p>光看 credits 数字没有意义，得知道每种功能吃多少 credit：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>功能</th><th>credit 消耗</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>TTS（语音合成）</strong></td><td><strong>1 credit / 字符</strong></td><td>打一个字扣一点</td></tr>
+        <tr><td>STT（语音识别）</td><td>330 credits / 分钟</td><td>—</td></tr>
+        <tr><td>Eleven Music（音乐生成）</td><td>900 / 分钟</td><td>最贵的一档之一</td></tr>
+        <tr><td>音效</td><td>200 / 次</td><td>按次不按时长</td></tr>
+        <tr><td>Voice Changer（变声）</td><td>1000 / 分钟</td><td>—</td></tr>
+        <tr><td>Voice Isolator（人声分离）</td><td>1000 / 分钟</td><td>把人声从背景音里抽出来</td></tr>
+        <tr><td>配音</td><td>2000–10000 / 分钟</td><td>最贵，因为要对口型和情绪</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>还有一个模型层面的差异：<strong>V2 Multilingual 是 1 字符 = 1 credit，而 Flash / Turbo 系通过 API 调用可以低至 0.5 credit/字符</strong>。<mark class="key">同样的字数，选对模型就省一半。</mark></p>
+  <p><strong>折算到每分钟音频的实际单价：</strong>Free 档约 <strong>$0.36/分钟</strong>，Pro 及以上约 <strong>$0.17/分钟</strong>，Business 档的低延迟 TTS 官方称可低至 <strong>5 美分/分钟</strong>。</p>
+  <p><strong>把这些数字换算成可感知的量：</strong>一本 20 万字的小说做成有声书，按 1 credit/字符算需要 20 万 credits——Creator 档（121k）不够，Pro 档（600k）一个月能做三本。<mark class="key">$99 一个月做三本有声书。</mark>而传统有声书录制要请配音演员进棚，一本书的制作费通常在数万元人民币量级。<strong>这里的成本差同样是两到三个数量级。</strong></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 从"专业厨房"到"预制菜货架"</span>
+    <p>把语音合成这十年的变化，想成<strong>做一桌菜</strong>这件事的变化。</p>
+    <p><em>十年前</em>，你要一段专业配音，等于要办一场<strong>宴席</strong>：得有一间专业<strong>厨房</strong>（录音棚），得请一位大厨（配音演员），得排他的时间表，改一个字要请他重来一趟。整套流程的门槛不在钱，在<strong>你根本约不到</strong>。</p>
+    <p><em>五年前</em>，机器合成出现了，但那声音一听就是机器——好比<strong>速冻饺子</strong>，能填饱肚子，可端上宴席会被人笑。你只敢用在导航播报这种"不介意难听"的地方。</p>
+    <p><em>今天</em>，情况变成了<strong>超市</strong>里那排<strong>预制菜</strong>货架。$6 一个月，你能克隆一个声音；$22 一个月，你能做专业级克隆；20 万字的有声书一个下午做完。<mark class="key">难吃不难吃已经不是主要问题了，主要问题变成了：这道菜到底是谁的手艺？</mark></p>
+    <p>因为预制菜可以印上任何一位大厨的名字。<strong>技术门槛消失之后，剩下的全是身份和授权的问题</strong>——这盘菜说是某位名厨做的，他本人知不知道？同意没同意？分到钱没有？<strong>而这些问题，是货架上的价签回答不了的。</strong></p>
+  </div>
+
+  <h3>★ 语音克隆：技术门槛已经变成了付费门槛</h3>
+  <p>上面那张价目表里藏着本节最值得记住的一条论断，而且它有官方定价档位做支撑，不需要靠猜：</p>
+  <ul class="keylist">
+    <li><span class="k">Instant Voice Cloning（即时语音克隆）</span><span class="v">从 <strong>$6/月的 Starter 档</strong>开放</span></li>
+    <li><span class="k">Professional Voice Cloning（专业语音克隆）</span><span class="v">从 <strong>$11–22/月的 Creator 档</strong>开放</span></li>
+  </ul>
+  <p>把这两行读慢一点。<mark class="key">在 2026 年，"克隆一个人的声音"这件事的门槛，已经不是技术门槛，而是每月六美元的付费门槛。</mark></p>
+  <p><strong>六美元是多少？</strong>大约是四十多块钱人民币，一份外卖，两杯奶茶，一张电影票的三分之二。<strong>换成大白话：如果你愿意少喝两杯奶茶，你这个月就能克隆一个声音。</strong></p>
+  <p>这个论断之所以重要，是因为它推翻了一个很多人还在抱着的安全感——"这种技术很高端，普通人搞不到"。<strong>五年前这句话是对的，需要专业知识、需要算力、需要大量目标人物的录音。今天它不对了。</strong>它变成了一个订阅按钮。</p>
+  <p>那么风险是什么？我在这里<strong>只做事实陈述和风险提示，不引用任何具体法规条文或论文</strong>——因为<strong>语音克隆伦理争议的权威学术与监管来源我这次没有取得</strong>，与其引一条来源不明的法条误导你，不如老实说明。以下是纯事实层面的推论：</p>
+  <ul class="keylist">
+    <li><span class="k">声纹身份验证的地基松了</span><span class="v">有些机构曾用"念一句话验证身份"做声纹认证。当克隆变成六美元一个月的服务，这类验证方式的可靠性需要重新评估。</span></li>
+    <li><span class="k">"听到亲人的声音"不再等于确认身份</span><span class="v">电话里听着是家人的声音说急需用钱——这个场景过去靠声音就能确认，现在不能。<strong>实用建议：约定一个只有你们知道的口令，或者主动挂断回拨已知号码。</strong></span></li>
+    <li><span class="k">配音行业的授权问题成了核心议题</span><span class="v">一位配音演员的声音被克隆之后，这个"声音"的使用权归谁、能用在什么内容上、报酬怎么算——这些问题技术不回答，只能靠合同和规则回答。</span></li>
+    <li><span class="k">举证责任发生了倒转</span><span class="v">过去一段录音天然具有证据力（"这是他自己说的"）；现在需要额外证明这段录音没被合成。<strong>这是一个静悄悄发生但影响深远的变化。</strong></span></li>
+  </ul>
+  <p><strong>这些不是危言耸听，也不是反对技术。</strong>它们是"六美元门槛"这个事实的直接推论。<mark class="key">技术本身不带道德属性，但价格会决定谁能拿到它——而当价格低到人人可及，规则就必须跟上，否则由规则承担的那部分风险就落到每个普通人头上了。</mark></p>
+
+  <h3>★★ Sora 已停运：本节最重要的一个事实</h3>
+  <p>现在转到视频生成。这里有一个必须首先讲清的事实，因为几乎所有中文资料都还没跟上：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>时间</th><th>事件</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2024-02-15</td><td>技术报告《Video generation models as world simulators》发布，Sora 首次公开</td></tr>
+        <tr><td>2025-09-30</td><td><strong>Sora 2 发布</strong>，同日上线独立 iOS 社交 App（先在美国、加拿大）</td></tr>
+        <tr><td><strong>2026-04-26</strong></td><td><strong>Sora 网页与 App 体验停止服务</strong></td></tr>
+        <tr><td><strong>2026-09-24</strong></td><td><strong>Sora API 将停止服务</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>官方原话有两处，都很明确。Sora 2 官方页面顶部现挂的停运声明：<strong>"As of April 26, 2026, the Sora product is no longer available."</strong>（自 2026 年 4 月 26 日起，Sora 产品不再可用。）帮助中心的说明：<strong>"The Sora web and app experiences were discontinued on April 26, 2026. The Sora API will be discontinued on September 24, 2026."</strong></p>
+  <p>善后安排也已公布：<strong>用户可以在 sora.chatgpt.com/sunset 导出自己的内容，此后数据永久删除；已购买的 Sora credits 可以转用于 Codex。</strong></p>
+  <p><strong>"sunset"这个词值得说一句。</strong>它在英文里字面是"日落"，在产品语境里就是"下线、退役"的意思。<strong>用日落而不用"关闭"，语气上柔和很多——这本身就是行业惯用的措辞方式。</strong>下次你看到某个产品的页面上出现 sunset 字样，就知道它在告别了。</p>
+
+  <h3>一个必须解释的表面矛盾：pricing 页还在卖，产品页已停运</h3>
+  <p>如果你现在自己去查，会遇到一个看起来自相矛盾的现象，很容易得出错误结论。所以我把它单独讲清：</p>
+  <pre><code>你会看到的两个页面：
+
+  ① OpenAI 产品页 / 帮助中心
+     → "As of April 26, 2026, the Sora product is no longer available."
+     → 已停运
+
+  ② OpenAI pricing 页
+     → 仍然列着 sora-2 / sora-2-pro 的价格
+     → 看起来还能买
+
+这两者矛盾吗？—— 不矛盾。
+
+关键在于「产品」和「API」是两条不同的下线时间线：
+
+  网页与 App 体验  →  2026-04-26 已停
+  API             →  2026-09-24 才停
+
+也就是说，查询日期（2026-08-06）正好落在
+「网页已停、API 还在计费窗口内」的这段夹缝里。
+
+★ 正确的表述：
+   "Sora API 尚在服务，但已进入停运倒计时"
+✗ 错误的表述：
+   "pricing 页还有价格，所以 Sora 还能正常用"</code></pre>
+  <p><mark class="key">这个例子极有教学价值：同一家公司的两个官方页面同时都是"真的"，但只看一个页面就会得出错误结论。</mark><strong>这就像</strong>一家<strong>餐厅</strong>要搬走了——大堂已经停止接待散客（门上贴了通知），但外卖窗口还开着，因为要把已接的订单做完。<strong>你只看到外卖窗口有人在做菜，就说"这家店照常营业"，是看漏了门上那张纸。</strong></p>
+  <p>顺便处理另一类噪音。网上有些自媒体说法是"Sora 于 2026 年初关停""3 月就停了""烧完投资者的钱跑了"——<strong>这些日期与官方口径（4 月 26 日）不符</strong>。本节的原则很简单：<strong>时间与事实只采信官方口径，动机与内幕不做揣测。</strong>官方说了什么就写什么，官方没说的不替它说。</p>
+  <p>Sora 2 停运前的定价也一并记录（按秒计费）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>分辨率</th><th>单价</th><th>一段 10 秒视频</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>sora-2</td><td>720p</td><td>$0.10 / 秒</td><td>$1.00</td></tr>
+        <tr><td>sora-2-pro</td><td>720p</td><td>$0.30 / 秒</td><td>$3.00</td></tr>
+        <tr><td>sora-2-pro</td><td>1024p</td><td>$0.50 / 秒</td><td>$5.00</td></tr>
+        <tr><td>sora-2-pro</td><td>1080p</td><td>$0.70 / 秒</td><td>$7.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Batch（批量）模式是<strong>半价</strong>。<strong>把 $0.70/秒 换算成可感知的量：</strong>一条 30 秒的 1080p 广告片，纯生成成本 21 美元。<mark class="key">而这只是"出一版"的钱——真实创作里你要试十几版才有一版能用，所以实际成本要乘上试错次数。</mark>这是所有"AI 生成很便宜"的说法都会漏掉的一项：<strong>单次生成便宜，但你付的是"直到满意为止"的总和。</strong></p>
+
+  <h3>Sora 2 做到了什么：官方自称"视频领域的 GPT-3.5 时刻"</h3>
+  <p>虽然产品下线了，但 Sora 2 的技术定位仍然值得完整记录——它是这条路线走到哪一步的官方标记。</p>
+  <p>官方规格（可引用）：<strong>Sora 2 是视频加音频一起生成的</strong>，支持同步对白与音效、跨多个镜头的指令跟随；ChatGPT Pro 用户可以用到质量更高的 Sora 2 Pro。</p>
+  <p>"视频加音频一起生成"这一点比听起来更重要。<strong>以前的做法是先出画面、再另外配音配乐，两套东西对不上口型也对不上节奏。</strong>一起生成意味着模型知道"这个人张嘴的时候应该出这个音"。<strong>这就像</strong><strong>做菜</strong>时把调味放进烹饪过程里，而不是菜做好了再往上浇一勺酱——<strong>入味和挂汁是两种口感。</strong></p>
+  <p>而 OpenAI 给自己的定位说法极有意思，也很值得记住。官方称 Sora 2 是<strong>「视频领域的 GPT-3.5 时刻」</strong>，而初代 Sora 是<strong>「GPT-1 时刻」</strong>。</p>
+  <p><strong>这个类比要解开才有价值。</strong>GPT-1 是什么状态？——技术路线验证了，但生成的东西还只能给研究者看，实用价值有限。GPT-3.5 是什么状态？——<strong>就是 ChatGPT 那个引爆全球的时刻，第一次"普通人用起来觉得真有用"。</strong>所以这句自我定位实际上在说两件事：<mark class="key">一，我们认为视频生成刚刚跨过"能用"这条线；二，我们认为后面还有 GPT-4、GPT-5 那么长的路要走。</mark></p>
+  <p>而现在回头看，这句话多了一层意味：<strong>说完这话不到七个月，这个产品就下线了。</strong>本节不揣测原因——官方没有解释，我就不替它解释。但这个时间线本身值得一个技术学习者记住：<strong>「技术上跨过了能用的线」和「作为一个产品能活下来」，是两件独立的事。</strong></p>
+
+  <h3>Sora 的技术路线：把视频切成时空块</h3>
+  <p>2024 年 2 月 15 日那份技术报告里的技术路线，是这条领域至今最被广泛沿用的思路，值得完整讲一遍。原文有两句关键的：</p>
+  <p><strong>"We leverage a transformer architecture that operates on spacetime patches of video and image latent codes. Our largest model, Sora, is capable of generating a minute of high fidelity video."</strong>（我们采用一种 transformer 架构，作用于视频与图像潜编码的时空块上。我们最大的模型 Sora 能生成一分钟的高保真视频。）</p>
+  <p>以及一句更短的：<strong>"Importantly, Sora is a diffusion transformer."</strong>（重要的是，Sora 是一个扩散 transformer。）</p>
+  <p>把这两句里的术语逐个翻译成大白话：</p>
+  <ul class="keylist">
+    <li><span class="k">latent space（潜空间）</span><span class="v"><strong>说白了就是"压缩过的版本"。</strong>原始视频的数据量大得没法直接处理，先用一个编码器把它压进一个小得多的空间，在那里干活，最后再解压回来。<strong>相当于</strong>你不会拿着一整箱<strong>行李</strong>在房间里挪，而是先<strong>真空压缩袋</strong>抽干空气压成一块砖。</span></li>
+    <li><span class="k">spacetime patch（时空块）</span><span class="v">§9.4 讲的图像 patch 是在<em>平面</em>上切格子。时空块是在<strong>平面加时间</strong>上切格子——不只切"画面的这一小块"，还切"这一小块的这几帧"。<strong>相当于</strong>把一段视频看成一个<strong>三维的蛋糕</strong>（长、宽、时间），然后切成小方块。</span></li>
+    <li><span class="k">diffusion（扩散）</span><span class="v"><strong>说白了就是"从一团噪点里一步步擦出画面"。</strong>训练时它学会"给一张加了噪点的图，怎么去掉一点噪点"；生成时就从纯噪点开始，反复去噪几十步，画面慢慢浮现。<strong>相当于</strong>一块<strong>被雾气糊住的浴室镜子</strong>，你一遍遍擦，人脸一点点显出来。</span></li>
+    <li><span class="k">transformer</span><span class="v">第 7 章讲过的那套"每个 token 回头看其他所有 token"的架构。这里的 token 就是时空块。</span></li>
+  </ul>
+  <p>整条机制链是这样的：</p>
+  <pre><code>原始视频（数据量巨大）
+     ↓  编码器压缩
+低维 latent space 里的表示（小得多）
+     ↓  切成 spacetime patches（时空块）
+一串 token —— 和文字 token 地位相同
+     ↓  transformer + diffusion 反复去噪
+生成的 latent 表示
+     ↓  解码器还原
+输出视频
+
+★ 关键洞察（这才是这套设计最漂亮的地方）：
+   一张图片 = 只有一帧的视频
+   所以图片和视频可以用完全同一套表示来训练
+   → 于是能训练出「可变分辨率 / 可变时长 / 可变宽高比」的模型
+   → 不用为每种尺寸单独训一个模型</code></pre>
+  <p>最后那个洞察值得停一下。<strong>以前的视频模型通常固定输出某个尺寸</strong>，比如只能出 256×256 的方形短片，想要竖屏得另外训。而"图片就是单帧视频"这个统一视角让它可以混着训练各种尺寸的素材，于是输出也可以是各种尺寸。<mark class="key">这不是加了一个功能，而是换了一个看问题的角度之后，功能自己出来了。</mark><strong>这就像</strong><strong>装修</strong>用的<strong>可调节搁板</strong>：不是给每种高度的书都做一个专用架子，而是承认"所有书都是一样的东西，只是高度不同"，于是做一套能调的。</p>
+  <p>初代 Sora 的能力上限（官方口径）：<strong>最长 1 分钟</strong>的高清视频，可采样 <strong>1920×1080</strong> 与 <strong>1080×1920</strong> 以及两者之间的任意尺寸，也可以生成最高 <strong>2048×2048</strong> 的图像。</p>
+  <p>★ 引用这份报告要注意一件事：<strong>它明确声明了不包含模型与实现细节</strong>——原文是 "Model and implementation details are not included in this report"。所以它是一份<strong>技术报告（technical report），不是完整论文</strong>。<mark class="key">技术报告告诉你"我们做到了什么、大方向是什么"，论文才告诉你"具体怎么做的、能不能复现"。</mark>引用时把这个性质说明白，是对读者的基本尊重。</p>
+
+  <h3>Google 的路线：注意官方已经把 Veo 降级了</h3>
+  <p>Sora 下线之后，视频生成这块最值得关注的官方产品线在 Google 这边。而这里有一个<strong>与大多数中文稿写法不符</strong>的口径，必须指出来。</p>
+  <p>Gemini API 目前有两条线：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>官方定位</th><th>主打能力</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Gemini Omni Flash</strong></td><td><strong>官方推荐的默认视频生成模型</strong></td><td>视频连贯性、多输入推理、角色一致性、多轮对话式编辑</td></tr>
+        <tr><td>Veo 3.1</td><td>用于<strong>特定能力</strong>或对接旧管线</td><td>场景延展、末帧控制等</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">看清这个代际口径：Veo 已经被官方降级为"用于特定能力或对接旧管线"，主推的是 Omni Flash。</mark>而现在绝大多数中文文章还在把 Veo 当作 Google 的视频旗舰来写。<strong>这不是那些文章故意写错，是这个领域的更新速度超过了内容生产速度。</strong></p>
+  <p>Veo 3.1 的规格仍然值得记（可引用）：</p>
+  <ul class="keylist">
+    <li><span class="k">时长</span><span class="v"><strong>8 秒</strong></span></li>
+    <li><span class="k">分辨率</span><span class="v"><strong>720p / 1080p / 4k</strong></span></li>
+    <li><span class="k">音频</span><span class="v"><strong>原生生成音频</strong>（不是后期配上的）</span></li>
+    <li><span class="k">宽高比</span><span class="v">16:9 与 9:16（横屏与竖屏都支持）</span></li>
+    <li><span class="k">导演式控制</span><span class="v">视频延展、首尾帧指定、最多 <strong>3 张参考图</strong>做导演</span></li>
+    <li><span class="k">API 模型名</span><span class="v"><code>veo-3.1-generate-preview</code></span></li>
+  </ul>
+  <p>其中"最多 3 张参考图导演"这个功能最能说明这条路线在往哪走。<strong>换成大白话：你可以给它三张图说"人物长这样、场景长这样、风格长这样"，然后让它按这个拍。</strong><mark class="key">这标志着视频生成从"抽奖式生成"往"可控创作"迈了一步</mark>——以前你只能写提示词然后祈祷，现在能指定几个锚点。</p>
+  <p>而"8 秒"这个数字也要说清。<strong>8 秒是多长？</strong>一个完整的镜头通常 3 到 8 秒，所以 8 秒刚好能覆盖<strong>一个镜头</strong>。<strong>但一条 30 秒的广告需要五到十个镜头。</strong><mark class="key">也就是说，今天的视频生成模型交付的单位是"一个镜头"，不是"一条片子"。</mark>剪辑、转场、叙事节奏，仍然是人的活儿。<strong>这就像</strong>你去<strong>菜市场</strong>能买到处理干净的净菜——省了洗切的功夫，但一桌宴席怎么配、先上什么后上什么，还得你自己拿主意。</p>
+
+  <h3>关于其他视频产品：为什么本节不给它们的参数</h3>
+  <p>你一定听过 Runway、Pika、快手的可灵（Kling）、字节的即梦这些名字。<strong>它们确实存在，也确实有很多人在用。</strong></p>
+  <p><strong>但本节不填它们任何具体参数——不写时长、不写分辨率、不写价格。</strong>原因很直接：<mark class="key">我这次没有取得这些产品的权威一手数据。</mark>能搜到的都是二手来源（技术自媒体、聚合文章），而这类来源在参数上的错误率相当高——版本更新了没跟着改、把测试版参数当正式版写、把某个套餐的限制当成产品能力上限。</p>
+  <p><strong>要用这些产品，请直接查各厂的开发者文档。</strong>这不是敷衍，这是唯一正确的做法。<strong>这就像</strong>你要买<strong>家电</strong>，导购的话可以听，但插座功率、尺寸、能否嵌入橱柜这些数字，一定要翻说明书上的规格表——<strong>因为出了事，负责的是说明书，不是导购的记忆。</strong></p>
+  <p><strong>顺便给你一条通用的查证方法</strong>，比记住任何具体参数都有用：</p>
+  <ul class="keylist">
+    <li><span class="k">一手来源</span><span class="v">厂商官方文档、官方定价页、官方发布博客、论文原文（arXiv 有编号的）。<strong>这些可以直接引用。</strong></span></li>
+    <li><span class="k">需要标注的来源</span><span class="v">厂商自测的 benchmark 分数（口径可能对自己有利）、更新滞后的官方页面（像 §9.4 里那个 Claude 视觉文档）、参赛方自报的榜单条目。<strong>可以用，但要说明性质。</strong></span></li>
+    <li><span class="k">不要当数据引用的来源</span><span class="v">技术自媒体的参数汇总表、聚合网站的"最全对比"、内容农场文章。<strong>可以拿来找线索，不能拿来当依据。</strong></span></li>
+    <li><span class="k">最重要的一条</span><span class="v">任何参数都写上<strong>查询日期</strong>。这个领域三个月就变一次，不带日期的参数等于没有参数。</span></li>
+  </ul>
+
+  <h3>★ 视频生成的真实局限：厂商自己的原话</h3>
+  <p>下面这部分是本节证据质量最好的内容，因为全部出自厂商自己的官方表述——<strong>没有人会编造对自己不利的话</strong>。</p>
+  <p><strong>第一段 · 初代 Sora 技术报告的 Discussion 部分原文：</strong></p>
+  <p>"Sora currently exhibits numerous limitations as a simulator. For example, it does not accurately model the physics of many basic interactions, like glass shattering. Other interactions, like eating food, do not always yield correct changes in object state."</p>
+  <p><strong>翻译：</strong>Sora 作为模拟器目前表现出诸多局限。例如，它无法准确建模许多基础交互的物理过程，比如玻璃碎裂。其他交互，比如吃东西，也不总能得到正确的物体状态变化。</p>
+  <p>"吃东西"这个例子特别好懂。<strong>正常逻辑是：咬一口，饼干上就该少一块，而且那个缺口要一直保持。</strong>而模型经常做出来的是：咬了一口，饼干还是完整的。<mark class="key">因为它学的是"画面看起来对不对"，而不是"世界的因果关系对不对"。</mark></p>
+  <p><strong>第二段 · Sora 2 发布文对前代通病的描述，这段极有引用价值：</strong></p>
+  <p>"Prior video models are overoptimistic—they will morph objects and deform reality to successfully execute upon a text prompt. For example, if a basketball player misses a shot, the ball may spontaneously teleport to the hoop."</p>
+  <p><strong>翻译：</strong>此前的视频模型过于乐观——它们会为了成功执行文字提示而扭曲物体、变形现实。例如，如果一个篮球运动员投篮不中，球可能会自动传送到篮筐里。</p>
+  <p><mark class="key">"投篮不中，球自己传送到篮筐"——这一句话把整个问题的性质说透了。</mark>为什么会这样？因为模型的训练目标是"让画面符合提示词"。你写"运动员投篮"，它就要交出一个"投篮成功"的画面，因为训练数据里的投篮视频大多是精彩镜头。<strong>它没有"球会不会进"这个概念，它只有"提示词要被满足"这个目标。</strong></p>
+  <p><strong>官方说 Sora 2 的改进是：投篮不中会从篮板弹回。</strong>并强调了一句非常深刻的判断：<strong>"you must be able to model failure, not just success"</strong>（你必须能够建模失败，而不只是成功）——这是成为世界模拟器的关键。</p>
+  <p>这句话值得反复读。<mark class="key">一个只会拍成功的模型不是模拟器，是一台美化机器。</mark>真实世界里绝大多数事情是失败的、是普通的、是"没成"的。<strong>能拍出"没投进"，才说明它学到的是物理规律；只能拍出"投进了"，说明它学到的是"讨好提示词"。</strong></p>
+  <p><strong>这就像</strong>教<strong>学生</strong>做题。一个只会把答案往标准答案上凑的学生，和一个真懂原理的学生，在会做的题上表现一样。<strong>区别只在你给他一道"其实无解"的题时——前者一定会硬编一个答案出来，后者会说"这题无解"。</strong><em>能说"无解"，才是真懂。</em></p>
+  <p>不过官方在同一篇里也承认：<strong>"The model is far from perfect and makes plenty of mistakes."</strong>（这个模型远非完美，会犯很多错。）<strong>厂商在发布会当天写这句话，本身就是对可信度的一次投资。</strong></p>
+
+  <h3>长时序连贯性：注意 "often, though not always" 这个限定词</h3>
+  <p>视频生成还有一个专门的难点，官方给它起了个名字并单独讨论。原文标题和内容是：</p>
+  <p><strong>"Long-range coherence and object permanence.</strong> A significant challenge for video generation systems has been maintaining temporal consistency when sampling long videos. We find that Sora is often, though not always, able to effectively model both short- and long-range dependencies."</p>
+  <p><strong>翻译：</strong>长程连贯性与物体恒存。视频生成系统的一个重大挑战是在采样长视频时保持时间一致性。我们发现 Sora <em>常常（但并非总是）</em>能有效建模短程与长程依赖。</p>
+  <p>先翻译两个术语：</p>
+  <ul class="keylist">
+    <li><span class="k">Long-range coherence（长程连贯性）</span><span class="v"><strong>说白了就是</strong>：视频开头那个人穿蓝衣服，到第 40 秒他还得穿蓝衣服，不能中途变红。</span></li>
+    <li><span class="k">Object permanence（物体恒存）</span><span class="v">这个词借自发展心理学，<strong>说白了就是</strong>"东西被挡住了，它还在那儿"。婴儿在几个月大之前没有这个概念——玩具被布盖住，他以为玩具消失了。<mark class="key">视频模型也要学会这件事：一个人走到柱子后面，走出来时还得是同一个人。</mark></span></li>
+  </ul>
+  <p><strong>而最该盯住的是那五个词：often, though not always。</strong>常常，但不总是。<mark class="key">这个限定词说明能力不稳定——不是"做不到"，是"有时做到有时做不到"。</mark></p>
+  <p><strong>"不稳定"在工程上比"做不到"更难对付。</strong>如果一个能力压根做不到，你就绕开它、另想办法。而"有时行有时不行"意味着：<strong>你没法在流程里依赖它，每一条输出都得人工检查。</strong>而人工检查的成本，往往比生成本身贵得多。</p>
+  <p><strong>这就像</strong>家里那台<strong>时好时坏的洗衣机</strong>。彻底坏了，你就送去修或者去<strong>洗衣店</strong>。可它十次里有八次正常、两次把衣服搅坏——你每次都得守在旁边看着，这比它彻底坏了更折磨人。</p>
+  <p>官方也列了具体的失效模式，原文提到：<strong>"...incoherencies that develop in long duration samples or spontaneous appearances of objects..."</strong>（在长时长样本中出现的不连贯，或物体的自发出现……）。<strong>"物体自发出现"</strong>说白了就是：<strong>画面里凭空多出一个原本不存在的东西</strong>。一只手变成两只、背景里突然多一个人、桌上多出一个杯子。</p>
+
+  <h3>★ 一条被忽略的重要论断：这些能力是"规模的产物"</h3>
+  <p>技术报告里还有一句话，讨论度远不如那些酷炫的演示视频，但我认为它是整份报告里最重要的一句：</p>
+  <p><strong>"These properties emerge without any explicit inductive biases for 3D, objects, etc.—they are purely phenomena of scale."</strong></p>
+  <p><strong>翻译：</strong>这些性质是在没有任何针对 3D、物体等的显式归纳偏置的情况下涌现出来的——它们纯粹是规模的产物。</p>
+  <p>先解释 <strong>inductive bias</strong>（归纳偏置）。<strong>这个词听着玄，说白了就是"人事先塞给模型的先验知识"。</strong>比如你在设计模型时专门写一个模块告诉它"世界是三维的""物体被挡住了还存在""光是从上往下照的"——这些都是归纳偏置。</p>
+  <p>而官方说的是：<strong>我们什么都没塞。</strong>没有人在 Sora 里写过"物体有恒存性"的代码，没有人告诉它三维空间怎么运作。<mark class="key">它是在看了足够多的视频之后，自己长出了这些能力。</mark></p>
+  <p><strong>这件事的哲学冲击力比技术冲击力更大。</strong>它意味着"理解三维空间"这种看起来必须靠专门设计才能获得的能力，<strong>可以纯粹从"看得足够多"里自己浮现出来</strong>。</p>
+  <p><strong>这就像</strong>学<strong>骑自行车</strong>。你可以先给孩子讲角动量、讲陀螺效应、讲重心与转向的耦合关系——这就是塞归纳偏置。<strong>但现实中没人这么教，孩子就是骑、摔、再骑，摔够了就会了。</strong>他学会之后仍然说不出任何物理原理，可他的身体确实掌握了那套规律。<mark class="key">"纯粹是规模的产物"这句话说的就是这件事：够多的经验本身就能长出规律，不需要有人先把规律讲一遍。</mark></p>
+  <p>但也要保持清醒，把两件事同时记住：<strong>规模能长出 3D 一致性和物体恒存，却至今没能长出"玻璃会碎""咬过的饼干会少一块"。</strong>所以正确的结论不是"规模能解决一切"，而是——<mark class="key">规模能长出"看起来对"的规律，还没能长出"因果上对"的规律。</mark>这两者的差距，恰好就是"视频生成"和"世界模拟器"之间的那段路。</p>
+
+  <h3>把三家的视频能力放在一张表里</h3>
+  <p>汇总一下前面所有可引用的官方数字。<strong>注意表格最后一列的"数据可靠度"——这一列比数据本身重要。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>产品</th><th>时长</th><th>分辨率</th><th>音频</th><th>状态</th><th>数据可靠度</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>初代 Sora</td><td>最长 1 分钟</td><td>最高 1920×1080 / 1080×1920</td><td>—</td><td>已被 Sora 2 取代</td><td>官方技术报告</td></tr>
+        <tr><td>Sora 2 / 2 Pro</td><td>官方未在本次核实中给出</td><td>720p / 1024p / 1080p（按价目）</td><td><strong>视频＋音频同生成</strong></td><td><strong>网页 App 已停（2026-04-26）<br/>API 将停（2026-09-24）</strong></td><td>官方页面 + 帮助中心</td></tr>
+        <tr><td><strong>Gemini Omni Flash</strong></td><td>官方未在本次核实中给出</td><td>官方未在本次核实中给出</td><td>—</td><td><strong>官方推荐的默认视频生成模型</strong></td><td>官方文档</td></tr>
+        <tr><td>Veo 3.1</td><td><strong>8 秒</strong></td><td><strong>720p / 1080p / 4k</strong></td><td><strong>原生生成</strong></td><td>官方定位为"特定能力 / 旧管线"</td><td>官方文档</td></tr>
+        <tr><td>Runway / Pika / 可灵 / 即梦</td><td colspan="4">产品存在，但本次未取得权威一手数据，<strong>故不填任何具体参数</strong></td><td><strong>请查各厂开发者文档</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里有好几格写着"官方未在本次核实中给出"。<strong>这些空格不是疏漏，是本节的态度。</strong><mark class="key">一张有空格但每格都可靠的表，比一张填满但真假混杂的表有用得多。</mark>因为你可以放心用前者的每一格，而后者你哪一格都不敢用。</p>
+
+  <h3>用 Python 调 Whisper 与转写 API</h3>
+  <p>说了这么多，动手跑一次。下面这段代码涵盖三种用法：本地跑开源 Whisper、调云端转写 API、以及成本估算。</p>
+  <pre><code># ============ 用法一：本地跑开源 Whisper（不花钱，要显卡或耐心）============
+# pip install openai-whisper
+import whisper
+
+model = whisper.load_model("base")        # 档位名照官方仓库来，参数量本节不引用
+result = model.transcribe("meeting.mp3", language="zh")
+
+print(result["text"])                      # 全文
+for seg in result["segments"][:5]:         # 前 5 段，带时间戳
+    print(f"[{seg['start']:6.1f}s → {seg['end']:6.1f}s] {seg['text']}")
+
+
+# ============ 用法二：调 OpenAI 转写 API（$0.006/分钟，快且省心）============
+# pip install openai
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+with open("meeting.mp3", "rb") as f:
+    tr = client.audio.transcriptions.create(
+        model="gpt-4o-transcribe",         # 便宜档用 gpt-4o-mini-transcribe
+        file=f,
+    )
+print(tr.text)
+
+
+# ============ 用法三：上线前先算钱 ============
+PRICE_PER_MIN = {
+    "gpt-4o-transcribe":      0.006,       # 官方折算价
+    "gpt-4o-mini-transcribe": 0.003,
+}
+
+def transcribe_cost(minutes, model="gpt-4o-transcribe"):
+    return minutes * PRICE_PER_MIN[model]
+
+# 实时语音的音频/文本单价对比（美元 / 1M tokens，gpt-realtime-2）
+AUDIO_IN,  TEXT_IN  = 32.00, 4.00
+AUDIO_OUT, TEXT_OUT = 64.00, 24.00
+
+print(f"音频输入单价是文本输入的 {AUDIO_IN / TEXT_IN:.0f} 倍")
+print(f"音频输出单价是文本输出的 {AUDIO_OUT / TEXT_OUT:.2f} 倍")
+
+for h in (1, 8, 40, 200):
+    m = h * 60
+    a = transcribe_cost(m)
+    b = transcribe_cost(m, "gpt-4o-mini-transcribe")
+    print(f"{h:&gt;4} 小时音频转写：标准档 ${a:&gt;7.2f} / 便宜档 ${b:&gt;7.2f}")
+
+# 实时翻译按分钟计费，可预测性好得多
+print(f"\n实时翻译 1 小时：${0.034 * 60:.2f}（gpt-realtime-translate，按分钟计费）")
+</code></pre>
+  <p>跑完第三段你会看到两行关键输出。<strong>第一行确认了那个 8 倍</strong>——音频 token 单价确实是文本的八倍，这不是我编的比喻，是两个价格相除的结果。<strong>第二行有点意外：音频输出只是文本输出的 2.67 倍</strong>（$64 对 $24），不是 8 倍。<mark class="key">也就是说，输入端的音频溢价比输出端更狠。</mark></p>
+  <p>这个细节有工程价值。<strong>如果你的应用是"用户说话、AI 用文字回答"，那你付的是最贵的输入加最便宜的输出。反过来"用户打字、AI 说话"，成本结构完全不同。</strong>做产品时把这个方向盘算清楚，能省下可观的钱。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="截至 2026 年 8 月 6 日，关于 Sora 的状态，下面哪种说法符合官方口径？"
+       data-opts="Sora 一直在正常运营，pricing 页有价格就是证明|网页与 App 体验已于 2026-04-26 停止服务，API 将于 2026-09-24 停止，目前处在「API 尚在但已进入停运倒计时」的阶段|Sora 在 2026 年 3 月因为烧完投资者的钱而突然关停|Sora 从未真正对外开放，一直只是演示项目"
+       data-answer="1"
+       data-explain="官方原文两处：Sora 2 页面顶部挂着「As of April 26, 2026, the Sora product is no longer available.」；帮助中心写「The Sora web and app experiences were discontinued on April 26, 2026. The Sora API will be discontinued on September 24, 2026.」所以网页与 App 已停、API 定在 9 月 24 日停。有人会发现 OpenAI pricing 页仍在列 sora-2 / sora-2-pro 的价格，看似矛盾——其实不矛盾：查询日期正好落在「网页已停、API 仍在计费窗口内」的夹缝里，所以正确表述是「API 尚在但已进入停运倒计时」，不能仅凭 pricing 页断言 Sora 可正常使用。而「2026 年 3 月关停」「烧完投资者的钱」这类自媒体说法与官方日期（4 月 26 日）不符，时间与事实只采信官方口径。用户可在 sora.chatgpt.com/sunset 导出内容，已购 credits 可转用于 Codex。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>语音识别</strong>这一路是"听得多"赢的。Whisper（arXiv <code>2212.04356</code>，2022-12-06）用<strong>68 万小时</strong>弱监督数据训练——相当于一个人不吃不睡连听 77 年——换来了 <strong>zero-shot</strong> 能力：不用为你的数据微调，拿来就能媲美专门训练过的模型。而今天的转写价格已经低到 <strong>$0.006/分钟</strong>（便宜档 $0.003），一整天会议录音转成文字不到 3 美元。有意思的是主力模型都迭代到 GPT-5.x 了，转写模型仍叫 <code>gpt-4o-transcribe</code>——<strong>命名的滞后，往往是"这个问题已经解决"的信号。</strong></p>
+    <p><strong>实时语音为什么贵，有官方价目为证</strong>：<code>gpt-realtime-2</code> 音频输入 $32/M、文本输入 $4/M——<mark class="key">音频 token 单价正好是文本的 8 倍</mark>。因为声音要连音色、语速、呼吸、背景一起打包运走。而 <code>gpt-realtime-translate</code> 改成按分钟计费（$0.034/分钟，一小时约 2 美元），说明实时翻译的量已大到值得单开产品线。</p>
+    <p><strong>语音合成的门槛变成了付费门槛。</strong>ElevenLabs 的 <strong>即时语音克隆从 $6/月的 Starter 档开放，专业克隆从 $11–22/月的 Creator 档开放</strong>。<mark class="key">在 2026 年，"克隆一个人的声音"的门槛是每月少喝两杯奶茶。</mark>随之而来的是声纹验证、身份确认、授权归属和举证责任的一整套问题——这些技术不回答，只能靠规则回答。</p>
+    <p><strong>视频生成这一路最戏剧。</strong>2024-02-15 技术报告首次公开 Sora（<code>diffusion transformer</code> + <strong>spacetime patches</strong>，因为"图片就是单帧视频"，同一套表示能训出可变分辨率/时长/宽高比的模型）；2025-09-30 Sora 2 发布并自称「视频领域的 GPT-3.5 时刻」；<mark class="key">而 2026-04-26 网页与 App 已停运，API 定在 2026-09-24 停。</mark>pricing 页仍在列价格不构成矛盾——那是 API 停运倒计时的窗口期。Google 这边的官方口径也要更新：<strong>主推 Gemini Omni Flash，Veo 3.1 已被降级为"特定能力或旧管线"</strong>（8 秒、720p/1080p/4k、原生音频、最多 3 张参考图导演）。</p>
+    <p>而最诚实的部分来自厂商自己：初代 Sora 报告承认<strong>建模不了玻璃碎裂、咬过的饼干不会少一块</strong>；Sora 2 发布文把前代通病说得极准——<strong>"投篮不中，球可能自己传送到篮筐"</strong>，并给出一句很深的判断：<strong>你必须能建模失败，而不只是成功。</strong>长时序连贯性上官方用的限定词是 <strong>"often, though not always"</strong>——不是做不到，是不稳定，<em>而不稳定在工程上比做不到更难对付</em>。最后一条最值得带走：3D 一致性与物体恒存<strong>"纯粹是规模的产物"</strong>，没有任何人工植入的归纳偏置。<mark class="key">但规模至今只长出了"看起来对"，还没长出"因果上对"——这段差距，就是"视频生成"和"世界模拟器"之间的全部距离。</mark></p>
+    <p>第 9 章到这里结束。<strong>第 10 章我们回到文字，讲提示词工程</strong>——当模型什么都能干的时候，"怎么把话说清楚"反而成了最值钱的技能。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./09-4-vision.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 9.4 · 视觉理解</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled" href="#">
+      <span class="dir">下一节 →</span>
+      <span class="title">第 10 章 · 提示词工程（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 9.5</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

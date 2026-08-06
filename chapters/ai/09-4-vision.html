@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 9.4 · 视觉理解 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./09-multimodal.html">智能篇 · 第 9 章</a>
+      <span class="sep">›</span>
+      <span>§ 9.4</span>
+    </div>
+    <a href="./09-multimodal.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 9.4 · Section</div>
+    <h1>视觉理解</h1>
+    <div class="cn">Vision Understanding</div>
+  </header>
+
+  <p class="lead">
+    你把一张手机截图丢给 AI，问它"这上面写的什么"，它一秒钟就答出来了。你会觉得它"看见"了这张图。<mark class="key">但它并没有"看"，它是在数方块。</mark>这一节要把这件事从头拆到尾：一张图片进入模型之前会被切成多少块、每块折算多少钱、为什么同一张图在不同模型上价格能差三十倍、为什么它能读清一整页合同却数不清桌上有几个杯子、以及一条几乎所有人都猜错的官方结论——<strong>主流大模型都不保证能判断一张图是不是 AI 生成的</strong>。所有数字都来自厂商官方文档，查询日期是 2026 年 8 月 6 日。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📦 快递分拣场地上那些白格子</div>
+    <p>你有没有见过<strong>快递</strong>分拣场？地上用白漆划满了一米见方的格子，每个格子对应一个区域编号。分拣员不会说"那个包裹在墙边偏左一点"，他会说"<strong>B7 格</strong>"。</p>
+    <p>为什么要划格子？因为"墙边偏左一点"这种描述没法交给机器处理，而"B7 格"是一个可以直接写进单据、可以排序、可以统计的<em>离散编号</em>。<mark class="key">划格子这个动作，本质是把"连续的一片场地"变成"一串可以点数的编号"。</mark></p>
+    <p>模型看图片干的就是这件事。一张 1024×1024 的照片，在它眼里不是一百多万个像素，而是被 32×32 的方格覆盖后得到的 <strong>1024 个格子</strong>——每个格子被压成一串数字，排成一队送进模型，和文字 token 排在同一条队伍里。<strong>模型从头到尾没有"看见"一张图，它拿到的是一串编号，跟第 8 章里那些文字 token 是同一种东西。</strong></p>
+    <div class="link">→ <strong>Patch</strong>（读作"派奇"，中文常译"图块"或"图像补丁"）= 图片被切开后的一个小方块，是模型处理图像的最小单位，地位完全等同于文字里的 token。</div>
+  </div>
+
+  <h3>先把"视觉理解"这四个字拆开</h3>
+  <p><strong>视觉理解</strong>（Vision Understanding）这个词听着玄，其实就是"<strong>你给图，它给字</strong>"。注意方向——图片是<em>输入</em>，文字是<em>输出</em>。这一点必须先钉死，因为它和"文生图"是完全相反的两件事，而这两件事在日常聊天里经常被混着说。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>方向</th><th>典型问法</th><th>本节是否讨论</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>视觉理解</strong></td><td>图 → 文字</td><td>"这张发票上的金额是多少？"</td><td><strong>是，本节主题</strong></td></tr>
+        <tr><td>图像生成</td><td>文字 → 图</td><td>"画一只戴帽子的猫"</td><td>不是（属于生成方向）</td></tr>
+        <tr><td>图像编辑</td><td>图 + 文字 → 图</td><td>"把背景换成海边"</td><td>不是</td></tr>
+        <tr><td>视频理解</td><td>视频 → 文字</td><td>"这段监控里那个人在干什么？"</td><td><strong>是，本节末段</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里顺手澄清一个流传很广的误会。Anthropic 官方文档里有一句写得非常直白的话：<strong>Claude 只能理解图像，不能生成或编辑图像</strong>（原文表述是 Claude can only understand images, not generate or edit them）。也就是说，你让 Claude"画张图"，它做不到——这不是它今天心情不好，是<strong>能力边界上就没有这一项</strong>。<mark class="key">"能看懂图"和"能画出图"是两套完全不同的机器，一个模型有前者不等于有后者。</mark></p>
+  <p>为什么值得单开一节讲视觉理解？因为它是目前<strong>落地最扎实</strong>的多模态能力。读发票、读体检单、读快递面单、读仪表盘、把手写笔记转成文字、帮视障者描述眼前的东西——这些都是今天就能用、而且每天有人在真用的场景。<strong>而要用好它，你必须先搞明白它按什么收钱、在什么地方靠不住。</strong>这两件事恰好都有官方文档可查，不需要靠猜。</p>
+
+  <h3>模型怎么"看"：图片先被切成方块</h3>
+  <p>把图片切成方块这个思路，来自一篇 2020 年的论文（Vision Transformer，业内简称 ViT）。它的核心主张一句话就能说完：<strong>既然 Transformer 处理"一串 token"很在行，那就把图片也变成一串 token 喂给它。</strong></p>
+  <p>怎么变？<strong>说白了就是</strong>三步：</p>
+  <pre><code>第 1 步 · 划格子
+    一张 1024 × 1024 的图，用 32 × 32 的方格去铺
+    横着能铺 1024 / 32 = 32 格
+    竖着也能铺 1024 / 32 = 32 格
+    总共 32 × 32 = 1024 个方格
+
+第 2 步 · 把每个方格压平
+    一个 32×32 的彩色方格里有 32 × 32 × 3 = 3072 个数字
+    （3 是红绿蓝三个通道）
+    把这 3072 个数字过一层线性变换，压成一个向量
+    → 这个向量的地位，和一个文字 token 的向量完全一样
+
+第 3 步 · 排队进模型
+    [图块1][图块2]...[图块1024][文字token1][文字token2]...
+     └────────── 图片部分 ──────────┘└──── 你的问题 ────┘
+
+    从这里往后，模型完全不区分"这个 token 是图还是字"
+    它就是在一条混编的队伍上做注意力计算</code></pre>
+  <p>第 3 步是整件事最关键、也最容易被忽略的地方。<mark class="key">图块和文字 token 进了模型之后是平权的、混编在一条队伍里的。</mark>这正是"多模态"这个词真正的技术含义——不是"接了一个读图插件"，而是<strong>图和字共用同一套注意力机制、在同一个空间里互相看</strong>。所以你能问"图里左边那个人穿的衣服和右边那个是同一件吗"，模型的"文字问题"确实能"看到"图块。</p>
+  <p><strong>换成大白话：</strong>这就<strong>相当于</strong>把图片翻译成了模型的母语。模型的母语是"一串向量"，图片本来是另一种语言，切块加压平这两步就是翻译。翻译完之后，图和字在模型眼里没有身份差别，就像<strong>公交车</strong>上刷卡的乘客——不管你是学生卡、老年卡还是普通卡，刷完之后在系统里都只是"一次上车记录"。</p>
+
+  <h3>OpenAI 的两套算法：Patch 制与 Tile 制</h3>
+  <p>知道了原理，来看真实账单。OpenAI 目前<strong>同时并行着两套图像计费算法</strong>，用哪套取决于你调的是哪个模型。这件事本身就有点意思——它是技术迭代留下的地质层。</p>
+  <p><strong>第一套 · Patch 制（GPT-5 系列在用）。</strong>公式极其干净，官方直接给出：</p>
+  <p><code>original_patch_count = ceil(width / 32) × ceil(height / 32)</code></p>
+  <p><code>ceil</code>（读作"晒欧"，全称 ceiling，"天花板函数"）<strong>这个词听着玄，其实就是"不管余下多少，一律进位"</strong>。宽度 1000 像素除以 32 等于 31.25，<code>ceil</code> 之后是 32——<strong>相当于</strong><strong>装修</strong>贴<strong>瓷砖</strong>：最后一列只剩三分之一宽的空隙，你也得整整切一片砖去贴，不可能贴"零点二五片砖"。</p>
+  <p>官方给的算例可以直接背下来：<mark class="key">一张 1024×1024 的图 = 1024 个 patch。</mark>验算一下：1024÷32 = 32，32×32 = 1024，正好。这个例子好记，可以当成心算基准——<strong>看到一张一千像素见方的图，就想到"一千来个 patch"。</strong></p>
+  <p>那图片太大怎么办？<strong>超预算就按比例缩放</strong>。每个模型档位有两个上限，谁先撞到算谁：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>预算档位</th><th>patch 上限</th><th>边长上限</th><th>适用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>high</code></td><td>2500 patches</td><td>2048 px</td><td>常规高清需求</td></tr>
+        <tr><td><code>original</code></td><td><strong>10000 patches</strong></td><td><strong>6000 px</strong></td><td>gpt-5.4 / gpt-5.5，不缩放</td></tr>
+        <tr><td>mini / nano 档</td><td>1536 patches</td><td>—</td><td>小模型上限更低</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>官方还给了第二个算例，正好演示了缩放：<strong>一张 1800×2400 的图，缩放之后是 1452 个 patch。</strong>你可以验算这个逻辑——原图直接算是 ceil(1800/32) × ceil(2400/32) = 57 × 75 = 4275 个 patch，撞破了 high 档的 2500 上限，于是被按比例缩小，缩到 1452 个才停手。<mark class="key">注意这个结果比上限 2500 还低不少——因为缩放要保持长宽比，还要让缩完的边长仍是整数格，只能取一个"安全落点"。</mark></p>
+  <p>还有一层容易漏掉的乘数。小模型算出 patch 数之后，还要<strong>再乘一个倍率</strong>才是最终计费 token：</p>
+  <ul class="keylist">
+    <li><span class="k">gpt-5.4-mini</span><span class="v">× 1.62</span></li>
+    <li><span class="k">gpt-5.4-nano</span><span class="v">× 2.46</span></li>
+    <li><span class="k">o4-mini</span><span class="v">× 1.72</span></li>
+  </ul>
+  <p>这个倍率的存在意味着一件反直觉的事：<strong>越小的模型，同一张图折算出的 token 反而越多。</strong>为什么？因为小模型的单价便宜，厂商用倍率把"图像这件事的真实成本"补回来——图像处理的算力开销并不随模型变小而等比例下降。<strong>换成大白话：</strong>这就像<strong>快递</strong>的<strong>体积重量</strong>规则，一箱泡沫塑料明明很轻，照体积算却按十公斤收钱，因为它占的车厢空间是实打实的。</p>
+
+  <h3>第二套算法 · Tile 制：先缩到 768，再数 512 的方块</h3>
+  <p><strong>Tile 制</strong>用在 GPT-4o、GPT-4.1 和 o 系列上。<strong>Tile</strong>（读作"泰欧"）就是"瓦片、地砖"的意思，<strong>它干的活儿相当于</strong>用一块块大地砖去铺图片，而不是用小马赛克。流程是：</p>
+  <pre><code>第 1 步 · 缩放
+    把图片缩放到"最短边 = 768 像素"
+
+第 2 步 · 数 512 见方的瓦片
+    看缩放后的图能被切成几块 512 × 512
+
+第 3 步 · 算钱
+    总 token = base（固定底价） + 每块瓦片的单价 × 瓦片数
+
+各模型的两个数字（官方口径）：
+    gpt-4o / gpt-4.1  →  base 85   + 170 / tile
+    gpt-5 系（tile 制）→  base 70   + 140 / tile
+    gpt-4o-mini       →  base 2833 + 5667 / tile   ← 看清这个数字</code></pre>
+  <p>前两行很正常，一张图几百个 token，符合直觉。<strong>但第三行需要你重读一遍。</strong></p>
+
+  <h3>★ 反直觉的一条账：mini 模型的图像成本高得离谱</h3>
+  <p>把三行放到一张表里对比，那个反常之处就藏不住了。假设一张图占 4 个 tile：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>base</th><th>每 tile</th><th>4 tile 合计 token</th><th>相对倍数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>gpt-4o / gpt-4.1</td><td>85</td><td>170</td><td>85 + 680 = <strong>765</strong></td><td>1 倍（基准）</td></tr>
+        <tr><td>gpt-5 系（tile 制）</td><td>70</td><td>140</td><td>70 + 560 = <strong>630</strong></td><td>0.82 倍</td></tr>
+        <tr><td><strong>gpt-4o-mini</strong></td><td><strong>2833</strong></td><td><strong>5667</strong></td><td>2833 + 22668 = <strong>25501</strong></td><td><strong>约 33 倍</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">同一张图，在 gpt-4o-mini 上折算出的 token 数是在 gpt-4o 上的三十三倍。</mark>这完全违背"mini 就是便宜版"的直觉。它之所以这样定，是因为 mini 的 token 单价本来就低得多，厂商需要用一个大得夸张的折算系数把图像的真实成本补齐——最终两者的<em>实付金额</em>并不会真差三十三倍。但是！<strong>token 数是实打实变多了</strong>，而这会带来两个纯技术后果，跟钱无关也躲不掉：</p>
+  <ul class="keylist">
+    <li><span class="k">吃掉上下文窗口</span><span class="v">两万五千个 token 是一大块地皮。如果 mini 的窗口只有十几万 token，几张图就能把窗口塞满，你的文字部分就没地方放了。</span></li>
+    <li><span class="k">拖慢首字响应</span><span class="v">输入 token 越多，prefill 阶段（就是第 8 章讲的"把你的问题读进去"那一步）越慢，第一个字出来得越晚。</span></li>
+    <li><span class="k">撞限流</span><span class="v">API 限流是按"每分钟多少 token"算的。图一多，你可能明明只发了几张图就被限流了。</span></li>
+  </ul>
+  <p><strong>实操结论很反常识：</strong>做图像任务时，<mark class="key">不要条件反射地选 mini 省钱——先把两边的 token 数真算一遍。</mark>这是本节最有实用价值的一条，也是网上几乎没人提的一条。</p>
+
+  <h3>detail 参数四档：你其实可以自己控制精度和成本</h3>
+  <p>OpenAI 的图像输入有一个叫 <code>detail</code> 的参数，四个取值：<code>low</code> / <code>high</code> / <code>original</code> / <code>auto</code>。<strong>所谓 detail，说白了就是"你要它看多仔细"</strong>——看得越仔细，切出的块越多，钱越多、越慢。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>取值</th><th>行为</th><th>什么时候用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>low</code></td><td>缩到很小，token 最少</td><td>只需要知道"这是猫还是狗""大概是什么场景"</td></tr>
+        <tr><td><code>high</code></td><td>按 2500 patch / 2048 px 预算处理</td><td>常规看图，绝大多数场景够用</td></tr>
+        <tr><td><code>original</code></td><td><strong>不缩放</strong>，按 10000 patch / 6000 px 预算</td><td><strong>OCR、小目标检测、坐标定位</strong></td></tr>
+        <tr><td><code>auto</code></td><td>模型自己决定</td><td><strong>在 GPT-5.5 和 5.6 上等价于 <code>original</code></strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后一行是个<strong>需要格外小心的坑</strong>。<code>auto</code> 这个名字给人的感觉是"它会帮我省着用"，可官方明确说：在 GPT-5.5 及 5.6 上，<code>auto</code> 等价于 <code>original</code>，也就是<strong>不缩放</strong>。后果是——<mark class="key">你什么参数都不填，扔一张手机原图（现在动辄四千像素宽）进去，token 消耗可能比在旧模型上还高。</mark></p>
+  <p><strong>这就像</strong>换了一台新<strong>洗衣机</strong>，旧机器的"自动"档默认是节水模式，新机器的"自动"档默认是深度清洗——你以为在省水，其实每次都在放满缸。<strong>迁移模型版本时，这类"默认值变了"的细节比"新增了什么功能"更容易咬人。</strong></p>
+  <p>反过来说，<code>original</code> 也不是浪费。有三类任务必须用它，用低了就是白跑：</p>
+  <ul class="keylist">
+    <li><span class="k">OCR</span><span class="v">OCR（Optical Character Recognition，光学字符识别——把图片上的字认成可编辑文本）。字小，缩一次就糊了，糊了就认错。</span></li>
+    <li><span class="k">小目标检测</span><span class="v">找图里那个很小的东西（远处的车牌、电路板上的某个元件）。缩放等于把它抹掉。</span></li>
+    <li><span class="k">坐标定位</span><span class="v">要模型报出"那个按钮在图上第几像素"。缩放会让坐标系整体失真。</span></li>
+  </ul>
+
+  <h3>输入的硬边界：格式、体积、张数</h3>
+  <p>这些是查文档就能查到、但不查就一定会踩的死规矩。OpenAI 一侧：</p>
+  <ul class="keylist">
+    <li><span class="k">支持格式</span><span class="v">PNG、JPEG、WEBP，以及<strong>非动图</strong>的 GIF。注意"非动图"这个限定——动图 GIF 不吃。</span></li>
+    <li><span class="k">单次请求体积上限</span><span class="v"><strong>512 MB</strong>。这个额度相当宽裕。</span></li>
+    <li><span class="k">单次请求图片张数</span><span class="v">最多 <strong>1500 张</strong>。</span></li>
+    <li><span class="k">视频</span><span class="v"><strong>官方视觉文档没有列出 video 输入类型。</strong>严谨的说法是"官方文档未提供视频输入"，<em>不能</em>写成"明确不支持"——文档没提和厂商声明不支持，是两回事。</span></li>
+  </ul>
+  <p>这个"文档没提 ≠ 明确不支持"的区分不是咬文嚼字。<mark class="key">技术写作里最常见的失真，就是把"我没查到"写成"它没有"。</mark><strong>这就像</strong>你翻遍了一本<strong>菜单</strong>没找到"红烧肉"，正确的说法是"菜单上没写"，而不是"这家店不会做红烧肉"——也许在小黑板上，也许要问服务员。<strong>本节所有"不支持"的断言，都只在厂商自己写了"不支持"时才这么写。</strong></p>
+
+  <h3>Claude 的算法只有一个除法：面积 ÷ 750</h3>
+  <p>Anthropic 的公式比 OpenAI 简单得多，一个除法就完了：</p>
+  <p><code>tokens = (width px × height px) / 750</code></p>
+  <p><strong>换成大白话：把图的长和宽乘起来得到面积，再除以 750。</strong>没有 <code>ceil</code>、没有分档、没有倍率。<strong>这就像</strong><strong>菜市场</strong>论斤称的摊子——不管你买的是什么，上秤，看数字，乘单价。而 OpenAI 那套更像<strong>快递</strong>公司的计费表，要分首重续重、分体积重量、分不同产品线。</p>
+  <p>拿刚才那张 1024×1024 验算：1024 × 1024 ÷ 750 ≈ <strong>1398 token</strong>。对比 OpenAI Patch 制的 1024 个 patch——<mark class="key">同一张图，两家算出来的数字差了三成多。</mark>所以"这张图多少 token"这个问题，<strong>没有跨厂商的统一答案</strong>，必须指明是哪家。</p>
+  <p>Claude 一侧的限制清单（官方原文口径）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>限制项</th><th>数值</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>单张最大尺寸</td><td>超过 <strong>8000 × 8000 px</strong> 直接拒收</td><td>不是缩放，是拒绝</td></tr>
+        <tr><td>多图时的尺寸上限</td><td>超过 20 张时，降为 <strong>2000 × 2000 px</strong></td><td>图越多，每张允许的尺寸越小</td></tr>
+        <tr><td>单请求张数</td><td>API 最多 <strong>100 张</strong>；claude.ai 网页版 <strong>20 张</strong></td><td>接口和网页不是一个额度</td></tr>
+        <tr><td>单图体积</td><td>API <strong>≤ 5 MB</strong></td><td>比 OpenAI 的 512 MB 总额严格得多</td></tr>
+        <tr><td>自动缩放触发线</td><td>长边 &gt; 1568 px，或超过约 1600 token</td><td>会被自动缩小</td></tr>
+        <tr><td>官方建议</td><td>不超过 <strong>1.15 megapixels</strong>（约 115 万像素）</td><td>大约就是 1024×1024 那个量级</td></tr>
+        <tr><td>视频</td><td><strong>不支持</strong></td><td>这一条是官方明写的，可以断言</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>"1.15 megapixels"这个数字要换算一下才有感觉：</strong>115 万像素，大概就是一张 1024×1024 的方图，或者 1280×900 左右的横图。而现在一部普通手机随手拍出来的照片是<strong>四千八百万像素</strong>——是这个建议值的<strong>四十倍</strong>。<mark class="key">也就是说，你直接上传手机原图，其中大约 97% 的像素在进模型之前就被扔掉了，你还为"上传"这件事等了几秒钟。</mark>先在本地缩一次图，又快又省，效果几乎不变。</p>
+
+  <h3>★ 一条必须标注的引用风险</h3>
+  <p>上面这些 Claude 的数字来自官方文档原文，可以引用。但<strong>我必须同时告诉你一件事：那个页面看起来没跟上最新模型。</strong>证据有三条：</p>
+  <ul class="keylist">
+    <li><span class="k">证据一</span><span class="v">页面通篇仍在说"Claude 3 和 4 系列"。</span></li>
+    <li><span class="k">证据二</span><span class="v">代码示例用的模型名是 <code>claude-sonnet-4-5</code>。</span></li>
+    <li><span class="k">证据三</span><span class="v">成本表里的计价基准是 Sonnet 3.7 的 $3/M token。</span></li>
+  </ul>
+  <p>所以正确的引用姿势是：<strong>公式和张数限制照引</strong>（这类技术约束通常不随模型版本变），<strong>但价格必须另去 pricing 页核一遍</strong>。<mark class="key">同一家厂商的两个页面更新节奏不同步，是查资料时最容易踩的陷阱之一。</mark></p>
+  <p><strong>这就像</strong>一家<strong>餐厅</strong>门口的<strong>价目牌</strong>和店里的菜单——门口那块牌子挂了三年没换，菜还是那些菜，价钱早就不是那个价钱了。<strong>看到"技术规格"和"价格"写在同一页时，要默认后者更容易过期。</strong></p>
+
+  <h3>用 Python 亲手把三套公式算一遍</h3>
+  <p>公式讲一百遍不如自己算一遍。下面这段代码不需要联网、不需要 API Key，纯本地算数，把三套算法摊在一起对比：</p>
+  <pre><code>import math
+
+def openai_patch(w, h, patch_budget=2500, mult=1.0):
+    """OpenAI Patch 制（GPT-5 系列）。返回最终计费 token 数。"""
+    n = math.ceil(w / 32) * math.ceil(h / 32)
+    if n &lt;= patch_budget:
+        return int(n * mult), "未缩放"
+    # 超预算：按比例缩放，直到 patch 数落进预算
+    # 面积按 scale 的平方缩小，所以 scale 取根号
+    scale = math.sqrt(patch_budget / n)
+    w2, h2 = int(w * scale), int(h * scale)
+    n2 = math.ceil(w2 / 32) * math.ceil(h2 / 32)
+    while n2 &gt; patch_budget:          # 取整误差兜底
+        w2, h2 = int(w2 * 0.98), int(h2 * 0.98)
+        n2 = math.ceil(w2 / 32) * math.ceil(h2 / 32)
+    return int(n2 * mult), f"缩放到 {w2}x{h2}"
+
+def openai_tile(w, h, base, per_tile):
+    """OpenAI Tile 制（GPT-4o / 4.1 / o 系列）。"""
+    short = min(w, h)
+    scale = 768 / short                  # 最短边缩到 768
+    w2, h2 = w * scale, h * scale
+    tiles = math.ceil(w2 / 512) * math.ceil(h2 / 512)
+    return base + per_tile * tiles, f"{tiles} 个 tile"
+
+def claude_tokens(w, h):
+    """Claude：面积除以 750。"""
+    return round(w * h / 750), "面积/750"
+
+CASES = [(1024, 1024), (1800, 2400), (3024, 4032), (640, 480)]
+
+print(f"{'尺寸':&gt;12} {'GPT-5 patch':&gt;13} {'gpt-4o tile':&gt;13} "
+      f"{'4o-mini tile':&gt;14} {'Claude':&gt;9}")
+print("-" * 68)
+for w, h in CASES:
+    p, _   = openai_patch(w, h)
+    t4, _  = openai_tile(w, h, 85, 170)
+    tm, _  = openai_tile(w, h, 2833, 5667)
+    c, _   = claude_tokens(w, h)
+    print(f"{w}x{h:&gt;6} {p:&gt;13} {t4:&gt;13} {tm:&gt;14} {c:&gt;9}")
+
+# 官方给的两个基准算例，用来自查代码有没有写错
+assert openai_patch(1024, 1024)[0] == 1024, "1024x1024 应为 1024 patch"
+print("\n自查通过：1024x1024 → 1024 patch，与官方算例一致")
+</code></pre>
+  <p>跑完你会看到几件事。第一，<strong>1024×1024 那一行的 GPT-5 列正好是 1024</strong>，和官方算例对上了，说明公式抄对了。第二，<code>3024×4032</code>（一张手机竖拍照片）那一行，<strong>gpt-4o-mini 列的数字大到刺眼</strong>——这就是上面那张表的现实版。第三，<strong>Claude 那一列和 GPT-5 那一列始终不一致</strong>，且差距随图变大而拉开。</p>
+  <p>代码里那个 <code>math.sqrt</code> 值得解释一句：<strong>为什么缩放比例要开平方根？</strong>因为 patch 数正比于<em>面积</em>，而面积正比于边长的<em>平方</em>。你想把 patch 数减半，边长只需缩到原来的 0.707 倍（根号二分之一）。<strong>这就像</strong><strong>装修</strong>算<strong>地板</strong>：房间边长砍一半，要买的地板不是砍一半，是只剩四分之一。<mark class="key">凡是涉及"面积/体积"的换算，直觉几乎总会算错，因为人脑习惯线性。</mark></p>
+
+  <div class="lab" data-lab="tokenizer"></div>
+
+  <p>上面这个分词器小工具本来是给文字用的，但你可以借它建立一个横向的量感：<strong>把一段文字粘进去，看它是多少 token，再回头看一张 1024×1024 的图是 1024 个 patch。</strong>你会发现——<mark class="key">一张普通截图的 token 消耗，大约相当于一千多字的中文文本。</mark>一张图确实"胜过千言"，但它也确实<strong>按千言收费</strong>。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 三家菜市场的三杆秤</span>
+    <p>把"同一张图在三家厂商那里 token 数不一样"这件事，想成你拎着<strong>同一条鱼</strong>走进三家<strong>菜市场</strong>。</p>
+    <p><em>第一家（Claude）</em>门口只有一杆最老实的<strong>台秤</strong>。鱼放上去，看指针，面积除以 750，报个数。没有例外、没有分档、没有花活。你三分钟就能学会怎么自己算。</p>
+    <p><em>第二家（GPT-5 系）</em>用的是<strong>格子板</strong>。他把鱼平摊在一块画满 32 毫米方格的板上，数覆盖了几格。要是鱼太大盖了太多格，他就先把鱼按比例"压小"再数——所以你会看到一条大鱼和一条中等鱼报出来的格数居然差不多，因为大的那条被压过。</p>
+    <p><em>第三家（GPT-4o 系）</em>更绕：先不管你的鱼原来多大，一律先修整到"最窄处 768 毫米"，然后用 512 毫米的<strong>大瓦片</strong>去铺，还要额外收一笔"开秤费"（base）。而这家有个专门服务小客户的窗口（mini），<mark class="key">那个窗口的开秤费是 2833、每片瓦 5667——是主窗口的三十多倍。</mark></p>
+    <p>三家的秤都没坏，都是明码标价，可你要是拿第一家的算法去第三家对账，一定对不上。<strong>这就是为什么"一张图多少 token"这个问题永远要先问"哪家"——所有关于图像成本的争论，八成都是因为双方在用不同的秤。</strong></p>
+  </div>
+
+  <h3>Gemini：三家里唯一能直接吃视频的</h3>
+  <p>前面说了 OpenAI 文档未列视频输入、Claude 官方明确不支持视频。<strong>那想让 AI 看视频怎么办？</strong>答案是 Google 的 Gemini——它是三家里唯一原生支持视频输入的。这不是"能力更强"那种笼统的强，而是接口层面就有这一项。</p>
+  <p>先说四种喂视频的方式：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方式</th><th>额度 / 限制</th><th>适合</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>File API</strong></td><td>付费档 20 GB，免费档 2 GB</td><td>大文件，反复调用同一个视频</td></tr>
+        <tr><td>Cloud Storage</td><td>按你自己的存储桶</td><td>已经在用 Google 云的团队</td></tr>
+        <tr><td>Inline（内联）</td><td>小于 <strong>100 MB</strong></td><td>短视频，一次性调用</td></tr>
+        <tr><td><strong>YouTube 公开链接</strong></td><td>免费档每日上传上限 8 小时</td><td><strong>直接贴网址就行，不用下载</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第四行值得单独说一句：<mark class="key">你可以直接把一个 YouTube 公开链接贴进请求里，让模型去看那个视频。</mark>不用你先下载、不用你转码、不用你上传。<strong>这在工程上省掉的功夫非常可观</strong>——原本你得写一套"下载 → 抽帧 → 压缩 → 上传"的流水线，现在一行 URL 就完了。</p>
+  <p>能看多长？<strong>1M 上下文的模型可以处理默认分辨率 1 小时、低分辨率 3 小时的视频。</strong>这个数字换算一下更有感觉：<strong>3 小时基本等于两部电影，或者一场完整的公司会议录像，或者一整个下午的监控回放。</strong>另外 Gemini 2.5 及以后的版本，每个请求最多放 10 个视频。</p>
+
+  <h3>视频是怎么被算成 token 的：每秒 300 个</h3>
+  <p>这里是本节第二个"你必须知道否则会被账单吓到"的地方。视频的处理方式<strong>说白了就是</strong>：<strong>抽帧 + 抽音轨，然后把帧当图片算、把音频当声音算。</strong></p>
+  <pre><code>Gemini 视频处理的默认参数（官方口径）：
+
+  采样帧率     1 FPS（每秒抽 1 帧）
+  音频         1 Kbps，单声道
+  时间戳       每秒都会附一个时间戳
+
+每一项折算多少 token：
+
+  一帧画面              258 tokens
+  一帧画面（低分辨率）    66 tokens   ← media_resolution 设 low
+  音频                  32 tokens / 秒
+
+于是每秒视频的总账：
+
+  默认档：  258（画面） + 32（音频） ≈ 290  → 官方口径「约 300 tokens/秒」
+  低分档：   66（画面） + 32（音频） ≈  98  → 官方口径「约 100 tokens/秒」</code></pre>
+  <p>把"每秒 300 token"这个数字往上乘，才能真正感受到它的重量：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>视频长度</th><th>默认档 token</th><th>低分档 token</th><th>相当于多少中文字</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1 分钟</td><td>约 1.8 万</td><td>约 6000</td><td>默认档≈3 万汉字</td></tr>
+        <tr><td>10 分钟</td><td>约 18 万</td><td>约 6 万</td><td>≈30 万汉字（一部长篇小说）</td></tr>
+        <tr><td>1 小时</td><td><strong>约 108 万</strong></td><td>约 36 万</td><td>≈180 万汉字</td></tr>
+        <tr><td>3 小时</td><td>约 324 万（超窗口）</td><td><strong>约 108 万</strong></td><td>≈180 万汉字</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看最后两行你就明白官方那句"1 小时默认分辨率 / 3 小时低分辨率"是怎么来的了：<mark class="key">不是模型不想看更长，是 1M 的上下文窗口正好在这里被填满。</mark>1 小时 × 300 token/秒 = 108 万，刚过 1M；3 小时 × 100 token/秒 = 108 万，也刚过 1M。<strong>这两个"能力上限"其实是同一个窗口约束的两种花法</strong>——要么看得清但看得短，要么看得糊但看得长。</p>
+  <p><strong>这就像</strong>你带一个固定容量的<strong>保温饭盒</strong>出门：装米饭能装三顿的量，装带汤的菜就只够一顿。<strong>饭盒没变，是你选了装什么。</strong>切换 <code>media_resolution</code> 这个参数，本质就是在决定"这个饭盒里装干货还是装汤"。</p>
+
+  <h3>★ 1 FPS 这个默认值藏着一个大坑</h3>
+  <p>官方自己提醒了一句非常重要的话：<strong>1 FPS 的采样会漏掉快速动作的细节。</strong>这句话值得展开，因为它决定了哪些视频任务今天根本做不了。</p>
+  <p><strong>1 FPS 是什么意思？每秒只看一眼。</strong>而一段正常视频是每秒 25 到 30 帧。<mark class="key">也就是说，模型看到的其实是一本"每秒一页"的连环画，中间那二十多帧全被扔了。</mark></p>
+  <p><strong>换算成可感知的量：</strong>人眨一次眼大约 100 毫秒。1 FPS 意味着两次"看"之间隔了 1000 毫秒——<strong>相当于你在这一秒里眨了十次眼，而每次眨眼都错过了一格画面。</strong>再具体点：一个网球发球动作从举拍到击球大约 0.4 秒，<strong>在 1 FPS 下有可能整个动作一帧都没被抓到</strong>，模型只看到"举着拍"和"球已经飞出去了"两张静态图，中间发生了什么它得靠猜。</p>
+  <p>所以哪些任务要小心：</p>
+  <ul class="keylist">
+    <li><span class="k">体育动作分析</span><span class="v">挥杆、投篮、起跳——关键帧就在那零点几秒里，抽不到就等于没看。</span></li>
+    <li><span class="k">安全事故判定</span><span class="v">"是他先动手还是对方先动手"这种问题，答案往往在半秒之内，1 FPS 判不了。</span></li>
+    <li><span class="k">快速手势 / 唇语</span><span class="v">手语和说话时的口型变化远快于每秒一次。</span></li>
+    <li><span class="k">✅ 反过来，这些任务完全够用</span><span class="v">会议录像总结、讲座内容提取、监控里"有没有人进来"、影视剧情梗概、教学视频转文字笔记——<strong>因为这些内容的信息变化本来就以"秒"甚至"分钟"为单位。</strong></span></li>
+  </ul>
+  <p><strong>一个实用的判断法：</strong>问自己"我要找的那个信息，在画面上停留超过一秒吗？"<mark class="key">停留超过一秒的，1 FPS 抓得住；一闪而过的，抓不住。</mark></p>
+
+  <h3>用 Python 调 Gemini 看一段视频</h3>
+  <p>下面是一段可运行的示意代码。文档示例用的模型是 <code>gemini-3.6-flash</code>，走 Interactions API。注意代码里我特意把 token 预估也算了出来——<strong>上线之前先估算，比事后看账单心慌好得多</strong>：</p>
+  <pre><code># pip install google-genai
+import os
+from google import genai
+
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
+# ---------- 方式一：直接给 YouTube 公开链接（最省事）----------
+resp = client.models.generate_content(
+    model="gemini-3.6-flash",
+    contents=[
+        {"file_data": {"file_uri": "https://www.youtube.com/watch?v=XXXXXXXXXXX"}},
+        "这段视频讲了几个要点？按时间戳分段列出来，每段一句话概括。",
+    ],
+)
+print(resp.text)
+
+# ---------- 方式二：本地文件走 File API（大文件用这个）----------
+f = client.files.upload(file="meeting.mp4")
+resp2 = client.models.generate_content(
+    model="gemini-3.6-flash",
+    contents=[f, "会议里谁负责哪件事？列成表格：负责人 / 事项 / 截止时间。"],
+)
+print(resp2.text)
+
+# ---------- 上线前先估成本 ----------
+def video_tokens(seconds, low_res=False):
+    """按官方口径估算：默认约 300 tokens/秒，低分辨率约 100 tokens/秒。"""
+    frame = 66 if low_res else 258      # 每帧 token（1 FPS，所以每秒 1 帧）
+    audio = 32                          # 音频每秒 token
+    return seconds * (frame + audio)
+
+for minutes in (1, 10, 60, 180):
+    sec = minutes * 60
+    hi, lo = video_tokens(sec), video_tokens(sec, low_res=True)
+    flag = "  ← 超 1M 窗口" if hi &gt; 1_000_000 else ""
+    print(f"{minutes:&gt;4} 分钟视频：默认 {hi:&gt;9,} tokens / 低分 {lo:&gt;9,} tokens{flag}")
+
+# 输出会告诉你：60 分钟默认档就顶到 1M 窗口了，这不是巧合
+</code></pre>
+  <p>特别注意最后那个循环打印出的东西。<strong>它会用一行输出告诉你官方那个"1 小时"上限的真正来源。</strong>很多教程只会告诉你"Gemini 能看 1 小时视频"，却不告诉你这个 1 小时是窗口算出来的——<mark class="key">知道数字的来处，你才知道换了个窗口更大的模型时这个数字会怎么变。</mark></p>
+
+  <h3>DocVQA 榜单：一个必须小心解读的排行榜</h3>
+  <p>讲能力总要有个量化标尺。文档理解领域最常被引用的是 <strong>DocVQA</strong>（Document Visual Question Answering，"文档视觉问答"——给一张文档图片，问一个问题，看模型答得对不对）。它有官方评测服务器，Task 1 是单页文档榜。当前榜单前列是这样的：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>排位</th><th>条目</th><th>分数</th><th>出处 / 说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>—</td><td><strong>Human Performance</strong>（人类）</td><td><strong>0.9811</strong></td><td>2020-06-13 记录的人类基准</td></tr>
+        <tr><td>1</td><td>ORCA</td><td>0.9729</td><td>多智能体框架，CVPR 2026</td></tr>
+        <tr><td>2</td><td>NEXT-8B</td><td>0.9728</td><td>Meta</td></tr>
+        <tr><td>3</td><td>qwen3vl</td><td>0.9725</td><td>阿里通义千问系</td></tr>
+        <tr><td>4</td><td>Seed-VL-1.5</td><td>0.9691</td><td>字节跳动</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表如果不加说明就直接用，会误导人。<strong>有三件事必须同时告诉你。</strong></p>
+  <p><strong>第一件 · 榜单前列没有 GPT、没有 Claude、没有 Gemini。</strong>前面挤满的是专用方法和中国厂商、Meta 系的模型。榜上唯一一条 GPT 相关的条目是 2024 年 5 月 31 日提交的"GPT-4 Vision Turbo + Amazon Textract OCR"，分数只有 <strong>0.8736</strong>。</p>
+  <p><strong>第二件 · 但你绝对不能因此断言"大厂弱"。</strong>原因很朴素：<mark class="key">大厂通常不往这个评测服务器提交结果。</mark>它们更愿意在自己的发布博客里报自测分数。而榜单上的条目本身也是<strong>参赛方自报</strong>的。所以正确的读法是——<strong>这是"愿意提交者之间的排名"，不是"世界上所有模型的排名"。</strong>同理，也不能反过来拿厂商博客里的自测分往这个榜上填，那是两套口径混用。</p>
+  <p><strong>第三件 · 榜首仍然低于人类。</strong>0.9729 对 0.9811，<strong>差 0.0082</strong>。听起来微不足道，换算一下：<mark class="key">在一万道题里，机器比人多答错 82 道。</mark>如果你在做一个每天处理一万张发票的系统，这 82 张就是每天要人工返工的量。<strong>"接近人类水平"和"可以取代人类"之间，隔着这 82 道题。</strong></p>
+  <p>顺便补一条<strong>我没有取得的信息</strong>：图表理解领域另一个常被引用的榜单叫 <strong>ChartQA</strong>，但我这次没有拿到权威的最新分数，<strong>所以本节不写任何 ChartQA 的具体数字</strong>。<strong>这就像</strong>你去<strong>医院</strong>体检，医生看到一项指标的化验单没出来，正确做法是写"待查"，而不是照着上次的结果填一个。</p>
+
+  <h3>官方自己列的局限清单（这部分最值钱）</h3>
+  <p>接下来是本节我认为最有价值的部分：<strong>两家厂商在官方文档里自己列出的"我们做不好什么"。</strong>厂商写自己的缺点，可信度天然高于任何第三方测评——因为没人会主动编造对自己不利的信息。</p>
+  <p><strong>OpenAI 列出的局限：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">专业医学影像</span><span class="v">不适用于 CT 这类专业医学影像。<strong>这条是安全红线</strong>，不是"效果一般"的问题。</span></li>
+    <li><span class="k">非拉丁字母</span><span class="v">日文、韩文等非拉丁文字的表现可能下降。</span></li>
+    <li><span class="k">小字</span><span class="v">字太小要先放大再传。</span></li>
+    <li><span class="k">旋转 / 倒置文本</span><span class="v">歪着或倒着的文字容易误读。</span></li>
+    <li><span class="k">线条样式</span><span class="v">难理解实线 / 虚线 / 点线之间的差异——<strong>这直接影响读图表</strong>，因为很多图表就靠线型区分不同数据系列。</span></li>
+    <li><span class="k">★ 精确空间定位</span><span class="v">官方举的例子是<strong>识别棋局</strong>——它可能认得出这是国际象棋，但说不准每颗棋子具体在哪一格。</span></li>
+    <li><span class="k">全景与鱼眼</span><span class="v">这两类畸变图像表现差。</span></li>
+    <li><span class="k">计数</span><span class="v">只能给近似值。<strong>要精确数量就别指望它。</strong></span></li>
+    <li><span class="k">CAPTCHA</span><span class="v">出于安全考虑被主动阻断——这条不是"做不到"，是"故意不做"。</span></li>
+  </ul>
+  <p><strong>Anthropic 列出的局限，和上面高度一致：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">空间推理有限</span><span class="v">官方举的两个例子特别形象：<strong>读模拟钟表面</strong>（就是有指针那种钟）、<strong>描述棋子的精确位置</strong>。</span></li>
+    <li><span class="k">小图易幻觉</span><span class="v">小于 200 像素的图容易让它编内容。</span></li>
+    <li><span class="k">计数不精确</span><span class="v">和 OpenAI 一样。</span></li>
+    <li><span class="k">★ 无法判断图像是否 AI 生成</span><span class="v">官方原文写得毫不含糊：<strong>Claude does not know if an image is AI-generated… Do not rely on it to detect fake or synthetic images.</strong></span></li>
+    <li><span class="k">不能识别图中人物身份</span><span class="v">这既是能力限制，也是主动的隐私策略。</span></li>
+  </ul>
+  <p>两家独立写出的清单在"空间定位""计数""小字"三项上完全重合，这个重合本身就是有力证据：<mark class="key">这些不是某一家的工程缺陷，而是"把图切成方块再当 token 处理"这条技术路线的共同代价。</mark></p>
+
+  <h3>为什么"数不清杯子"和"读得清合同"能同时成立</h3>
+  <p>很多人第一次看到"能读整页合同却数不清桌上有几个杯子"会觉得矛盾。<strong>其实一点也不矛盾，把机制想清楚就顺了。</strong></p>
+  <p><strong>读文字为什么行？</strong>因为文字是<em>高度冗余的、有强先验的</em>。模型在训练里见过海量文本，看到"发票金额：￥1"再加半个模糊的形状，它能靠语言模型的能力把整个数字推出来——<strong>相当于</strong>你读一封笔迹很烂的信，凭上下文照样能猜出那个字是"钱"不是"我"。</p>
+  <p><strong>数杯子为什么不行？</strong>因为"三个"和"四个"这件事<em>没有任何冗余可依赖</em>。它必须真的把每个杯子逐个点过去，而这需要<strong>精确的空间定位能力</strong>——恰好是它最弱的那项。更根本的原因在于注意力机制：<mark class="key">注意力擅长的是"哪里跟哪里有关系"，而不是"一共有几个"。</mark>数数是一个需要按顺序遍历、且不能重复不能遗漏的过程，这压根不是注意力的工作方式。</p>
+  <p><strong>这就像</strong><strong>超市</strong>收银台的两种能力。扫码枪对着条码一扫就出价格，快得惊人——因为条码是为机器设计的、冗余极强的编码。但你让同一个收银员目测一筐散装葡萄有多少颗，他也得一颗一颗数。<strong>扫码和数葡萄用的是完全不同的两套本事，一个快不代表另一个也快。</strong></p>
+  <p>实用推论：<mark class="key">凡是"精确计数"和"精确坐标"的任务，用专门的检测模型或传统计算机视觉方法，不要指望通用大模型。</mark>而"读懂内容、提取信息、归纳总结"这类任务，通用大模型极强。<strong>分工，而不是替代。</strong></p>
+
+  <h3>★ 一条与公众预期完全相反的事实：AI 不认识 AI</h3>
+  <p>这条我要单开一节，因为它的科普价值最高，而且几乎所有人都猜错。</p>
+  <p>现在网上的假图越来越多，很自然的想法是"让 AI 帮我看看这张图是不是 AI 生成的"。<strong>而官方文档明确告诉你：别这么用。</strong>Anthropic 的原文是：<strong>Claude does not know if an image is AI-generated. Do not rely on it to detect fake or synthetic images.</strong>OpenAI 那份局限清单里也没有任何"能识别 AI 生成内容"的承诺。</p>
+  <p><mark class="key">换成大白话：主流大模型官方都不保证自己能认出 AI 生成的图。</mark></p>
+  <p>为什么？想想它的训练方式就明白了。<strong>模型学的是"图片内容和文字描述之间的对应关系"</strong>——它学会了"毛茸茸四条腿的这种东西叫猫"。它从来没有被专门训练去回答"这张图是相机拍的还是模型画的"。<strong>更麻烦的是，AI 生成图的目标恰恰就是"看起来像真的"</strong>——生成模型的整个训练过程都在优化"骗过判别"这件事。<strong>相当于</strong>让一个人去鉴别<strong>假钞</strong>，而印假钞的人手里正好有这个鉴别员的全部评分标准，还在照着标准反复改版。</p>
+  <p>那它有时候确实"看出来"了怎么解释？<strong>它看的是内容层面的破绽</strong>——六根手指、字迹是乱码、影子方向对不上、栏杆穿过了人的胳膊。这属于"发现画面里有不合理的东西"，不是"检测出生成痕迹"。<mark class="key">所以它会有两类错：漏判（生成得好的图它看不出）和误判（把真实照片里的怪事当成生成痕迹）。</mark>两类错都不可控，因此不能当检测工具用。</p>
+  <p><strong>正确的做法是什么？</strong>看溯源信息而不是看画面：查内容凭证（C2PA 那类嵌在文件里的来源标记）、查原始文件的元数据、查这张图第一次出现在互联网上的时间和地点、找发布者核实。<strong>这些方法查的是"这张图从哪来"，而不是"这张图长得像不像真的"</strong>——前者可查证，后者本质上是一场军备竞赛。</p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"mini 模型处理图片更便宜"</td><td><strong>token 数上恰恰相反。</strong>gpt-4o-mini 的图像折算是 2833 + 5667/tile，同一张图 token 数约为 gpt-4o 的 33 倍</td></tr>
+        <tr><td>"一张图就是几百个 token"</td><td>看算法和尺寸。1024×1024 在 GPT-5 patch 制下是 1024，在 Claude 是约 1398，在 gpt-4o-mini 上可能上万</td></tr>
+        <tr><td>"detail 设 auto 最省"</td><td>不对。<strong>GPT-5.5 / 5.6 上 auto 等价于 original</strong>，即不缩放，可能比旧模型更贵</td></tr>
+        <tr><td>"上传原图效果最好"</td><td>Claude 官方建议不超过约 1.15 megapixels，长边超 1568px 会被自动缩。上传手机原图只是白等上传时间</td></tr>
+        <tr><td>"所有大模型都能看视频"</td><td>不对。Claude 官方明确不支持；OpenAI 视觉文档未列视频输入类型；<strong>三家里只有 Gemini 原生支持</strong></td></tr>
+        <tr><td>"Gemini 能看 1 小时视频是因为模型强"</td><td>更准确说是<strong>窗口算出来的</strong>：1 小时 × 约 300 token/秒 ≈ 108 万，正好顶到 1M 窗口</td></tr>
+        <tr><td>"视频理解就是看了每一帧"</td><td>不对。默认 <strong>1 FPS</strong>，每秒只看一眼，官方提醒会漏掉快速动作</td></tr>
+        <tr><td>"DocVQA 榜上没大厂说明大厂弱"</td><td>不对。大厂通常不向该服务器提交，榜单条目是参赛方自报。这是"提交者之间的排名"</td></tr>
+        <tr><td>"文档理解已经超过人类了"</td><td>没有。榜首 0.9729 仍低于 Human Performance 0.9811，一万题里多错 82 道</td></tr>
+        <tr><td>"可以让 AI 帮我鉴别 AI 生成图"</td><td><strong>官方明确劝阻。</strong>Anthropic 原文：Do not rely on it to detect fake or synthetic images</td></tr>
+        <tr><td>"Claude 也能画图"</td><td>不能。官方明写只能理解图像，不能生成或编辑</td></tr>
+        <tr><td>"可以用它读 CT 片子"</td><td><strong>不可以。</strong>OpenAI 官方明确列出不适用于 CT 等专业医学影像</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>写给要动手的人：八条实操建议</h3>
+  <ul class="keylist">
+    <li><span class="k">先算 token 再选模型</span><span class="v">尤其涉及 mini 档。把 patch 制、tile 制、面积除 750 三套公式都跑一遍你的真实图片尺寸，再决定用谁。<strong>直觉在这里几乎一定错。</strong></span></li>
+    <li><span class="k">上传前在本地缩图</span><span class="v">缩到 1024–1568 长边这个区间，通常效果不掉、速度和成本都降。手机原图 97% 的像素是白花的。</span></li>
+    <li><span class="k">OCR 类任务显式设 original</span><span class="v">别指望默认值帮你决定。同理，只做粗分类的任务显式设 <code>low</code>，别让 auto 帮你花钱。</span></li>
+    <li><span class="k">精确计数改用专用工具</span><span class="v">目标检测模型或传统 CV 方法。通用模型的计数官方自己就说只是近似。</span></li>
+    <li><span class="k">要坐标就明确要求归一化坐标</span><span class="v">让它输出 0–1 之间的相对坐标而不是绝对像素，能规避一部分缩放导致的失真。但仍要人工抽检——空间定位是它公认的弱项。</span></li>
+    <li><span class="k">视频先估 token 再上传</span><span class="v">按每秒约 300（默认）或约 100（低分）估。发现要超窗口就先切片，或者切到 <code>media_resolution=low</code>。</span></li>
+    <li><span class="k">快动作视频别用 1 FPS</span><span class="v">如果关键信息停留不足一秒，考虑先在本地按需抽帧，把关键片段当图片序列传。</span></li>
+    <li><span class="k">别把它当鉴伪工具、别当医学影像工具</span><span class="v">这两条是官方明写的禁区，不是调参能解决的。<strong>越过去就是拿别人的风险赌自己的方便。</strong></span></li>
+  </ul>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于「用 AI 判断一张图是不是 AI 生成的」，下面哪种说法符合厂商官方口径？"
+       data-opts="主流视觉模型都能可靠识别 AI 生成图，准确率超过 95%|只有付费版才开放这个功能，免费版被限制了|Anthropic 官方明确写着 Claude 不知道图片是否为 AI 生成，并劝阻用它检测伪造图像|这属于模型的隐藏能力，加上特定提示词就能激活"
+       data-answer="2"
+       data-explain="Anthropic 官方局限清单里的原文是：Claude does not know if an image is AI-generated… Do not rely on it to detect fake or synthetic images。OpenAI 的局限清单里同样没有任何「能识别 AI 生成内容」的承诺。原因在机制上很清楚：模型学的是「图片内容 ↔ 文字描述」的对应关系，从未被专门训练去判断图片的生成来源；而生成模型的整个优化目标恰恰就是「看起来像真的」。它偶尔「看出来」，靠的是发现画面内容里的破绽（六根手指、乱码文字、影子方向不对），这既会漏判也会误判，两类错都不可控。真正可靠的路子是查溯源：内容凭证（C2PA 一类）、文件元数据、首次出现的时间地点、向发布者核实。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>模型不会"看"图，它把图<strong>切成方块</strong>，每块压成一个向量，然后和文字 token 混编排进同一条队伍——从那一刻起，图和字在它眼里没有身份差别。这就是"多模态"的技术实质。</p>
+    <p>三家的算法各不相同，所以<mark class="key">"一张图多少 token"必须先问"哪家"</mark>。GPT-5 系用 <code>ceil(w/32) × ceil(h/32)</code>（官方算例：1024×1024 = 1024 patch），GPT-4o 系用"缩到最短边 768 再数 512 瓦片"，Claude 用 <code>面积 / 750</code>。最反直觉的一条：<strong>gpt-4o-mini 的图像折算是 2833 + 5667/tile，同一张图的 token 数约为 gpt-4o 的 33 倍——mini 在图像上不省。</strong>还有一个坑：GPT-5.5/5.6 上 <code>detail=auto</code> 等价于 <code>original</code>，不缩放。</p>
+    <p>视频方面，三家里只有 <strong>Gemini 原生支持</strong>：可直接贴 YouTube 链接，默认 1 FPS 采样，每帧 258 token 加音频 32 token/秒，合起来约 <strong>300 token/秒</strong>。所谓"能看 1 小时"其实是 1M 窗口算出来的额度。而 <strong>1 FPS 意味着每秒只看一眼</strong>，快动作任务会直接失效。</p>
+    <p>能力边界最好的证据是厂商自己写的：<strong>空间定位差（认不出棋子在哪格、读不准模拟钟表面）、计数只能近似、小字和旋转文本易错、不适用 CT 等专业医学影像。</strong>而最反公众预期的一条是——<mark class="key">官方明确劝阻用它检测 AI 生成图像。AI 不认识 AI。</mark>另外读榜单要小心：DocVQA 榜前列全是专用方法与中国、Meta 系模型，大厂通常不提交，所以那是"提交者之间的排名"；而榜首 0.9729 仍低于人类 0.9811，一万题里多错 82 道。</p>
+    <p>下一节我们从"看"转向"听和拍"——<strong>语音识别、实时对话、以及视频生成</strong>。那里有一个更戏剧性的事实等着你：曾经引爆全网的 Sora，已经在 2026 年 4 月 26 日停止服务了。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./09-3-clip.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 9.3 · CLIP</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./09-5-speech-video.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 9.5 · 语音与视频生成</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 9.4</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

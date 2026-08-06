@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 9 章 · 多模态 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html#vol-ai">智能篇</a>
+      <span class="sep">›</span>
+      <span>第 9 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 09</div>
+    <h1>第 9 章 · 多模态</h1>
+    <div class="cn">Multimodal · 让机器同时看得见、听得懂、说得出</div>
+  </header>
+
+  <p class="lead">
+    上一章我们把大语言模型拆到了底：它眼里只有一串编号，一个字一个字往外冒。可你现在随手拍一张冰箱内部的照片扔给它，它能告诉你"用这些菜可以做番茄炒蛋，但你缺葱"；你对着手机说一句话，它能直接回你一句话，中间连字幕都不用。<mark class="key">文字、图片、声音、视频这四样东西在物理上毫无共同点，凭什么能被同一个模型一起处理？</mark>答案说白了只有一句：<strong>把它们全部翻译成同一种语言——一串数字。</strong>这一章分五节，把这件事从头讲到尾：什么叫模态、什么叫 Embedding、CLIP 是怎么把图和字对齐的、模型到底怎么"看"一张图、以及声音和视频这两个更难的家伙怎么办。
+  </p>
+
+  <h3>本章要回答什么</h3>
+  <p><strong>多模态</strong>（Multimodal，读作"马尔提模道尔"）这个词听着高深，其实拆开就两个字：<strong>模态</strong>（modality）指的是"信息的一种形式"——文字是一种，图片是一种，声音是一种，视频是一种。<mark class="key">单模态模型只吃一种，多模态模型能同时吃好几种。</mark>就这么简单。</p>
+  <p>但"同时吃好几种"这件事在工程上难得离谱。一段文字是一串离散的编号；一张 1024×1024 的照片是三百多万个连续的亮度数值；一秒钟的 CD 音质声音是 44100 个采样点。<strong>这三样东西的形状、量级、单位全都不一样，你没法把它们拼在一起喂给同一个矩阵。</strong>整个多模态领域，本质上就是在解决这一个问题：<strong>先给每种模态各配一个"翻译官"，把它们统统翻译成同一个格式的一串数字，然后在这串数字的世界里做事。</strong>那串数字叫 <strong>向量</strong>，那个"同一个格式的世界"叫 <strong>共享嵌入空间</strong>。</p>
+
+  <p>具体来说，这五节各回答一个问题：</p>
+  <ul class="keylist">
+    <li><strong>什么叫模态？为什么"多模态"是必然方向？</strong>——人从出生起就是多模态的：你听见"苹果"、看见苹果、咬一口苹果，这三件事在你脑子里是同一个概念。只会读书不会看图的模型，天生缺一条腿。</li>
+    <li><strong>Embedding 到底是什么？</strong>——它是本章最重要的一个词，也是整个现代 AI 最重要的一个词之一。说白了就是"把任何东西变成一串数字，而且意思相近的东西数字也相近"。语义搜索、推荐系统、RAG 全靠它。</li>
+    <li><strong>图片和文字怎么会在同一个空间里？</strong>——CLIP 用四亿张网图和它们的说明文字，硬生生把两个不相干的世界拧到了一起。这是 2021 年最重要的一篇论文之一。</li>
+    <li><strong>模型是怎么"看"一张图的？</strong>——它不是从左到右扫描像素，而是把图切成一格一格的小方块，然后像读句子一样读这些方块。</li>
+    <li><strong>声音和视频比图片难在哪？</strong>——难在多了一根"时间轴"。一张图是静的，一段视频是一堆图排成队，数据量爆炸，而且时间上的先后关系还必须保住。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 联合国的同声传译间</span>
+    <p>想象一场<strong>联合国</strong>会议。台上坐着一位中国代表、一位法国代表、一位阿拉伯代表，三个人说三种完全不同的语言——语法不同、词汇不同、连书写方向都不同。<strong>他们凭什么能开会？</strong></p>
+    <p>靠会场后面那几个玻璃小屋：<strong>同声传译间</strong>。每种语言配一位译员，各自把自己负责的那种语言翻成一种大家都懂的中介语言。翻完之后，三个人说的话在中介语言里就变成了同一套词汇——"我反对"这句话，不管原话是中文、法语还是阿拉伯语，翻出来都是同一个意思，都能被拿来直接比较。</p>
+    <p><mark class="key">多模态模型的架构和这个会场一模一样。</mark>文字有一位译员（文本编码器），图片有一位译员（图像编码器），声音再配一位（音频编码器）。每位译员把自己负责的那种模态翻译成<strong>同一种中介语言</strong>——那门中介语言不是英语，而是"一串固定长度的小数"，比如 1536 个小数。翻完之后，一张猫的照片和"一只猫"这四个字，在中介语言里就成了两串<strong>非常接近</strong>的数字。</p>
+    <p>于是所有跨模态的神奇本领都变成了同一件普通的事：<strong>比较两串数字有多接近。</strong>用文字搜图片、用图片搜图片、给图片配文字说明、判断一张图和一句描述是否相符——全都是同一个操作。这一章五节，前三节讲这套翻译系统是怎么建起来的，后两节讲图像、声音、视频这三位译员各自的手艺。</p>
+  </div>
+
+  <h3>为什么这一章值得单独拆出来</h3>
+  <p>因为多模态是 2023 年之后 AI 产品形态变化最大的一块。你现在用的 AI，几乎没有一个是纯文字的了——拍照问作业、截图问报错、发语音聊天、上传 PDF 让它总结、给它一张草图让它写代码，这些全都是多模态能力。<strong>如果你只懂第 8 章那套纯文本的 LLM，你会解释不了眼前一半的现象。</strong></p>
+  <p>而且这一章有一个特别实用的副产品：<strong>Embedding</strong>。它是当下最容易上手、性价比最高的 AI 技术——不用训练、不用显卡，调一次 API 就能拿到，拿到之后你就能做语义搜索、做文档问答、做去重、做聚类、做推荐。<mark class="key">很多人以为要做 AI 应用必须先会微调大模型，其实百分之八十的实用需求，一个 Embedding 加一个向量检索就搞定了。</mark>§9.2 会把这件事讲透，还配了一个可以亲手拖动向量、看余弦相似度怎么变的互动组件。</p>
+
+  <h3>这一章怎么读</h3>
+  <p>五节是<strong>递进</strong>的，建议按顺序读。§9.1 先把"模态"这个概念和多模态的整体版图铺开，属于地图；§9.2 的 Embedding 是全章的地基，不搞清"一串数字怎么承载意思"，后面讲 CLIP、讲跨模态检索全是空的；§9.3 是本章的技术高潮，CLIP 那套对比学习的思路后来被搬到了几乎所有多模态模型里；§9.4 转向"图像编码器内部长什么样"以及 LLaVA、BLIP-2 这类视觉语言模型是怎么把图接进 LLM 的；§9.5 处理带时间轴的模态——语音和视频。</p>
+  <p>如果你时间有限只能读一节，<strong>读 §9.2</strong>。Embedding 是这一章唯一一个你今天下午就能动手用上的东西。</p>
+
+  <h3>本章的五节</h3>
+  <div class="cards">
+    <a class="card" href="./09-1-what-is-multimodal.html">
+      <div class="card-num">§ 9.1</div>
+      <h4>什么是多模态</h4>
+      <p>模态就是"信息的一种形式"。为什么四样毫不相干的东西能塞进同一个模型？</p>
+    </a>
+    <a class="card" href="./09-2-embedding.html">
+      <div class="card-num">§ 9.2</div>
+      <h4>Embedding 向量</h4>
+      <p>把任何东西变成一串数字，意思近的数字也近。语义搜索与 RAG 的地基。</p>
+    </a>
+    <a class="card" href="./09-3-clip.html">
+      <div class="card-num">§ 9.3</div>
+      <h4>CLIP 与跨模态对齐</h4>
+      <p>四亿组图文对硬训出来的一件事：让图片和文字住进同一个空间。</p>
+    </a>
+    <a class="card" href="./09-4-vision.html">
+      <div class="card-num">§ 9.4</div>
+      <h4>视觉理解</h4>
+      <p>模型不扫像素，它把图切成一格格小方块，然后像读句子一样读。</p>
+    </a>
+    <a class="card" href="./09-5-speech-video.html">
+      <div class="card-num">§ 9.5</div>
+      <h4>语音与视频</h4>
+      <p>多了一根时间轴，数据量就爆炸。声音和视频难在哪、怎么压。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">一切模态最终都变成向量</span><span class="v">不管进来的是字、图、声音还是视频，出口都是一串固定长度的小数。这是多模态唯一的通用做法，没有例外。</span></li>
+    <li><span class="k">"意思接近"在数学上就是"方向接近"</span><span class="v">两串数字像不像，标准动作是算<strong>余弦相似度</strong>——看两个箭头的夹角大不大，而不看箭头有多长。公式只有一行：<code>cos_sim(A,B) = (A·B) / (|A|·|B|)</code>。</span></li>
+    <li><span class="k">对齐靠的是"配对"而不是"标注"</span><span class="v">CLIP 没请人标注四亿张图，它只是从网上抓了四亿组"图片 + 它旁边的说明文字"。互联网自己就是最大的标注工厂——这个思路才是 CLIP 真正的贡献。</span></li>
+    <li><span class="k">零样本不是魔法，是检索</span><span class="v">CLIP 能识别它从没专门训练过的类别，做法是把候选类名写成句子、编码成向量，然后看哪个和图片向量最接近。<strong>说白了就是在一堆候选答案里挑最像的那个。</strong></span></li>
+    <li><span class="k">多模态模型也有很蠢的短板</span><span class="v">CLIP 在最简单的 MNIST 手写数字上零样本只有 88%，远低于人类的 99.75%。因为它的四亿张网图里几乎没有手写数字这种东西。<strong>训练数据里没有的，它就是不会。</strong></span></li>
+    <li><span class="k">时间轴是最贵的那一维</span><span class="v">一秒视频是二三十张图。同样的模型，处理一分钟视频的开销可能是处理一张图的上千倍——所以所有视频模型都在想办法"抽帧"和"压缩"。</span></li>
+  </ul>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-6-reasoning.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 8.6 · 推理模型</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./09-1-what-is-multimodal.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 9.1 · 什么是多模态</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · 第 9 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

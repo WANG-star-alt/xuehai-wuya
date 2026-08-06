@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 9.2 · Embedding 向量 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./09-multimodal.html">智能篇 · 第 9 章</a>
+      <span class="sep">›</span>
+      <span>§ 9.2</span>
+    </div>
+    <a href="./09-multimodal.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 9.2 · Section</div>
+    <h1>Embedding 向量</h1>
+    <div class="cn">Embedding &amp; Vector Representation</div>
+  </header>
+
+  <p class="lead">
+    你在手机相册里搜"海边"，它翻出了三张你从没打过标签的照片；你在文档里搜"报销流程"，它找出了一篇标题叫《费用申请指引》的文件——里面一个"报销"两个字都没出现。<mark class="key">这两件事背后是同一个东西：Embedding。</mark>它说白了就是把任何东西变成一串小数，而且规矩是"意思相近的东西，那串小数也相近"。这一节要把这件事从最基础的"什么叫向量"讲起，一路讲到余弦相似度、维度取舍、向量数据库怎么在千万条向量里一眨眼找到最近的那几条。这也是整章里唯一一个你今天下午就能动手做出成品的技术。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📮 邮政编码：为什么数字接近的地方，地理上也接近</div>
+    <p>你寄一个<strong>快递</strong>到"浙江省杭州市西湖区"，单子上还会写一串<strong>邮政编码</strong>：310007。这串数字不是随便编的，它有讲究：</p>
+    <p>前两位 <strong>31</strong> 代表浙江省，前三位 <strong>310</strong> 代表杭州，再往后逐级细分到投递局。于是<mark class="key">同一个城市的两个地址，编码前几位一定一样；两个相隔千里的地址，编码从第一位就不同。</mark></p>
+    <p>这一招带来一个惊人的便利：<strong>分拣机器人完全不需要认识汉字，也不需要懂地理。</strong>它只要比较两串数字前几位差多少，就能判断"这两个包裹是不是要去同一个方向"。它甚至能做到你没教它的事——把 310007 和 310012 放进同一辆车，因为数字接近。<strong>这不是它理解了杭州，而是编码本身把"地理接近"这件事编进了数字里。</strong></p>
+    <p>现在把"地址"换成"任何东西"，把"地理接近"换成"意思接近"，你就得到了 Embedding 的全部思想。</p>
+    <div class="link">→ <strong>Embedding</strong>（读作"嵌拨定"，中文叫"嵌入"或"嵌入向量"）= 把一个东西（一个词、一句话、一张图、一个用户）转换成一串固定长度的小数，并且要求：<strong>意思越接近的东西，那串小数在数学上就越接近。</strong></div>
+  </div>
+
+  <h3>先把"向量"这个词彻底说清</h3>
+  <p><strong>向量</strong>（Vector）这个词在数学课上被讲成了"有大小和方向的量"，配一个带箭头的图，然后大部分人就把它忘了。但在 AI 里，它的含义朴素得多：<mark class="key">向量说白了就是一串按顺序排好的数字。</mark>就这样。没有别的。</p>
+  <p>你早就在用向量了，只是没这么叫它：</p>
+  <pre><code>一个人的体检数据：  [身高 172, 体重 65, 血压 118, 心率 72]
+                     ↑ 这就是一个 4 维向量
+
+一杯咖啡的配方：    [咖啡 30, 牛奶 200, 糖 5, 冰 100]
+                     ↑ 这是一个 4 维向量
+
+一个 RGB 颜色：      [255, 128, 0]     （橙色）
+                     ↑ 这是一个 3 维向量
+
+OpenAI 的文本嵌入：  [0.0023, -0.0091, 0.0177, ... ]  共 1536 个数
+                     ↑ 这是一个 1536 维向量</code></pre>
+  <p>"<strong>维度</strong>"这个词也不神秘——<strong>维度就是这串数字有几个</strong>。体检数据 4 个数就是 4 维，颜色 3 个数就是 3 维，OpenAI 的 <code>text-embedding-3-small</code> 输出 1536 个数就是 1536 维。</p>
+  <p>关键的一步理解在这里：<strong>一串数字可以看成空间中的一个位置。</strong>两个数就是纸面上的一个点（横坐标、纵坐标）；三个数就是房间里的一个点（东西、南北、上下）；1536 个数就是一个我们没法想象、但数学上完全成立的 1536 维空间里的一个点。</p>
+  <p><strong>换成大白话：</strong>你没法在脑子里画出 1536 维空间，但你不需要画。<mark class="key">所有你在二维平面上会做的事——量两点之间的距离、量两个箭头的夹角、找离某个点最近的几个点——在 1536 维里用的是同一套公式，只是加法项从 2 个变成 1536 个。</mark>计算机根本不觉得这有什么难。</p>
+
+  <h3>Embedding 的真正定义：不是"变成数字"，而是"带秩序地变成数字"</h3>
+  <p>很多人对 Embedding 的理解停在"把文字变成数字"，这是不够的——<strong>把文字变成数字这件事，早就有人干了，而且干得很烂。</strong>看这两种做法的对比，你就知道 Embedding 的贵重之处在哪。</p>
+  <p><strong>烂做法：One-Hot 编码。</strong>假设词表有 10 万个词，那就用 10 万维向量表示一个词：第 5000 号词就是"第 5000 位是 1，其余 99999 位全是 0"。</p>
+  <pre><code>One-Hot 编码（"独热编码"，意思是只有一位是热的/亮的）
+
+  "猫"   → [0, 0, ..., 1, ..., 0, 0]   第 5000 位是 1
+  "狗"   → [0, 0, ..., 0, ..., 1, 0]   第 8213 位是 1
+  "推土机" → [0, 1, ..., 0, ..., 0, 0]   第 2 位是 1
+
+问题：任意两个词之间的"距离"完全一样！
+  猫 和 狗   的相似度 = 0
+  猫 和 推土机 的相似度 = 0
+
+这套编码里"猫和狗都是动物"这个信息 100% 丢失。
+它只是给每个词发了一个互不相同的号码牌，
+号码之间没有任何含义。</code></pre>
+  <p><strong>好做法：Embedding。</strong>用几百到几千个小数表示一个词，而这些小数是训练出来的，训练目标就是让语义相关的词落在相近的位置。</p>
+  <pre><code>Embedding（示意，真实数值没有这么整齐的含义）
+
+  "猫"    → [ 0.72,  0.31, -0.15,  0.88, ... ]
+  "狗"    → [ 0.69,  0.35, -0.11,  0.85, ... ]   ← 和"猫"很接近
+  "推土机" → [-0.42, -0.77,  0.63, -0.09, ... ]   ← 差得很远
+
+  相似度：猫-狗 = 0.91      猫-推土机 = 0.07
+
+信息没丢："猫和狗都是动物"这件事被编码进了数值本身。</code></pre>
+  <p>所以完整的定义应该是三句话：<mark class="key">① 把东西变成固定长度的一串小数；② 长度远小于 One-Hot（几百几千 vs 几十万），所以叫"稠密向量"；③ 最关键的一条——语义关系被保留成了几何关系。</mark></p>
+  <p>顺便解释"<strong>稠密</strong>"（Dense）和"<strong>稀疏</strong>"（Sparse）这对词：稀疏向量指的是绝大多数位置都是 0（One-Hot 就是极端稀疏，10 万位里只有 1 位非零）；稠密向量是每一位都在用、都有数值。<strong>相当于</strong>：稀疏向量是一个只在一格里写了字的巨大<strong>表格</strong>，稠密向量是一张写得满满的小卡片。<strong>后者更省地方，而且信息还更多。</strong></p>
+
+  <h3>一切的起点：word2vec 与那个被传错的类比</h3>
+  <p>Embedding 这个思路的成名之作是 <strong>word2vec</strong>（读作"word to vec"，意思就是"把词变成向量"）。这篇论文的准确信息值得记住，因为网上关于它的错误传言实在太多：</p>
+  <ul class="keylist">
+    <li><span class="k">论文标题</span><span class="v">《Efficient Estimation of Word Representations in Vector Space》（在向量空间中高效估计词表示）</span></li>
+    <li><span class="k">作者与机构</span><span class="v">Mikolov 等，<strong>Google</strong></span></li>
+    <li><span class="k">编号与时间</span><span class="v">arXiv <strong>1301.3781</strong>，<strong>2013 年 1 月</strong>；发表于 <strong>ICLR 2013 Workshop</strong></span></li>
+    <li><span class="k">最惊人的一条效率数据</span><span class="v">在 <strong>16 亿词</strong>的语料上，<strong>不到一天</strong>就能训完</span></li>
+  </ul>
+  <p>那个效率数字在当年是石破天惊的。<strong>把它换算成可感知的量</strong>：16 亿词大约相当于 1 万多本长篇小说的文字量——如果一个人一天读一本，要读三十多年。<mark class="key">而这台机器一天之内就把这些书全"读"完了，还顺手给每个词都算出了一串坐标。</mark>在 2013 年那个还没有大模型的年代，这个效率直接让"词向量"从实验室玩具变成了工业标配。</p>
+
+  <h3>★ 误解澄清：king − man + woman ≈ queen 不是 word2vec 那篇提出的</h3>
+  <p>这是本节最值得单独开一节讲的事，因为它是<strong>技术科普界最经典的一次以讹传讹</strong>。</p>
+  <p>你几乎在每一篇讲 Embedding 的文章里都见过这个式子：<code>vec("king") - vec("man") + vec("woman") ≈ vec("queen")</code>。意思是"国王减去男人再加上女人，约等于女王"——向量的加减居然能做语义上的类推，这个例子实在太漂亮，所以被引用了成千上万次。</p>
+  <p><strong>而绝大多数引用都把出处写错了。</strong>它们写成"word2vec 论文提出了这个著名类比"。事实是：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>word2vec 那篇</th><th>提出 king−man+woman 类比的那篇</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>标题</td><td>Efficient Estimation of Word Representations in Vector Space</td><td><strong>Linguistic Regularities in Continuous Space Word Representations</strong></td></tr>
+        <tr><td>作者</td><td>Mikolov 等</td><td><strong>Mikolov, Yih, Zweig</strong>（作者组不同！）</td></tr>
+        <tr><td>机构</td><td><strong>Google</strong></td><td><strong>微软研究院</strong></td></tr>
+        <tr><td>发表于</td><td>arXiv 1301.3781 · ICLR 2013 Workshop</td><td><strong>NAACL-HLT 2013</strong>（不在 arXiv 上，ACL Anthology 编号 <strong>N13-1090</strong>）</td></tr>
+        <tr><td>主要贡献</td><td>两个高效训练词向量的架构，16 亿词一天训完</td><td>发现词向量空间里存在<strong>语言学规律</strong>，可以用向量加减做类推</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意几个容易被忽略的细节：<strong>第一，作者组不同</strong>——Mikolov 是两篇的共同作者，但另外两位（Yih 和 Zweig）不在 word2vec 那篇里。<strong>第二，机构不同</strong>——一篇是 Google，一篇是微软研究院。<strong>第三，连发表渠道都不同</strong>——一篇挂在 arXiv 上人人可下，另一篇是正式的 NAACL 会议论文，压根没上 arXiv，所以你搜 arXiv 编号会搜不到。</p>
+  <p><mark class="key">为什么这件事值得较真？</mark>因为这是一个绝好的示范：<strong>技术圈的"常识"里混着相当比例的错误，而错误往往就是这样传开的</strong>——某篇科普把两篇同期、同一位共同作者的论文记混了，后面几千篇文章直接抄前面那篇。<strong>相当于</strong>一句话在<strong>办公室</strong>里传了十手，第一个人说的和最后一个人听到的已经不是一回事，但每个人都很确信自己说的是原话。</p>
+  <p>顺便说，这个类比本身也有个常被夸大的地方。<strong>它不是精确等式，是"约等于"</strong>——算出来的那个向量并不完全等于 queen 的向量，而是在整个词表里离 queen 最近。而且这个技巧对某些关系（国家-首都、单数-复数、形容词-比较级）效果很好，对另一些关系就很勉强。<strong>它是一个真实存在但被过度浪漫化的现象。</strong></p>
+
+  <h3>怎么衡量"两串数字有多像"：余弦相似度</h3>
+  <p>现在到了最实用的一环。有了向量，我们就要比较它们。<strong>标准动作叫余弦相似度</strong>（Cosine Similarity）。</p>
+  <p>公式只有一行，而且你只需要认识两个符号：</p>
+  <pre><code>cos_sim(A, B) = (A · B) / (|A| · |B|)
+
+其中：
+  A · B   叫"点积"，算法是：对应位置相乘，然后全部加起来
+          [1,2,3] · [4,5,6] = 1×4 + 2×5 + 3×6 = 32
+
+  |A|     叫"模长"或"长度"，算法是：每一项平方，加起来，开根号
+          |[3,4]| = sqrt(3² + 4²) = 5     （就是勾股定理）
+
+结果范围： -1  到  +1
+   +1   两个向量方向完全一致（夹角 0 度）  → 意思一样
+    0   两个向量互相垂直（夹角 90 度）     → 毫不相干
+   -1   两个向量方向完全相反（夹角 180 度） → 意思相反</code></pre>
+  <p>"余弦"这个词听着玄，其实就是<strong>夹角</strong>的另一种说法。<mark class="key">换成大白话：余弦相似度衡量的是"两个箭头指向的方向有多接近"，它完全不管箭头有多长。</mark></p>
+  <p><strong>为什么"不管长度"是个优点？</strong>举个例子。"我今天很高兴"和"我今天真的非常非常高兴"这两句话，后者的向量可能"更长"（强度更高），但方向基本一致——它们讲的是同一件事。<strong>如果你用"距离"来衡量，后者会因为长度差被判定为不相似；用夹角来衡量，它们就是高度相似的。</strong></p>
+  <p><strong>相当于</strong>问路：你问"火车站往哪走"，一个人说"往东"，另一个人说"往东走三公里"。<strong>方向一致，只是详细程度不同。</strong>余弦相似度关心的就是"往东"这件事。</p>
+
+  <h3>★ 一个官方细节：OpenAI 的向量已经归一化，所以余弦相似度就是点积</h3>
+  <p>这一条是工程上的实用宝藏，而且有官方文档背书，值得单独讲透。</p>
+  <p><strong>OpenAI 官方文档明确说明：它的 embedding 输出已经被归一化为单位长度</strong>，也就是每个向量的 <code>L2</code> 模长（那个 <code>|A|</code>）都正好等于 1。</p>
+  <p>把这个事实代进公式，你会看到一个漂亮的化简：</p>
+  <pre><code>已知 |A| = 1，|B| = 1
+
+  cos_sim(A, B) = (A · B) / (|A| · |B|)
+                = (A · B) / (1 × 1)
+                = A · B                      ← 余弦相似度退化成了纯点积！
+
+工程意义：省掉了两次开根号和一次除法。
+在千万条向量的检索里，这个化简能省掉可观的算力。
+而且矩阵乘法可以一次算出一对多的全部相似度：
+  sims = query_vec @ all_vecs.T     ← 一行 numpy 搞定</code></pre>
+  <p>还有第二个推论，官方文档也提到了：<mark class="key">对于已归一化的向量，余弦相似度和欧氏距离给出的排序结果完全相同。</mark></p>
+  <p><strong>欧氏距离</strong>就是你在中学学的"两点之间直线距离"（勾股定理那个）。一般情况下它和余弦相似度会给出不同的排名，但当所有向量长度都是 1 时，它们必然一致。<strong>直觉解释：</strong>如果所有箭头都是同样长，那么"箭头尖离得近"和"夹角小"就是同一件事——<strong>相当于</strong>一群人站在同一个圆形<strong>操场</strong>的跑道上（离圆心距离都一样），那么两个人"站得近"和"相对圆心的角度差小"完全等价。</p>
+  <p><strong>实用结论：</strong>用 OpenAI 的向量做检索时，你随便挑余弦相似度还是欧氏距离，排名不会变——所以直接选算得最快的那个（点积）。<strong>但请注意这个结论有前提</strong>：如果你换用别家没有归一化的向量模型，这个等价关系就不成立了，必须老老实实算余弦相似度，或者自己先归一化一遍。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 试衣间里的三围表</span>
+    <p>你去<strong>商场</strong>买衣服，导购问你要什么号。你说"我不知道"，她拿出软尺量了三个数：<strong>胸围 92、腰围 78、臀围 96</strong>。</p>
+    <p>请注意这三个数干了一件很了不得的事：<mark class="key">它把"一个活人的身材"这么复杂的东西，压缩成了三个数字。</mark>压缩当然有损失——它丢掉了你的肤色、发型、脾气、学历，这些对买衣服没用的信息全被扔了。<strong>但它保住了最关键的那部分：跟"衣服合不合身"有关的信息。</strong></p>
+    <p>这三个数就是一个 <strong>3 维 Embedding</strong>。而它的神奇之处和文本向量一模一样：<strong>两个人的三围数字接近，他们就能穿同一件衣服</strong>——即使这两个人一个在北京一个在广州、一个爱吃辣一个不吃、长得完全不像。<strong>导购根本不用认识他们，只要比数字。</strong></p>
+    <p>现在把这个类比推到底，你就理解了所有关键概念：</p>
+    <p><strong>维度就是量几个尺寸。</strong>只量三围（3 维）够买 T 恤了，但要定制西装就不够——得再加肩宽、袖长、裤长、领围，量到十几个数（十几维）。<mark class="key">维度越高，保留的细节越多，但每个人的档案也越占地方、量起来也越费时间。</mark>这就是后面要讲的"维度取舍"。</p>
+    <p><strong>余弦相似度就是"体型比例像不像"。</strong>一个 92-78-96 的人和一个 184-156-192 的巨人（每个数正好翻倍），他们的三围数字大小差远了，但<em>比例</em>完全一致——余弦相似度会说"完全相似"，因为它只看方向不看长度。这正好对应"身材匀称度相同，只是整体尺码不同"。</p>
+    <p><strong>而"训练"就是决定量哪几个尺寸。</strong>没有人天生知道该量三围而不是量小指长度。是几百年的裁缝经验发现"这三个数最能预测合身与否"。<strong>Embedding 模型的训练干的就是这件事：从海量数据里自动摸索出"该量哪几千个看不见的尺寸"，才能最好地预测语义关系。</strong>只不过它摸索出来的那几千个"尺寸"没有名字，人类也看不懂每一维是什么意思——这就是为什么 Embedding 常被说成"黑箱"。</p>
+  </div>
+
+  <h3>OpenAI 三代嵌入模型：一张对照表看清取舍</h3>
+  <p>说完原理，来看真实产品。OpenAI 目前主推三个文本嵌入模型，它们的官方参数是这样的（<strong>查询日期 2026 年 8 月 6 日</strong>）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>默认维度</th><th>MTEB 平均分</th><th>最大输入</th><th>支持截断降维</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>text-embedding-3-small</code></td><td><strong>1536</strong></td><td><strong>62.3%</strong></td><td>8192 token</td><td><strong>支持</strong></td></tr>
+        <tr><td><code>text-embedding-3-large</code></td><td><strong>3072</strong></td><td><strong>64.6%</strong></td><td>8192 token</td><td><strong>支持</strong></td></tr>
+        <tr><td><code>text-embedding-ada-002</code>（上一代）</td><td>1536</td><td>61.0%</td><td>8192 token</td><td>不支持</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>MTEB</strong> 这个缩写要解释一下：<strong>Massive Text Embedding Benchmark</strong>（大规模文本嵌入基准测试），是这个领域公认的综合评测，涵盖检索、分类、聚类、排序等几十个任务。<mark class="key">62.3% 和 64.6% 这个差距看着小，但在榜单上是好几个名次。</mark></p>
+  <p>三个数字之间的取舍很清楚：<strong>ada-002 是上一代</strong>，分数最低（61.0%），且不支持降维，除了兼容老系统之外没有选它的理由。<strong>3-small 是性价比之选</strong>，维度和 ada-002 一样但分数更高。<strong>3-large 是效果之选</strong>，维度翻倍（3072），分数最高。</p>
+  <p>注意三者的最大输入都是 <strong>8192 token</strong>。<strong>把这个数换算成可感知的量</strong>：按中文约 0.6 token 一个字算（§8.1 讲过的 DeepSeek 官方口径），8192 token 大约能装一万三千个汉字——差不多是一篇长报告或者一章小说。<mark class="key">超过这个长度的文档必须自己先切块（chunking），这是所有 RAG 系统的第一步工程活。</mark></p>
+
+  <h3>关于价格：一个必须诚实交代的空白</h3>
+  <p>写到这里本该给一张价格表，但这里必须停下来说清一件事：<strong>OpenAI 当前的定价页面已经不再单独列出 embedding 的每百万 token 单价了。</strong>网上流传的 <code>$0.02</code>、<code>$0.13</code> 这类数字我无法在现行官方页面上核实到，所以本节<mark class="key">不给具体单价</mark>——宁可留白，不写不确定的数。</p>
+  <p>不过官方指南提供了另一个口径的对照，它更贴近实际感受。按<strong>每页约 800 token</strong> 估算（一页纸的文字量），一美元能处理的页数是：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>每美元能处理多少页（按 800 token / 页）</th><th>相对倍数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>text-embedding-3-small</code></td><td><strong>62,500 页</strong></td><td>基准</td></tr>
+        <tr><td><code>text-embedding-ada-002</code></td><td>12,500 页</td><td>约 1/5</td></tr>
+        <tr><td><code>text-embedding-3-large</code></td><td>9,615 页</td><td>约 1/6.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>以官方定价页为准，查询日期 2026 年 8 月 6 日。</strong></p>
+  <p><strong>把 62500 页换算成可感知的量</strong>：一本 300 页的书，62500 页相当于 <strong>200 多本书</strong>。<mark class="key">花一美元（不到八块钱）就能把两百多本书全部转成向量、建成一个可以语义搜索的库。</mark>这就是为什么我说 Embedding 是当下性价比最高的 AI 技术——它便宜到你几乎不用做成本核算。</p>
+  <p>顺便记一个工程要点：<strong>Embedding 只需要算一次，之后可以永久存下来复用。</strong>你的文档库建好向量之后，每次搜索只需要给"查询词"算一个向量（几十个 token 的事），文档那边一次都不用重算。<strong>相当于</strong><strong>图书馆</strong>编目录：编一次很费工夫，但编完之后每次找书都是几秒钟的事，不用重新编。</p>
+
+  <h3>Matryoshka：把 3072 维剪短到 256 维，居然还更准</h3>
+  <p>这是 v3 系列最有意思的一个特性，也是一个绝好的科普点。</p>
+  <p><strong>问题背景：</strong>维度越高效果越好，但代价是存储和检索都变贵。3072 维的向量占的空间是 256 维的 12 倍——一千万条文档，前者要几十个 GB，后者只要几个 GB。<strong>能不能只留前面几百维，把后面的剪掉？</strong></p>
+  <p>常识告诉你不行。<strong>普通的向量每一维都携带一部分信息，剪掉后半截等于扔掉一半信息，效果会崩。</strong>就像把一张照片右半边裁掉，剩下的半张脸认不出是谁。</p>
+  <p>但 v3 系列的模型是用一种特殊技术训练的（官方文档引用的是 arXiv <strong>2205.13147</strong>），使得<mark class="key">信息按重要性从前往后排列——前面几维装最重要的信息，越往后越次要。</mark>于是你可以在 API 里用 <code>dimensions</code> 参数直接截断，效果只是缓慢下降而不是崩塌。</p>
+  <p>这个技术叫 <strong>Matryoshka</strong>——就是俄罗斯套娃那个词。<strong>这个名字取得极妙</strong>：套娃拆开一层，里面还是一个完整的娃娃，只是小一号；截断后的向量也是一个完整可用的向量，只是精度低一号。</p>
+  <p><strong>官方给出的对照结果最有说服力：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">3-large 截断到 256 维</span><span class="v"><strong>仍然优于</strong>未截断的 1536 维 <code>ada-002</code></span></li>
+  </ul>
+  <p>把这句话读三遍。<mark class="key">一个被砍到只剩 256 个数的新模型向量，效果比一个完整保留 1536 个数的老模型向量还好——存储空间只有六分之一。</mark></p>
+  <p><strong>相当于</strong>：新款相机拍出的<strong>照片</strong>，压缩到原来六分之一大小之后，看起来还是比老相机的原图清楚。<strong>这不是压缩算法的胜利，是成像质量的代际差。</strong></p>
+  <p><strong>工程启示很直接：</strong>如果你的向量库很大、存储或内存吃紧，先试试 <code>dimensions=512</code> 或 <code>256</code>，量一下你自己数据上的召回率损失。<strong>很多场景下损失可以忽略，而成本直接砍掉大半。</strong>但一定要用自己的数据实测，别照搬官方数字。</p>
+
+  <h3>动手：用 numpy 手算余弦相似度</h3>
+  <p>不需要任何 API、不需要联网，先把余弦相似度这个公式亲手跑一遍。<strong>这段代码 20 行，但它是所有语义搜索系统的内核。</strong></p>
+  <pre><code># 安装： pip install numpy
+import numpy as np
+
+def cos_sim(a, b):
+    """余弦相似度： (A·B) / (|A|·|B|)  —— 完全照公式写"""
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    dot  = np.dot(a, b)                 # 点积：对应位相乘再求和
+    na   = np.linalg.norm(a)            # 模长：平方和开根号
+    nb   = np.linalg.norm(b)
+    return dot / (na * nb)
+
+# ---- 先验证三个极端情况 ----
+print("方向完全一致：", cos_sim([1, 2, 3], [2, 4, 6]))    # +1.0（长度翻倍不影响）
+print("互相垂直    ：", cos_sim([1, 0],    [0, 1]))        #  0.0
+print("方向完全相反：", cos_sim([1, 2],    [-1, -2]))      # -1.0
+
+# 注意第一行：[1,2,3] 和 [2,4,6] 长度不同（一个长一个短），
+# 但方向一致，余弦相似度就是 1。这正是"只看方向不看长短"。
+
+# ---- 用手工编的小向量模拟语义 ----
+# 假设我们的空间只有 3 维，人为赋予含义：[动物性, 机械性, 可爱度]
+vecs = {
+    "猫":     [0.9, 0.0, 0.9],
+    "狗":     [0.9, 0.1, 0.8],
+    "老虎":   [0.9, 0.0, 0.2],
+    "推土机": [0.0, 0.9, 0.1],
+    "挖掘机": [0.0, 0.9, 0.2],
+}
+
+names = list(vecs)
+print("\n两两余弦相似度矩阵：")
+print("        " + "".join(f"{n:>8}" for n in names))
+for n1 in names:
+    row = "".join(f"{cos_sim(vecs[n1], vecs[n2]):>8.3f}" for n2 in names)
+    print(f"{n1:>6}  {row}")
+
+# ---- 归一化之后：余弦相似度 == 点积 ----
+M = np.array([vecs[n] for n in names], dtype=float)
+M = M / np.linalg.norm(M, axis=1, keepdims=True)   # 每行变成单位长度
+print("\n每行模长：", np.round(np.linalg.norm(M, axis=1), 6))
+print("一次矩阵乘法算出全部相似度（就是点积）：")
+print(np.round(M @ M.T, 3))
+</code></pre>
+  <p>跑完你会看到：<strong>猫和狗的相似度接近 1，猫和推土机接近 0，推土机和挖掘机接近 1。</strong>这三维是我人为编的，所以含义清楚；真实模型的 1536 维每一维都没有名字，但机制完全一样。</p>
+  <p>最后那两行是关键的工程技巧：<mark class="key">把所有向量先归一化成单位长度，之后 <code>M @ M.T</code> 一次矩阵乘法就算出全部两两相似度</mark>——这就是前面讲的"余弦相似度退化成点积"在代码里的样子。<strong>百万级向量的检索全靠这一招。</strong></p>
+
+  <p>公式和代码都过了一遍，现在你该亲手拖一拖。<strong>下面这个小实验室让你直接拖动两个向量的方向，实时看余弦相似度怎么变</strong>——把两个箭头拖到重合、拖到垂直、拖到反向各试一次，你对这个数字的直觉会一下子建立起来。这比再读十遍公式都有用。</p>
+
+  <div class="lab" data-lab="embedding"></div>
+
+  <h3>动手：真的调一次 OpenAI Embedding API</h3>
+  <p>玩过了直觉，来跑真东西。下面这段代码做一件完整的事：<strong>把几句话变成向量，然后用一句查询在里面搜出最相关的那句。</strong>这就是语义搜索的最小可用版本。</p>
+  <pre><code># 安装： pip install openai numpy
+# 需要设置环境变量 OPENAI_API_KEY
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI()
+
+def embed(texts, model="text-embedding-3-small", dims=None):
+    """把一批文本转成向量。dims 用于 Matryoshka 截断降维。"""
+    kwargs = {"model": model, "input": texts}
+    if dims:
+        kwargs["dimensions"] = dims      # v3 系列专属参数
+    resp = client.embeddings.create(**kwargs)
+    return np.array([d.embedding for d in resp.data])
+
+docs = [
+    "公司报销需在费用发生后 30 天内提交申请单。",
+    "年假可结转至次年 3 月 31 日，逾期作废。",
+    "食堂午餐时间为 11:30 至 13:00。",
+    "出差住宿标准：一线城市每晚上限 500 元。",
+    "新员工入职当天需完成信息安全培训。",
+]
+
+V = embed(docs)
+print("向量矩阵形状：", V.shape)                        # (5, 1536)
+print("每条向量的模长：", np.round(np.linalg.norm(V, axis=1), 6))
+# 输出全是 1.0 —— 官方文档说明 embedding 已归一化为单位长度
+
+# 因为已归一化，余弦相似度直接就是点积，不用再除模长
+query = "差旅费怎么报"
+q = embed([query])[0]
+sims = V @ q                                          # 一次点积搞定
+
+order = np.argsort(-sims)
+print(f"\n查询：{query}")
+for rank, i in enumerate(order, 1):
+    print(f"  {rank}. {sims[i]:.4f}  {docs[i]}")
+
+# ---- 演示 Matryoshka 截断降维 ----
+for d in (1536, 512, 256, 64):
+    Vd = embed(docs, dims=d)
+    qd = embed([query], dims=d)[0]
+    top = docs[int(np.argmax(Vd @ qd))]
+    print(f"维度 {d:>4}：Top-1 = {top}")
+</code></pre>
+  <p>这段代码有三个值得注意的点。</p>
+  <p><strong>第一，查询词和文档里没有一个共同的字。</strong>你搜"差旅费怎么报"，命中的是"出差住宿标准"和"公司报销"这两条——<mark class="key">前者一个"报"字都没有，后者一个"差"字都没有。</mark>关键词搜索在这里会完全失手，语义搜索却能命中。<strong>这就是 Embedding 最直接的价值。</strong></p>
+  <p><strong>第二，打印出的模长全是 1.0。</strong>这直接验证了官方那句"已归一化为单位长度"，所以后面 <code>V @ q</code> 这一行点积就是余弦相似度，不用额外除模长。</p>
+  <p><strong>第三，最后那个循环是 Matryoshka 的现场演示。</strong>你会看到从 1536 维一路砍到 256 维，Top-1 的结果往往一模一样；砍到 64 维时才开始出错。<strong>这就是"截断而不显著损失语义"的直观样子。</strong></p>
+
+  <h3>Embedding 能拿来做什么：七个真实用途</h3>
+  <p>把"算相似度"这一个动作换个包装，就是七种不同的产品。</p>
+  <ul class="keylist">
+    <li><span class="k">语义搜索</span><span class="v">搜"差旅费怎么报"能命中"出差住宿标准"。<strong>和关键词搜索最大的区别是它不需要字面重合</strong>，能处理同义词、口语化说法、错别字。</span></li>
+    <li><span class="k">RAG（检索增强生成）</span><span class="v">Retrieval-Augmented Generation，"先查再答"。先用 Embedding 从知识库里捞出最相关的几段，塞进提示词，再让 LLM 基于这几段回答。<strong>这是企业知识库问答的标准做法</strong>，比微调模型便宜几个数量级。</span></li>
+    <li><span class="k">推荐系统</span><span class="v">把用户看过的内容向量求平均当成"用户向量"，然后找离它最近的没看过的内容。<strong>这就是"猜你喜欢"最朴素的实现。</strong></span></li>
+    <li><span class="k">聚类与主题发现</span><span class="v">把一万条用户反馈全部转成向量，跑一个聚类算法，自动分出"物流慢""包装破""客服态度"几堆。<strong>不用事先定分类标准</strong>，让数据自己说话。</span></li>
+    <li><span class="k">去重与查重</span><span class="v">相似度超过某个阈值就判为重复。比字符串比对强得多——"退款申请"和"我要退钱"字面完全不同，向量上却很近。</span></li>
+    <li><span class="k">异常检测</span><span class="v">把新来的一条数据和历史向量的中心比一下，离得太远就是异常。用于风控、日志监控。</span></li>
+    <li><span class="k">分类（少样本）</span><span class="v">每个类别只给几个例子，求平均得到"类别向量"，新数据来了就看离哪个类别最近。<strong>不用训练模型</strong>，加类别只需要加几个例子。</span></li>
+  </ul>
+  <p><mark class="key">这七件事的底层动作完全相同：把东西变成向量，然后比较。</mark>这就是为什么 Embedding 被称为"现代 AI 应用的地基"——你学会一次，能解决七类问题。</p>
+
+  <h3>千万条向量里怎么一眨眼找到最近的：HNSW</h3>
+  <p>前面那段 numpy 代码有个致命问题：<strong>它把查询向量和每一条文档向量都算了一遍。</strong>五条文档没问题，一千万条就完蛋了——每次搜索要做一千万次点积，每次点积是 1536 次乘法加 1536 次加法。<mark class="key">一次搜索三百多亿次浮点运算，用户要等好几秒。</mark></p>
+  <p>这个"老老实实一个个比"的做法叫 <strong>暴力搜索</strong>（Brute Force），也叫精确最近邻。它的优点是绝对准确，缺点是慢得没法用。</p>
+  <p>于是有了 <strong>ANN</strong>——<strong>Approximate Nearest Neighbor</strong>（近似最近邻）。<strong>"近似"这两个字是关键：它不保证找到绝对最近的那一条，但保证找到的几条里绝大多数确实是最近的，代价是速度快成百上千倍。</strong></p>
+  <p><strong>换成大白话：</strong>你在<strong>菜市场</strong>找最便宜的西红柿。暴力搜索是把三十个摊位全问一遍价；近似搜索是只问五个摊位，取里面最便宜的。<mark class="key">后者可能漏掉真正的最低价，但省了八成时间，而且大多数时候答案一样。</mark>对搜索这种"用户只看前十条"的场景，这个交易极其划算。</p>
+  <p>当前应用最广的 ANN 算法叫 <strong>HNSW</strong>，全称 <strong>Hierarchical Navigable Small World</strong>（分层可导航小世界图）。它的论文信息：</p>
+  <ul class="keylist">
+    <li><span class="k">作者</span><span class="v"><strong>Malkov &amp; Yashunin</strong></span></li>
+    <li><span class="k">编号与时间</span><span class="v">arXiv <strong>1603.09320</strong>，<strong>2016 年 3 月</strong></span></li>
+    <li><span class="k">核心结构</span><span class="v"><strong>多层邻近图</strong>——每一层都是一张"谁离谁近"的关系网，层数越高节点越稀疏</span></li>
+    <li><span class="k">关键设计</span><span class="v">每个元素能进到的<strong>最高层</strong>是按<strong>指数衰减概率</strong>随机抽的——绝大多数元素只在最底层，越往上越少</span></li>
+    <li><span class="k">复杂度</span><span class="v">实现<strong>对数复杂度</strong>的检索——数据量翻十倍，查询时间只增加一点点</span></li>
+    <li><span class="k">论文自述的结构渊源</span><span class="v">这套分层思想<strong>类似跳表（skip list）</strong>——一种经典的数据结构</span></li>
+  </ul>
+  <p><strong>那个"指数衰减概率"和"类似跳表"是理解 HNSW 的钥匙。</strong>用一个交通类比讲一遍你就懂了：</p>
+  <pre><code>HNSW 的分层结构（想象一张交通网）
+
+  第 2 层（最稀疏）：  北京 ————————————— 广州
+                      只有几个大枢纽，之间是超长直飞航线
+
+  第 1 层（中等）：    北京 ——— 郑州 ——— 武汉 ——— 广州
+                      加入省会级节点，航线短一些
+
+  第 0 层（最密）：  北京-廊坊-保定-石家庄-…-广州
+                      所有城市都在，只连相邻的邻居
+
+查找"离某个小县城最近的点"的过程：
+  1. 先在最高层用超长航线跳到大概方位（一步跨半个中国）
+  2. 降到中间层，用省级航线再靠近一点
+  3. 降到最底层，在邻居之间小步挪动，精确落点
+
+关键：前两步用极少的跳跃就跨越了大部分距离。
+这就是"对数复杂度"的来源——不用一站一站坐绿皮车。</code></pre>
+  <p><strong>把"对数复杂度"换算成可感知的量</strong>：如果暴力搜索在一千万条数据上要做一千万次比较，对数复杂度大约只要做二十几次跳跃就能定位。<mark class="key">一千万次 vs 二十几次——这是"等好几秒"和"眨眼之间"的差别。</mark></p>
+  <p>关于 HNSW 的地位，这里必须严谨地限定一句：<strong>"HNSW 是向量数据库最常用的 ANN 算法"是一条业界观察，不是论文里的结论。</strong>论文只证明了它的性能，没法证明"以后大家都会用它"。实际上主流向量数据库通常同时提供好几种索引（HNSW、IVF、乘积量化等），选哪个取决于你的数据规模、更新频率和内存预算。<strong>写技术文档时不要把"我看到很多人用"说成"论文证明"。</strong></p>
+
+  <h3>向量数据库：Embedding 的仓库</h3>
+  <p>有了向量和 ANN 算法，就有了一类专门的产品：<strong>向量数据库</strong>（Vector Database）。</p>
+  <p><strong>它和你熟悉的传统数据库有什么区别？</strong>传统数据库擅长的是精确匹配和范围查询——"找出所有工资大于 8000 的员工"。向量数据库擅长的是"找出和这个向量最像的 10 条"。<mark class="key">前者问的是"等于/大于"，后者问的是"最像"。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比项</th><th>传统关系数据库</th><th>向量数据库</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>核心查询</td><td>精确匹配、范围、连表</td><td><strong>相似度 Top-K</strong></td></tr>
+        <tr><td>索引结构</td><td>B+ 树、哈希</td><td><strong>HNSW、IVF、乘积量化</strong></td></tr>
+        <tr><td>结果保证</td><td>精确</td><td><strong>近似</strong>（可调准确率与速度的平衡）</td></tr>
+        <tr><td>典型场景</td><td>订单、账目、库存</td><td>语义搜索、RAG、推荐、以图搜图</td></tr>
+        <tr><td>生活类比</td><td><strong>银行</strong>的账本：一分钱都不能错</td><td><strong>图书馆</strong>的推荐架：找"和这本差不多的书"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>实用提醒：<strong>不是所有项目都需要专门的向量数据库。</strong>如果你的数据只有几万条，直接用 numpy 存成一个矩阵、每次算一遍点积就够了——几万条的暴力搜索在现代 CPU 上是毫秒级的。<mark class="key">向量数据库真正解决的是"百万级以上 + 需要实时增删 + 需要过滤条件"这三个叠加起来的问题。</mark><strong>过早引入基础设施是工程上最常见的浪费。</strong></p>
+
+  <h3>Embedding 的四个坑：踩过才知道疼</h3>
+  <p>原理简单，用起来却有一堆细节。这四条是最容易翻车的地方。</p>
+  <p><strong>坑一：不同模型的向量不能混用。</strong>用 <code>3-small</code> 算的向量和用 <code>3-large</code> 算的向量，即使你把维度调成一样，也<strong>完全不能互相比较</strong>——它们是两套独立训练出来的坐标系。<mark class="key">这就好比一个人用摄氏度报体温、另一个人用华氏度，数字放在一起比毫无意义。</mark>后果很实际：<strong>换模型意味着整个向量库必须全部重算。</strong>所以选模型要在项目早期定下来。</p>
+  <p><strong>坑二：切块（chunking）策略比模型选择更影响效果。</strong>长文档必须切成小段再算向量。切太长，一段里混了好几个话题，向量被"平均"成一团模糊；切太短，句子失去上下文，"它需要提前三天申请"这句话单独拿出来根本不知道"它"指什么。<strong>相当于</strong>把一本<strong>菜谱</strong>剪碎：剪成整章太粗，剪成单句又丢了"这是在讲哪道菜"。<strong>常见做法是按语义边界（段落、小标题）切，并让相邻块之间留一点重叠。</strong></p>
+  <p><strong>坑三：相似度分数的绝对值不可跨查询比较。</strong>你可能想设一个阈值，比如"相似度低于 0.7 就认为没找到"。<strong>这个做法很脆</strong>——同一个模型下，不同查询的分数分布差别很大，短查询普遍分数偏低，长查询普遍偏高。<mark class="key">相似度分数适合用来排序（谁比谁更像），不适合用来做绝对判定。</mark>要设阈值，必须用自己的数据统计出来，而且换模型后要重新统计。</p>
+  <p><strong>坑四：语义搜索不能完全取代关键词搜索。</strong>用户搜一个精确的产品型号"XPS-9310"、一个订单号、一个人名，<strong>关键词搜索一击必中，语义搜索反而可能给你一堆"差不多的型号"。</strong>成熟系统的做法是<strong>混合检索</strong>（Hybrid Search）——关键词和向量各搜一遍，然后融合排序。<strong>相当于</strong>找东西时既用<strong>索引</strong>目录也靠印象，两条路互补。</p>
+
+  <h3>不只是文字：图像、音频、用户都能 Embedding</h3>
+  <p>本节前面全在讲文本，但 Embedding 这个思路对任何东西都适用。<strong>这也正是它能撑起整个多模态的原因。</strong></p>
+  <ul class="keylist">
+    <li><span class="k">图像 Embedding</span><span class="v">一张图转成一串数字。<strong>以图搜图、找相似商品、图库去重</strong>全靠它。§9.3 的 CLIP 就是把图像 Embedding 和文本 Embedding 对齐到同一空间。</span></li>
+    <li><span class="k">音频 Embedding</span><span class="v">一段声音转成向量。用于<strong>听歌识曲、声纹识别、找相似音效</strong>。</span></li>
+    <li><span class="k">用户 Embedding</span><span class="v">把一个用户的行为历史压成一串数字。<strong>推荐系统的核心资产</strong>——"和你口味相似的人还看了什么"就是找用户向量的近邻。</span></li>
+    <li><span class="k">商品 Embedding</span><span class="v">电商平台给每个商品算向量，用于"看了又看""搭配推荐"。</span></li>
+    <li><span class="k">代码 Embedding</span><span class="v">把函数转成向量，用于<strong>代码搜索、找相似实现、检测抄袭</strong>。</span></li>
+    <li><span class="k">分子 Embedding</span><span class="v">药物研发里把分子结构转成向量，找"结构相似但专利不同"的候选化合物。</span></li>
+  </ul>
+  <p><mark class="key">看清这个清单的共性：只要你能定义"什么叫两个东西相似"，你就能训练一个 Embedding。</mark>而定义相似性的方式，正是 §9.3 要讲的对比学习的核心。</p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"king − man + woman ≈ queen 出自 word2vec 论文"</td><td><strong>错。</strong>出自 Mikolov, Yih, Zweig 的《Linguistic Regularities...》，NAACL-HLT 2013，微软研究院，Anthology 编号 N13-1090。word2vec 那篇（arXiv 1301.3781）是 Google 的，作者组不同</td></tr>
+        <tr><td>"Embedding 就是把文字变成数字"</td><td>不完整。One-Hot 也是把文字变成数字，但它丢掉了全部语义关系。Embedding 的关键是"语义关系被保留成几何关系"</td></tr>
+        <tr><td>"维度越高一定越好"</td><td>不是。3-large 截到 256 维仍优于完整 1536 维的 ada-002。维度是存储成本和精度的取舍，不是单调的好坏</td></tr>
+        <tr><td>"算余弦相似度必须除以模长"</td><td>看情况。OpenAI 的向量已归一化为单位长度，所以直接点积就是余弦相似度。换别家模型就必须自己算或自己归一化</td></tr>
+        <tr><td>"余弦相似度和欧氏距离排序不同"</td><td>一般情况是，但<strong>对已归一化的向量，两者给出完全相同的排序</strong>（官方文档明确说明）</td></tr>
+        <tr><td>"不同模型的向量维度一样就能混用"</td><td>绝对不行。它们是两套独立坐标系，混用的结果毫无意义。换模型必须全库重算</td></tr>
+        <tr><td>"相似度 0.7 以上就算匹配"</td><td>阈值不可照搬。不同查询的分数分布差别很大，分数适合排序不适合绝对判定</td></tr>
+        <tr><td>"HNSW 是论文证明的最优 ANN 算法"</td><td>论文只证明了它的性能表现。"最常用"是<strong>业界观察</strong>，主流向量库通常同时提供多种索引供选</td></tr>
+        <tr><td>"有了语义搜索就不用关键词搜索了"</td><td>不对。搜型号、订单号、人名这类精确串，关键词搜索更可靠。成熟系统用混合检索</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>写给要动手的人：六条实操建议</h3>
+  <ul class="keylist">
+    <li><span class="k">从 3-small 起步</span><span class="v">1536 维、MTEB 62.3%、每美元 62500 页。绝大多数场景够用。效果不满意再换 3-large，别一上来就用最贵的。</span></li>
+    <li><span class="k">向量算一次就存下来</span><span class="v">文档向量是永久资产，只有换模型时才需要重算。存的时候连原文和元数据一起存，否则检索出向量却找不到对应内容。</span></li>
+    <li><span class="k">先试 Matryoshka 降维</span><span class="v">用 <code>dimensions</code> 参数从 1536 砍到 512 或 256，在自己数据上量召回率。存储省一大半而效果往往几乎不变。</span></li>
+    <li><span class="k">数据量小就别上向量数据库</span><span class="v">几万条以内，numpy 一个矩阵加一次 <code>@</code> 就是毫秒级。过早上基础设施是纯浪费。</span></li>
+    <li><span class="k">切块策略要专门调</span><span class="v">这是 RAG 效果的最大变量，比换模型影响更大。按语义边界切、相邻块留重叠、把标题拼进每一块。</span></li>
+    <li><span class="k">上混合检索</span><span class="v">关键词 + 向量两路都搜，然后融合排序。这一步通常能把召回率提升一大截，成本却很低。</span></li>
+  </ul>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于 <code>king - man + woman ≈ queen</code> 这个著名类比，下面哪种说法准确？"
+       data-opts="出自 word2vec 论文（arXiv 1301.3781），Google，2013 年 1 月|出自 Mikolov、Yih、Zweig 的《Linguistic Regularities in Continuous Space Word Representations》，NAACL-HLT 2013，微软研究院|出自 CLIP 论文，OpenAI，2021 年|它是个精确等式，任何词向量模型上都严格成立"
+       data-answer="1"
+       data-explain="正确答案是第二项。这个类比出自 Mikolov、Yih、Zweig 的《Linguistic Regularities in Continuous Space Word Representations》，发表于 NAACL-HLT 2013，机构是微软研究院，ACL Anthology 编号 N13-1090，这篇并不在 arXiv 上。而 word2vec 那篇是《Efficient Estimation of Word Representations in Vector Space》，arXiv 1301.3781，2013 年 1 月，Google，ICLR 2013 Workshop——两篇虽然共有 Mikolov 这位作者，但作者组、机构、发表渠道全都不同。把类比归给 word2vec 是技术圈流传最广的一次以讹传讹。第四项也错：它是「约等于」而不是精确等式，算出的向量只是在词表中离 queen 最近，而且这个技巧对不同类型的语义关系效果差别很大。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>Embedding</strong> 说白了就是"把任何东西变成一串固定长度的小数，并且让意思相近的东西数字也相近"。它和 One-Hot 那种"发号码牌"的编码根本不同——<mark class="key">关键不在于变成了数字，而在于语义关系被保留成了几何关系。</mark>邮政编码那个类比最贴切：数字接近就代表地理接近，于是分拣机器人不用懂地理也能干活。</p>
+    <p>历史上的起点是 <strong>word2vec</strong>（arXiv 1301.3781，2013 年 1 月，Google，ICLR 2013 Workshop），16 亿词语料不到一天训完。而那个人人都会背的 <code>king − man + woman ≈ queen</code>，<strong>出处经常被写错</strong>——它来自 Mikolov、Yih、Zweig 的《Linguistic Regularities...》，NAACL-HLT 2013，微软研究院，Anthology 编号 N13-1090，不在 arXiv 上。</p>
+    <p>比较向量的标准动作是<strong>余弦相似度</strong>：<code>cos_sim(A,B) = (A·B) / (|A|·|B|)</code>，只看方向不看长度，取值 −1 到 +1。<strong>OpenAI 的 embedding 已归一化为单位长度</strong>，所以余弦相似度直接退化成点积，而且此时余弦相似度与欧氏距离给出<strong>完全相同的排序</strong>。</p>
+    <p>产品上，<code>3-small</code> 1536 维 / MTEB 62.3%，<code>3-large</code> 3072 维 / 64.6%，<code>ada-002</code> 1536 维 / 61.0%，最大输入都是 8192 token。v3 系列支持 <strong>Matryoshka 截断降维</strong>——<mark class="key">3-large 砍到 256 维仍优于完整 1536 维的 ada-002。</mark>价格方面本节只给官方的替代口径（每美元处理页数：3-small 62,500 页、3-large 9,615 页、ada-002 12,500 页，按 800 token/页），不写未核实的单价。</p>
+    <p>规模上去之后靠 <strong>HNSW</strong>（arXiv 1603.09320，2016 年 3 月）这类近似最近邻算法：多层邻近图、元素最高层按指数衰减概率随机选取、结构类似跳表、实现对数复杂度。它在向量数据库里用得最多，但这是业界观察而非论文结论。</p>
+    <p>下一节我们要解决一个更难的问题：<strong>怎么让图片和文字住进同一个向量空间</strong>——这样你就能用一句话搜出一张图。答案是四亿组图文对和一个叫对比学习的训练目标。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./09-1-what-is-multimodal.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 9.1 · 什么是多模态</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./09-3-clip.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 9.3 · CLIP 与跨模态对齐</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 9.2</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>
