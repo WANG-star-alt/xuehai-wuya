@@ -114,14 +114,14 @@
         ], { href: 'chapters/ai/08-llm.html' }),
       createNode('ai-09', '第 9 章 · 多模态',
         '文/图/视频/语音——AI 打破单一模态边界。',
-        '待撰写',
+        '约 5.0 万字',
         [
-          createNode('ai-09-1', '§ 9.1 · 什么是多模态', '文字、图像、音频、视频——模态之间怎么打通。', '待撰写', []),
-          createNode('ai-09-2', '§ 9.2 · Embedding 向量', '把万物变成一串数字——语义搜索的底层原理。', '待撰写', []),
-          createNode('ai-09-3', '§ 9.3 · CLIP 与跨模态对齐', '让"猫的图"和"猫这个词"落在同一个空间。', '待撰写', []),
-          createNode('ai-09-4', '§ 9.4 · 视觉理解', 'ViT、视觉编码器——GPT-4V 怎么"看懂"截图。', '待撰写', []),
-          createNode('ai-09-5', '§ 9.5 · 语音与视频生成', 'TTS、ASR、Sora——听得懂也说得出、还能拍片。', '待撰写', [])
-        ]),
+          createNode('ai-09-1', '§ 9.1 · 什么是多模态', '文字、图像、音频、视频——模态之间怎么打通。', '7748 字', [], { href: 'chapters/ai/09-1-what-is-multimodal.html', spec: 'pass'}),
+          createNode('ai-09-2', '§ 9.2 · Embedding 向量', '把万物变成一串数字——语义搜索的底层原理。', '9937 字', [], { href: 'chapters/ai/09-2-embedding.html', spec: 'pass'}),
+          createNode('ai-09-3', '§ 9.3 · CLIP 与跨模态对齐', '让"猫的图"和"猫这个词"落在同一个空间。', '9014 字', [], { href: 'chapters/ai/09-3-clip.html', spec: 'pass'}),
+          createNode('ai-09-4', '§ 9.4 · 视觉理解', 'ViT、视觉编码器——GPT-4V 怎么"看懂"截图。', '9664 字', [], { href: 'chapters/ai/09-4-vision.html', spec: 'pass'}),
+          createNode('ai-09-5', '§ 9.5 · 语音与视频生成', 'TTS、ASR、Sora——听得懂也说得出、还能拍片。', '11261 字', [], { href: 'chapters/ai/09-5-speech-video.html', spec: 'pass'})
+        ], { href: 'chapters/ai/09-multimodal.html' }),
       createNode('ai-10', '第 10 章 · 提示词工程',
         '角色、任务、Few-shot、CoT——怎么问 AI 才能拿到好答案。',
         '待撰写',

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 9.3 · CLIP 与跨模态对齐 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./09-multimodal.html">智能篇 · 第 9 章</a>
+      <span class="sep">›</span>
+      <span>§ 9.3</span>
+    </div>
+    <a href="./09-multimodal.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 9.3 · Section</div>
+    <h1>CLIP 与跨模态对齐</h1>
+    <div class="cn">CLIP &amp; Cross-modal Alignment</div>
+  </header>
+
+  <p class="lead">
+    上一节我们让文字住进了一个向量空间，同一个空间里"报销"和"费用申请"离得很近。这一节要干一件听起来不太可能的事：<mark class="key">让一张照片和一句话住进同一个空间，近到可以直接量它们之间的夹角。</mark>做成这件事的模型叫 CLIP，它没有学过一道标准的分类题，却在 ImageNet 上零样本达到了原始 ResNet-50 的水平——而后者要靠 128 万张人工标注图片才能训出来。这一节把 CLIP 从数据、损失函数、温度参数、两条编码器路线一路拆到能跑的代码，同时诚实地告诉你它连手写数字都认不太准。所有论文数字都标明出处，凡是我没核实到的具体数值一律留白不写。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎪 公司年会上那个连线游戏</div>
+    <p>公司年会玩一个游戏。主持人收了 <strong>32 位同事的童年照</strong>贴在左边墙上，又收了这 32 个人各写的<strong>一句童年自述</strong>贴在右边墙上，两边都打乱了顺序。任务是：把左右两边正确连起来。</p>
+    <p>你会怎么做？你不会去研究"照片"和"文字"这两种东西本质上有什么区别——那没用。<mark class="key">你会给每张照片提炼几个特征（男孩、短头发、在海边、抱着一只狗），给每句话也提炼几个特征，然后比哪一对的特征最贴。</mark></p>
+    <p>关键在于游戏的记分方式。你手上一共有 <strong>32 × 32 = 1024</strong> 种可能的连法，其中只有 <strong>32 条</strong>是对的，剩下 <strong>992 条</strong>全是错的。主持人的记分规则是：<strong>连对的每条加分，连错的每条扣分。</strong>于是为了拿高分，你被迫做两件事——把对的那 32 对往一起靠，把错的那 992 对往两边推。</p>
+    <p>玩上十把，你会自己摸索出一套"该看哪些特征"的经验。<strong>这套经验就是 CLIP 训练出来的东西。</strong>只不过 CLIP 玩的不是 32 张照片，是 <strong>4 亿组</strong>；也不是玩十把，是玩到 592 张显卡连转 18 天。</p>
+    <div class="link">→ <strong>CLIP</strong>（读作"克利普"，全称 <strong>Contrastive Language–Image Pre-training</strong>，"对比式语言—图像预训练"）= 用海量图文对，训练两个编码器把图片和文字投到同一个向量空间里，使得配对的图文向量方向一致、不配对的方向分开。</div>
+  </div>
+
+  <h3>先把"跨模态对齐"这四个字拆开</h3>
+  <p><strong>跨模态对齐</strong>（Cross-modal Alignment）这个词听着玄，其实就是<strong>让两种完全不同的东西用上同一套坐标</strong>。</p>
+  <p>"模态"这个词 §9.1 讲过，说白了就是"信息的种类"——图像是一种模态，文字是一种模态，声音是一种模态。"跨模态"就是横跨两种以上的种类。那"对齐"呢？<mark class="key">对齐说白了就是：让两套本来各说各话的编号系统，变成同一套编号系统。</mark></p>
+  <p>为什么这件事以前做不到？因为图像模型和文本模型是各自单独训练的，各自都会输出一串向量，但那两串向量的"坐标含义"毫无关系。<strong>相当于</strong>两个部门各自做了一套<strong>货架</strong>编号：仓库那边把货位叫"A3-12"，门店那边把同一批货叫"东侧第二排"。<strong>两套编号都自成体系，都很好用，但你没法把 A3-12 直接跟"东侧第二排"比大小。</strong>要打通，只能人工做一张对照表。</p>
+  <p>CLIP 做的事就是<strong>让两个部门从第一天起就用同一套编号规则去培训员工</strong>。训练完成后，图像编码器输出的 512 个数和文本编码器输出的 512 个数是可以直接算余弦相似度的，因为它们指的是同一个空间里的方向。<mark class="key">这一步一旦打通，"用文字搜图片"就退化成了上一节讲过的"找最近的向量"——一个已经解决了的问题。</mark></p>
+  <p>把术语链条串一遍，你就知道这一节在整章里的位置：<strong>§9.1 说清了什么叫模态，§9.2 说清了什么叫向量空间，本节说清怎么把不同模态塞进同一个向量空间，§9.4 再讲塞进去之后模型怎么真正读懂一张图。</strong></p>
+
+  <h3>CLIP 的准确档案：一条最容易搞混的时间线</h3>
+  <p>先把可核实的事实钉死，因为 CLIP 是被转述得最多、也被写错得最多的论文之一。</p>
+  <ul class="keylist">
+    <li><span class="k">论文标题</span><span class="v">《Learning Transferable Visual Models From Natural Language Supervision》（从自然语言监督中学习可迁移的视觉模型）</span></li>
+    <li><span class="k">编号与日期</span><span class="v">arXiv <strong>2103.00020</strong>，<strong>2021 年 2 月 26 日</strong></span></li>
+    <li><span class="k">机构</span><span class="v"><strong>OpenAI</strong></span></li>
+    <li><span class="k">作者</span><span class="v">共 <strong>12 位</strong>。<strong>Alec Radford 与 Jong Wook Kim 共同第一作者</strong>，末位作者是 <strong>Ilya Sutskever</strong></span></li>
+    <li><span class="k">正式发表</span><span class="v"><strong>ICML 2021</strong>（PMLR 第 <strong>139</strong> 卷）</span></li>
+    <li><span class="k">★ 最容易搞混的一条</span><span class="v"><strong>OpenAI 官方博客在 2021 年 1 月 5 日就公开发布了 CLIP，比 arXiv 上那篇论文（2 月 26 日）早了将近两个月</strong></span></li>
+  </ul>
+  <p>最后那条值得单独强调，因为网上大量文章写"CLIP 发布于 2021 年 2 月"或"CLIP 是 2021 年 3 月的工作"，也有文章写"2021 年 1 月"，两派互相说对方错。<mark class="key">事实是两个日期都真实存在，只是指的是两件不同的事：1 月 5 日是官方博客公布模型与权重，2 月 26 日是 arXiv 上传预印本。</mark></p>
+  <p><strong>这个先博客后论文的顺序不是失误，而是那几年的常态。</strong>研究机构先发博客抢时间、把权重放出去让社区玩起来，正式论文随后补上。<strong>相当于</strong>一家<strong>餐厅</strong>先在门口挂出"新菜上市"的牌子让客人尝，配料表和工艺说明书过两个月才印进正式菜单。<strong>写技术文档时如果只认论文日期，你会把整条时间线往后挪两个月，进而误判它和同期其他工作的先后关系。</strong></p>
+  <p>顺便记一个作者层面的细节：<strong>Alec Radford 也是 GPT-2 论文的第一作者。</strong>这解释了后面一个看起来奇怪的设计——CLIP 的文本编码器直接沿用了 GPT-2 的架构改动，因为写它的就是同一批人。</p>
+
+  <h3>训练数据 WIT：4 亿组图文对是怎么攒出来的</h3>
+  <p>CLIP 的效果里有很大一块要归功于数据。它没用现成的公开数据集，而是自建了一个，名字叫 <strong>WIT</strong>（<strong>WebImageText</strong>，"网络图文数据"），规模是 <strong>4 亿（400M）组图文对</strong>。</p>
+  <p><strong>把 4 亿这个数换算成可感知的量</strong>：假设你一秒钟看一组图配一句话，不吃不喝不睡地看下去，看完 4 亿组需要 <strong>12 年半</strong>。<mark class="key">这不是"很多数据"，这是一个人一辈子清醒时间的相当一部分。</mark></p>
+  <p>更值得学的是它<em>怎么攒</em>的。随便爬 4 亿张图会得到什么？大量重复的表情包、大量猫狗、大量美女图——<strong>数据会严重偏斜，某些概念多到爆，某些概念一张都没有。</strong>论文里的做法是先造一张"查询词表"，再按词逐个去搜，最后对每个词限量。</p>
+  <pre><code>WIT 数据集构建流程（按论文描述）
+
+第一步：造一张约 50 万条的查询词表，来源有四类
+  ① 英文维基百科里出现次数 ≥ 100 次的所有词
+  ② 高 PMI 的二元词组（PMI = 点互信息，
+     用来找"这两个词经常一起出现且不是巧合"的搭配）
+  ③ 搜索量高的维基百科条目名
+  ④ 剩下的所有 WordNet synset（同义词集合）
+
+第二步：拿每条查询去检索图文对
+
+第三步：★ 每条查询最多只留 20000 组
+        —— 做近似的类别平衡，防止热门词淹没冷门词
+
+结果：4 亿组图文对
+      总词量级与训练 GPT-2 用的 WebText 相当</code></pre>
+  <p>第三步那个"每个查询最多 2 万组"的限额是整套设计里最聪明的一笔。<strong>换成大白话：这是在给数据集做配额制。</strong><strong>相当于</strong>食堂打菜规定"每人最多打两勺红烧肉"——不是嫌红烧肉不好，而是不限量的话前面几个人就把肉端走了，后面的人只剩青菜。<mark class="key">限了额之后，"猫"这种烂大街的词最多贡献 2 万组，而"星盘""涡轮增压器"这类冷门词也能凑够自己的份额，模型才见得到长尾概念。</mark></p>
+  <p>词表来源里的第一类和第四类也有讲究。"维基百科里出现 ≥100 次的词"保证覆盖的是<strong>人类真的在用的概念</strong>；"剩余的 WordNet synset"（synset 说白了就是"一组意思相同的词"，比如 car / auto / automobile 算一个 synset）是<strong>兜底</strong>，把前面几类没扫到的字典词全补进来。<strong>一头保证常用，一头保证不漏，这是造词表的通用套路。</strong></p>
+  <p>最后那句"总词量级与 WebText 相当"是个很有用的锚点。<strong>WebText 是训练 GPT-2 用的文本语料。</strong>也就是说，<mark class="key">CLIP 读到的文字总量，和 GPT-2 读到的文字总量在同一个量级——只不过 CLIP 的每一段文字后面都拴着一张图。</mark>它不是"文本模型加了个视觉插件"，它是从头就把文字当成图像的监督信号在读。</p>
+
+  <h3>对比学习：CLIP 到底在优化什么</h3>
+  <p>现在讲最核心的机制。开篇那个年会连线游戏已经把直觉给你了，这里把它翻译成论文的原话。</p>
+  <p>论文的描述是这样的：给定一个批次（batch）里的 <strong>N 组</strong>（图像，文本）对，CLIP 要预测的是——<strong>在 N × N 种可能的配对中，哪些是真实发生过的</strong>。做法是联合训练图像编码器和文本编码器，<mark class="key">最大化那 N 组真实配对的图文 embedding 余弦相似度，同时最小化剩下 N² − N 组错误配对的余弦相似度</mark>，并在这一批相似度分数上优化一个<strong>对称交叉熵损失</strong>（symmetric cross entropy loss）。</p>
+  <p>"批次"这个词先解释：<strong>batch 说白了就是"一次同时喂进去的一小撮样本"</strong>。训练时不会一张一张喂，而是几百几千张一起喂，因为显卡擅长并行。</p>
+  <pre><code>一个 batch 内的 N × N 相似度矩阵（这里画 N = 4）
+
+              文本1   文本2   文本3   文本4
+    图像1  [  ✔真    ✘假    ✘假    ✘假  ]
+    图像2  [  ✘假    ✔真    ✘假    ✘假  ]
+    图像3  [  ✘假    ✘假    ✔真    ✘假  ]
+    图像4  [  ✘假    ✘假    ✘假    ✔真  ]
+
+    对角线上 N 个 = 真实配对   → 相似度要往 +1 推
+    对角线外 N²−N 个 = 错误配对 → 相似度要往下压
+
+    N = 4   时：4 个正例，12 个负例
+    N = 32768 时：32768 个正例，约 10.7 亿个负例
+                  （同一个 batch 里白拿的负样本）</code></pre>
+  <p><strong>这张矩阵图值得多看两眼，因为它藏着对比学习最划算的一笔生意。</strong>你只提供了 N 组"这张图配这句话"的正确答案，却顺手得到了 N² − N 组"这张图不配那句话"的错误答案——<mark class="key">负样本是白送的，batch 越大送得越多，而且完全不用额外标注。</mark></p>
+  <p><strong>换成大白话：正样本要花钱买，负样本可以从正样本堆里现场配出来。</strong><strong>相当于</strong>你买了 32 双<strong>鞋</strong>，就自动知道了上千种"左脚配错右脚"的搭配是不对的——这些反面知识一分钱没多花。<strong>这就是为什么对比学习被叫做自监督学习：监督信号不是人写的标签，而是数据自己的结构。</strong></p>
+  <p>那"对称"两个字是什么意思？因为这道题可以从两头问：<strong>给定一张图，在 N 句话里挑对的那一句</strong>（图 → 文）；<strong>给定一句话，在 N 张图里挑对的那一张</strong>（文 → 图）。CLIP 两个方向都算一遍交叉熵，加起来取平均。<strong>相当于</strong>年会连线游戏既要求"从照片找自述"也要求"从自述找照片"，两个方向都得对——<strong>只练一个方向的话，模型可能学出偏科的表征。</strong></p>
+
+  <h3>★ 术语严谨性：CLIP 原文里并没有"InfoNCE"这个词</h3>
+  <p>这一条是本节最值得较真的地方，也是判断一篇 CLIP 科普文靠不靠谱的试纸。</p>
+  <p>你看到的绝大多数介绍会说"CLIP 用的是 InfoNCE 损失"。这个说法在数学形式上没错，但<strong>在文献学上是不准确的——CLIP 论文原文从头到尾没有使用"InfoNCE"这个词，它用的表述是"对称交叉熵损失"。</strong></p>
+  <p>所以严谨的写法是这样一句：<mark class="key">CLIP 用的是对称的 InfoNCE 式对比损失，论文原文称之为对称交叉熵损失。</mark>这句话既让懂行的人立刻知道你在说哪一类损失函数，又没有把一个作者没用的词硬塞到人家论文里。</p>
+  <p>论文自己交代的溯源反而更清楚，而且比"InfoNCE"这条线更具体：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>环节</th><th>出处</th><th>贡献</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>batch 构造方式与目标函数的最早提出</td><td><strong>Sohn (2016)</strong></td><td>作为 <strong>multi-class N-pair loss</strong>（多类 N 对损失）提出</td></tr>
+        <tr><td>适配到图文表征学习</td><td><strong>Zhang et al. (2020)</strong>，即 <strong>ConVIRT</strong></td><td>把这套目标用在<strong>医学影像</strong>的图文对比学习上</td></tr>
+        <tr><td>CLIP 自己的定位</td><td>CLIP 论文自述</td><td><strong>"ConVIRT 的简化版本，从零开始训练"</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意最后一行。<strong>CLIP 自己承认它不是方法上的原创，而是把一个已有方法简化、然后灌进大得离谱的数据量和算力。</strong><mark class="key">这是深度学习史上反复出现的剧本：方法在小圈子里被发明出来（医学影像），几年后有人用一百倍的数据把它做爆，于是所有人都以为方法是后者发明的。</mark></p>
+  <p><strong>为什么要特意讲这个？</strong>因为它反映了一个通用的读文献习惯：<strong>看到"某模型开创了某方法"这种句子，先去原论文的 Related Work 那一节看看作者自己怎么说。</strong>作者通常比转述者诚实得多——CLIP 论文明明白白写着自己是简化版 ConVIRT，是二手转述把它写成了原创。<strong>相当于</strong><strong>菜市场</strong>里那句"祖传秘方"，回头翻翻这家人自己的族谱，可能写的是"配方买自隔壁镇某厨子"。</p>
+
+  <h3>InfoNCE 的真正出处：2018 年的 CPC</h3>
+  <p>既然说 CLIP 用的是"InfoNCE 式"损失，那 InfoNCE 这个名字到底出自哪里？答案很明确，值得单独记住，因为它是 CLIP 和 SimCLR 的共同祖先。</p>
+  <ul class="keylist">
+    <li><span class="k">论文标题</span><span class="v">《Representation Learning with Contrastive Predictive Coding》（用对比预测编码做表征学习），简称 <strong>CPC</strong></span></li>
+    <li><span class="k">作者</span><span class="v"><strong>van den Oord, Li, Vinyals</strong></span></li>
+    <li><span class="k">编号与时间</span><span class="v">arXiv <strong>1807.03748</strong>，<strong>2018 年 7 月</strong></span></li>
+    <li><span class="k">机构</span><span class="v"><strong>DeepMind</strong></span></li>
+    <li><span class="k">名字来历</span><span class="v"><strong>NCE = Noise-Contrastive Estimation</strong>（噪声对比估计）。<strong>"InfoNCE"这个名字就是这篇论文起的</strong></span></li>
+  </ul>
+  <p>CPC 的核心思路可以用一句大白话说清：<strong>让模型在"压缩后的空间"里预测接下来会发生什么，而不是在原始数据上预测。</strong>论文的做法是用一个自回归模型在潜空间（latent space，说白了就是"压缩过的特征空间"）里预测未来，并用一个<strong>概率型的对比损失</strong>来训练——这个损失可以证明是在<strong>最大化互信息的一个下界</strong>。</p>
+  <p>"互信息"这个词也得翻译一下：<mark class="key">互信息说白了就是"知道了 A 之后，你对 B 的不确定性减少了多少"。</mark>看到<strong>乌云</strong>会让你对"要不要带伞"的判断确定不少，这两件事的互信息就高；看到今天几号对要不要带伞几乎没影响，互信息就接近零。</p>
+  <p>这里有一个工程上的关键点：<strong>互信息本身极难直接算，尤其是高维数据。</strong>CPC 的贡献之一就是——<strong>靠负采样把这个不可算的量变成了可优化的目标</strong>。所谓负采样，说白了就是"随手抓几个不相关的样本当反面例子"，用"能不能从一堆假的里挑出真的"这个可以算分的任务，去替代那个算不出来的互信息。<strong>相当于</strong>你没法直接测一个人的<strong>厨艺</strong>有多高，但你可以让他和五个路人一起做同一道菜，看评委能不能一口尝出哪份是他做的——<strong>把不可测量的东西变成可打分的比赛，这是科研里非常常见的一招。</strong></p>
+  <p>CPC 的另一个值得记的点是它的验证范围：<strong>论文在语音、图像、文本、以及 3D 环境下的强化学习这四个领域上都做了验证。</strong><mark class="key">一个方法在四个完全不同的领域都有效，这是"通用方法"的强信号——它说明这套思路抓住的不是某种数据的特性，而是表征学习本身的某种结构。</mark>CLIP 三年后把它用在图文上，SimCLR 同期把它用在纯图像上，都是这条线的延续。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 全公司统一换成一套货位号</span>
+    <p>一家公司有两个仓库：<strong>A 仓存衣服，B 仓存鞋子</strong>。两个仓库各自用了几十年的老货位号。A 仓的号是"三楼-东区-7 排-2 层"，B 仓的号是"仓 2-通道 C-货架 14"。</p>
+    <p>两套号在各自仓库里都好使——A 仓的老员工听到"三楼东区 7 排"立刻知道往哪走。<mark class="key">但麻烦出在一个新需求上：老板要做"衣服配鞋"的搭配推荐，需要知道"这件外套该配哪双鞋"。</mark>这时候两套货位号就完全帮不上忙了，因为它们描述的是"东西放在哪"，不是"东西是什么样"。</p>
+    <p>公司想了个办法：<strong>重新设计一套编号规则，这套规则不描述位置，只描述风格。</strong>比如用四个数字表示：正式度、季节、色系冷暖、价位档。于是那件深灰羊毛外套编成 <code>[0.9, 0.2, 0.3, 0.8]</code>，那双黑色牛津皮鞋编成 <code>[0.9, 0.3, 0.3, 0.7]</code>——<strong>两个编号很接近，一比就知道能搭。</strong>而一双荧光色跑鞋编成 <code>[0.1, 0.8, 0.9, 0.3]</code>，跟外套差得远，一比就知道不搭。</p>
+    <p>这套新编号就是<strong>共享向量空间</strong>。<strong>请注意它做到了什么：衣服和鞋子是完全不同的东西，但它们现在住在同一套坐标里，可以直接互相比较了。</strong>这就是"跨模态对齐"这四个字的全部含义。</p>
+    <p>那么这四个维度是谁定的？<mark class="key">关键就在这里——不是人定的，是训练出来的。</mark>公司的做法是：翻出过去十年<strong>四亿</strong>张顾客买单小票，每张小票上都记着"这个人同时买了这件衣服和这双鞋"。<strong>已经被同一个人买走的组合就是"配对成功"的正例；随机拿一件衣服配一双别人买的鞋，就是负例。</strong>然后调整编号规则，直到"真实成交的组合编号接近、随机瞎配的组合编号远离"。调完之后，那四个数字自动就带上了"正式度""季节"这类含义——虽然没人给它们起过名字。</p>
+    <p>CLIP 做的一模一样。它的"小票"是 4 亿组从网上抓来的图文对（图片和它旁边的说明文字，天然就是"配对成功"的记录）；它的编号不是 4 个数而是 512 个数；它的"调整规则"就是梯度下降。<strong>训练完成后，那 512 个维度谁也说不清每一维是什么意思，但它们确实把"图片内容"和"文字含义"编到了同一套坐标里。</strong></p>
+  </div>
+
+  <h3>temperature：那个藏在损失函数里的旋钮</h3>
+  <p>CLIP 的损失函数里有一个不起眼但很关键的参数，叫 <strong>temperature</strong>（温度），符号写成 <code>τ</code>（希腊字母 tau，读"陶"）。</p>
+  <p>你在 §8.4 见过这个词——那里讲的是生成文字时调温度，温度高输出更随机，温度低更保守。<strong>这里的 temperature 是同一个数学机制，但用途完全不同。</strong>论文对它的定义很朴素：<mark class="key">τ 用来控制 softmax 里 logits 的取值范围。</mark></p>
+  <p>两个词得先翻译。<strong>logits</strong>（读"洛基茨"）说白了就是"还没归一化的原始打分"——一堆可以是任意大小的数。<strong>softmax</strong> 说白了就是"把一堆打分变成加起来等于 1 的概率"的那个函数。<strong>而 τ 干的活儿，相当于在把打分交给 softmax 之前，先统一乘或除一个倍数，把分数之间的差距拉开或压扁。</strong></p>
+  <pre><code>temperature 对 softmax 的影响（一组打分：3, 1, 0）
+
+τ 小（相当于把差距放大）：
+  3/0.2=15,  1/0.2=5,  0/0.2=0
+  softmax → [0.9999, 0.0001, 0.0000]
+  结果：几乎全部概率压在最高分那一项上（很"尖"）
+
+τ 大（相当于把差距压扁）：
+  3/5=0.6,  1/5=0.2,  0/5=0
+  softmax → [0.43, 0.29, 0.28]
+  结果：三项概率接近，模型显得"犹豫"（很"平"）
+
+CLIP 的实现细节（论文伪代码）：
+  logits = np.dot(I_e, T_e.T) * np.exp(t)
+           ↑ 图文向量点积       ↑ 温度以 exp(t) 形式乘进来</code></pre>
+  <p><strong>相当于</strong>调<strong>收音机</strong>的选台旋钮灵敏度：灵敏度调高（τ 小），指针稍微一动电台就完全切换，非常果断但容易过头；灵敏度调低（τ 大），指针转半圈还在两个台之间含混不清。<mark class="key">τ 决定的是"模型对相似度差异有多敏感"。</mark></p>
+  <p>现在讲 CLIP 在这件事上的一个漂亮设计。<strong>按常规做法，τ 是一个超参数</strong>——所谓超参数，说白了就是"训练前得由人拍一个数、训练过程中不变的设置"，比如学习率、batch 大小。调超参数是件苦活，得试很多次。</p>
+  <p><strong>CLIP 的做法是：不把 τ 当超参数，而是把它当成一个可学习的参数，让它自己在训练里被优化。</strong>具体是<mark class="key">以 log 参数化的形式作为一个乘性标量直接参与训练</mark>——就是伪代码里 <code>np.exp(t)</code> 的意思：真正被优化的是 <code>t</code>，实际乘进 logits 的是 <code>exp(t)</code>。</p>
+  <p>为什么要绕这一层 <code>exp</code>？因为温度必须是正数，而梯度下降不管你三七二十一，可能把参数优化成负数。<strong>套一层 <code>exp</code> 之后，无论 <code>t</code> 被优化到多小（哪怕是 −5），<code>exp(t)</code> 永远是正的。</strong><strong>相当于</strong>给<strong>水龙头</strong>加了个限位卡：你可以往关的方向使劲拧，但拧不出"负水流"这种物理上不存在的东西。</p>
+  <p>论文自己说明这么做的动机就一句话：<strong>为了避免把它当超参数来调。</strong>这是一个非常实用的工程思路——<mark class="key">凡是又重要又难调的超参数，想办法把它变成可学习参数，让优化器替你调。</mark></p>
+  <p>最后补一个你实际用 CLIP 时一定会碰到的细节：<strong>CLIP 的推理接口返回的 logits，数值上就是"余弦相似度 × 100"。</strong>所以你看到 <code>logits_per_image</code> 里出现 25.3 这样的数字，不要以为出了 bug——把它除以 100 就是那个熟悉的、范围在 −1 到 +1 之间的余弦相似度。</p>
+
+  <h3>两条图像编码器路线：8 个模型的完整清单</h3>
+  <p>CLIP 不是一个模型，是<strong>一组 8 个模型</strong>。它的图像编码器走了两条完全不同的技术路线，各训了几个规模。</p>
+  <p><strong>路线一：修改版 ResNet。</strong>ResNet（Residual Network，"残差网络"）是 2015 年之后卷积神经网络的标准架构，§5 讲过卷积的基本原理。CLIP 基于 <strong>ResNet-50</strong> 做了三处改动：</p>
+  <ul class="keylist">
+    <li><span class="k">改动一</span><span class="v">加入 <strong>ResNet-D</strong> 改进（He et al. 2019）</span></li>
+    <li><span class="k">改动二</span><span class="v">加入 <strong>antialiased rect-2 blur pooling</strong>（抗锯齿的模糊池化，Zhang 2019）</span></li>
+    <li><span class="k">改动三 ★ 最关键</span><span class="v">把<strong>全局平均池化</strong>替换成 <strong>attention pooling</strong>（注意力池化）——一层 transformer 式的 multi-head QKV 注意力，其中 <strong>query 以图像的全局平均池化表征为条件</strong></span></li>
+  </ul>
+  <p>第三条得翻译成大白话，它是理解 CLIP 图像侧的关键。<strong>池化</strong>（pooling）说白了就是"把一片区域的很多个数汇总成一个数"。<strong>全局平均池化</strong>就是最简单的那种汇总：<strong>全部取平均</strong>。</p>
+  <p><strong>相当于</strong>你要给一个班的整体水平打一个分。全局平均池化的做法是：把全班五十个人的分数加起来除以五十。<mark class="key">简单、公平，但它有个毛病——它认为每个人的重要性完全一样。</mark></p>
+  <p>而 <strong>attention pooling</strong> 的做法是：<strong>先决定"该重点看谁"，再按不同权重加权汇总。</strong>那个"该重点看谁"的判断，来自 query（查询向量）。<strong>相当于</strong>校长评估班级水平时先问一句"我们这次关心的是理科能力"，然后理科好的同学权重高、其他人权重低。<mark class="key">图像上的意义就是：模型可以自己决定"这张图里哪些区域重要"，而不是把背景和主体一样看待。</mark></p>
+  <p><strong>路线二：ViT（Vision Transformer，视觉 Transformer）。</strong>CLIP 说自己"紧随 ViT 的原实现"，只做了两处微调：</p>
+  <ul class="keylist">
+    <li><span class="k">微调一</span><span class="v">把 patch embedding 与 position embedding 相加后、送进 transformer 之前，<strong>额外加了一层 LayerNorm</strong>（层归一化）</span></li>
+    <li><span class="k">微调二</span><span class="v"><strong>初始化方案</strong>略有不同</span></li>
+  </ul>
+  <p><strong>LayerNorm 说白了就是"把一组数字统一调整到均值 0、方差 1 的标准刻度上"。</strong><strong>相当于</strong>几个不同<strong>学校</strong>的成绩要放在一起比，先各自换算成"距本校平均分几个标准差"再比——不然一个学校平均 90 分、另一个平均 60 分，原始分没法比。<strong>这一层的作用是让训练更稳，是深度网络里的常规操作。</strong></p>
+  <p>现在给出 8 个模型的完整清单：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型名</th><th>路线</th><th>规模说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>RN50</code></td><td>修改版 ResNet</td><td>基准（ResNet-50 规模）</td></tr>
+        <tr><td><code>RN101</code></td><td>修改版 ResNet</td><td>更深（ResNet-101 规模）</td></tr>
+        <tr><td><code>RN50x4</code></td><td>修改版 ResNet</td><td>按 <strong>EfficientNet 风格</strong>缩放到约 <strong>4 倍</strong>计算量</td></tr>
+        <tr><td><code>RN50x16</code></td><td>修改版 ResNet</td><td>缩放到约 <strong>16 倍</strong>计算量</td></tr>
+        <tr><td><code>RN50x64</code></td><td>修改版 ResNet</td><td>缩放到约 <strong>64 倍</strong>计算量（ResNet 系里最大）</td></tr>
+        <tr><td><code>ViT-B/32</code></td><td>ViT</td><td>Base 规模，patch 边长 <strong>32</strong> 像素</td></tr>
+        <tr><td><code>ViT-B/16</code></td><td>ViT</td><td>Base 规模，patch 边长 <strong>16</strong> 像素（切得更细）</td></tr>
+        <tr><td><code>ViT-L/14</code></td><td>ViT</td><td>Large 规模，patch 边长 <strong>14</strong> 像素；<strong>额外在 336 像素分辨率下多训了一个 epoch</strong>（FixRes 风格）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>表里三个术语要解释。<strong>EfficientNet 风格缩放</strong>说白了就是"不只加深，也同时加宽、加大输入分辨率，三者按比例一起长"——<strong>相当于</strong>房子要扩建，不是只往上加层，而是长宽高一起放大，比例才协调。<strong>epoch</strong>（读"埃波克"）说白了就是"把整个训练集完整过一遍"。<strong>patch 边长越小，一张图被切出的块越多、看得越细，但计算量也越大</strong>——ViT-B/32 把 224×224 的图切成 49 块，ViT-B/16 切成 196 块，差了四倍。</p>
+  <p>最后那个 <code>ViT-L/14</code> 的"336 像素多训一个 epoch"值得单独说。<strong>它解决的是一个很实际的错配问题：训练时用小图（224），实际用的时候常给大图。</strong>直接换分辨率会掉点，所以在训练末尾用目标分辨率再过一遍。<mark class="key">这就是 <code>ViT-L/14@336px</code> 这个型号名里 @336px 的来历，它是 CLIP 家族里效果最好的一个。</mark></p>
+
+  <h3>文本编码器：一个 6300 万参数的 GPT-2 亲戚</h3>
+  <p>图像侧讲完，文本侧其实更简单，但有几个设计细节非常值得学。</p>
+  <ul class="keylist">
+    <li><span class="k">基础架构</span><span class="v"><strong>Transformer</strong>（Vaswani et al. 2017），并采用了 <strong>GPT-2</strong>（Radford et al. 2019）的那套架构修改</span></li>
+    <li><span class="k">基础规模</span><span class="v"><strong>12 层 · 宽度 512 · 8 个注意力头 · 约 6300 万参数</strong></span></li>
+    <li><span class="k">输入处理</span><span class="v">小写化的 <strong>BPE</strong>（Byte Pair Encoding，字节对编码——§8.1 讲过的那种分词方式）</span></li>
+    <li><span class="k">序列格式</span><span class="v">用 <code>[SOS]</code> 和 <code>[EOS]</code> 两个特殊标记把文本包起来（Start / End Of Sequence，序列开始 / 结束）</span></li>
+    <li><span class="k">★ 怎么取出句子向量</span><span class="v">取<strong>最高层 <code>[EOS]</code> 位置上的激活值</strong>，经 LayerNorm 后线性投影到多模态 embedding 空间</span></li>
+    <li><span class="k">注意力类型</span><span class="v"><strong>掩码自注意力</strong>（masked self-attention）</span></li>
+  </ul>
+  <p><strong>那个"取 [EOS] 位置的激活"是最容易被忽略、也最有意思的一条。</strong>你可能会想：一句话有十几个 token，每个 token 都有一个向量，凭什么只拿最后那个特殊标记的向量代表整句话？</p>
+  <p>答案在"掩码自注意力"上。<strong>掩码</strong>说白了就是"挡住后面的内容，只让每个词看到自己前面的词"。<mark class="key">于是在这种结构里，只有最后一个位置能看到整句话的全部内容——前面的位置都是残缺的。</mark></p>
+  <p><strong>相当于</strong>开一场<strong>接力式的会议</strong>：规定每个人只能听到自己之前发言者说的话。那么会议记录该找谁总结？<strong>只有最后一个发言的人听全了所有人的意见，只有他有资格总结。</strong><code>[EOS]</code> 就是那个最后发言的人。</p>
+  <p>接着说"掩码"的另一层用意，论文明确交代了：<strong>用掩码自注意力是为了保留未来添加语言建模辅助目标的可能性。</strong>换成大白话：<mark class="key">如果哪天想让这个文本编码器顺便也学会"预测下一个词"（也就是 GPT 那套本事），现在这个结构可以直接支持，不用改架构。</mark><strong>相当于</strong><strong>装修</strong>时先在墙里埋好了一根空管，眼下没用，但以后想穿网线不用砸墙。<strong>这是一个非常成熟的工程习惯——为还没确定的未来需求留一个成本极低的接口。</strong></p>
+  <p>最后是缩放策略，这一条藏着一个反直觉的结论：<strong>CLIP 在放大模型时，文本编码器只按 ResNet 的宽度同比加宽，完全不增加深度。</strong>为什么？<mark class="key">因为作者发现 CLIP 的性能对文本编码器的容量并不敏感。</mark></p>
+  <p>这个发现很值得琢磨。它说明在图文对齐这个任务里，<strong>瓶颈在视觉侧，不在语言侧</strong>——图片里的信息量远大于一句短说明文字，所以给文本编码器加料的边际收益很低。<strong>相当于</strong>你要把一头<strong>大象</strong>装进冰箱，瓶颈是冰箱门的宽度，把大象的鼻子练得再灵活也没用。<strong>把参数预算花在真正的瓶颈上，这是模型设计里最基本的取舍原则。</strong></p>
+  <p><strong>把 6300 万参数换算成可感知的量</strong>：GPT-2 最小版本约 1.24 亿参数，也就是说 <strong>CLIP 的文本编码器还不到最小号 GPT-2 的一半</strong>。<mark class="key">这个规模在今天看简直是个小玩具——但它撑起了整个"用文字搜图"的能力。</mark></p>
+
+  <h3>还有一个反直觉的缩放决定：只加宽，不加深</h3>
+  <p>论文里有个容易被忽略但很有启发的工程选择：当 CLIP 把模型往大做的时候，<strong>文本编码器只按 ResNet 的宽度增幅同比放宽，完全不增加层数</strong>。</p>
+  <p>为什么？因为作者发现 <strong>CLIP 的整体性能对文本编码器的容量并不敏感</strong>。换成大白话：<strong>这套系统的瓶颈在"看"那一侧，不在"读"那一侧。</strong>你把读文字的那半边做得再强，整体也涨不了多少；钱应该花在图像编码器上。</p>
+  <p>打个比方：<strong>这好比开一家翻译公司，业务是把中文菜谱翻成英文。</strong>你发现瓶颈是"看不懂手写菜谱"，那就该多招几个擅长辨认字迹的人，而不是给英文很好的译员再报个英文进修班。<mark class="key">知道系统的瓶颈在哪，比知道每个部件怎么优化更重要。</mark></p>
+
+  <h3>zero-shot 的真实成绩：它到底有多能打</h3>
+  <p>现在到了最关键的问题：这套训练方式换来了什么？<strong>答案是 zero-shot（零样本）分类能力——不给任何标注样本，直接用文字描述就能分类。</strong></p>
+  <p>论文里最有名的那个结论是：<strong>CLIP 在 ImageNet 上 zero-shot 的准确率，达到了原始 ResNet-50 的水平——而后者是用 128 万张人工标注的图片训练出来的。</strong></p>
+  <p>请把这句话的分量掂清楚。<strong>ResNet-50 那 128 万张图，是人一张一张标出来的</strong>；而 CLIP 一张 ImageNet 的标注图都没看过，成绩打平。<mark class="key">这不是准确率上的胜利，这是"根本不需要标注"这件事本身的胜利。</mark></p>
+  <p>为了让你感受到这一步跨越有多大，把它放进历史坐标里看：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方法</th><th>ImageNet zero-shot 准确率</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Li et al. (2017) 的前人 SOTA</td><td><strong>11.5%</strong></td><td>CLIP 之前 zero-shot 的最好水平</td></tr>
+        <tr><td><strong>CLIP</strong></td><td>达到原始 ResNet-50 的水平</td><td>不用任何 ImageNet 标注样本</td></tr>
+        <tr><td>当时的全监督 SOTA（Xie et al. 2020）</td><td>88.4%</td><td>用了全部标注数据，是天花板参照</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>从 11.5% 到追平 ResNet-50，这是量级上的跨越，不是百分点上的改进。</strong>顺便说一句为什么这里我不给 CLIP 的具体百分数：网上流传最广的那个数字（76.2%）我没能在论文正文的表格里核实到，只在二手来源见过。<mark class="key">科普写作里，一个查不到出处的精确数字，不如一句查得到出处的定性描述。</mark>"达到原始 ResNet-50 的水平"这句话是论文和官方博客都反复写过的，可以放心引用。</p>
+
+  <h3>但 CLIP 有个尴尬的短板：它不太会认手写数字</h3>
+  <p>上面全是好话，现在说说它的怪毛病——这部分往往比优点更能帮你理解它的原理。</p>
+  <p><strong>CLIP 在 MNIST 手写数字上的 zero-shot 准确率只有 88%，而人类是 99.75%。</strong>MNIST 是什么难度？它是深度学习领域的"你好世界"，一个几十行代码的简单卷积网络就能轻松做到 99% 以上。<strong>一个能在 ImageNet 上追平 ResNet-50 的模型，却在最简单的入门任务上被一个新手模型碾压。</strong></p>
+  <p>这看起来很荒谬，但原因非常合理：<mark class="key">CLIP 的知识全部来自互联网上的图文对，而互联网上几乎没有人会拍一张手写数字的照片，然后配上文字说"这是数字 7"。</mark></p>
+  <p>换成大白话：<strong>CLIP 是个博览群书但从没上过学的自学者。</strong>它读遍了互联网上的图配文，所以认得出埃菲尔铁塔、认得出柯基犬、认得出赛博朋克风格；但小学一年级课堂上那种"照着描红本认阿拉伯数字"的训练，它压根没经历过。<strong>它的知识边界，就是互联网图文的分布边界。</strong></p>
+  <p>再举一个同源的例子：<strong>CLIP 的名人识别能力在 100 个候选里 top-1 是 59.2%，扩到 1000 个候选就降到 43.3%。</strong>这同样是分布问题——互联网上有大量名人照片配名字，所以它会；但候选一多，细分辨别力就跟不上了。</p>
+  <div class="callout">
+    <span class="tag">⚠️ 从这个短板要学到的通用道理</span>
+    <p><strong>任何模型的能力边界，都由它训练数据的分布决定，而不是由任务的"客观难度"决定。</strong>MNIST 对人类来说比 ImageNet 简单得多，但对 CLIP 来说反而更难——因为难易的标尺不在任务本身，<strong>而在"训练数据里有没有这类东西"。</strong></p>
+    <p>这条道理可以直接用在你评估任何 AI 工具上：<strong>当它在某个看起来很简单的任务上表现离谱，先别急着说它笨，去想想它的训练数据里有没有这种东西。</strong></p>
+  </div>
+
+  <h3>训练成本：这件事当年有多贵</h3>
+  <p>最后交代一下代价。CLIP 不是能在自家显卡上复现的东西：</p>
+  <ul class="keylist">
+    <li><span class="k">最大的 ResNet（RN50x64）</span><span class="v"><strong>592 张 V100 显卡训练 18 天</strong></span></li>
+    <li><span class="k">最大的 ViT</span><span class="v"><strong>256 张 V100 显卡训练 12 天</strong></span></li>
+  </ul>
+  <p><strong>592 张卡跑 18 天是什么概念</strong>：换算成单卡时间是约 <code>592 × 18 = 10656</code> 卡天，也就是<strong>一张 V100 要不停跑将近 29 年</strong>。这就是 2021 年做一个 CLIP 的门票价格。</p>
+  <p>不过论文里也给了两个非常实用的效率结论，说明<strong>选对方法比堆卡更值钱</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">换目标函数</span><span class="v">从"预测图片的完整文字描述"改成"对比式地判断配对"，zero-shot ImageNet 的效率提升 <strong>4 倍</strong></span></li>
+    <li><span class="k">换图像骨架</span><span class="v">从标准 ResNet 换成 ViT，再获得 <strong>3 倍</strong>计算效率提升</span></li>
+  </ul>
+  <p><mark class="key">4 倍乘 3 倍，就是 12 倍——这两个决定省下的算力，比买十倍的卡更管用。</mark>这也解释了为什么 CLIP 最终最好的模型是 ViT 版本而不是 ResNet 版本。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="CLIP 在 ImageNet 上 zero-shot 表现优异，却在 MNIST 手写数字上只有 88%（人类 99.75%）。最主要的原因是？"
+       data-opts="互联网图文数据里几乎没有「手写数字配文字说明」这类样本|MNIST 图片分辨率太低，CLIP 的 patch 切分不适用|CLIP 的文本编码器只有 6300 万参数，太小了|MNIST 是灰度图，CLIP 只能处理彩色图"
+       data-answer="0"
+       data-explain="CLIP 的全部知识来自 4 亿组互联网图文对，而互联网上几乎没人会拍一张手写数字再配文说「这是数字 7」。所以它的能力边界由训练数据分布决定，而不是由任务的客观难度决定——MNIST 对人类是入门题，对 CLIP 反而是分布外的冷门任务。这也是评估任何 AI 工具的通用方法：当它在看似简单的任务上表现离谱，先想想它的训练数据里有没有这种东西，而不是直接下「它笨」的结论。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>跨模态对齐的目标只有一句话：让"猫的照片"和"猫"这两个字，在同一个向量空间里落到相近的位置。</strong>做到这件事，图搜文、文搜图、zero-shot 分类就都自然成立了。</p>
+    <p><strong>CLIP 的做法是对比学习。</strong>一个 batch 里 N 个图文对，构成 N×N 种可能配对，最大化 N 个真实对的余弦相似度、最小化 N²−N 个错误配对的相似度，在相似度矩阵上优化<strong>对称交叉熵损失</strong>。数据是自建的 <strong>WIT，4 亿组图文对</strong>。</p>
+    <p><strong>术语要严谨</strong>：CLIP 原文并没有用"InfoNCE"这个词，它写的是对称交叉熵损失。InfoNCE 这个名字出自 2018 年 DeepMind 的 CPC 论文（arXiv 1807.03748），是 CLIP、SimCLR 共同的祖先。CLIP 也明确溯源过：这种 batch 构造最早是 Sohn (2016) 的 multi-class N-pair loss，后由 ConVIRT 用于医学影像，CLIP 自述是"ConVIRT 的简化版"。</p>
+    <p><strong>temperature 在 CLIP 里不是超参数，而是可学习参数</strong>——以 log 参数化的乘性标量直接参与训练，省掉了手工调它的麻烦。</p>
+    <p><strong>成绩与短板要一起看。</strong>zero-shot ImageNet 达到原始 ResNet-50 水平（而对手用了 128 万张标注图），前人 SOTA 只有 11.5%；但 MNIST 只有 88%，名人识别 1000 候选降到 43.3%。<mark class="key">能力边界由训练数据分布决定，不由任务的客观难度决定——这是这一节最值得带走的一条判断力。</mark></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./09-2-embedding.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 9.2 · Embedding 向量</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./09-4-vision.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 9.4 · 视觉理解</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 9.3</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>
