@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 8.6 · 推理模型 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./08-llm.html">智能篇 · 第 8 章</a>
+      <span class="sep">›</span>
+      <span>§ 8.6</span>
+    </div>
+    <a href="./08-llm.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 8.6 · Section</div>
+    <h1>推理模型</h1>
+    <div class="cn">Reasoning Models · o1 与 DeepSeek-R1</div>
+  </header>
+
+  <p class="lead">
+    §8.5 给了一个诱人的暗示：只要让模型"多想一会儿"，成绩就能翻几倍。那么一个自然的追问是——<mark class="key">为什么不把"遇到难题就自己先想很久"这件事，直接训练进模型里？</mark>2024 年 9 月 12 日，OpenAI 用 o1 回答了这个问题；2025 年 1 月，DeepSeek 用 R1 把答案公开、开源，并在同年把论文发上了《Nature》。这一节讲的是 AI 领域最近一次真正的范式转弯：<strong>从"把模型做得更大"，转向"让模型想得更久"。</strong>
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧑‍🏫 抢答型学霸 vs 慢想型学霸</div>
+    <p><strong>教室</strong>里坐着两位好学生。</p>
+    <p><strong>小快</strong>是抢答型。老师题目刚念完，他手就举起来了——绝大多数简单题他抢得又快又对，看起来非常聪明。可遇到一道需要转三个弯的难题，他还是那个抢答速度，答案就时常出错。<strong>他不是不会，是他的规矩不允许他慢下来。</strong></p>
+    <p><strong>小慢</strong>是另一种。简单题他也答得快，但碰到难题，他会低头在草稿纸上写十分钟——列条件、试几种思路、发现走不通就划掉重来、算完了还代回去验一遍。然后他抬头给出答案。<mark class="key">同一道难题，他的正确率明显高过小快。</mark></p>
+    <p>过去几年我们造的全是"小快"。<strong>不管题目多难，模型的思考深度都是固定的那么多层，答得飞快。</strong>2024 年之后，人们终于造出了"小慢"——遇到难题会自己先在草稿纸上折腾几千个字，才开口说答案。</p>
+    <div class="link">→ <strong>推理模型</strong>（Reasoning Model）= 被专门训练过"遇到难题先在内部生成长篇推理过程、再给答案"的模型。</div>
+  </div>
+
+  <h3>先把"推理模型"和普通模型的差别说清</h3>
+  <p><strong>推理模型</strong>这个名字容易引起误解——好像普通模型不会推理。<strong>其实差别不在"会不会"，而在"肯不肯花时间，以及这份时间是怎么被训练出来的"。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>普通模型（+ 手写 CoT）</th><th>推理模型</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>推理过程从哪来</td><td>你在提示词里要求它写</td><td><strong>训练进去的，它自己会写</strong></td></tr>
+        <tr><td>推理长度</td><td>你要求多长就多长，通常几百 token</td><td>它自己判断，可能几千到几万 token</td></tr>
+        <tr><td>会不会自我纠错</td><td>基本不会（写歪了就一路歪）</td><td><strong>会</strong>——发现走不通会自己说"等等，这条路不对"</td></tr>
+        <tr><td>过程给不给你看</td><td>给，就是正常输出</td><td>看厂商：o1 <strong>隐藏</strong>原始思维链，R1 公开</td></tr>
+        <tr><td>简单题上的表现</td><td>快而准</td><td>可能"想太多"，慢且不见得更好</td></tr>
+        <tr><td>成本</td><td>正常</td><td>思考过程也按输出 token 计费，<strong>可能贵几十倍</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最需要理解的是第一行。<strong>手写 CoT 是"你教它这次要写过程"；推理模型是"它被训练成遇到难题就自动写过程，而且写得比你能教的更好"。</strong><mark class="key">前者是外挂，后者是内建。</mark></p>
+
+  <h3>★ 2024 年 9 月 12 日：o1 的发布</h3>
+  <p>这是一个值得记住的日期。<strong>2024 年 9 月 12 日</strong>，OpenAI 发布 o1-preview，配套公告的标题是《<em>Learning to reason with LLMs</em>》（"教大语言模型学会推理"）。</p>
+  <p>公告里的官方数字很有说服力：</p>
+  <ul class="keylist">
+    <li><span class="k">Codeforces 编程竞赛</span><span class="v">达到 <strong>89th percentile</strong>——也就是超过 89% 的人类参赛选手。</span></li>
+    <li><span class="k">AIME 数学竞赛</span><span class="v">成绩足以<strong>进入全美前 500 名</strong>。<strong>AIME</strong>（American Invitational Mathematics Examination，美国数学邀请赛）是美国高中数学竞赛的第二轮，参赛者本身就是从几十万人里筛出来的尖子。</span></li>
+    <li><span class="k">GPQA</span><span class="v"><strong>首个在这个基准上超过人类 PhD 专家的模型</strong>。GPQA 是一套物理、化学、生物的博士级难题。</span></li>
+    <li><span class="k">MMMU</span><span class="v">78.2%（多模态的大学水平综合基准）。</span></li>
+    <li><span class="k">MMLU</span><span class="v">在 <strong>54 个子类中的 54 个</strong>超过 GPT-4o（共 57 个子类）。</span></li>
+  </ul>
+  <p>但最能说明"多想一会儿有多值钱"的，是<strong>2024 年 AIME</strong> 那组对照数字：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>做法</th><th>2024 AIME 成绩</th><th>答对题数（共 15 题）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-4o（普通模型）</td><td>12%</td><td>1.8 题</td></tr>
+        <tr><td><strong>o1 · 单次采样</strong></td><td><strong>74%</strong></td><td>11.1 题</td></tr>
+        <tr><td>o1 · 64 次采样取共识</td><td>83%</td><td>12.5 题</td></tr>
+        <tr><td>o1 · 1000 次采样 + 重排序</td><td>93%</td><td>14 题</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>把这张表读懂，你就读懂了 2024 年之后的整个 AI 路线图。</strong>第一行到第二行：从 1.8 题到 11.1 题，<mark class="key">同一个"多想一会儿"的思路，让答对题数涨了六倍。</mark>第二行到第四行更有意思——采样次数从 1 次到 1000 次，成绩从 74% 涨到 93%。<strong>换成大白话：多花钱多想，成绩还能继续涨，而且涨得很平滑。</strong></p>
+
+  <h3>★ test-time compute：一条全新的扩展路径</h3>
+  <p>上面那张表指向的结论，是 o1 公告里最重要的一句话。原文的意思是：<mark class="key">模型性能随「强化学习的量」（train-time compute，训练时算力）和「思考的时间」（test-time compute，推理时算力）双向持续平滑提升，而且这条扩展路径的约束与预训练截然不同。</mark></p>
+  <p>这句话为什么重要？因为在 o1 之前，"让 AI 变强"只有一条公认的路：<strong>把模型做得更大、把训练数据堆得更多、把训练算力砸得更狠。</strong>这条路叫"预训练扩展定律"（Scaling Law），它有效，但也在撞墙——高质量数据快用完了，训练成本涨到只有几家公司付得起。</p>
+  <p><strong>o1 揭示的是第二条路：不动模型，只让它在回答时多想一会儿。</strong>两条路的性质完全不同：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>train-time compute（训练时算力）</th><th>test-time compute（推理时算力）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>钱花在什么时候</td><td>训练阶段，一次性投入</td><td><strong>每次回答的时候，用一次花一次</strong></td></tr>
+        <tr><td>谁付这笔钱</td><td>模型厂商</td><td><strong>调用方（也就是你）</strong></td></tr>
+        <tr><td>受什么限制</td><td>高质量数据、超算规模、几个月的周期</td><td>用户愿意等多久、愿意付多少钱</td></tr>
+        <tr><td>能不能按需调节</td><td>不能，训完就定了</td><td><strong>能</strong>——简单题少想、难题多想</td></tr>
+        <tr><td>类比</td><td>送员工去读三年博士</td><td>让员工这一件事多加两小时班</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后那一行的类比值得展开。<strong>好比</strong>一家公司要提高<strong>办公室</strong>的产出：<em>第一条路</em>是花大钱送每位员工去读三年学位，一次投入、永久受益，但周期长、贵得吓人，而且好学校的名额有限；<em>第二条路</em>是遇到重要项目时，让员工在这件事上多花两小时仔细做，<mark class="key">这条路随时能用、按需付费，而且你可以自己决定哪件事值得多花时间。</mark></p>
+  <p><strong>这就是为什么 o1 被视为一次范式转弯</strong>——它不是又一个更大的模型，而是打开了一个此前没人系统利用的维度。</p>
+
+  <h3>o1 的一个争议：它把思考过程藏起来了</h3>
+  <p>o1 有一个引发大量讨论的设计：<mark class="key">它隐藏原始思维链</mark>。你看到的只有最终答案，加上一段官方生成的"思考摘要"。真正的推理过程不给你。</p>
+  <p>官方给的理由主要是两条：一是原始思维链可能包含未经安全对齐的中间想法，直接暴露有风险；二是它涉及模型的核心能力，公开等于把训练成果送出去。<strong>但对使用者来说，代价是实实在在的</strong>——你付了那些思考 token 的钱（它们按输出计费），却看不到内容；调试时也无法判断它到底在哪一步想歪了。</p>
+  <p>这里顺带说清 <strong>reasoning token</strong>（推理 token）这个概念，它是一个真实的计费项：</p>
+  <pre><code>调用推理模型时，你的账单大致是这样：
+
+  输入 token          ← 你的问题，按输入价计费
+  reasoning token     ← 它内部思考用掉的，★ 按输出价计费
+  输出 token          ← 最终给你看的答案，按输出价计费
+
+举例：你问一道难题（100 token），
+      它内部想了 8000 token，
+      最后答了 300 token
+
+  你实际付费的输出量 = 8000 + 300 = 8300 token
+  而你能看到的只有 300 token
+
+——这就是为什么推理模型的账单常常比预期高一个数量级。</code></pre>
+  <p><strong>换成大白话：</strong>你雇了一位<strong>会计</strong>核一笔账，他在<strong>办公室</strong>里算了三天，然后交给你一张写着结果的纸条。<mark class="key">你付的是三天的工钱，拿到的是一张纸条——而且你不能查他的草稿。</mark>这笔交易到底值不值，取决于那个结果对你有多重要。</p>
+  <p>关于 o 系列的现状也说明一下，避免过时信息：<strong>OpenAI 已经把推理能力并入 GPT 主线</strong>（GPT-5.6 Sol 的页面标注 <code>Reasoning: Highest</code> 并支持 reasoning token），<mark class="key">o 系列作为独立产品线事实上已经终结，但 o3 / o4-mini 在 API 中仍然可用。</mark></p>
+
+  <h3>★ DeepSeek-R1：把这件事彻底公开</h3>
+  <p>o1 证明了这条路走得通，但它是个黑箱——没有论文、没有权重、连思考过程都藏着。<strong>2025 年 1 月 22 日，DeepSeek 发布 R1，把整件事摆到了台面上。</strong></p>
+  <p>先讲一个特别值得记住的里程碑：</p>
+  <ul class="keylist">
+    <li><span class="k">论文</span><span class="v">arXiv 2501.12948，2025 年 1 月 22 日发布</span></li>
+    <li><span class="k">★ 已正式发表于《Nature》</span><span class="v"><mark class="key">Nature，vol. 645，pp. 633–638（2025），DOI 10.1038/s41586-025-09422-z</mark>。这是一个重要的分水岭——大模型的研究成果登上《Nature》正刊，意味着这套方法通过了最严格的同行评审。</span></li>
+    <li><span class="k">★ 许可证</span><span class="v">代码与<strong>模型权重均为 MIT 许可</strong>，允许商用、修改、蒸馏。<strong>这在当时是极其罕见的开放程度</strong>——很多"开源"模型的许可证其实带着一堆商用限制。</span></li>
+    <li><span class="k">规格</span><span class="v"><strong>671B 总参数 / 37B 激活 / 128K 上下文</strong>，基于 DeepSeek-V3-Base。671B 总参数但每次只激活 37B，这是 MoE 混合专家架构（第 7 章讲过）。</span></li>
+  </ul>
+  <p><strong>把 671B 换算成能感知的量</strong>：6710 亿个参数，如果每个参数占 2 个字节，光是存下来就要 1.3 TB——<strong>相当于三百多部高清电影的体积，而这只是"静态地放着"，跑起来还要额外的空间。</strong>而"只激活 37B"意味着每次实际调用的只有其中约 5.5%，<strong>好比</strong>一家大<strong>医院</strong>有六百多位<strong>科室</strong>医生，但你挂号看病只惊动其中三十几位。</p>
+
+  <h3>★ R1-Zero：首次公开验证「纯 RL 也能长出推理能力」</h3>
+  <p>R1 论文里最有科学价值的部分，其实是它的前身 <strong>R1-Zero</strong>。</p>
+  <p>先解释一个缩写。<strong>SFT</strong>（Supervised Fine-Tuning，监督微调）<strong>说白了就是</strong>：准备一堆"问题 + 标准答案"的样本，让模型照着学。这是过去所有教模型做事的标准第一步。<strong>RL</strong>（Reinforcement Learning，强化学习）则是<strong>另一套路子</strong>：不给标准答案，只告诉它"这次做得好"或"这次做得差"，让它自己摸索。</p>
+  <p>R1-Zero 干了一件当时被认为很难成功的事：<mark class="key">完全跳过 SFT，直接用纯强化学习去激励推理能力。</mark>它是<strong>首个公开验证「推理能力可以纯靠 RL 激励、无需 SFT」的研究</strong>。</p>
+  <p>结果令人吃惊——在训练过程中，模型<strong>自发涌现</strong>出了几种没人教过它的行为：</p>
+  <ul class="keylist">
+    <li><span class="k">自我验证</span><span class="v">算完之后自己代回去检查一遍。</span></li>
+    <li><span class="k">反思</span><span class="v">写到一半发现思路不对，主动说"等等，我重新考虑一下"。</span></li>
+    <li><span class="k">长思维链</span><span class="v">遇到难题会自发把推理写得越来越长——<strong>没人规定它要写多长，是它自己学会"难题值得多写"。</strong></span></li>
+  </ul>
+  <p>论文 v1 版本里有一段很著名的描述，把这种自我修正的时刻称为 <strong>"aha moment"</strong>（恍然大悟的时刻）。<strong>这里要严谨说明</strong>：这个词出现在 v1 论文正文里，<mark class="key">但它不在《Nature》版摘要和模型卡片里</mark>——所以可以提，但不要标注成"Nature 论文原话"。</p>
+  <p>但 R1-Zero 也有明确的缺陷，论文写得很诚实：<strong>无限重复、可读性差、语言混杂</strong>（中英文混着蹦）。这些毛病让它没法直接给人用。</p>
+  <p>于是有了完整版 R1，它在 R1-Zero 的基础上加了一套四步流程：</p>
+  <pre><code>DeepSeek-R1 的训练流程（cold-start + 两阶段 RL + 两阶段 SFT）
+
+  ① cold-start SFT
+     先用少量高质量的长思维链数据做一次监督微调
+     ——先把「话说得像人」这件事教会，解决可读性和语言混杂
+
+  ② 第一阶段 RL
+     针对推理任务做强化学习，把推理能力练上去
+
+  ③ 第二阶段 SFT
+     用①②产生的数据 + 通用任务数据再做一次监督微调
+     ——让它不只会做数学题，日常任务也拿得起来
+
+  ④ 第二阶段 RL
+     面向全场景（有用性 + 无害性）再做一次强化学习
+     ——对齐人类偏好，收尾
+
+对比：R1-Zero = 只有纯 RL，能力强但不好用
+      R1      = 上面这四步，能力强且好用</code></pre>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一位无师自通的野路子高手，后来去补了文化课</span>
+    <p><strong>好比</strong>一位打拳的天才。</p>
+    <p><em>R1-Zero 那条路</em>：把他扔进擂台，不教任何招式，只在每场结束后告诉他"这场赢了"或"这场输了"。几百场之后，他自己摸索出了一整套极其厉害的打法——甚至学会了打到一半发现套路不对就临场改变节奏（这就是"反思"），学会了打完复盘（这就是"自我验证"）。<mark class="key">他真的很能打，但他站没站相、说话夹着方言、赢了还要多打三十下停不下来。</mark>你没法把他派去代表公司参加正式比赛。</p>
+    <p><em>R1 那条路</em>：先送他上几节礼仪和表达课（cold-start SFT，把话说清楚），再回擂台强化打法（第一阶段 RL），再补一轮文化课让他不只会打拳还能做别的（第二阶段 SFT），最后再练一轮怎么在正式场合得体地赢（第二阶段 RL）。</p>
+    <p><strong>两条路的科学意义不同：</strong>R1-Zero 证明了<em>"能力可以纯靠反馈自己长出来"</em>——这是一个关于智能如何涌现的重要发现；R1 证明了<em>"长出来的能力可以被驯化成产品"</em>——这是工程上的必要一步。<strong>论文同时给出这两半，才是它的完整贡献。</strong></p>
+  </div>
+
+  <h3>★ R1 对 o1 的实测：互有胜负，如实呈现</h3>
+  <p>下面这组是 R1 官方公布的 benchmark 对照。<strong>先交代评测设置，这是判断数字可信度的前提</strong>：最大 32,768 token、temperature 0.6、top-p 0.95、<strong>64 次采样估算 pass@1</strong>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>基准</th><th>DeepSeek-R1</th><th>OpenAI o1-1217</th><th>谁赢</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>AIME 2024</td><td><strong>79.8</strong></td><td>79.2</td><td>R1 略胜</td></tr>
+        <tr><td>MATH-500</td><td><strong>97.3</strong></td><td>96.4</td><td>R1 略胜</td></tr>
+        <tr><td>GPQA Diamond</td><td>71.5</td><td><strong>75.7</strong></td><td>o1 胜</td></tr>
+        <tr><td>MMLU</td><td>90.8</td><td><strong>91.8</strong></td><td>o1 胜</td></tr>
+        <tr><td>LiveCodeBench</td><td><strong>65.9</strong></td><td>63.4</td><td>R1 胜</td></tr>
+        <tr><td>Codeforces（Elo 分）</td><td>2029</td><td><strong>2061</strong></td><td>o1 略胜</td></tr>
+        <tr><td>SWE-bench Verified</td><td><strong>49.2</strong></td><td>48.9</td><td>R1 极微弱胜</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这张表最诚实的读法是：互有胜负，各有所长，整体在同一个水平线上。</strong>R1 在纯数学（AIME、MATH-500）和真实代码任务（LiveCodeBench、SWE-bench）上略占优；o1 在科学知识（GPQA）、通用知识（MMLU）和竞赛编程（Codeforces）上略占优。</p>
+  <p><mark class="key">请特别警惕那种"某模型全面碾压"的宣传。</mark>真实的 benchmark 从来是这个样子——七项里赢四项输三项，而且多数项目的差距在一两个百分点内，很可能落在测试噪声范围里。<strong>好比</strong>两位棋手下了七盘，四胜三负，你可以说"势均力敌"，但说"碾压"就是撒谎。</p>
+  <p>还要注意"<strong>64 次采样估 pass@1</strong>"这个设置意味着什么：它是跑 64 次取平均来估算"一次答对的概率"，这比"跑一次看结果"稳定得多，但也说明<strong>单次调用的实际体感可能不如榜单数字漂亮</strong>。<strong>这就像</strong>公布一位学生"平均分 79.8"，但你某一次<strong>考试</strong>碰上他，可能考 90 也可能考 65。</p>
+
+  <h3>蒸馏：让小模型也学会推理</h3>
+  <p>R1 论文还做了一件影响面极广的事：<strong>开源了六个蒸馏模型</strong>。</p>
+  <p><strong>蒸馏</strong>（Distillation）这个词听着玄，<strong>说白了就是</strong>：拿大模型生成的高质量答案当教材，去训练一个小模型。<strong>好比</strong>一位老<strong>厨师</strong>没法克隆自己，但他可以写下几千道菜的详细做法，让年轻<strong>厨师</strong>照着练——<mark class="key">年轻人练不出老师傅的全部本事，但在那几千道菜上能做得很像。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>蒸馏模型规模</th><th>基座</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1.5B / 7B / 14B / 32B</td><td>Qwen2.5</td><td>四个规模，从能跑在笔记本上到需要一张专业卡</td></tr>
+        <tr><td>8B / 70B</td><td>Llama3</td><td>两个规模</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中最出名的成绩是：<mark class="key">R1-Distill-Qwen-32B 超过了 o1-mini。</mark><strong>一个 320 亿参数、能在单机上跑起来的开源模型，超过了 OpenAI 的一个商业推理模型</strong>——这件事在 2025 年初对整个行业的心态冲击极大。</p>
+  <p><strong>为什么蒸馏这么有效？</strong>因为推理能力很大程度体现在"推理过程的写法"上，而这个写法是可以被模仿的文本模式。大模型辛苦用强化学习摸索出来的那套"该怎么一步步想"，一旦写成文字，小模型就能照着学。<strong>相当于</strong>老师傅摸索了十年的手感，写成一本详尽的<strong>笔记</strong>，徒弟三个月就能上手八成。</p>
+
+  <h3>为什么以前没人这么做</h3>
+  <p>看完 o1 那张表，一个自然的疑问是：<strong>"让模型多想一会儿"这么简单的想法，为什么等到 2024 年才成？</strong>其实早有人想过，只是有三道坎。</p>
+  <ul class="keylist">
+    <li><span class="k">坎一 · 模型得先"够聪明"才配多想</span><span class="v">§8.5 提过，CoT 的收益和模型规模强相关。<strong>小模型你让它多想，它只会写出一串似是而非的步骤，越想越偏。</strong>只有模型本身的基础能力过了某条线，"多想"才是加分而不是减分。这条线大约在 2023 年之后才被普遍跨过。</span></li>
+    <li><span class="k">坎二 · 不知道该奖励什么</span><span class="v">强化学习要有"打分的人"。数学题好办，答案对就给分；可"这段推理过程写得好不好"该怎么打分？<strong>这是最难的一环。</strong>R1 的做法之一是主要针对<em>可自动验证</em>的任务（数学答案、代码能否通过测试）做 RL——<strong>说白了就是</strong>先在"能自动判卷"的科目上练，把能力练出来再迁移到别的科目。</span></li>
+    <li><span class="k">坎三 · 推理成本以前贵到不可想象</span><span class="v">让模型在每个问题上多吐几千个 token，这在 2020 年是天文数字的开销。<strong>是这几年推理成本一路暴跌（还记得 §8.1 那张价格表里 DeepSeek 的 $0.14 吗），才让"用推理算力换准确率"这笔交易在经济上说得通。</strong></span></li>
+  </ul>
+  <p><strong>打个比方</strong>：这就<strong>相当于</strong>"让员工加班仔细做"这件事——你得先有一位基本功过关的员工（坎一），得有一套能评判他做得好不好的标准（坎二），还得付得起加班费（坎三）。<mark class="key">三个条件同时成熟，是 2024 年这个时间点的真正含义。</mark></p>
+
+  <h3>把"多想一会儿"到底多花多少钱算清</h3>
+  <p>推理模型的账单常常让人措手不及，因为那笔思考费用是看不见的。用具体数字算一遍：</p>
+  <pre><code>假设用一个输出价 $30/百万 token 的推理模型
+（比如 GPT-5.6 Sol 的输出价就是 $30）
+
+【简单问题 · 用推理模型是浪费】
+  问："北京是中国的首都吗？"     20 token 输入
+  它内部思考了                   400 token   ← 这道题压根不需要想
+  最终回答                        15 token
+  单次输出费用 = 415 × $30/百万 = $0.0125
+
+  同一个问题用普通模型：
+  输出 15 token = $0.00045
+  ★ 贵了约 28 倍，答案一模一样
+
+【困难问题 · 用推理模型是值得的】
+  问：一道需要五步推演的架构设计权衡题
+  输入                          800 token
+  它内部思考了                12,000 token   ← 真的在干活
+  最终回答                     1,200 token
+  单次输出费用 = 13200 × $30/百万 = $0.396
+
+  普通模型答同一题：便宜二十倍，但答案质量明显不够
+  ★ 这四毛钱花得值
+
+结论：推理模型的性价比完全取决于题目难度。
+      用错场景，你在为一次不必要的思考付二十几倍的钱。</code></pre>
+  <p>所以工程上有一个很实用的设计模式叫<strong>分级路由</strong>（和 §8.5 那条思路是同一个）：<mark class="key">先用一个便宜的小模型判断"这个问题需不需要深想"，需要才转给推理模型。</mark><strong>好比</strong><strong>医院</strong>的<strong>挂号</strong>台加一道<strong>分诊</strong>：头疼脑热的直接给普通门诊，疑难杂症才转专家会诊——<strong>相当于</strong>把最贵的资源留给真正需要的人。</p>
+  <p>还有一个很多人不知道的实用功能：<strong>部分厂商提供"思考力度"的档位</strong>（比如低 / 中 / 高）。这等于让你自己决定"让它想多久"，是控制成本最直接的旋钮。<strong>换成大白话就是</strong>：你可以告诉它"这题随便想想就行"或者"这题请务必想透"。</p>
+
+  <h3>什么时候该用推理模型，什么时候别用</h3>
+  <p>推理模型不是"更好的模型"，是"另一类模型"。用错场景，你会付几十倍的钱买到更差的体验。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>用不用</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>数学题、算法题、逻辑谜题</td><td><strong>该用</strong></td><td>这是它的主战场，提升幅度最大</td></tr>
+        <tr><td>复杂代码重构、多文件 bug 排查</td><td><strong>该用</strong></td><td>需要跨文件推演因果，普通模型容易只改表面</td></tr>
+        <tr><td>科研文献分析、方案可行性论证</td><td><strong>该用</strong></td><td>需要权衡多个相互制约的因素</td></tr>
+        <tr><td>把一段话翻译成英文</td><td>别用</td><td>不需要推理，只需要语言能力。慢且贵，效果不见得好</td></tr>
+        <tr><td>提取实体、分类、打标签</td><td>别用</td><td>本来一个 token 就答完了，它可能想 3000 个 token</td></tr>
+        <tr><td>闲聊、陪伴、情感支持</td><td>别用</td><td>它会把一句问候当成课题来分析，体验很怪</td></tr>
+        <tr><td>要求毫秒级响应的场景</td><td>别用</td><td>思考过程本身就要几秒到几十秒，物理上做不到</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>另外记住几条使用要点：<strong>一、不要再手写"让我们一步一步想"</strong>，它已经内建了，重复叠加可能干扰它自己的格式；<strong>二、不要乱调采样参数</strong>——R1 官方评测用的是 temperature 0.6、top-p 0.95，你自己乱设可能掉分；<strong>三、提示词要写清约束和目标，但别写推理步骤</strong>，把"怎么想"这件事交给它。</p>
+  <p>第三条最容易被误解，值得多说一句。<strong>普通模型的提示工程讲的是"教它怎么做"，推理模型的提示工程讲的是"说清要什么"。</strong><mark class="key">你越是详细规定它每一步该怎么想，反而越可能把它训练好的推理路径带偏。</mark><strong>好比</strong>你请了一位真正的老<strong>厨师</strong>，你该做的是把口味、忌口、上菜时间讲清楚，而不是站在<strong>案板</strong>边指挥他"先切姜再放蒜"——<strong>相当于</strong>拿外行的流程去干扰内行的手艺。<strong>换成大白话：说清目标，别指挥过程。</strong></p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"推理模型比普通模型全面更强"</td><td>不对。它在需要多步推理的任务上强，在翻译、分类、闲聊上又慢又贵，体验更差</td></tr>
+        <tr><td>"o1 是 2024 年底发布的"</td><td>准确日期是 <strong>2024 年 9 月 12 日</strong>（o1-preview），公告《Learning to reason with LLMs》</td></tr>
+        <tr><td>"R1 只是一篇 arXiv 预印本"</td><td>不对。<strong>已正式发表于《Nature》vol. 645, pp. 633–638 (2025)</strong>，DOI 10.1038/s41586-025-09422-z</td></tr>
+        <tr><td>"R1 全面超过了 o1"</td><td>不对。<strong>互有胜负</strong>：R1 在 AIME/MATH-500/LiveCodeBench/SWE-bench 略胜，o1 在 GPQA/MMLU/Codeforces 略胜</td></tr>
+        <tr><td>"R1 开源但不能商用"</td><td>不对。<strong>代码与模型权重均为 MIT 许可</strong>，允许商用、修改、蒸馏</td></tr>
+        <tr><td>"aha moment 是 Nature 论文原话"</td><td>不准确。这个说法在 <strong>v1 论文正文</strong>中，不在 Nature 版摘要和模型卡片里</td></tr>
+        <tr><td>"思考过程不花钱，反正看不见"</td><td>大错。reasoning token <strong>按输出价计费</strong>，是账单暴涨的主因</td></tr>
+        <tr><td>"o 系列还在独立迭代"</td><td>OpenAI 已把推理能力并入 GPT 主线（GPT-5.6 Sol 标注 Reasoning: Highest 并支持 reasoning token），<strong>o 系列作为独立产品线事实上已终结</strong>，但 o3 / o4-mini 在 API 中仍可用</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>这条路会走到哪里</h3>
+  <p>最后留一点开放的思考，而不是给一个漂亮的结论。</p>
+  <p><strong>确定的部分：</strong>test-time compute 这条扩展路径已经被验证有效，而且它的约束条件和预训练完全不同——它受限于"用户愿意等多久、愿意付多少钱"，而不是"有没有足够的数据和超算"。<mark class="key">这意味着即使预训练撞了墙，还有这一整条路可以走。</mark>2025 到 2026 年间，几乎所有主流厂商都推出了自己的推理模型，或者把推理能力并入主线模型（GPT-5.6 Sol 就是后者的例子）。</p>
+  <p><strong>不确定的部分：</strong>推理能力的上限在哪里，目前没人知道。o1 公告那组"1000 次采样能到 93%"的数字很诱人，但它也提示了一个尴尬的事实——<strong>剩下那 7% 不是靠再多采样一万次就能补上的。</strong>而且"想得越久越准"这条曲线终究会变平，那个拐点在哪，是个开放问题。</p>
+  <p>还有一个更值得琢磨的问题：<strong>模型写出来的那一大段"思考"，究竟是不是它真实的思考？</strong>§8.5 提过，有观察表明模型有时会"先有答案再倒着编过程"。推理模型的长思维链看起来更像真的在推理，但<mark class="key">"看起来像"和"是"之间，仍然隔着我们目前无法验证的距离。</mark><strong>这一点在读任何关于"AI 会思考了"的报道时，都值得放在心上。</strong></p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于 DeepSeek-R1，下面哪一项陈述是准确的？"
+       data-opts="它只是一篇 arXiv 预印本，未经过同行评审|它在所有 benchmark 上全面超过了 o1|它已正式发表于《Nature》，且代码与模型权重均为 MIT 许可、允许商用|它是闭源模型，只能通过 API 调用"
+       data-answer="2"
+       data-explain="DeepSeek-R1 的论文（arXiv 2501.12948，2025 年 1 月 22 日）已正式发表于《Nature》vol. 645, pp. 633–638 (2025)，DOI 10.1038/s41586-025-09422-z——这是大模型研究的一个重要里程碑，意味着这套方法通过了最严格的同行评审。同时代码与模型权重均采用 MIT 许可，允许商用、修改和蒸馏，开放程度在当时极其罕见。选项 B 不成立：官方 benchmark 显示互有胜负——R1 在 AIME 2024（79.8 vs 79.2）、MATH-500（97.3 vs 96.4）、LiveCodeBench（65.9 vs 63.4）、SWE-bench Verified（49.2 vs 48.9）上略胜，而 o1-1217 在 GPQA Diamond（75.7 vs 71.5）、MMLU（91.8 vs 90.8）、Codeforces（2061 vs 2029）上略胜。看到「全面碾压」这类说法，先去核对原始数据。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>推理模型</strong>的核心不是"更会推理"，而是<mark class="key">"遇到难题会自动先想很久"这件事被训练进了模型里</mark>——从外挂变成内建。</p>
+    <p><strong>o1</strong>（<strong>2024 年 9 月 12 日</strong>发布 o1-preview，公告《Learning to reason with LLMs》）给出的官方数字：Codeforces 89th percentile、AIME 进入全美前 500、GPQA 首个超过人类 PhD 专家、MMMU 78.2%、MMLU 在 54/57 子类超 GPT-4o。最有说服力的是 <strong>2024 AIME</strong>：GPT-4o 12%（1.8/15）→ o1 单样本 <strong>74%</strong>（11.1/15）、64 样本共识 83%、1000 样本重排序 93%。它<strong>隐藏原始思维链</strong>，而 reasoning token 按输出价计费。公告最重要的一句是：性能随<strong>强化学习量（train-time）</strong>和<strong>思考时间（test-time）</strong>双向持续平滑提升，且这条扩展路径的约束与预训练截然不同。</p>
+    <p><strong>DeepSeek-R1</strong>（arXiv 2501.12948，2025 年 1 月 22 日）<mark class="key">已正式发表于《Nature》vol. 645, pp. 633–638 (2025)，DOI 10.1038/s41586-025-09422-z</mark>，代码与<strong>模型权重均为 MIT 许可</strong>，允许商用、修改、蒸馏。671B 总参数 / 37B 激活 / 128K 上下文，基于 DeepSeek-V3-Base。前身 <strong>R1-Zero</strong> 是<strong>首个公开验证「推理能力可纯靠 RL 激励、无需 SFT」</strong>的研究，涌现出自我验证、反思、长 CoT；缺陷是无限重复、可读性差、语言混杂，故 R1 补上 cold-start + 两阶段 RL + 两阶段 SFT。它还开源了 1.5B/7B/8B/14B/32B/70B 六个蒸馏模型（基于 Qwen2.5 与 Llama3），其中 <strong>R1-Distill-Qwen-32B 超过 o1-mini</strong>。</p>
+    <p>官方 benchmark <strong>互有胜负</strong>（评测设置：max 32768 token、temperature 0.6、top-p 0.95、64 次采样估 pass@1）：R1 在 AIME 2024（79.8 vs 79.2）、MATH-500（97.3 vs 96.4）、LiveCodeBench（65.9 vs 63.4）、SWE-bench Verified（49.2 vs 48.9）略胜；o1 在 GPQA Diamond（75.7 vs 71.5）、MMLU（91.8 vs 90.8）、Codeforces（2061 vs 2029）略胜。<strong>看到"全面碾压"就该去核对原始数据。</strong></p>
+    <p><strong>第 8 章到此结束。</strong>回头看这六节，它们其实是同一条线：文字被切成 token（§8.1），token 一个一个被吐出来（§8.2），一次能摊多少 token 有上限（§8.3），每一个 token 怎么从候选里挑（§8.4），让它多吐一些中间 token 就能变准（§8.5），把"多吐中间 token"训练成本能（§8.6）。<mark class="key">六节讲的都是同一件事的不同侧面——一个只会写下一个字的模型，是怎么变成今天这个样子的。</mark></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-5-cot.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 8.5 · 思维链 CoT</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled" href="#">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 9 章 · 多模态（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 8.6</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

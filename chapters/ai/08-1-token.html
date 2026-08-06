@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 8.1 · Token 与分词 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./08-llm.html">智能篇 · 第 8 章</a>
+      <span class="sep">›</span>
+      <span>§ 8.1</span>
+    </div>
+    <a href="./08-llm.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 8.1 · Section</div>
+    <h1>Token 与分词</h1>
+    <div class="cn">Token &amp; Tokenization</div>
+  </header>
+
+  <p class="lead">
+    你打开 ChatGPT 输入"今天天气怎么样"，你以为它看到的是这七个汉字。<mark class="key">其实它一个汉字都没看见。</mark>在这句话进入模型之前，它已经被一台叫"分词器"的机器切成了若干块碎片，每块碎片换成一个整数编号——模型从头到尾看到的，只是一串数字。这一节要讲的就是这台切碎机：它怎么切、为什么这么切、切出来的碎片怎么变成你账单上的钱，以及为什么"一个汉字等于两个 token"这句流传最广的说法，其实已经过时好几年了。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔪 菜市场买回来的菜，得先切</div>
+    <p>你从<strong>菜市场</strong>买回一整颗白菜、一根整萝卜，直接扔进锅里能煮吗？不行——锅装不下，火也进不去。你得先在<strong>厨房</strong>的案板上把它们切开。</p>
+    <p>关键是：<em>切多大</em>？切成大块，省事，但炒不透、不好入味；切成肉末那么细，倒是好熟，可切的功夫太多，而且一炒就烂、认不出这是白菜还是萝卜。<mark class="key">有经验的厨师会切成"不大不小"的段——刚好能下锅，又刚好还能看出是什么菜。</mark></p>
+    <p>分词器干的活儿，就是这位厨师手里那把刀。它把一句话切成"不大不小"的碎片：不是整句（太大，模型学不动），也不是单个字符（太细，一句话切出上百块，算不起）。<strong>那个"不大不小"的碎片，就叫 Token。</strong></p>
+    <div class="link">→ <strong>Token</strong>（读作"托肯"，中文常译"词元"或"标记"）= 模型能直接处理的最小文本单位，一块"不大不小"的文字碎片。</div>
+  </div>
+
+  <h3>先把"Token"这个词彻底说清</h3>
+  <p><strong>Token</strong> 这个词听着玄，其实就是"一小块"。它在英语里的日常意思是"代币、筹码"——游戏厅里那种圆铁片，你拿钱换筹码，机器只认筹码不认钱。这个比喻好得不能再好：<mark class="key">模型就是那台游戏机，它不认汉字、不认字母，只认筹码上的编号。</mark></p>
+  <p>整个流程分三步，中间没有任何魔法：</p>
+  <pre><code>你输入的原文  →  切碎  →  查表换编号  →  送进模型
+
+ "今天天气怎么样"
+      ↓  分词器切碎（Tokenization）
+ ["今天", "天气", "怎么", "样"]        ← 4 块碎片（示意，实际切法看词表）
+      ↓  查词表，每块换成一个整数 ID
+ [37046, 104651, 100678, 33014]        ← 模型真正看到的东西
+      ↓  每个 ID 查一张巨大的表，换成一个向量
+ [[0.21, -1.33, ...], [...], ...]      ← 进入 Transformer 的输入</code></pre>
+  <p>注意第三步——每个整数 ID 会去查一张叫 <strong>Embedding 表</strong>（嵌入表，可以理解成"编号 → 一串数字"的字典）的东西，换成一串浮点数。这一步我们在第 2 章讲过，这里不重复。<strong>本节只关心第一步和第二步：怎么切、切成几块。</strong></p>
+  <p>为什么这两步值得单开一节？因为<mark class="key">token 是整个 LLM 世界的公制单位</mark>。上下文窗口按 token 算，API 价格按 token 算，生成速度按"每秒多少 token"算，限流按"每分钟多少 token"算。你要是不知道自己那份 8000 字的文档到底是多少 token，你就没法估算它能不能塞进窗口、要花多少钱。<strong>这就跟不知道一斤是多少两，就没法在菜市场算账一样。</strong></p>
+
+  <h3>为什么不干脆按字切、或者按词切</h3>
+  <p>最容易想到的切法有两种极端，而它们<strong>都被试过、都失败了</strong>。这段历史值得讲清，因为它解释了今天这套看起来奇怪的切法是怎么来的。</p>
+  <p><strong>极端一：按单个字符切（Character-level）。</strong>英文就是 26 个字母加标点，词表小到只有几十个，永远不会遇到"不认识的词"。听起来很美，问题是切得太碎——"international"一个词变成 13 块。一篇 1000 词的英文文章切出六七千块碎片，而注意力的计算量是碎片数的平方（第 7 章讲过），<mark class="key">碎片数翻五倍，计算量就翻二十五倍</mark>。更糟的是，单个字母 "t" 本身没有任何语义，模型得从零开始学"t-h-e 连起来是个冠词"这种事，学习效率极低。</p>
+  <p><strong>极端二：按完整单词切（Word-level）。</strong>一个词一块，语义最完整，碎片数最少。问题是词表爆炸——英文常用词就有几十万，加上人名、地名、拼写错误、新造词，根本列不完。而且一旦遇到词表里没有的词（叫 <strong>OOV</strong>，Out-Of-Vocabulary，"词表外"），模型只能吐一个 <code>&lt;unk&gt;</code>（unknown，未知）敷衍过去，信息全丢。你写"ChatGPT"，它看到的是"未知"，这怎么可能好用。中文更麻烦——中文词与词之间没有空格，"研究生命起源"到底是"研究生/命/起源"还是"研究/生命/起源"？这本身就是一个几十年没彻底解决的难题。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>切法</th><th>词表大小</th><th>一句话切几块</th><th>致命问题</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>按字符切</td><td>几十到几千</td><td>很多（碎）</td><td>序列太长，注意力算不起；单字符无语义</td></tr>
+        <tr><td>按单词切</td><td>几十万甚至无穷</td><td>很少</td><td>词表爆炸；遇生词只能吐"未知"；中文没法切</td></tr>
+        <tr><td><strong>按子词切（BPE）</strong></td><td>约 10 万 / 20 万</td><td>适中</td><td>切法不直观，会切出奇怪碎片——但可接受</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>于是人们走了中间路线，叫 <strong>Subword</strong>（子词，"比词小、比字母大"的碎片）。常用词整块保留，生僻词拆成几块常见零件。这就是今天所有主流 LLM 的做法。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 乐高积木盒</span>
+    <p>想象你要买一盒<strong>乐高</strong>，要求是"能拼出世界上任何东西"。</p>
+    <p><em>方案 A</em>：盒里只装一种最小的 1×1 颗粒。理论上什么都能拼，但拼一辆车要三千块颗粒，拼到手断。<br/>
+    <em>方案 B</em>：盒里装的全是成品——一整辆车、一整栎房子、一整艘船。拼起来倒是一秒钟的事，可你想拼一只从没出过的恐龙，盒里没有，就彻底拼不出来了。<br/>
+    <em>方案 C</em>（现实中乐高真正的做法）：盒里装<strong>中等大小的零件</strong>——车轮、车门、窗框、屋顶斜块。常见的东西有现成件，一装就成；没见过的东西，用基础块慢慢搭也搭得出来。</p>
+    <p><mark class="key">BPE 分词就是方案 C。</mark>"the""ing""国家""因为"这种高频组合，词表里有现成的整块；碰到"Schadenfreude"这种冷门德语词，就拆成 "Sch"+"aden"+"fre"+"ude" 几个零件拼出来。<strong>既不至于碎得拼不动，又保证世界上任何字符串都拼得出来——这就是子词分词的全部智慧。</strong></p>
+  </div>
+
+  <h3>BPE：一套"统计谁老在一起"的笨办法</h3>
+  <p>那些"中等大小的零件"是谁定的？答案是：<strong>没人定，是数出来的</strong>。主流方法叫 <strong>BPE</strong>（Byte Pair Encoding，字节对编码）。这名字听着玄，它干的活儿其实笨得可爱——<mark class="key">就是反复找出"最常挨在一起出现的两个东西"，把它们粘成一个新东西。</mark></p>
+  <p>用一个具体例子走一遍，你会发现它完全不需要智商：</p>
+  <pre><code>假设我们的全部语料只有这几个词（数字是出现次数）：
+    low × 5   lower × 2   newest × 6   widest × 3
+
+第 0 步：先拆到最细，每个字符一块
+    l o w      l o w e r      n e w e s t      w i d e s t
+
+第 1 步：数一数哪两个相邻块最常一起出现
+    "e"+"s" 出现了 6+3 = 9 次 ← 最多！粘起来
+    → 新零件 "es" 进词表
+    n e w es t      w i d es t
+
+第 2 步：再数
+    "es"+"t" 出现 9 次 ← 最多，粘起来
+    → 新零件 "est" 进词表
+    n e w est      w i d est
+
+第 3 步：再数
+    "l"+"o" 出现 5+2 = 7 次 ← 最多，粘起来
+    → 新零件 "lo" 进词表
+
+……一直重复，直到词表凑够 10 万个零件为止。
+
+最后词表里会有什么？
+    高频整词： "low"  "the"  "and"
+    高频词尾： "est"  "ing"  "ed"  "tion"
+    单个字符： "a" "b" "c" ...（保底，永远拆得下去）</code></pre>
+  <p>就这么简单。<strong>没有语法学家参与，没人告诉它 "est" 是英语最高级词尾</strong>——它纯粹是因为"这两个字符老在一起"才被粘出来的。而结果恰好和语言学高度吻合，这件事本身就挺让人感慨。</p>
+  <p>名字里那个 <strong>Byte</strong>（字节）也值得解释一句。现代 LLM 用的是 <strong>Byte-level BPE</strong>——它不是在"字符"上做统计，而是在<strong>字节</strong>上做。一个字节就是 0～255 这 256 个可能值，任何文字（中文、日文、阿拉伯文、emoji、乱码）在计算机里都是一串字节。<mark class="key">这一招保证了世界上不存在"切不出来"的输入</mark>——最坏情况下退化成一个字节一块，但永远不会吐出"未知"。你发一个从没见过的 emoji、一段火星文、一串乱码，它都能老老实实编码回去，这就叫"无损"。</p>
+
+  <h3>词表有多大：cl100k_base 与 o200k_base</h3>
+  <p>OpenAI 开源了自家的分词库，叫 <strong>tiktoken</strong>。里面有几套不同的编码方案，名字看起来像密码，其实规律很清楚——<strong>名字里的数字就是词表大小</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>编码名</th><th>词表规模</th><th>用于哪些模型</th><th>中文表现</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>cl100k_base</code></td><td>约 10 万</td><td>GPT-3.5 / GPT-4 系列</td><td>一般，中文明显吃亏</td></tr>
+        <tr><td><code>o200k_base</code></td><td>约 20 万</td><td>GPT-4o 及之后的模型</td><td>明显改善，多语言优化</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里必须严谨一句：<strong>"约 10 万""约 20 万"是从名字推出来的量级，官方并没有明文声明一个精确到个位的数字。</strong>网上流传的那些精确数值（比如某个具体的六位数）多半来自第三方读取词表文件后的统计，不能当官方口径引用。所以本节一律写"约 10 万 / 约 20 万"。<mark class="key">在技术科普里，"知道自己不知道多精确"和"知道数字"一样重要。</mark></p>
+  <p>那么词表从 10 万扩到 20 万，换来了什么？<strong>换来了同一段文字碎片数量的下降</strong>。词表大，就意味着更多常见组合能整块塞进去，不必拆开。这对中文、日文、阿拉伯文这些"非英语"语言的收益最大——因为老词表的零件是照着英语语料统计出来的，中文的高频组合根本没进榜。<strong>换成大白话：老词表是照着英国人的菜谱配的刀具，切中餐自然不顺手；新词表把中式菜刀也配上了。</strong></p>
+
+  <h3>★ 一个汉字等于几个 Token：一笔很多人算错的账</h3>
+  <p>这是本节最值得记住的一条，也是网上错误信息最集中的一条。</p>
+  <p>先给<strong>可以直接引用的官方口径</strong>。DeepSeek 官方文档给出的换算是：</p>
+  <ul class="keylist">
+    <li><span class="k">1 个英文字符</span><span class="v">≈ 0.3 个 token（也就是说，大约 3～4 个英文字母才凑成 1 个 token）</span></li>
+    <li><span class="k">1 个中文字符</span><span class="v"><strong>≈ 0.6 个 token</strong>（也就是说，不到 1 个 token！两个汉字才勉强凑成一个多 token）</span></li>
+    <li><span class="k">官方同时声明</span><span class="v">不同模型的分词器有差异，这只是估算；<strong>实际用量一律以 API 返回的 usage 字段为准</strong>。</span></li>
+  </ul>
+  <p>看清楚这个数字：<mark class="key">1 个中文字符约 0.6 个 token，而不是 2 个。</mark></p>
+  <p>可网上到处都在说"一个汉字等于两个 token"。这句话<strong>不是凭空编的，它曾经是对的</strong>——在 GPT-3、GPT-3.5 那个年代，用的是 <code>cl100k_base</code> 及更早的词表，那些词表几乎完全按英语语料统计出来，一个汉字在 UTF-8 编码里占 3 个字节，词表里又没有对应的中文整块零件，只能拆成 2～3 个字节块。<strong>所以"一个汉字 2 个 token"在当年是实测结论。</strong></p>
+  <p>但从 GPT-4o 的 <code>o200k_base</code> 开始，以及国内厂商自研的分词器（它们的训练语料本来就中文占大头），中文被大幅优化——常见的双字词、三字词、四字成语都进了词表整块。于是同一句中文，<strong>碎片数直接腰斩甚至更多</strong>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>说法</th><th>成立范围</th><th>结论</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1 个汉字 = 2 个 token</td><td>GPT-3 / GPT-3.5 及更早（cl100k 一代及以前）</td><td><strong>已过时</strong>，别再拿来估算新模型</td></tr>
+        <tr><td>1 个汉字 ≈ 0.6 个 token</td><td>DeepSeek 官方给出的估算口径</td><td>可引用，但仍是估算</td></tr>
+        <tr><td>1 个汉字通常 &lt; 1 个 token</td><td>针对中文优化过的新词表</td><td>当前最稳妥的直觉</td></tr>
+        <tr><td>1 token ≈ 4 个英文字符</td><td>没找到现行官方出处</td><td><strong>业界经验值</strong>，估算够用，别当权威数据引</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这件事的实际影响很大。<strong>打个比方</strong>，你要把一份 5 万汉字的合同扔给模型：按过时说法算是 10 万 token，你可能会觉得"完了，太长了塞不进去，得先分段"；按真实口径算只有约 3 万 token，绝大多数现代模型一口就吃下了。<mark class="key">一个过时的常识，能让你白做半天工程。</mark></p>
+
+  <p>下面这个小工具让你亲眼看看一句话是怎么被切开的。输入中文、英文、代码、emoji 各试一次，看看碎片数怎么变——<strong>这比读十遍文字描述都直观</strong>。</p>
+
+  <div class="lab" data-lab="tokenizer"></div>
+
+  <h3>用 Python 亲手数一遍</h3>
+  <p>估算终究是估算。要拿到<strong>确切</strong>的 token 数，最靠得住的办法是本地跑一遍分词器。OpenAI 的 <code>tiktoken</code> 库可以离线做这件事，不消耗任何 API 额度：</p>
+  <pre><code># 安装： pip install tiktoken
+import tiktoken
+
+# 取两套编码对比：老词表 vs 新词表
+old = tiktoken.get_encoding("cl100k_base")   # GPT-3.5 / GPT-4 时代，约 10 万词表
+new = tiktoken.get_encoding("o200k_base")    # GPT-4o 之后，约 20 万词表
+
+samples = [
+    "今天天气怎么样",
+    "Hello, how is the weather today?",
+    "def add(a, b): return a + b",
+    "面朝大海，春暖花开。",
+    "🍜🥢",
+]
+
+print(f"{'原文':&lt;36} {'字符数':&gt;5} {'cl100k':&gt;7} {'o200k':&gt;6}")
+print("-" * 60)
+for s in samples:
+    a = len(old.encode(s))
+    b = len(new.encode(s))
+    print(f"{s:&lt;36} {len(s):&gt;5} {a:&gt;7} {b:&gt;6}")
+
+# 想看清到底切成了哪几块，就把每块解码回来看
+ids = new.encode("研究生命起源")
+for i in ids:
+    print(i, "→", repr(new.decode([i])))
+</code></pre>
+  <p>这段代码里最值得你亲手跑一遍的是最后那个循环。<strong>它会把每一块碎片单独打印出来</strong>，你会看到一些很反直觉的切法——比如英文单词前面那个空格常常被算进碎片里（<code>" the"</code> 和 <code>"the"</code> 是两个不同的 token！），比如同一个词大写和小写是两个不同编号，比如换行符自己占一个 token。</p>
+  <p>另外还有一件工程上很重要的事：<strong>API 返回的 <code>usage</code> 字段才是最终账单依据</strong>。你自己数出来的数和账单可能有几十个 token 的差距，因为对话接口会自动加上角色标记、消息分隔符这类"看不见的 token"（后面会讲）。<mark class="key">自己数是为了估算和优化，对账要看 usage。</mark></p>
+
+  <h3>Token 就是钱：把价格表摊开看</h3>
+  <p>现在来算钱。所有主流 LLM 的 API 都按 token 计费，而且<strong>输入和输出两套价</strong>。下面是查询日期 <strong>2026 年 8 月 6 日</strong>的一组官方标价，单位是"每百万 token 多少美元"：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>输入（每百万 token）</th><th>输出（每百万 token）</th><th>输出 / 输入 倍数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-5.6 Sol</td><td>$5</td><td>$30</td><td><strong>6 倍</strong></td></tr>
+        <tr><td>Claude Opus 4.7</td><td>$5</td><td>$25</td><td><strong>5 倍</strong></td></tr>
+        <tr><td>Claude Sonnet 4.6</td><td>$3</td><td>$15</td><td>5 倍</td></tr>
+        <tr><td>DeepSeek-V4-Flash</td><td>$0.14（缓存命中 $0.0028）</td><td>$0.28</td><td>2 倍</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三件事值得盯一下。</p>
+  <p><strong>第一，输出永远比输入贵，而且贵好几倍。</strong>这不是厂商乱定价，背后是硬件层面的硬道理——我们在 §8.2 会把这笔账彻底讲透（关键词是 prefill 和 decode 两个阶段）。这里先给结论：<mark class="key">读你的问题可以整段并行算，写答案只能一个一个挤出来，后者对硬件的折磨程度完全不同。</mark></p>
+  <p><strong>第二，缓存命中价便宜得离谱。</strong>DeepSeek 缓存命中的输入价是 $0.0028，是原价 $0.14 的<strong>五十分之一</strong>；Claude 的缓存命中价是输入价的 0.1 倍。所谓缓存命中，<strong>说白了就是</strong>：你这次的开头一大段和上次一模一样（比如同一份长系统提示词、同一份长文档），服务端把上次算过的中间结果留着没扔，这次直接接着用，不必重算。<strong>这就像</strong><strong>餐厅</strong>后厨提前熬好的一大锅高汤——每来一位客人不用重新熬八小时，舀一勺就上菜。<strong>工程上的启示很直接：把不变的长内容放在提示词最前面，把变化的部分放后面，缓存命中率会显著提高，账单能砍掉一大截。</strong></p>
+  <p><strong>第三，不同厂商的价差是几十倍量级。</strong>DeepSeek-V4-Flash 的输入价 $0.14 对比 GPT-5.6 Sol 的 $5，差了<strong>三十五倍</strong>。<strong>把这个数字换算成可感知的量</strong>：假设你要处理一本 100 万汉字的长篇小说（约 60 万 token），只算输入，用前者花约 8 美分（人民币六毛钱），用后者花约 3 美元（人民币二十多块）。<mark class="key">同样一件事，一顿早饭钱和一杯咖啡钱的差别。</mark>选型时先想清楚任务需要多强的模型，别一律用最贵的。</p>
+
+  <h3>分词带来的那些"AI 怎么这么蠢"的怪事</h3>
+  <p>知道了分词机制，你就能解释一大批看起来智商为负的 AI 行为。<strong>这些不是模型笨，是它压根看不到你看到的东西。</strong></p>
+  <ul class="keylist">
+    <li><span class="k">数不清一个词里有几个字母</span><span class="v">经典问题："strawberry 里有几个 r？"模型答错过很多次。因为它眼里这个词可能只是 <code>str</code>+<code>aw</code>+<code>berry</code> 三块碎片，它从没见过里面的单个字母长什么样。<strong>好比</strong>你只拿到三个封好的<strong>快递</strong><strong>包裹</strong>，不拆箱就要你数出总共有几颗螺丝——数不出来不是你笨。</span></li>
+    <li><span class="k">把字符串倒着写会写错</span><span class="v">同理。倒序需要逐字符操作，而它的操作单位是碎片，不是字符。</span></li>
+    <li><span class="k">大数字算术容易错</span><span class="v">"1234567" 可能被切成 <code>123</code>+<code>456</code>+<code>7</code>，也可能切成 <code>1234</code>+<code>567</code>。同一个数字在不同上下文里被切成不同碎片，进位关系被切断了，算错就不奇怪。这也是为什么让它调用计算器工具远比让它硬算靠谱。</span></li>
+    <li><span class="k">押韵、藏头诗做不好</span><span class="v">押韵关心的是最后一个音节，藏头诗关心的是每行第一个字——都是字符级任务，而它的视野是碎片级。</span></li>
+    <li><span class="k">同一个词大小写被当成两个东西</span><span class="v"><code>"Apple"</code> 和 <code>"apple"</code> 是两个不同编号。它们的含义要靠模型在训练中自己学会关联，而不是天生就知道。</span></li>
+  </ul>
+  <p><mark class="key">一句话总结：凡是"需要看清单个字符"的任务，LLM 天生弱，这是分词层面的先天限制，不是训练数据不够。</mark>知道这一点，你就不会拿这类问题去证明"AI 不行"，也不会指望换个更大的模型就解决——该用工具的地方就得用工具。</p>
+
+  <h3>看不见的 Token：特殊标记与对话模板</h3>
+  <p>还有一批 token 你从来没输入过，但它们确实占了你的额度。它们叫<strong>特殊 token</strong>（Special Tokens），是模型内部的"控制符"，负责告诉模型"这段话是谁说的""到这儿该停了"。</p>
+  <pre><code>一次对话请求，模型实际看到的东西大致长这样（不同厂商格式不同）：
+
+&lt;|im_start|&gt;system
+你是一个乐于助人的助手。
+&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+今天天气怎么样
+&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+                       ← 模型从这里开始往下写
+
+那几个 &lt;|im_start|&gt; / &lt;|im_end|&gt; 就是特殊 token。
+  im = "instant message"（一条消息）
+  它们各占 1 个 token，不属于你输入的内容，但计费
+
+常见特殊 token 的职责：
+  BOS （Beginning Of Sequence）  一段文本的开头
+  EOS （End Of Sequence）        一段文本的结尾
+  PAD （Padding）                批处理时把短句垫齐用的填充
+  UNK （Unknown）                未知内容（Byte-level BPE 基本不需要它了）</code></pre>
+  <p>其中 <strong>EOS</strong> 尤其重要——<mark class="key">模型什么时候停下来不说话，靠的就是它自己吐出一个 EOS token。</mark>不是有个程序在旁边掐着表喊停，是它自己写下了"句号"。这一点在 §8.2 会再提一次。</p>
+  <p>实用启示：<strong>多轮对话的成本增长比你以为的快</strong>。每一轮你都要把之前所有轮次连同这些控制符一起重发一遍（因为模型没有记忆，这是 §8.3 的主题），聊到第二十轮时，单次请求的输入 token 可能已经是第一轮的几十倍。<strong>这就像</strong>每次去<strong>银行</strong>办业务，柜员都要求你把之前所有办过的业务凭证一起重新交一遍——<strong>越办到后面，那摞纸越厚，每次都得重新过一遍。</strong></p>
+
+  <h3>中文吃亏吗？多语言公平性的现实</h3>
+  <p>既然分词器的零件是从语料里统计出来的，那语料里哪种语言多，哪种语言就占便宜。这是个客观事实，也带来了一个不太被注意的公平问题。</p>
+  <p>在英语主导的老词表里，同样表达一个意思，<strong>英语用的 token 最少，中文次之，而一些小语种（比如缅甸语、泰米尔语）可能要多花好几倍的 token</strong>。这意味着三件很实在的不公平：<strong>同一份预算，小语种能处理的内容更少；同样的窗口，小语种能塞进去的信息更少；同样一句话，小语种要跑更多次前向，回答更慢。</strong></p>
+  <p>好消息是这件事在快速改善。词表从约 10 万扩到约 20 万，扩出来的容量主要就是给非英语语言的。国产模型的分词器因为训练语料本来中文占大头，中文效率通常比国际模型还要好一些。<strong>换成大白话：</strong>这就<strong>相当于</strong>原来<strong>超市</strong>只备了做西餐的调料，现在把八角、桂皮、豆瓣酱也上架了——做中餐的人不用再拿三样西式香料勉强凑一个味儿。</p>
+  <p>顺手记一个实用结论：<mark class="key">如果你在做成本敏感的应用，同一段意思用中文写提示词往往比英文更省 token</mark>（中文信息密度高，一个汉字承载的意思比一个字母多得多）。这跟"用英文写提示词效果更好"的传言是两个维度的事，别混为一谈——效果和成本要分开算。</p>
+
+  <h3>分词器家族：BPE 之外还有谁</h3>
+  <p>BPE 不是唯一的方案，历史上有三条主要路线，今天各有各的地盘。<strong>知道它们的区别，主要是为了在读论文和读模型配置文件时不至于一头雾水。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方法</th><th>合并零件的依据</th><th>代表模型</th><th>特点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>BPE</strong></td><td>谁和谁挨着出现得最<strong>多</strong>（纯频次）</td><td>GPT 全系、Llama、DeepSeek</td><td>简单、快、可预测，事实上的行业标准</td></tr>
+        <tr><td><strong>WordPiece</strong></td><td>合并之后能让语料的<strong>可能性变得最大</strong>（概率增益）</td><td>BERT 系列</td><td>比 BPE 多算一步，切分略更"讲道理"</td></tr>
+        <tr><td><strong>Unigram</strong></td><td>反着来：先备一大堆候选零件，再一批批<strong>删掉</strong>最没用的</td><td>T5、mT5</td><td>同一句话可以有多种切法，训练时能随机换切法当数据增强</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>另外你一定会碰到一个词：<strong>SentencePiece</strong>。它不是第四种算法，而是 Google 开源的一个<em>工具库</em>，里面同时实现了 BPE 和 Unigram。它最大的贡献是<mark class="key">彻底不预设"词是用空格分开的"这件事</mark>——它把空格本身也当成一个普通字符（用一个特殊符号 <code>▁</code> 表示）。<strong>这一步对中文、日文、泰文至关重要</strong>，因为这些语言压根没有空格分词的概念。<strong>换成大白话：</strong>以前的工具要求你先把菜按份摆好再送进<strong>厨房</strong>，SentencePiece 说"整堆送进来就行，我自己会分"。</p>
+  <p>顺便说一个容易搞混的点：<strong>分词器是要"训练"的，但它的训练跟模型训练完全是两回事。</strong>分词器的训练只是在语料上数频次、跑合并，几小时就能跑完，产出是一张静态的词表文件（几兆到几十兆），之后<strong>永远不变</strong>。模型训练则要几万张显卡跑几个月。<mark class="key">而且词表一旦定下来，就再也改不了了</mark>——因为 Embedding 表的每一行都对应一个 token 编号，改词表等于把模型的输入层全部推翻，只能重新预训练。<strong>这就像</strong>一栋楼的<strong>门牌</strong>号系统：楼盖好之后你想把"3 号房"改叫"7 号房"，所有住户的钥匙、水电账户、快递地址全得跟着改，代价大到不如重盖。</p>
+
+  <h3>词表大小的取舍：不是越大越好</h3>
+  <p>既然大词表能让碎片数变少，那为什么不把词表做到一千万，让每个常见句子都成为一个 token？<strong>因为这里有一笔清清楚楚的三方拉锯。</strong></p>
+  <ul class="keylist">
+    <li><span class="k">词表变大的好处</span><span class="v">同一段文字切出的碎片更少 → 序列更短 → 注意力的平方级开销骤降 → 又快又省钱，而且相当于变相扩大了上下文窗口（同样 1M token 能装更多实际内容）。</span></li>
+    <li><span class="k">词表变大的代价一 · 参数暴涨</span><span class="v">Embedding 表的行数就是词表大小。词表从 10 万涨到 20 万，输入层和输出层的参数直接翻倍。而输出层每一步都要对全词表算一遍概率——<strong>词表翻倍，每生成一个 token 的最后那一步计算量就翻倍</strong>。</span></li>
+    <li><span class="k">词表变大的代价二 · 长尾学不动</span><span class="v">词表里排在后面那几万个零件，在训练语料里可能只出现过几十次。它们对应的 Embedding 行几乎没被训练过，等于占着位置不干活。<strong>好比</strong><strong>仓库</strong>里买了一整排<strong>货架</strong>专门放冷门零件，一年动不了一次，租金照付。</span></li>
+    <li><span class="k">现实中的甜点区</span><span class="v">所以主流选择落在 3 万到 25 万之间：早期英文模型 3～5 万，GPT-3.5/4 一代约 10 万，GPT-4o 之后约 20 万。<strong>再往上，收益开始被参数成本吃掉。</strong></span></li>
+  </ul>
+  <p><strong>把这个取舍换算成可感知的量：</strong>假设向量维度是 4096，词表每多 1 万个 token，Embedding 表就要多 4096 万个参数。<strong>10 万个参数如果印在一张 A4 纸上大约能印满一页，那 4096 万个参数就是四百多页——相当于一本厚辞典，而这只是"词表多了 1 万条"的代价。</strong>词表大小从来不是随便拍的数。</p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"一个汉字就是 2 个 token"</td><td>过时。只对 GPT-3/3.5 那代旧词表成立；针对中文优化后的新词表通常 &lt; 1</td></tr>
+        <tr><td>"token 就是单词"</td><td>不对。常用词可能是一整块，生僻词会被拆成几块，空格和换行也各自占块</td></tr>
+        <tr><td>"所有模型的 token 数一样"</td><td>不对。每家分词器不同，同一句话在不同模型上的 token 数能差三成以上</td></tr>
+        <tr><td>"我数一下字符除以 4 就是 token 数"</td><td>只是英文的<strong>业界经验值</strong>，中文完全不适用，且无现行官方出处</td></tr>
+        <tr><td>"输入输出应该一个价"</td><td>不对，输出通常贵 5～6 倍，原因是硬件层面的（见 §8.2）</td></tr>
+        <tr><td>"缓存只是省点小钱"</td><td>不对。缓存命中价可低至原价的十分之一甚至五十分之一，是长提示词场景最大的省钱杠杆</td></tr>
+        <tr><td>"模型能看见每个字母"</td><td>不对。它看见的是碎片编号，字符级任务（数字母、倒序、押韵）天生弱</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>写给要动手的人：五条实操建议</h3>
+  <ul class="keylist">
+    <li><span class="k">上线前先测真实 token 数</span><span class="v">别靠经验公式估。用 <code>tiktoken</code> 或厂商提供的接口跑一遍你自己的真实数据，成本预估误差能从 50% 降到 5% 以内。</span></li>
+    <li><span class="k">长而不变的内容放最前面</span><span class="v">系统提示词、知识库文档、few-shot 示例——这些每次都一样的东西放开头，才能吃到前缀缓存的折扣。变量放最后。</span></li>
+    <li><span class="k">对账一律看 usage</span><span class="v">API 返回里的 <code>usage.prompt_tokens</code> / <code>usage.completion_tokens</code> 是唯一权威。本地统计只用于优化决策。</span></li>
+    <li><span class="k">该用工具就别硬算</span><span class="v">数字符、精确算术、字符串反转这类任务，交给函数调用/代码执行，不要指望模型硬扛分词的先天限制。</span></li>
+    <li><span class="k">给输出设上限</span><span class="v">输出是最贵的那一段。<code>max_tokens</code> 设一个合理值，既防止跑飞，也防止账单意外。</span></li>
+  </ul>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于「一个汉字等于几个 token」，下面哪种说法最准确？"
+       data-opts="固定等于 2 个 token，所有模型都一样|固定等于 1 个 token，因为一个字就是一个单位|看分词器：旧词表约 2 个，针对中文优化的新词表通常不到 1 个|汉字不占 token，只有英文才算 token"
+       data-answer="2"
+       data-explain="「一个汉字 = 2 个 token」只对 GPT-3/3.5 那代按英语语料统计出的旧词表成立。新词表（如约 20 万规模的 o200k_base，以及国产自研分词器）把大量中文常见组合整块收进了词表，同一句中文的碎片数明显下降。DeepSeek 官方给出的估算是 1 个中文字符约 0.6 个 token——不到 1 个。但官方也强调这只是估算，实际用量要以 API 返回的 usage 字段为准。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>模型眼里没有汉字、没有字母，只有一串编号。把文字切成编号的那台机器叫<strong>分词器</strong>，切出来的每一块叫 <strong>Token</strong>——它是整个 LLM 世界的公制单位：窗口按它算、价格按它算、速度按它算。</p>
+    <p>切法走的是中间路线：不按字符（太碎，注意力算不起），不按单词（词表爆炸、遇生词就哑），而是用 <strong>BPE</strong> 反复合并"最常挨在一起的两个东西"，统计出约 10 万（<code>cl100k_base</code>）或约 20 万（<code>o200k_base</code>）个中等大小的零件。<mark class="key">最该更新的一条常识是：「一个汉字 = 2 个 token」已经过时，新词表下通常不到 1 个，DeepSeek 官方估算是约 0.6 个。</mark></p>
+    <p>知道分词机制，你就同时解释了两类现象：为什么它数不清 strawberry 里有几个 r（它看不见单个字母），以及为什么输出比输入贵五六倍（下一节的主题）。</p>
+    <p>下一节我们进入运行时——<strong>为什么它非得一个字一个字往外冒</strong>。答案会顺带解开"输入便宜输出贵"这笔账。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-llm.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">第 8 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./08-2-autoregressive.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 8.2 · 自回归生成</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 8.1</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

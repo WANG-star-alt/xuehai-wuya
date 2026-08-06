@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 8.3 · 上下文窗口 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./08-llm.html">智能篇 · 第 8 章</a>
+      <span class="sep">›</span>
+      <span>§ 8.3</span>
+    </div>
+    <a href="./08-llm.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 8.3 · Section</div>
+    <h1>上下文窗口</h1>
+    <div class="cn">Context Window</div>
+  </header>
+
+  <p class="lead">
+    "上下文窗口 100 万 token"——这句宣传语你见过无数次。它到底是什么窗？为什么窗越大越贵？为什么明明支持 100 万，你塞进去 30 万字的资料，它偏偏漏掉了中间那几页？<mark class="key">最反直觉的一点是：模型压根没有记忆。</mark>它每次回答你，靠的都是你（或者你背后的程序）把之前所有对话原原本本重新递给它一遍。这一节要讲清这张"桌子"的物理边界，以及一个已经被学术界证实的残酷现象——放在中间的信息，最容易被忽略。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🩺 一位不记得你是谁的门诊医生</div>
+    <p>想象你在<strong>医院</strong>看一个特殊的门诊。这位医生医术极高，但有一个特点：<mark class="key">他每次见你都完全不记得你是谁。</mark></p>
+    <p>所以流程变成了这样：你第一次去，把病情说一遍，他给个诊断。你第二次去，得<strong>把第一次说过的话、他上次给的诊断，连同这次的新情况，全部重新讲一遍</strong>，他才能接着看。第十次去，你得把前九次的完整记录都念一遍——念到嗓子哑，而他确实也只能看你摊在桌上的这些纸。</p>
+    <p>而<strong>他的桌子是有大小的</strong>。纸摊到一定程度就放不下了，只能把最早的那几张抽走。抽走之后，他就真的对那部分一无所知了。</p>
+    <p>更微妙的是：<strong>桌上纸多的时候，他容易把最上面几张和最下面几张看得比较仔细，中间那一叠反而容易扫过去。</strong>这不是他偷懒——这是被论文实测出来的真实现象。</p>
+    <div class="link">→ <strong>上下文窗口</strong>（Context Window）= 那张桌子的大小，也就是模型一次能同时"看见"的 token 总数上限（输入 + 输出 一起算）。</div>
+  </div>
+
+  <h3>先纠正最大的一个误解：模型没有记忆</h3>
+  <p>这是本节最重要的一句，值得单独立一段：<mark class="key">大语言模型是完全无状态的——它不记得任何事。</mark></p>
+  <p><strong>无状态</strong>（stateless）这个词听着玄，<strong>说白了就是</strong>：模型每次收到请求，都是"这辈子第一次"。它不知道你是谁，不知道十分钟前你们聊过什么，甚至不知道自己上一句说了什么。它唯一拥有的，就是这次请求里递给它的那一堆 token。</p>
+  <p>那为什么你和 ChatGPT 聊天时它明明记得上文？<strong>因为客户端在替你重发。</strong>每一轮对话，前端都会把之前所有轮次拼在一起，作为一次全新的完整输入发出去：</p>
+  <pre><code>你以为的过程：
+    第 1 轮： 你说 A          → 模型答 B（模型记住了 A、B）
+    第 2 轮： 你说 C          → 模型答 D（模型记得 A、B、C）
+    第 3 轮： 你说 E          → 模型答 F（模型记得 A~E）
+
+实际的过程：
+    第 1 轮： 发送 [A]                → 返回 B
+    第 2 轮： 发送 [A, B, C]          → 返回 D    ← A、B 又发了一遍
+    第 3 轮： 发送 [A, B, C, D, E]    → 返回 F    ← A~D 又发了一遍
+    第 4 轮： 发送 [A, B, C, D, E, F, G] → 返回 H
+    ...
+
+每一轮，输入 token 都在累加。
+第 20 轮时的输入量，可能是第 1 轮的几十倍。
+——这就是为什么长对话越聊越贵、越聊越慢。</code></pre>
+  <p>这个机制解释了三个天天遇到的现象：</p>
+  <ul class="keylist">
+    <li><span class="k">为什么长对话越来越慢</span><span class="v">每轮输入都在变长，prefill 的耗时是平方级增长的（§8.2），到后面每次等第一个字的时间明显变长。</span></li>
+    <li><span class="k">为什么长对话越来越贵</span><span class="v">你以为只发了最后那一句，其实把整段历史都重发了一遍。第 20 轮的账单可能相当于前 19 轮的总和。</span></li>
+    <li><span class="k">为什么聊久了它会"忘"开头</span><span class="v">桌子放满了。客户端不得不把最早的对话截掉，才能把新内容塞进去。<mark class="key">它不是"忘了"，是那段内容根本没被递给它。</mark></span></li>
+  </ul>
+  <p>所以那些"给 AI 加记忆"的产品，做的其实都不是给模型加记忆，而是<strong>在外面搭一套东西，决定每次该把哪些历史内容重新塞进那张桌子</strong>——把旧对话摘要压缩、把相关片段从数据库里检索出来（这就是 RAG 的思路）、把用户偏好抽成几行事实存起来。<strong>本质上就是</strong>帮那位失忆医生管好他的病历夹。</p>
+
+  <h3>窗口有多大：把主流模型摊开看</h3>
+  <p>下面是<strong>截至 2026 年 8 月初、有官方来源可查</strong>的一组窗口数据。这里要特别强调"有官方来源"这四个字——这个领域的传言比事实多得多。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>上下文窗口</th><th>最大输出</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-5.6 Sol</td><td>1,050,000 token</td><td>128,000 token</td></tr>
+        <tr><td>Claude Opus 4.7</td><td>1M token</td><td>—</td></tr>
+        <tr><td>Claude Sonnet 4.6</td><td>1M token</td><td>—</td></tr>
+        <tr><td>Claude Haiku 4.5</td><td><strong>200K token</strong></td><td>—</td></tr>
+        <tr><td>DeepSeek-V4</td><td>1M token</td><td>384K token</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>关于这张表，有三件事必须说清：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">Llama 和 Gemini 为什么不在表里</span><span class="v">因为它们的具体窗口数<strong>没有取得可靠的官方来源</strong>。这两家在社群和二手报道里流传着几个非常惊人的数字，但都<mark class="key">未经厂商官方确认</mark>，所以本文一律不写具体数值。宁可少给一个数，也不给一个错的数——<strong>你在别处看到这类数字时，也建议先去官方文档核对一遍再采信。</strong></span></li>
+    <li><span class="k">同一家的不同型号差别巨大</span><span class="v">注意 Claude Haiku 4.5 只有 200K，而同门的 Opus 4.7 和 Sonnet 4.6 是 1M——<strong>差了五倍</strong>。选型时千万不要"看到某家支持 1M 就以为它家所有模型都 1M"。</span></li>
+    <li><span class="k">窗口 ≠ 最大输出</span><span class="v">这是最容易踩的坑，下一段专门讲。</span></li>
+  </ul>
+  <p>顺便提一句业内的口径矛盾，也是为了让你养成核对来源的习惯：<strong>截至 2026 年 8 月初，Anthropic 官方文档列出的最强通用可用模型是 Claude Opus 4.7；而第三方评测榜单上已经出现了 Opus 5 的条目。</strong>两者对不上，那就以官方文档为准、同时如实说明存在这个差异——<mark class="key">这才是负责的写法，而不是跟着榜单一路喊"最强"。</mark></p>
+
+  <h3>窗口 ≠ 最大输出：一个高频踩坑点</h3>
+  <p>看清 GPT-5.6 Sol 那一行：窗口 1,050,000，最大输出 128,000。这两个数字完全不是一回事。</p>
+  <pre><code>上下文窗口 = 输入 + 输出，总共不能超过这个数
+最大输出   = 单次回答最多能吐多少 token，另有上限
+
+举例（GPT-5.6 Sol：窗口 1,050,000 / 最大输出 128,000）：
+
+  情况 A  输入 100 万 token 的资料
+          → 还剩 5 万 token 的空间给输出
+          → 就算最大输出允许 12.8 万，你也只能拿到 5 万
+          → 桌子先放满了
+
+  情况 B  输入 1000 token 的短问题
+          → 窗口剩 104.9 万，绰绰有余
+          → 但输出仍然最多 12.8 万，因为有单独的输出上限
+          → 撞的是另一道天花板
+
+结论：两道限制同时生效，哪道先撞就受哪道约束。</code></pre>
+  <p>DeepSeek-V4 那一行也值得看：窗口 1M、最大输出 384K。<strong>输出上限给到这么高，是有明确用途的</strong>——推理模型的"思考过程"本身就要吃掉几千甚至几万个输出 token（§8.6 会讲），输出上限卡太死，它想不完就被掐断了。</p>
+  <p><strong>实操建议：</strong>做长文档处理时，一定要给输出预留空间。<strong>好比</strong>搬家<strong>装修</strong>时往<strong>仓库</strong>里堆东西，你得留出一条能走人的过道——把过道也堆满，货就取不出来了。</p>
+
+  <h3>把这些数字换算成能感知的量</h3>
+  <p>"100 万 token"完全没有实感，得换成人话。按 §8.1 的口径（1 个中文字符约 0.6 token）反推，1 个 token 大约装 1.5 个汉字：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>窗口大小</th><th>约等于多少汉字</th><th>相当于什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>4K token</td><td>约 6 千字</td><td>一篇公众号长文（这是 2023 年初 ChatGPT 的水平）</td></tr>
+        <tr><td>32K token</td><td>约 5 万字</td><td>一份完整的商业合同 + 附件</td></tr>
+        <tr><td>200K token</td><td>约 30 万字</td><td>一本《三体》第一部</td></tr>
+        <tr><td>1M token</td><td><strong>约 150 万字</strong></td><td><mark class="key">《红楼梦》全本（约 87 万字）还能再塞一本长篇</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>换个角度感受一下这个变化速度：<strong>2023 年初，GPT-3.5 的窗口是 4K；三年后主流是 1M，涨了 250 倍。</strong>如果把窗口比作书桌，那就是从一张<strong>课桌</strong>（放一叠 A4 纸）扩成了一间<strong>教室</strong>那么大的平台（能摊开一整套二十四史）。这个增速在计算机历史上都算罕见的。</p>
+
+  <h3>★ 为什么窗口越大越贵：一笔平方级的账</h3>
+  <p>窗口不是想扩就扩的，因为注意力的账是<strong>二次的（平方级）</strong>——这个结论出自 FlashAttention 论文（Tri Dao et al.，arXiv 2205.14135，2022 年 5 月）。<mark class="key">序列长度翻一倍，注意力的时间和内存开销翻四倍。</mark></p>
+  <pre><code>注意力要算什么：每个 token 和每个 token 都打一次分
+              → n 个 token 就是 n × n 次打分
+
+n = 1,000        →       1,000,000 次   （一百万）
+n = 10,000       →     100,000,000 次   （一亿，×100）
+n = 100,000      →  10,000,000,000 次   （一百亿，×10000）
+n = 1,000,000    → 1,000,000,000,000 次 （一万亿，×100万）
+
+长度涨 1000 倍，计算量涨 100 万倍。</code></pre>
+  <p><strong>换成生活场景来体会这个"平方"有多可怕。</strong>这是一场规定"每位客人必须和每位客人都握一次手"的<strong>会议</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">10 个人</span><span class="v">握 45 次手。花两分钟，轻松。</span></li>
+    <li><span class="k">100 个人</span><span class="v">握 4950 次手。一上午过去了。</span></li>
+    <li><span class="k">1000 个人</span><span class="v">握近 50 万次手。<strong>就算每次握手只用一秒，也要不吃不睡握上五天半。</strong></span></li>
+    <li><span class="k">10 万个人</span><span class="v">50 亿次握手。<mark class="key">会场直接瘫了——这不是效率问题，是物理上办不到。</mark></span></li>
+  </ul>
+  <p><strong>所以"上下文越长越贵"不是厂商在收智商税，而是数学上躲不掉的账。</strong>后面那一堆优化技术，本质上都是在想办法"别让每个人都跟每个人握手"。</p>
+  <p>另外还有一笔账是<strong>显存</strong>。§8.2 讲过 KV Cache 随序列长度<strong>线性增长</strong>：桌子上摊的纸越多，你的"便签"就越多，显存被吃得越狠。所以长上下文推理有两个瓶颈同时压着：<strong>计算量是平方级涨，显存是线性涨</strong>。这也是为什么很多服务对超长上下文单独定价、单独限流。</p>
+
+  <h3>FlashAttention：不改答案，只改搬数据的方式</h3>
+  <p>面对平方级的账，最著名的一个解法叫 <strong>FlashAttention</strong>（Tri Dao et al.，arXiv 2205.14135，2022 年 5 月）。这里有一个必须澄清的关键点，很多科普文章都写错了：</p>
+  <p><mark class="key">FlashAttention 是"精确"注意力，不是近似。</mark>它算出的结果和标准注意力<strong>完全一样</strong>，一个小数点都不差。它优化的不是数学，而是<strong>数据在显存里搬来搬去的方式</strong>——论文自己的说法是 <strong>IO-aware</strong>（"知道读写代价"的）。</p>
+  <p>它的核心手法叫 <strong>tiling</strong>（分块）。GPU 里有两种存储：<strong>HBM</strong>（高带宽显存，容量大但相对慢）和 <strong>SRAM</strong>（片上高速缓存，快得多但小得可怜）。标准注意力的做法是把那个 n×n 的巨大打分矩阵完整算出来写进 HBM，再读回来做 softmax，再写回去——<strong>来回搬了好几趟</strong>。FlashAttention 改成把矩阵切成一个个小块，每块都在 SRAM 里算完再走，中间那个巨大的矩阵<strong>从来没有被完整写进 HBM</strong>。</p>
+  <div class="callout analogy">
+    <span class="tag">Analogy · 厨房动线，不是换菜谱</span>
+    <p><strong>好比</strong>一个<strong>厨房</strong>：食材都在<strong>冰箱</strong>里（这是 HBM，容量大但远），你手边的<strong>案板</strong>只有巴掌大（这是 SRAM，近但小）。</p>
+    <p><em>笨办法</em>：把整袋菜从冰箱搬到案板，案板放不下，切一半塞回冰箱，再拿出来切另一半，切完的又塞回去，要炒了再全搬出来——<strong>光是来回搬，就占了大半时间。</strong></p>
+    <p><em>FlashAttention 的办法</em>：每次只从冰箱拿一小把，在案板上切完、直接下锅，再拿下一把。<mark class="key">整袋菜从来没有在案板上完整摊开过，但最后做出来的菜和笨办法一模一样。</mark></p>
+    <p><strong>这就是"精确但更快"的含义——它没有换菜谱，只改了动线。</strong>论文里那几个数字很有说服力：GPT-2（序列长度 1K）提速 <strong>3 倍</strong>，Long Range Arena 基准提速 <strong>2.4 倍</strong>，并且<strong>首次在 Path-X 任务（序列长 16K）上达到 61.4% 的准确率</strong>——在此之前这个长度上的表现基本等同于瞎猜。</p>
+  </div>
+  <p>顺带说另一类思路：<strong>滑动窗口注意力</strong>。它的做法是<strong>把注意力限制在一个固定长度的窗口内</strong>——每个 token 只看自己前后一段范围里的邻居，不再看全场。这样复杂度从 <code>O(n²)</code> 降到 <code>O(n·w)</code>（w 是窗口宽度），也就是从平方级降回线性。<strong>回到那个握手比喻：不再要求每个人和所有人握手，只跟邻座那十几位握。</strong>代价是真的丢掉了一部分远距离联系，所以通常要和其他机制配合使用。<mark class="key">和 FlashAttention 不同，这一类是真的改变了计算结果，属于"近似"。</mark></p>
+
+  <h3>★ Lost in the Middle：中间的信息真的会被漏掉</h3>
+  <p>现在讲本节最有实用价值的一个发现。</p>
+  <p>2023 年 7 月，Liu 等人发表了论文《Lost in the Middle: How Language Models Use Long Contexts》（arXiv 2307.03172，后发表于 <strong>TACL 2023</strong>）。他们做了一件很聪明的事：把正确答案放在长文档的不同位置，看模型能不能找到。</p>
+  <p>结论非常清晰，而且有点残酷：</p>
+  <ul class="keylist">
+    <li><span class="k">相关信息在开头 → 表现最好</span><span class="v">模型对开头的内容格外敏感。</span></li>
+    <li><span class="k">相关信息在结尾 → 表现也很好</span><span class="v">最近的内容同样容易被抓住。</span></li>
+    <li><span class="k">★ 相关信息在中部 → 性能显著下降</span><span class="v"><mark class="key">这是核心发现：关键信息埋在长上下文中间，模型经常就是找不到。</mark></span></li>
+    <li><span class="k">★ 声称支持长上下文的模型也一样</span><span class="v">论文明确指出，<strong>即使是那些专门为长上下文设计、声称支持很长窗口的模型，也表现出同样的模式</strong>。也就是说"窗口大"不等于"整个窗口都用得好"。</span></li>
+  </ul>
+  <p>画成一条曲线，它是一个明显的 <strong>U 型</strong>：两头高、中间凹。</p>
+  <pre><code>模型找到答案的准确率
+
+ 高 │●                                          ●
+    │ ●                                        ●
+    │   ●                                    ●
+    │      ●                              ●
+    │          ●                      ●
+ 低 │              ● ● ● ● ● ● ● ●
+    └──────────────────────────────────────────────
+     开头          ←—— 中部 ——→             结尾
+                答案在文档中的位置
+
+两头记得牢，中间容易漏 —— 这就是 Lost in the Middle。</code></pre>
+  <p><strong>这个 U 型曲线，人类身上也有一模一样的现象</strong>，心理学上叫"首因效应"和"近因效应"。<strong>打个比方</strong>：<strong>开会</strong>时老板讲了二十条要求，散会后你能想起来的通常是第一条和最后一条，中间那十几条一片模糊。<strong>又好比</strong>你去<strong>菜市场</strong>，妻子在<strong>打电话</strong>里报了十样要买的东西，你回家八成会漏掉第五第六样。<mark class="key">模型和你犯的是同一种错。</mark></p>
+  <p><strong>这个发现的实操价值极高，直接给出四条可执行的规则：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">重要的话放两头</span><span class="v">核心指令、关键约束、必须遵守的格式要求——放在提示词的最开头或最末尾，别塞在中间那一大堆资料里。很多人的提示词是"一大段背景资料 + 中间夹一句要求 + 一大段示例"，这是最糟的结构。</span></li>
+    <li><span class="k">别把窗口当搜索引擎用</span><span class="v">"反正窗口有 1M，我把全部一百份文档都塞进去让它自己找"——这是典型误用。正确做法是先用检索（RAG）把最相关的三五段挑出来，只把这几段塞进去。<strong>少而准远胜多而杂。</strong></span></li>
+    <li><span class="k">长文档要分段处理</span><span class="v">与其一次塞 50 万 token 让它总结，不如切成若干段分别总结，再把各段摘要合起来总结一次。虽然多花几次调用，但准确率高得多。</span></li>
+    <li><span class="k">关键指令可以重复一遍</span><span class="v">在开头说一次、在结尾再说一次。这不算废话——考虑到 U 型曲线，这是有效的工程手段。</span></li>
+  </ul>
+
+  <h3>位置编码：模型怎么知道哪个字在前面</h3>
+  <p>这里有一个很多人从没想过的问题。第 7 章讲过，注意力的做法是"每个词同时看所有其他词"——<strong>可这一来，词的顺序信息不就丢了吗？</strong>"猫追狗"和"狗追猫"在注意力眼里，词是一模一样的三个，凭什么区分？</p>
+  <p>答案是：<strong>得额外告诉它每个词站在第几个位置</strong>。这个东西叫<strong>位置编码</strong>（Positional Encoding）。<strong>它干的活儿，相当于</strong>给<strong>教室</strong>里每个座位贴一个座号牌——学生本人的信息（这是词向量）和"他坐在第几排第几列"（这是位置编码）是两份独立的信息，合起来才完整。</p>
+  <p>为什么这件事和窗口有关？因为<mark class="key">位置编码是限制窗口长度的另一道隐形天花板。</mark>如果模型训练时只见过 0～4095 号座位，你突然给它第 100 万号座位，它就懵了——这个数字它从没见过，不知道该怎么理解。这就是所谓的<strong>长度外推</strong>难题。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方案</th><th>做法</th><th>能不能超出训练长度</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>绝对位置编码</td><td>给每个位置一个固定的编号向量</td><td>基本不能，超出就崩</td></tr>
+        <tr><td><strong>RoPE</strong>（旋转位置编码）</td><td>把位置信息编成一个"旋转角度"，加在 Q 和 K 上</td><td>有一定外推能力，<strong>当前主流</strong></td></tr>
+        <tr><td>RoPE + 插值缩放</td><td>把长序列的位置"压缩"到训练见过的范围里</td><td>能，这是把 4K 模型扩到 128K 的常用手法</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>插值缩放这一招用日常语言说，特别好懂：</strong>模型只认得从 0 到 4095 的座号，现在有 40960 个人要坐。<strong>那就把座号"缩水"——原来的第 10 号人，现在标成 1 号；第 20 号标成 2 号</strong>。座号还在原来的范围内，模型认得，代价是相邻两人的座号差变小了、分辨率下降了。<mark class="key">这就是为什么很多"扩窗口"的模型，在超长上下文上的精细度会打折——不是它偷懒，是位置分辨率真的被压缩了。</mark></p>
+
+  <h3>把整本书塞进去，还是用检索？一张决策表</h3>
+  <p>窗口涨到 1M 之后，一个真实的工程选择摆在面前：<strong>既然装得下，还需要 RAG（检索增强）吗？</strong>这个问题在 2025 年被讨论了整整一年，答案是"看情况"，而判断标准其实很清楚。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你的情况</th><th>建议</th><th>理由</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>资料总量远超 1M（比如整个公司的知识库）</td><td>必须 RAG</td><td>物理上塞不进去，没得选</td></tr>
+        <tr><td>资料几十万 token，但每次只用到其中一小块</td><td>倾向 RAG</td><td>全塞进去要按平方级付计算费，还容易 Lost in the Middle</td></tr>
+        <tr><td>资料是一份完整长文档，问题需要通篇理解</td><td>倾向全塞</td><td>检索会切碎上下文，破坏论证的连贯性</td></tr>
+        <tr><td>同一份长资料要被反复问几十次</td><td>全塞 + 前缀缓存</td><td>第一次付全价 prefill，后面每次都吃缓存折扣，反而最便宜</td></tr>
+        <tr><td>要求引用出处、可溯源</td><td>倾向 RAG</td><td>检索天然带来源标记，全塞则很难说清答案来自哪一页</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最容易被忽略的是<strong>第四行</strong>。假设你有一份 50 万 token 的技术手册，要回答用户的一百个问题。如果每次都重新 prefill 50 万 token，那是一百次全价；但如果把手册放在提示词最前面固定不变、只把问题放在末尾，<mark class="key">从第二次起就全是缓存命中价——Claude 是输入价的 0.1 倍，DeepSeek 低到 $0.0028</mark>。<strong>相当于</strong><strong>餐厅</strong>那锅高汤熬好一次，之后一百位客人共用。<strong>这种场景下"全塞"比 RAG 又简单又便宜。</strong></p>
+
+  <h3>一个真实的成本推演，把账算给你看</h3>
+  <p>光讲原理不如算一笔账。假设你要做一个客服助手，用 Claude Sonnet 4.6（输入 $3 / 输出 $15 每百万 token），系统提示词加产品手册共 20,000 token，用户每次问一句约 50 token，模型答约 300 token。</p>
+  <pre><code>【方案 A · 不做任何优化，每轮重发全部历史】
+
+  第 1 轮  输入 = 20000(手册) + 50(问)                = 20,050
+  第 2 轮  输入 = 20000 + 50 + 300 + 50               = 20,400
+  第 3 轮  输入 = 20000 + (50+300)×2 + 50             = 20,750
+  ...
+  第 20 轮 输入 ≈ 20000 + 350×19 + 50                 = 26,700
+
+  20 轮累计输入 ≈ 466,500 token → 约 $1.40
+  20 轮累计输出 = 300 × 20 = 6,000 token → 约 $0.09
+  单次会话总成本 ≈ $1.49
+
+【方案 B · 手册放最前面固定不变，吃前缀缓存】
+
+  手册那 20000 token 从第 2 轮起全部缓存命中
+  缓存命中价 = 输入价 × 0.1 = $0.3 / 百万
+
+  第 1 轮   全价 prefill 20,050
+  第 2~20 轮 其中 20000 走缓存价，其余走全价
+
+  累计成本 ≈ $0.24
+  ——比方案 A 便宜约 6 倍
+
+【方案 C · 再加滚动摘要，每 10 轮把历史压成 200 token】
+
+  累计成本 ≈ $0.19，且每轮输入不再无限膨胀
+  TTFT 也随之稳定，不会越聊越慢
+
+结论：同一个功能，工程做法不同，成本能差 6~8 倍。
+      而这几招都不需要换模型、不损失效果。</code></pre>
+  <p>这笔账里最值得记住的是<strong>方案 A 到方案 B 的跨度</strong>——什么都没改，只是把"不变的内容放前面、变化的放后面"，成本就砍到六分之一。<mark class="key">在 LLM 工程里，提示词的排版顺序是有价格的。</mark><strong>这就像</strong>在<strong>超市</strong><strong>排队</strong>结账，你把商品按类别摆好递上去，收银员扫码飞快；你要是乱七八糟一堆倒过去，同样的东西要多花三倍时间。</p>
+
+  <h3>窗口的历史：三年涨了两百多倍</h3>
+  <p>把时间线摊开看，这条曲线的陡峭程度会让你重新理解"这个领域变化有多快"。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>时期</th><th>典型窗口</th><th>能装什么</th><th>当时的用法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2018 年 GPT-1 一代</td><td>512 token</td><td>不到 800 字</td><td>只能做单句分类、短句续写</td></tr>
+        <tr><td>2020 年 GPT-3</td><td>2K token</td><td>约 3 千字</td><td>能写一段短文，多轮对话很快就满</td></tr>
+        <tr><td>2023 年初 ChatGPT</td><td>4K token</td><td>约 6 千字</td><td>聊十几轮就开始"忘"开头</td></tr>
+        <tr><td>2023 年底</td><td>128K token</td><td>约 19 万字</td><td>第一次能整本书扔进去</td></tr>
+        <tr><td><strong>2026 年主流</strong></td><td><strong>1M token</strong></td><td><strong>约 150 万字</strong></td><td>整个代码仓库、整套年报、几十份合同</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>从 512 到 1,050,000，<strong>八年涨了两千倍</strong>；只看 2023 到 2026 这三年，也涨了两百多倍。<strong>换算成能感知的量</strong>：这<strong>相当于</strong>你的办公桌从一块<strong>便签</strong>纸大小，变成了一整间<strong>教室</strong>的地板。</p>
+  <p>但请记住本节最核心的那句提醒：<mark class="key">桌子变大，不等于桌上每个角落都被认真看过。</mark>Lost in the Middle 那条 U 型曲线并没有因为窗口变大而消失——它只是被摊到了更长的距离上，中间那段"看不清"的区域反而更长了。<strong>所以"窗口涨了两百倍"这件事的正确读法是：能装的东西多了两百倍，但你更需要认真安排该把什么放在哪里。</strong></p>
+
+  <h3>"大海捞针"测试与它的局限</h3>
+  <p>业界有个流行的长上下文评测方法叫 <strong>Needle in a Haystack</strong>（大海捞针）：在一大段无关文本里藏一句特定的话（"针"），然后问模型这句话是什么。很多厂商拿它的满分成绩当宣传素材。</p>
+  <p>这个测试有价值，但<strong>要知道它测的是什么、不测什么</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>大海捞针测得出来吗</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>能不能<strong>找到</strong>一个显眼的孤立事实</td><td>能</td><td>这正是它设计的目标</td></tr>
+        <tr><td>能不能<strong>同时用上</strong>散落在多处的几条信息</td><td>测不出</td><td>只藏一根针，不考验交叉推理</td></tr>
+        <tr><td>能不能<strong>综合理解</strong>全文的论点结构</td><td>测不出</td><td>周围文本是无关填充，不构成真实语义</td></tr>
+        <tr><td>能不能在<strong>信息互相冲突</strong>时做判断</td><td>测不出</td><td>没有设置矛盾信息</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">所以"大海捞针满分"和"长文档理解能力强"是两件事。</mark><strong>换成大白话</strong>：这就<strong>相当于</strong>考驾照只考了"能不能在<strong>停车</strong>场把车倒进车位"——过了当然是好事，但不代表你敢上高架。<strong>看到这类满分宣传，问一句"它在多针、跨段落推理的测试上表现如何"，通常就能问出真实水平。</strong></p>
+
+  <h3>省窗口的六个实用招数</h3>
+  <p>窗口是有限资源，而且用得越满越慢越贵还越容易 Lost in the Middle。下面几条是工程上常用的：</p>
+  <ul class="keylist">
+    <li><span class="k">滚动摘要</span><span class="v">对话到一定长度时，让模型把前面十轮压缩成一段两百字的摘要，之后只带摘要往下走。代价是丢细节，收益是窗口和成本都降下来。</span></li>
+    <li><span class="k">检索增强（RAG）</span><span class="v">把大量资料存进向量库，每次只检索出最相关的几段塞进窗口。这是长资料场景的标准解法，比"全塞进去"又便宜又准。</span></li>
+    <li><span class="k">前缀缓存友好排版</span><span class="v">不变的长内容放最前面（系统提示词、知识库、few-shot 示例），变化的放最后。这样才能吃到缓存命中折扣——Claude 缓存命中价是输入价的 0.1 倍，DeepSeek 更是低到 $0.0028。</span></li>
+    <li><span class="k">砍掉无用的格式垃圾</span><span class="v">从网页扒下来的资料里，导航栏、页脚、广告、重复的空白，可能占了三分之一的 token。清洗一遍，纯赚。</span></li>
+    <li><span class="k">结构化代替散文</span><span class="v">同样的信息，用表格或键值对表达，通常比大段散文省 token，而且模型更容易定位。</span></li>
+    <li><span class="k">给输出设上限</span><span class="v">输出占的也是同一个窗口，而且是最贵的那部分。<code>max_tokens</code> 设一个合理值。</span></li>
+  </ul>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"模型记得我们之前的对话"</td><td>不记得。是客户端每次把全部历史重发一遍</td></tr>
+        <tr><td>"窗口 1M 就是能输出 100 万 token"</td><td>不对。窗口是输入+输出的总额，最大输出另有单独上限（GPT-5.6 Sol 是 128K）</td></tr>
+        <tr><td>"窗口大就一定用得好"</td><td>不对。Lost in the Middle 已证明中部信息显著更容易被漏，长上下文模型也不例外</td></tr>
+        <tr><td>"某家支持 1M，它家所有模型都 1M"</td><td>不对。Claude Haiku 4.5 只有 200K，同门的 Opus 4.7 / Sonnet 4.6 才是 1M</td></tr>
+        <tr><td>"FlashAttention 是近似算法，会掉精度"</td><td>不对。它是<strong>精确</strong>注意力，结果与标准注意力完全一致，优化的是显存读写</td></tr>
+        <tr><td>"大海捞针满分 = 长文本理解强"</td><td>不对。它只测单点检索，测不出多点交叉推理和全文结构理解</td></tr>
+        <tr><td>"窗口越长越贵是厂商多收钱"</td><td>不对。注意力是平方级开销、KV Cache 是线性显存开销，是硬成本</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lab" data-lab="quiz"
+       data-q="根据 Lost in the Middle（Liu et al., 2023）的研究结论，把关键信息放在长上下文的哪个位置最危险？"
+       data-opts="放在最开头|放在正中间|放在最末尾|位置无所谓，模型对所有位置一视同仁"
+       data-answer="1"
+       data-explain="这篇论文（arXiv 2307.03172，发表于 TACL 2023）的核心发现是一条 U 型曲线：相关信息位于上下文的开头或结尾时性能最高，而位于长上下文的中部时性能显著下降。更值得注意的是，论文明确指出即使是那些专门为长上下文设计、声称支持超长窗口的模型，也表现出同样的模式——所以「窗口大」并不等于「整个窗口都用得好」。实用推论：核心指令和关键约束应放在提示词的开头或结尾，重要的话可以在两头各说一遍；不要把大量资料一股脑塞进窗口指望它自己找，先用检索筛出最相关的几段更可靠。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>上下文窗口</strong>就是那张桌子的大小——模型一次能同时看见的 token 总数（输入 + 输出一起算）。最该颠覆的认知是：<mark class="key">模型完全无状态，它不记得任何事</mark>，是客户端每轮把全部历史重发一遍，才制造出"它记得"的错觉。长对话越聊越慢越贵，根源就在这里。</p>
+    <p>有官方来源的窗口数据：GPT-5.6 Sol 1,050,000（最大输出 128,000）、Claude Opus 4.7 与 Sonnet 4.6 均 1M、DeepSeek-V4 1M（最大输出 384K）、<strong>而 Claude Haiku 4.5 只有 200K</strong>。<strong>窗口 ≠ 最大输出，这是高频踩坑点。</strong></p>
+    <p>窗口不能随便扩，因为注意力开销对序列长度是<strong>二次（平方级）</strong>的（FlashAttention 论文，arXiv 2205.14135），叠加 KV Cache 的线性显存增长。FlashAttention 的解法是 tiling 分块、减少 HBM 与 SRAM 之间的读写，<mark class="key">它是精确注意力而不是近似</mark>——GPT-2 上提速 3 倍、Long Range Arena 提速 2.4 倍、首次在 16K 长度的 Path-X 上达到 61.4%。</p>
+    <p>最实用的一条是 <strong>Lost in the Middle</strong>（arXiv 2307.03172，TACL 2023）：<strong>信息在开头或结尾时性能最高，埋在中部时显著下降，长上下文模型也不例外。</strong>所以关键指令放两头、别把窗口当搜索引擎、长文档分段处理。</p>
+    <p>下一节我们转向"怎么挑下一个字"——<strong>temperature、top-p、top-k</strong> 这几个旋钮到底在调什么，还有一个能亲手拖的滑块等着你。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-2-autoregressive.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 8.2 · 自回归生成</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./08-4-sampling.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 8.4 · 采样参数</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 8.3</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

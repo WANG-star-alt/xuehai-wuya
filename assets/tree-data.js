@@ -15,7 +15,7 @@
     'intelligence',
     '智能篇',
     '认识 AI 的过去、现在与未来。从"AI 是什么"到大模型、Agent、多模态——14 章串起完整的 AI 认知地图。',
-    '约 30.2 万字',
+    '待撰写',
     [
       createNode('ai-01', '第 1 章 · AI 是什么',
         'ANI / AGI / ASI 三种 AI 层级 + AI 的四种核心能力。',
@@ -103,15 +103,15 @@
       ),
       createNode('ai-08', '第 8 章 · 大语言模型 LLM',
         'Token、上下文窗口、Temperature、CoT、推理模型 o1/R1。',
-        '待撰写',
+        '约 4.0 万字',
         [
-          createNode('ai-08-1', '§ 8.1 · Token 与分词', '模型眼里没有汉字，只有 token——为什么按 token 计费。', '待撰写', []),
-          createNode('ai-08-2', '§ 8.2 · 自回归生成', '一个字一个字往后猜——生成的本质就是接话。', '待撰写', []),
-          createNode('ai-08-3', '§ 8.3 · 上下文窗口', '从 4K 到 100 万 token——记忆边界与"失忆"现象。', '待撰写', []),
-          createNode('ai-08-4', '§ 8.4 · 采样参数', 'Temperature、Top-p、Top-k——控制"发散还是保守"。', '待撰写', []),
-          createNode('ai-08-5', '§ 8.5 · 思维链 CoT', '"让我们一步一步想"——为什么加这句话正确率会涨。', '待撰写', []),
-          createNode('ai-08-6', '§ 8.6 · 推理模型', 'o1 / R1 / DeepSeek——先想很久再答的新一代模型。', '待撰写', [])
-        ]),
+          createNode('ai-08-1', '§ 8.1 · Token 与分词', '模型眼里没有汉字，只有 token——为什么按 token 计费。', '7013 字', [], { href: 'chapters/ai/08-1-token.html', spec: 'pass'}),
+          createNode('ai-08-2', '§ 8.2 · 自回归生成', '一个字一个字往后猜——生成的本质就是接话。', '6582 字', [], { href: 'chapters/ai/08-2-autoregressive.html', spec: 'pass'}),
+          createNode('ai-08-3', '§ 8.3 · 上下文窗口', '从 4K 到 100 万 token——记忆边界与"失忆"现象。', '6638 字', [], { href: 'chapters/ai/08-3-context.html', spec: 'pass'}),
+          createNode('ai-08-4', '§ 8.4 · 采样参数', 'Temperature、Top-p、Top-k——控制"发散还是保守"。', '6637 字', [], { href: 'chapters/ai/08-4-sampling.html', spec: 'pass'}),
+          createNode('ai-08-5', '§ 8.5 · 思维链 CoT', '"让我们一步一步想"——为什么加这句话正确率会涨。', '6530 字', [], { href: 'chapters/ai/08-5-cot.html', spec: 'pass'}),
+          createNode('ai-08-6', '§ 8.6 · 推理模型', 'o1 / R1 / DeepSeek——先想很久再答的新一代模型。', '6535 字', [], { href: 'chapters/ai/08-6-reasoning.html', spec: 'pass'})
+        ], { href: 'chapters/ai/08-llm.html' }),
       createNode('ai-09', '第 9 章 · 多模态',
         '文/图/视频/语音——AI 打破单一模态边界。',
         '待撰写',
@@ -182,7 +182,7 @@
     'network',
     '网络篇',
     '从"什么是网络"到"数据怎么从你的手机跑到百度服务器"——10 章讲透互联网工作原理。',
-    '约 14.4 万字',
+    '待撰写',
     [
       createNode('net-01', '第 1 章 · 网络是什么',
         '主机、协议、地址、客户端服务器、数据包、带宽时延丢包——建立最基础的认识。',
@@ -302,7 +302,7 @@
     'interface',
     '界面篇',
     '从"GUI 是什么"到"AI 时代的生成式界面"——10 章讲透人和机器之间那层看得见、摸得着的皮肤；第 5 章重点铺开 14 种主流 GUI 工具。',
-    '约 8.4 万字',
+    '待撰写',
     [
       createNode('gui-01', '第 1 章 · GUI 是什么',
         'CLI / TUI / GUI 三种交互范式 + 控件、窗口、事件驱动的基本盘。',
@@ -426,11 +426,11 @@
     'elec',
     '电学篇',
     '不学电气工程，只学家里真能用上的电——从不触电、看懂配电箱，到换灯换插座、跳闸排查、弱电布线、万用表与电费单。',
-    '约 4.9 万字（第 1 章已完成）',
+    '待撰写',
     [
       createNode('elec-01', '第 1 章 · 安全第一课',
         '动手之前先学怎么不受伤——断电、验电、急救，以及哪些地方一辈子都别自己碰。',
-        '约 4.9 万字',
+        '约 4.7 万字',
         [
           createNode('elec-01-1', '§ 1.1 · 电为什么会电到人', '电流穿过身体才危险，几毫安开始麻、多少毫安要命。', '7423 字', [], { href: 'chapters/elec/01-1-why-shock.html', spec: 'pass'}),
           createNode('elec-01-2', '§ 1.2 · 火线、零线、地线', '三根线各干什么，为什么只碰零线通常不电人。', '7613 字', [], { href: 'chapters/elec/01-2-three-wires.html', spec: 'pass'}),
@@ -574,7 +574,7 @@
     'root',
     '学海无涯',
     '把 AI、网络、界面三大领域拆成看得见、点得动的认知地图——每篇独立、循序渐进。',
-    '全站约 53.0 万字',
+    '待撰写',
     [branchIntelligence, branchNetwork, branchInterface, branchElec]
   );
 

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 8.4 · 采样参数 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./08-llm.html">智能篇 · 第 8 章</a>
+      <span class="sep">›</span>
+      <span>§ 8.4</span>
+    </div>
+    <a href="./08-llm.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 8.4 · Section</div>
+    <h1>采样参数</h1>
+    <div class="cn">Sampling Parameters · Temperature / Top-p / Top-k</div>
+  </header>
+
+  <p class="lead">
+    §8.2 讲过，模型每一步吐出的不是一个字，而是<strong>词表里约十万个候选各自的概率</strong>。真正决定屏幕上出现哪个字的，是紧接着那个"怎么挑"的动作——它叫<strong>采样</strong>。<mark class="key">采样参数不改模型一个字节的权重，它只改"从这堆候选里怎么挑一个"。</mark>但就是这几个旋钮，决定了同一个模型是写出严谨的代码，还是编出天马行空的小说，还是陷入车轱辘话来回说的死循环。这一节把 temperature、top-p、top-k、两种惩罚项一个一个拆开，还有一个能亲手拖的滑块等着你。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍽️ 同一份菜单，四个人的点菜风格</div>
+    <p>一家<strong>餐厅</strong>的菜单上有一百道菜，每道菜旁边标着"过去一年被点过多少次"——这就是概率分布。现在四个人来<strong>点菜</strong>：</p>
+    <p><strong>老张</strong>每次都点点单量第一的那道，从不变。稳，永远不会踩雷，但吃了十年都是同一道。<em>——这是 temperature = 0。</em></p>
+    <p><strong>老李</strong>按点单量的比例随机抽：第一名有 35% 概率被他抽中，第二名 22%，第八十名 0.01% 也有可能被抽中。整体靠谱，偶尔出个新鲜。<em>——这是 temperature = 1。</em></p>
+    <p><strong>小王</strong>无视点单量，一百道菜等概率乱抽，包括那道谁都不点的"糖醋<strong>钥匙</strong>"。<em>——这是 temperature 调到很高。</em></p>
+    <p><strong>老陈</strong>的规矩最有意思：他先划掉那些"点单量加起来只占最后 10% 的冷门菜"，然后<strong>在剩下的热门菜里</strong>按比例随机抽。既有新鲜感，又不会抽到离谱的东西。<em>——这是 top-p 核采样。</em></p>
+    <div class="link">→ <strong>采样</strong>（Sampling）= 从模型给出的概率分布里，按某套规则挑出下一个 token。规则不同，性格就不同。</div>
+  </div>
+
+  <h3>先把这一步的位置搞清楚</h3>
+  <p>采样发生在整条流水线的<strong>最末端</strong>，在模型全部算完之后。这一点很重要，因为它意味着：<mark class="key">你调采样参数，不需要重新训练、不需要重新加载模型，改一个数字下次请求就生效。</mark></p>
+  <pre><code>模型内部（改不了，除非重训）
+  ┌──────────────────────────────────────────┐
+  │  Transformer 一层层算完                    │
+  │            ↓                              │
+  │  最后一层输出：logits                      │
+  │  ——词表里每个 token 一个「原始分数」       │
+  │     "很"   → 3.2                          │
+  │     "怎么" → 2.8                          │
+  │     "不"   → 2.4                          │
+  │     ...（约 10 万个）                      │
+  └──────────────────────────────────────────┘
+            ↓ ↓ ↓  这条线以下才是采样参数的地盘
+  ┌──────────────────────────────────────────┐
+  │ ① logits 各除以 temperature T              │
+  │ ② 加上 frequency / presence penalty        │
+  │ ③ 过 softmax → 变成概率（加起来 = 1）      │
+  │ ④ 按 top-k 砍掉排名靠后的                  │
+  │ ⑤ 按 top-p 砍掉累积概率尾巴                │
+  │ ⑥ 在剩下的候选里按概率随机抽一个            │
+  └──────────────────────────────────────────┘
+            ↓
+        这一个 token 上屏</code></pre>
+  <p>先解释一个必须懂的词。<strong>logits</strong>（读作"洛吉茨"）<strong>说白了就是</strong>模型给每个候选打的"原始分数"——它可以是任意实数，可以是负数，加起来也不等于 1，不能直接当概率用。要变成概率，得过一道叫 <strong>softmax</strong> 的手续。</p>
+  <p><strong>softmax</strong> 这个词听着玄，它干的活儿<strong>相当于</strong>把一堆乱七八糟的分数换算成百分比：先把每个分数拿去做指数运算（放大差距），再各自除以总和（归一化），结果就是一组加起来正好等于 1 的概率。<strong>好比</strong>班里<strong>考试</strong>，原始分是 92、85、78，你想知道"每人拿到多少份奖金比例"，就得把分数换算成占总分的百分比——softmax 干的就是这件事，只是它在换算前先做了一次指数放大，让高分的优势更明显。</p>
+
+  <h3>★ Temperature：把分布压平还是拉尖</h3>
+  <p>这是最重要、也最常被调的一个参数。它的定义极其简洁——<mark class="key">在进 softmax 之前，把所有 logits 都除以一个数 T。</mark></p>
+  <pre><code>标准 softmax：
+    P(xi) = exp(zi) / Σ exp(zj)
+
+带 temperature 的 softmax：
+    P(xi) = exp(zi / T) / Σ exp(zj / T)
+                   ↑
+              就多了这一个除法
+
+  zi  = 第 i 个 token 的原始分数（logit）
+  T   = temperature
+  Σ   = 对词表里所有 token 求和</code></pre>
+  <p>就这一个除法，效果却是决定性的。用具体数字走一遍你就明白了。假设三个候选的 logits 是 <code>3.0 / 2.0 / 1.0</code>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>T 的值</th><th>候选 A（logit 3.0）</th><th>候选 B（logit 2.0）</th><th>候选 C（logit 1.0）</th><th>效果</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>T = 0.5</td><td><strong>86.7%</strong></td><td>11.7%</td><td>1.6%</td><td>拉尖：强者更强，几乎只选 A</td></tr>
+        <tr><td>T = 1.0</td><td>66.5%</td><td>24.5%</td><td>9.0%</td><td>原始分布，不做改动</td></tr>
+        <tr><td>T = 2.0</td><td>50.6%</td><td>30.7%</td><td>18.6%</td><td>压平：差距缩小，B、C 有机会了</td></tr>
+        <tr><td>T = 5.0</td><td>39.7%</td><td>32.5%</td><td>26.6%</td><td>更平：三个几乎势均力敌</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看清这个规律：<strong>T 变小 → 除法把差距放大 → 分布更尖 → 更保守；T 变大 → 除法把差距压缩 → 分布更平 → 更随机。</strong></p>
+  <p>两个极端值值得单独记：</p>
+  <ul class="keylist">
+    <li><span class="k">T → 0</span><span class="v">退化为<strong>贪心解码</strong>（greedy decoding），也就是 <code>argmax</code>——永远只挑概率最高的那一个，完全不随机。<strong>注意：数学上除以 0 是没定义的，所以实现层面通常是"T 设为 0 就直接切换到 argmax 分支"，而不是真的做那个除法。</strong></span></li>
+    <li><span class="k">T = 1</span><span class="v">原始分布，不加任何修改。这是模型训练时学到的"真实"概率。</span></li>
+    <li><span class="k">T → ∞</span><span class="v">所有 logits 都被除成接近 0，指数运算后彼此相等，分布趋于<strong>词表上的均匀分布</strong>——等于在十万个候选里完全乱抽，输出会是彻底的乱码。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 音响的音量旋钮，不是选曲键</span>
+    <p><strong>好比</strong>你在调一台老<strong>收音机</strong>。台上正在放的曲子是什么，是电台决定的（那是模型的 logits，你改不了）。<mark class="key">你手里那个旋钮只能调"音量对比"——把响的更响、轻的更轻，还是把大家都拉到差不多的音量。</mark></p>
+    <p>T 调小，<strong>相当于</strong>把对比拉到极致：最响的那一声压过一切，其他声音你完全听不见，于是你每次听到的都是同一个音。<br/>
+    T 调大，<strong>相当于</strong>把所有声音的音量拉齐：主旋律和背景杂音一样响，你会听到很多平时听不到的东西——有时候是有趣的和声，有时候就是纯粹的噪音。</p>
+    <p><strong>关键在于：旋钮从来没有换过曲子。</strong>模型的知识、判断、偏好全都在 logits 里定好了；temperature 只是决定你要多严格地遵守这份偏好。<strong>这就是为什么"把温度调高能让模型更有创意"这句话只对了一半——它不会让模型变聪明，只是让它更愿意说出那些它本来觉得不太可能的话。</strong></p>
+  </div>
+
+  <p>下面这个组件让你亲手拖动温度滑块，实时看概率条形图怎么被压平和拉尖。<strong>拖到最左边，你会看到一根独苗；拖到最右边，你会看到一片平原。</strong>建议在两个极端各停一下，这个画面比任何公式都好记。</p>
+
+  <div class="lab" data-lab="temperature"></div>
+
+  <h3>★ Top-k：固定砍到只剩 k 个</h3>
+  <p><strong>Top-k</strong> 的规则简单到一句话：<mark class="key">按概率从高到低排序，只保留前 k 个，其余全部作废，然后在这 k 个里按概率重新归一化后随机抽。</mark></p>
+  <pre><code>假设 top_k = 3，模型给出的分布是：
+
+  "很"     35%   ✓ 保留
+  "怎么"   22%   ✓ 保留
+  "不"     15%   ✓ 保留
+  ────────────────── 第 3 名之后全砍
+  "好"     10%   ✗ 砍掉
+  "真"      8%   ✗ 砍掉
+  ...（其余约 10 万个）  ✗ 全砍
+
+  剩下三个重新算比例（35+22+15 = 72）：
+  "很"   → 48.6%
+  "怎么" → 30.6%
+  "不"   → 20.8%
+
+  在这三个里随机抽一个。</code></pre>
+  <p>它的好处是杜绝了"从十万个候选的长尾里抽到一个荒谬词"的可能。缺点是<strong>那个 k 是死的</strong>，而这就是问题所在：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>情形</th><th>分布长什么样</th><th>top_k = 50 的后果</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>写代码，下一个 token 几乎唯一确定</td><td>第一名 99%，其余全是零点几</td><td><strong>太松</strong>：把 49 个概率极低的垃圾也放进候选池，虽然抽中概率小，但确实有可能出错</td></tr>
+        <tr><td>写小说的开头，下一个词有几百种合理选择</td><td>前 300 名概率都在 0.2%~0.5% 之间，很平均</td><td><strong>太紧</strong>：硬生生砍掉 250 个同样合理的词，文风被人为收窄</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>换成大白话：</strong>top-k 就<strong>相当于</strong>规定"不管什么情况，都只从前 50 名里挑"。可现实是有时候第一名就该独占鳌头，有时候前三百名难分高下。<mark class="key">用一个固定的数字去应付变化极大的分布，这是 top-k 的先天缺陷。</mark></p>
+
+  <h3>★ Top-p 核采样：砍掉的是"尾巴"而不是"名次"</h3>
+  <p>为了解决上面那个缺陷，Holtzman 等人提出了 <strong>Top-p</strong>，也叫<strong>核采样</strong>（Nucleus Sampling）。它的规则是：<mark class="key">按概率从高到低累加，累加到刚好超过 p 就停，只保留这一批。</mark></p>
+  <p>这里有个有趣的细节值得提：这篇论文的题目是《<em>The Curious Case of Neural Text Degeneration</em>》（"神经文本退化的怪案"），<strong>标题里根本没有 Top-p 或 Nucleus Sampling 的字样</strong>——方法名是在正文里给的。论文是 arXiv 1904.09751，2019 年提出、2020 年发表于 ICLR。</p>
+  <p>它的动机说得非常直白：<strong>最大似然解码（也就是永远挑概率最高的那个）产生的文本"平淡且诡异地重复"</strong>；解决办法是<strong>从一个动态的"核"中采样，以截断那条不可靠的长尾</strong>。</p>
+  <pre><code>假设 top_p = 0.9
+
+【场景 A · 模型很确定的时候】
+  "="      95%   累积 95%  ← 已经超过 90%，就此打住
+  ──────────────────── 只保留 1 个候选！
+  其余全砍
+
+【场景 B · 模型很不确定的时候】
+  "夜晚"    8%   累积  8%
+  "清晨"    7%   累积 15%
+  "雨天"    6%   累积 21%
+  "远方"    5%   累积 26%
+  ...（一路累加）
+  "码头"  0.4%   累积 89.7%
+  "灯塔"  0.4%   累积 90.1%  ← 刚超过 90%，打住
+  ──────────────────── 保留了 60 多个候选！
+
+同一个 top_p = 0.9：
+  确定时自动收紧到 1 个
+  不确定时自动放宽到 60 多个
+  ★ 候选数量是「自己变」的，不用你操心</code></pre>
+  <p><strong>这就是 top-k 和 top-p 的本质区别，务必记牢：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>Top-k</th><th>Top-p（核采样）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>你规定的是</td><td><strong>固定的个数</strong>（保留几个）</td><td><strong>固定的累积概率质量</strong>（保留多少把握）</td></tr>
+        <tr><td>候选数量</td><td>永远是 k 个，死的</td><td><strong>动态变化</strong>，从 1 个到几百个</td></tr>
+        <tr><td>模型很确定时</td><td>仍然放 k 个进候选池（偏松）</td><td>自动收到 1～2 个（正好）</td></tr>
+        <tr><td>模型很不确定时</td><td>硬砍到 k 个（偏紧）</td><td>自动放宽到几百个（正好）</td></tr>
+        <tr><td>论文</td><td>更早期的常规做法</td><td>Holtzman et al., arXiv 1904.09751, ICLR 2020</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>用生活场景说清这个区别</strong>：<strong>好比</strong><strong>医院</strong>门诊<strong>分诊</strong>。<em>Top-k 的规矩</em>是"不管来什么病人，每次都往候诊名单上放 50 个"；<em>Top-p 的规矩</em>是"往名单上放人，放到把 90% 的可能病因都覆盖住为止"——<mark class="key">明显是感冒就只放内科一位医生，症状复杂就把六十位专家都叫来。后者显然更合理。</mark></p>
+  <p><strong>这也是为什么今天绝大多数场景的默认推荐是用 top-p 而不是 top-k。</strong>顺便提一句常见的困惑：top-k 和 top-p 是可以同时开的，多数实现是先按 k 砍、再按 p 砍。但一般不建议同时精调两个——<strong>先固定 top_p，只动 temperature，是最省心的做法。</strong></p>
+
+  <h3>两种重复惩罚：frequency 与 presence</h3>
+  <p>如果你见过模型陷入"车轱辘话来回说"的死循环（"这很重要。这很重要。这很重要。……"），那两个惩罚参数就是给这种情况准备的。它们的区别<strong>只有一个字，但很关键</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>参数</th><th>惩罚规则</th><th>效果</th><th>范围</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>frequency_penalty</code></td><td>按已出现的<strong>次数</strong>成正比惩罚——出现越多，罚得越狠</td><td>压制高频重复，但不完全禁止</td><td>−2.0 ~ 2.0</td></tr>
+        <tr><td><code>presence_penalty</code></td><td>只要<strong>出现过</strong>，就施加一个固定的惩罚，不管出现了几次</td><td>鼓励换新话题、扩大用词范围</td><td>−2.0 ~ 2.0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>打个比方</strong>就清楚了。假设你在一场<strong>会议</strong>上发言，主持人有两种不同的限制方式：</p>
+  <ul class="keylist">
+    <li><span class="k">frequency 式主持人</span><span class="v">"你这个词说第一遍不扣分，第二遍扣 1 分，第三遍扣 2 分，第十遍扣 9 分。"<strong>——你还可以偶尔用，但绝不敢反复念。</strong></span></li>
+    <li><span class="k">presence 式主持人</span><span class="v">"你这个词只要说过一次，之后每次都固定扣 1 分，说十遍也是每次扣 1 分。"<strong>——你会倾向于换新词，但不会被"越说越重罚"逼着彻底放弃。</strong></span></li>
+  </ul>
+  <p>注意那个负数范围。<strong>设成负值等于"鼓励重复"</strong>，听起来没用，其实在某些场景（比如要求严格遵守某个固定格式、反复输出同一个标签）确实有人用。</p>
+  <p><mark class="key">★ 但这里有一个非常重要的提醒：Anthropic 的 Claude API 不提供这两个参数。</mark>Claude 只有 <code>temperature</code>、<code>top_p</code>、<code>top_k</code>。所以千万不要写出"所有 LLM 都有 frequency_penalty"这种话，也不要在跨厂商的代码里无条件传这两个字段——会直接报错。<strong>这是一个真实的踩坑点。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>参数</th><th>OpenAI 兼容接口</th><th>Anthropic Claude</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>temperature</code></td><td>有</td><td>有</td></tr>
+        <tr><td><code>top_p</code></td><td>有</td><td>有</td></tr>
+        <tr><td><code>top_k</code></td><td>部分实现有</td><td>有</td></tr>
+        <tr><td><code>frequency_penalty</code></td><td>有</td><td><strong>没有</strong></td></tr>
+        <tr><td><code>presence_penalty</code></td><td>有</td><td><strong>没有</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>★ 「temperature=0 就完全可复现」并不成立</h3>
+  <p>这是一条流传极广的误解，值得单独讲。逻辑上看它很有道理：T=0 就是 argmax，永远挑概率最高的那个，没有随机性，那同一个 prompt 应该永远得到同一个答案——<strong>可实践中并非如此。</strong></p>
+  <p>下面几条标注为<strong>「实践观察」</strong>，是工程上被反复报告的现象：</p>
+  <ul class="keylist">
+    <li><span class="k">浮点运算的非确定性</span><span class="v">GPU 上大量数字并行相加，而浮点加法<strong>不满足结合律</strong>——(a+b)+c 和 a+(b+c) 的结果可能在最后一位小数上不同。当两个候选的概率极其接近（比如 0.4999 和 0.5001），这点误差足以让 argmax 挑出另一个。而一旦第一个 token 不同，后面整段话就全岔开了（回想 §8.2 的"无法回头修改"）。</span></li>
+    <li><span class="k">MoE 的路由</span><span class="v">混合专家模型（第 7 章讲过）每一步要决定"把这个 token 交给哪几个专家处理"。这个路由决策在某些实现里会受到<strong>同一批次里其他请求</strong>的影响，而你无法控制别人什么时候发请求。</span></li>
+    <li><span class="k">批处理的大小</span><span class="v">服务端会把多个用户的请求攒成一批一起算。批的大小不同，底层调用的矩阵乘法算子实现可能不同，数值结果就有细微差别。<strong>而批大小取决于当时有多少人在用，你完全控制不了。</strong></span></li>
+  </ul>
+  <p><strong>换成大白话：</strong>T=0 保证的是"决策规则不带随机"，而不是"输入到输出的整条链路上一个比特都不变"。<strong>这就像</strong>两个人用同一台<strong>银行</strong>点钞机数同一叠钱：规则完全一样，但机器的传送速度、纸币的湿度、当时的温度都会影响个别钞票的识别，绝大多数时候结果相同，偶尔就是会差一张。</p>
+  <p><strong>所以在工程上：</strong>需要"完全可复现"的场景（比如自动化测试的断言、需要审计留痕的业务），不要指望 T=0，而要<mark class="key">把模型的输出结果本身存下来</mark>。有些厂商提供 <code>seed</code> 参数能提高复现概率，但通常也只承诺"尽力而为"（best-effort），不是保证。</p>
+
+  <h3>贪心解码 vs 束搜索：还有第三种挑法</h3>
+  <p>前面讲的几种都属于"随机采样"这一大类。历史上还有一条完全不同的路线，叫<strong>束搜索</strong>（Beam Search），今天在翻译和语音识别里仍然常用，理解它能让你更明白采样的取舍。</p>
+  <p><strong>贪心解码</strong>（也就是 T=0）的问题是<em>只看眼前一步</em>。它在第 1 步挑了概率最高的词，可这个词可能把后面整句话逼进死胡同——<strong>就像</strong>下棋只算一步，第一步吃个小卒很划算，结果第二步丢了车。</p>
+  <p><strong>束搜索</strong>的做法是同时保留几条候选路径（"束宽"，beam width），走几步之后再看哪条整体概率最高：</p>
+  <pre><code>假设束宽 = 3，要生成 3 个 token
+
+第 1 步  从概率最高的 3 个开头各开一条路
+         路径A: "今"   路径B: "明"   路径C: "昨"
+
+第 2 步  每条路各往下扩展 3 个候选 → 共 9 条
+         算出每条的「累积概率」，只留总分最高的 3 条
+         路径A: "今天"  路径B: "明天"  路径C: "今晚"
+         （"昨" 那条被淘汰了，因为它后续都不太行）
+
+第 3 步  再扩展、再淘汰，保持只留 3 条
+
+最后：从 3 条完整路径里挑累积概率最高的那条输出。</code></pre>
+  <p>束搜索在机器<strong>翻译</strong>这类"答案基本唯一"的任务上表现很好，因为它确实找到了整体概率更高的句子。<mark class="key">但用在开放式写作上，它反而是灾难——正是 Top-p 那篇论文批评的对象。</mark>因为"整体概率最高的句子"往往是最平淡、最模板化的那句，而且极其容易陷入重复。<strong>好比</strong><strong>招聘</strong>时只按"最符合平均标准"的算法选人，选出来的一定是最不出错也最没意思的那位。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方法</th><th>确定性</th><th>擅长</th><th>短板</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>贪心（T=0）</td><td>确定</td><td>代码、结构化输出</td><td>只看一步，容易走进死胡同；容易重复</td></tr>
+        <tr><td>束搜索</td><td>确定</td><td>翻译、语音识别</td><td>输出平淡模板化；计算量是束宽的倍数</td></tr>
+        <tr><td>Top-p 采样</td><td>随机</td><td>对话、创作、通用场景</td><td>不可复现；偶尔会抽到不太好的词</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>还有几个你可能会遇到的旋钮</h3>
+  <p>除了主要那几个，各家 API 还有一些不那么常用但偶尔救命的参数。<strong>知道它们的存在，比临时抱佛脚查文档强。</strong></p>
+  <ul class="keylist">
+    <li><span class="k">min_p</span><span class="v">一种较新的截断方式：只保留概率不低于"最高概率 × min_p"的候选。<strong>换成大白话</strong>就是"必须至少有冠军的百分之几的实力才有资格进候选"。它比 top-p 对分布形状更敏感，在部分开源推理框架里能用。</span></li>
+    <li><span class="k">repetition_penalty</span><span class="v">开源社区（如 Hugging Face、vLLM）常见的参数，和 OpenAI 的两种 penalty 思路类似但公式不同——它是直接对已出现 token 的 logit 做<strong>除法</strong>而不是减法。<mark class="key">注意：跨框架时同名不同义，1.1 在这里是"轻微惩罚"，别照搬 OpenAI 那套 −2~2 的取值直觉。</mark></span></li>
+    <li><span class="k">logit_bias</span><span class="v">手动指定某些 token 的分数加减多少。最典型的用法是<strong>硬性禁用某些词</strong>（设一个极大的负值）或者<strong>强行提高某个词的概率</strong>。做内容过滤和格式约束时很实用。</span></li>
+    <li><span class="k">seed</span><span class="v">随机数种子。设了它能提高复现概率，但如前所述，多数厂商只承诺"尽力而为"，不是保证。<strong>别把它当契约。</strong></span></li>
+    <li><span class="k">n / best_of</span><span class="v">一次请求生成多条候选。想要多样性又不想把温度调爆，用这个更靠谱——生成 5 条，自己挑或者让另一个模型评一遍。代价是按全部输出 token 计费，所以 n=5 就是 5 倍输出成本。</span></li>
+  </ul>
+  <p>关于最后一条，值得补一句实践经验：<mark class="key">"温度调到 1.3 求一条好答案"和"温度 0.7 生成 5 条挑一条最好的"，后者几乎总是赢。</mark><strong>相当于</strong><strong>招聘</strong>时你是"降低标准招一个奇才"，还是"按正常标准面五个人挑最好的"——后者的期望质量明显更高，成本也可控。</p>
+
+  <h3>为什么"平淡且诡异地重复"会发生</h3>
+  <p>Top-p 论文里那个说法值得单独展开，因为它揭示了一个很深的机制：<strong>为什么"永远挑概率最高的那个"反而会写出病态的文本？</strong></p>
+  <p>关键在于<mark class="key">概率高不等于内容好</mark>。模型学到的是"在人类写的文本里，这个词后面最常跟什么"。而人类语言里最常出现的搭配，恰好是那些最没信息量的：连接词、套话、客套。你让它永远挑最常见的，它就一路挑出最平庸的路径。</p>
+  <p>更糟的是<strong>正反馈循环</strong>。这个循环特别值得看清：</p>
+  <pre><code>模型写下一句 "这一点非常重要。"
+     ↓
+现在上下文里出现了 "这一点非常重要。"
+     ↓
+模型看到自己刚说过这句话
+——而在训练语料里，一句话出现过之后，
+   它再次出现的概率其实是升高的
+   （因为人类文本里确实有重复强调的现象）
+     ↓
+于是 "这" 的概率略微上升
+     ↓
+写下 "这一点非常重要。"
+     ↓
+现在上下文里这句话出现了两次
+     ↓
+概率再升高 ……
+     ↓
+死循环：一直重复到 max_tokens 用完</code></pre>
+  <p><strong>这就像</strong>一个人在空<strong>教室</strong>里说话产生的回声：他说了一句，回声传回来，他觉得"刚才好像是这么说的"，又照着说一遍，回声更强……<mark class="key">这不是模型坏了，是"贪心 + 自回归"两个机制叠加出的结构性陷阱。</mark></p>
+  <p>知道机制之后，三种解法就都能想通了：<strong>一、加随机性</strong>（提高温度或用 top-p），让它有机会跳出那条路径；<strong>二、加重复惩罚</strong>，直接对已出现的 token 扣分，从数值上打断循环；<strong>三、改提示词</strong>，明确要求不要重复。<strong>三种手段作用在不同层面，可以叠加使用。</strong></p>
+
+  <h3>调参的正确姿势：一套可复用的流程</h3>
+  <p>最后给一套实操流程。这套东西的价值不在多聪明，而在<strong>它能让你不再瞎猜</strong>。</p>
+  <ul class="keylist">
+    <li><span class="k">第一步 · 先别调参，改提示词</span><span class="v">这是最容易被跳过的一步。<mark class="key">十次里有八次，问题出在提示词写得不清楚，而不是温度不对。</mark>把要求写明确、给两三个示例，效果提升通常比调参大得多，而且免费。</span></li>
+    <li><span class="k">第二步 · 建一个小评测集</span><span class="v">找 20～30 个真实输入，人工标好"什么样的输出算合格"。<strong>没有这个集合，你所有的调参都是凭感觉，换个例子结论就翻</strong>。这一步花两小时，能省后面二十小时。</span></li>
+    <li><span class="k">第三步 · 只动 temperature，扫一遍</span><span class="v">固定 top_p = 0.95，让 temperature 从 0 到 1.2 每隔 0.2 跑一遍评测集，把合格率画成一条曲线。<strong>你会看到一个明显的最优区间</strong>，而且往往比你凭直觉挑的值好不少。</span></li>
+    <li><span class="k">第四步 · 只在有重复问题时才加 penalty</span><span class="v">别一上来就把两个惩罚项都设成 0.5。先确认真的出现了重复，再从 0.1～0.3 这种小值开始加。<strong>惩罚项加大了会让模型刻意回避某些必要的词，反而伤害准确性</strong>——比如写代码时它会为了"不重复"而换掉本该重复的变量名。</span></li>
+    <li><span class="k">第五步 · 把最终配置写进代码并加注释</span><span class="v">注明"为什么是这个值、在哪个评测集上验证过"。半年后你自己也会忘，而这行注释能救命。</span></li>
+  </ul>
+  <p><strong>整个流程可以类比成</strong>调一台老<strong>收音机</strong>：第一步是先确认天线插好了（提示词），第二步是找一个已知的电台当基准（评测集），第三步是慢慢转旋钮听哪里最清楚（扫温度），第四步是只在有杂音时才动降噪（惩罚项）。<mark class="key">最常见的错误恰恰是天线没插就开始猛转旋钮。</mark></p>
+
+  <h3>各种任务该怎么调：一张实用配置表</h3>
+  <p>下面这张表是工程实践中的常见起点。<strong>请注意这些是经验起点而不是权威定论</strong>，具体还要看你的模型和任务微调。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>任务</th><th>temperature</th><th>top_p</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>写代码 / 改 bug</td><td>0 ~ 0.2</td><td>0.95 或不设</td><td>语法只有一种对的写法，创意等于错误</td></tr>
+        <tr><td>数据抽取 / 结构化输出 JSON</td><td>0</td><td>不设</td><td>要求格式严格一致，一点偏差就解析失败</td></tr>
+        <tr><td>事实问答 / 知识检索</td><td>0 ~ 0.3</td><td>0.9</td><td>要准，不要发挥</td></tr>
+        <tr><td>翻译</td><td>0.3</td><td>0.9</td><td>要准，但允许一点行文上的灵活</td></tr>
+        <tr><td>日常聊天 / 客服</td><td>0.7</td><td>0.9</td><td>自然、不呆板，但别跑偏</td></tr>
+        <tr><td>写文案 / 起标题 / 头脑风暴</td><td>0.9 ~ 1.1</td><td>0.95</td><td>要多样性，愿意接受一些不那么"标准"的表达</td></tr>
+        <tr><td>写诗 / 小说 / 剧本</td><td>1.0 ~ 1.2</td><td>0.95</td><td>意外性本身就是价值</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三条通用建议：</p>
+  <ul class="keylist">
+    <li><span class="k">只动一个旋钮</span><span class="v">先把 top_p 固定在 0.9 或 0.95，只调 temperature。同时调两个会让你完全说不清是哪个在起作用。</span></li>
+    <li><span class="k">别把温度调过 1.5</span><span class="v">超过这个值，输出质量通常会明显崩坏——不是"更有创意"，是开始说不成话。想要更多样性，宁可换成"多生成几条，从里面挑"。</span></li>
+    <li><span class="k">推理模型可能不吃这一套</span><span class="v">部分推理模型（§8.6）会锁定或建议特定的采样参数。<strong>比如 DeepSeek-R1 官方 benchmark 的评测设置就是明确的 temperature 0.6、top-p 0.95</strong>——这类模型你自己乱调，反而会掉分。</span></li>
+  </ul>
+
+  <h3>代码：把这几个旋钮真正拧一遍</h3>
+  <p>光看表不如自己试。下面这段代码用同一个提示词、不同的温度各跑三次，你会亲眼看到差异：</p>
+  <pre><code># pip install openai
+from openai import OpenAI
+
+client = OpenAI()
+prompt = "用一句话形容春天的傍晚。"
+
+for T in [0.0, 0.7, 1.3]:
+    print(f"\n===== temperature = {T} =====")
+    for i in range(3):
+        r = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=T,
+            top_p=0.95,
+            max_tokens=60,
+            # 注意：下面两个参数 Anthropic Claude 不支持！
+            frequency_penalty=0.0,
+            presence_penalty=0.0,
+        )
+        print(f"  [{i+1}] {r.choices[0].message.content.strip()}")
+        print(f"      用量: in={r.usage.prompt_tokens} out={r.usage.completion_tokens}")
+
+# 你会观察到：
+#   T=0.0  三次答案几乎相同（但不保证 100% 一字不差！）
+#   T=0.7  三次答案句式不同，但都还算得体
+#   T=1.3  开始出现奇特的比喻，偶尔有一次读起来不太通顺
+</code></pre>
+  <p>特别留意最后那行注释。<strong>跑十次，你有可能碰到一次 T=0 的输出跟其他九次不一样</strong>——那不是你的代码写错了，正是上面讲的浮点非确定性在起作用。<mark class="key">亲眼看到这一次不一致，比读十遍解释都有说服力。</mark></p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"温度调高模型就变聪明了"</td><td>不对。温度不改模型知识，只改"多严格遵守它自己的偏好"。调高只是更愿意说出它本来认为不太可能的话</td></tr>
+        <tr><td>"temperature=0 就完全可复现"</td><td><strong>不成立</strong>。浮点非确定性、MoE 路由、批处理大小都会导致同一 prompt 输出不同（实践观察）</td></tr>
+        <tr><td>"top-k 和 top-p 差不多"</td><td>本质不同。top-k 固定<strong>个数</strong>，top-p 固定<strong>累积概率质量</strong>、候选数动态变化</td></tr>
+        <tr><td>"所有 LLM 都有 frequency_penalty"</td><td><strong>不对</strong>。Anthropic Claude API 只有 temperature / top_p / top_k，没有这两个惩罚参数</td></tr>
+        <tr><td>"Top-p 论文的名字里有 Nucleus Sampling"</td><td>不对。论文叫《The Curious Case of Neural Text Degeneration》，方法名在正文里</td></tr>
+        <tr><td>"两个 penalty 是一个东西"</td><td>不是。frequency 按<strong>出现次数</strong>成正比加罚，presence 是<strong>出现过就固定加罚</strong></td></tr>
+        <tr><td>"温度越高越有创意，1.5 以上更好"</td><td>过了 1.5 通常直接崩坏。要多样性应该用"多生成几条再挑"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lab" data-lab="quiz"
+       data-q="Top-k 和 Top-p（核采样）最本质的区别是什么？"
+       data-opts="Top-k 更快，Top-p 更慢|Top-k 固定保留的候选「个数」，Top-p 固定保留的「累积概率质量」、候选数随分布动态变化|Top-k 用于英文，Top-p 用于中文|Top-k 会改变模型权重，Top-p 不会"
+       data-answer="1"
+       data-explain="Top-k 规定「只保留前 k 个候选」——k 是死的，不管模型这一步有多确定。Top-p（核采样，Holtzman et al., arXiv 1904.09751, ICLR 2020）规定「按概率从高到低累加，累加到刚超过 p 就停」——保留的候选数量是自己变的：模型很确定时可能只保留 1 个，模型很不确定时可能保留几百个。论文的动机正是最大似然解码会产生「平淡且诡异地重复」的文本，办法是从一个动态的核中采样以截断不可靠的长尾。顺带一提，这篇论文的标题是《The Curious Case of Neural Text Degeneration》，里面并没有出现 Top-p 或 Nucleus Sampling 字样。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>采样发生在整条流水线的最末端，<mark class="key">它不改模型一个字节，只改"从约十万个候选里怎么挑一个"</mark>——所以改一个数字下次请求就生效。</p>
+    <p><strong>Temperature</strong> 的定义就一个除法：<code>P(xi) = exp(zi/T) / Σexp(zj/T)</code>，进 softmax 前把 logits 除以 T。<strong>T→0 退化为贪心/argmax；T=1 是原始分布；T→∞ 趋于词表上的均匀分布（纯乱码）。</strong>它像音量对比旋钮，从不换曲子。</p>
+    <p><strong>Top-k 与 Top-p 的本质区别务必记牢：前者固定「个数」，后者固定「累积概率质量」、候选数动态变化。</strong>Top-p 来自 Holtzman et al.《The Curious Case of Neural Text Degeneration》（arXiv 1904.09751，2019 年提出、2020 年 ICLR），动机是最大似然解码会产出"平淡且诡异地重复"的文本，办法是从动态核中采样以截断不可靠长尾。</p>
+    <p>两个惩罚项：<code>frequency_penalty</code> 按已出现<strong>次数</strong>成正比加罚，<code>presence_penalty</code> <strong>出现过就固定加罚</strong>，范围都是 −2.0 ~ 2.0。<mark class="key">但 Anthropic Claude API 不提供这两个参数，只有 temperature / top_p / top_k。</mark>另外，「T=0 就完全可复现」并不成立——浮点非确定性、MoE 路由、批处理都会插一手（实践观察）。</p>
+    <p>下一节我们换个角度：不再调旋钮，而是<strong>改提示词</strong>——只加一句"让我们一步一步想"，正确率就从一成跳到四成。这件事在 2022 年震动了整个领域。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-3-context.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 8.3 · 上下文窗口</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./08-5-cot.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 8.5 · 思维链 CoT</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 8.4</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

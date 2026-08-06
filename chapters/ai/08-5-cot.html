@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 8.5 · 思维链 CoT · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./08-llm.html">智能篇 · 第 8 章</a>
+      <span class="sep">›</span>
+      <span>§ 8.5</span>
+    </div>
+    <a href="./08-llm.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 8.5 · Section</div>
+    <h1>思维链 CoT</h1>
+    <div class="cn">Chain-of-Thought Prompting</div>
+  </header>
+
+  <p class="lead">
+    2022 年发生了一件让整个领域集体愣住的事：有人发现，只要在问题后面加一句"<em>Let's think step by step</em>"（让我们一步一步来想），同一个模型在一道数学题集上的正确率能从 <mark class="key">10.4% 跳到 40.7%</mark>。<strong>模型没有重新训练，一个参数都没改，加的只是一句话。</strong>这件事有点侮辱智商——它意味着模型本来就会，只是我们没问对。这一节要讲清这句"咒语"为什么有效、它背后的机制是什么，以及为什么它不是玄学而是一笔可以算清的账。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📝 不许打草稿的心算考试</div>
+    <p>想象一场<strong>考试</strong>，题目是："<em>一个班有 23 个学生，老师买了 5 盒笔，每盒 12 支，先给每人发 2 支，剩下的平分给 4 个学习小组，每组分到几支？</em>"</p>
+    <p><strong>规则甲：不许打草稿，看完题直接在答题卡上写答案。</strong>你得在脑子里一口气完成"5×12=60、23×2=46、60−46=14、14÷4=3.5"这一串运算，中间任何一步记错，答案就废了。绝大多数人会算错。</p>
+    <p><strong>规则乙：允许在<strong>黑板</strong>上写过程。</strong>你写下"共 60 支"，再写"发出 46 支"，再写"剩 14 支"——<mark class="key">每一步都被固定在纸上，不必在脑子里悬着</mark>，出错率骤降。同一个学生，同一道题，两种规则下的成绩天差地别。</p>
+    <p>大语言模型的处境就是规则甲。<strong>它没有内部草稿纸——它唯一能"写下"东西的地方，就是它的输出。</strong>所以你不让它写过程，就是在要求它心算；你让它写过程，等于给了它一块黑板。</p>
+    <div class="link">→ <strong>思维链</strong>（Chain-of-Thought，简称 CoT）= 让模型把中间推理步骤显式地写出来，而不是直接跳到答案。</div>
+  </div>
+
+  <h3>先说清"思维链"这个词</h3>
+  <p><strong>Chain-of-Thought</strong>（思维链，常缩写为 <strong>CoT</strong>，读作"C-O-T"）这个词听着玄，<strong>说白了就是</strong>：<mark class="key">让模型把"想的过程"一步一步写出来，写完再给结论。</mark></p>
+  <p>对比一下两种回答方式，区别一眼就能看到：</p>
+  <pre><code>【不用 CoT · 直接要答案】
+
+  问：一个班 23 人，老师买 5 盒笔每盒 12 支，
+      先给每人发 2 支，剩下平分给 4 个组，每组几支？
+  答：4 支。            ← 错了，而且你完全看不出它哪一步错
+
+【用 CoT · 要求写过程】
+
+  问：（同上）请一步一步计算。
+  答：好，我一步一步来算。
+      第一步，笔的总数：5 盒 × 12 支/盒 = 60 支。
+      第二步，发给学生的：23 人 × 2 支/人 = 46 支。
+      第三步，剩下的：60 − 46 = 14 支。
+      第四步，平分给 4 个组：14 ÷ 4 = 3.5 支。
+      所以每组分到 3.5 支。      ← 对了，而且过程可核查</code></pre>
+  <p>注意右边这个例子里最容易被忽略的价值：<strong>过程是可核查的</strong>。哪怕它算错了，你也能一眼看出错在第几步。<strong>这在实际工程里的意义甚至超过准确率本身</strong>——一个能看出错在哪的系统，和一个只会吐结论的黑箱，可维护性完全不是一个量级。</p>
+
+  <h3>★ 开创性的那篇论文：Wei et al. 2022</h3>
+  <p>CoT 这个概念的正式提出，是 2022 年 1 月 Google 研究团队的论文：</p>
+  <ul class="keylist">
+    <li><span class="k">论文</span><span class="v">《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》（"思维链提示能激发大语言模型的推理能力"）</span></li>
+    <li><span class="k">作者与出处</span><span class="v">Wei et al.，arXiv 2201.11903，2022 年 1 月，后发表于 <strong>NeurIPS 2022</strong>，Google 研究团队</span></li>
+    <li><span class="k">做法</span><span class="v">在提示词里给几个"带完整推理过程"的示例，让模型照着学会"也要写过程"</span></li>
+    <li><span class="k">★ 摘要里的关键数字</span><span class="v"><mark class="key">仅用 8 个 CoT 示例作提示，在 540B（PaLM）模型上，就在 GSM8K 数学题基准上达到了当时的最好成绩（SOTA），超过了带 verifier（验证器）的微调版 GPT-3。</mark></span></li>
+  </ul>
+  <p>请把那句话再读一遍，然后体会一下它的分量：<strong>8 个示例，打败了一个专门为这个任务微调过、还外挂了验证器的模型。</strong>微调要准备数据、要跑训练、要几十张卡；CoT 只需要在提示词里多写八段话。<mark class="key">这是提示工程史上最著名的一次"以小博大"。</mark></p>
+  <p>这里必须严谨地补一句：<strong>论文摘要里并没有给出"CoT 让 GSM8K 提升了多少个百分点"这类具体数字</strong>，只说达到了当时的 SOTA。所以本节不编造这个提升幅度——网上流传的各种具体百分比要小心甄别。<strong>真正有明确数字可引的是下一篇。</strong></p>
+  <p>顺便解释两个术语。<strong>GSM8K</strong>（Grade School Math 8K）是一个包含约八千道小学数学应用题的测试集，题目类似上面那道发笔的题——不难，但需要多步计算，正好卡在"心算容易出错"这个点上，所以成了推理能力的经典标尺。<strong>540B</strong> 指 5400 亿参数，是当时 Google PaLM 模型的规模。<strong>把这个数换算成可感知的量</strong>：5400 亿个参数，如果每个参数写成一个字印在书上，按每页 500 字算，要印<strong>十亿页以上</strong>——摞起来足有一百多公里高。</p>
+
+  <h3>★ 更震撼的那一句：零样本 CoT</h3>
+  <p>Wei 那篇论文虽然强，但还是要人工写 8 个示例。四个月后，另一批人做了一件更极端的事——<strong>连示例都不给，只加一句话</strong>。</p>
+  <ul class="keylist">
+    <li><span class="k">论文</span><span class="v">《Large Language Models are Zero-Shot Reasoners》（"大语言模型是零样本推理者"）</span></li>
+    <li><span class="k">作者与出处</span><span class="v">Kojima et al.，arXiv 2205.11916，2022 年 5 月，<strong>NeurIPS 2022</strong></span></li>
+    <li><span class="k">做法</span><span class="v">在问题后面只加一句 <code>Let's think step by step</code>。<strong>没有示例，没有微调，没有任何其他改动。</strong></span></li>
+    <li><span class="k">★ 摘要里的确切数字（这组可以放心用）</span><span class="v"><mark class="key">MultiArith：17.7% → 78.7%；GSM8K：10.4% → 40.7%</mark>（模型是 text-davinci-002）</span></li>
+  </ul>
+  <p>看清 MultiArith 那一行：<strong>从 17.7% 涨到 78.7%，涨了 61 个百分点，翻了四倍多。</strong>GSM8K 从 10.4% 到 40.7%，也是接近四倍。</p>
+  <p><strong>把这个提升换算成能体会的量：</strong>10.4% 的正确率意味着<strong>十道题错九道</strong>，这个模型基本可以判定"不会做数学题"；40.7% 意味着<strong>十道题能对四道</strong>——虽然还不及格，但已经从"完全不会"变成了"有一定能力"。<mark class="key">而这个飞跃的全部代价，是六个英文单词。</mark></p>
+  <p><strong>"零样本"（zero-shot）</strong>这个词也解释一下：<strong>说白了就是</strong>"一个示例都不给"。相对应的，<strong>few-shot（少样本）</strong>是给几个示例，<strong>fine-tuning（微调）</strong>是拿数据重新训练。三者的成本差着好几个数量级：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>做法</th><th>需要什么</th><th>成本</th><th>本节讲的两篇论文</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>零样本 CoT</td><td>加一句话</td><td><strong>几乎为零</strong></td><td>Kojima et al. 2022</td></tr>
+        <tr><td>少样本 CoT</td><td>手写几个带过程的示例</td><td>一小时人力 + 一点 token</td><td>Wei et al. 2022</td></tr>
+        <tr><td>微调</td><td>几千到几万条标注数据 + 训练算力</td><td>几天到几周，几千到几十万元</td><td>——</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 输出栏就是它唯一的草稿纸</span>
+    <p>这个类比是理解 CoT 的钥匙，值得慢慢读。</p>
+    <p><strong>好比</strong>一位<strong>会计</strong>在核一笔复杂的账。他面前有两样东西：<em>脑子</em>和<em>桌上的纸</em>。人类的优势在于，我们的脑子有一块"工作记忆"——能临时悬着几个中间结果，不写下来也能算完。</p>
+    <p><mark class="key">而大语言模型的脑子里，没有这块工作记忆。</mark>每一次前向计算的层数是固定的（比如 80 层），它能在"一次心算"里完成的思考深度就是这 80 层，多一点都没有。它无法说"我先在心里存着这个 14，等下再用"——它压根没有存东西的地方。</p>
+    <p><strong>它唯一能存东西的地方，就是输出栏。</strong>每写下一个 token，这个 token 就进入了下一次前向的输入（这是 §8.2 的自回归）——<strong>写下来的东西，就变成了它下一步可以读的记忆。</strong></p>
+    <p>所以 CoT 的本质是：<mark class="key">用"输出的长度"换取"思考的深度"。</mark>不许它写过程，它只能用 80 层做一道需要 4 步推理的题；让它写 200 个 token 的过程，它就有了 200 次 × 80 层的思考量，而且每一步的中间结果都被牢牢固定在纸上，不会丢。</p>
+    <p><strong>这就是为什么 CoT 不是玄学，而是一笔可以算清的账。</strong>它不是"给模型灌了鸡汤让它努力一点"，它是实实在在地把计算量提高了几十倍。</p>
+  </div>
+
+  <h3>为什么这一招不是"给模型打鸡血"</h3>
+  <p>很多人第一次听说"加一句话就能提分"，第一反应是"这也太玄了，跟哄小孩一样"。上面那个类比已经给了答案，这里再从三个角度把它落实：</p>
+  <ul class="keylist">
+    <li><span class="k">角度一 · 计算量真的变多了</span><span class="v">模型的一次前向计算深度是固定的（层数决定）。多写 200 个 token，就是多跑 200 次前向。<strong>这不是心理作用，是实打实多花了几十倍算力。</strong>你的账单也会诚实地反映这一点。</span></li>
+    <li><span class="k">角度二 · 中间结果被"锚定"了</span><span class="v">一旦"剩 14 支"这四个字被写进上下文，后面的推理就是在一个<strong>确定的事实</strong>上进行的，而不是在一个模糊的内部激活值上。<mark class="key">写下来 = 变成硬事实。</mark></span></li>
+    <li><span class="k">角度三 · 它激活了训练数据里"讲解"那一类文本的模式</span><span class="v">互联网上有大量"解题步骤""教程""推导过程"这类文本。当你说"一步一步来"，模型就切换到了模仿这类文本的模式；而不说的时候，它可能在模仿"答案速查表"那类文本——<strong>后者本来就是不讲道理只给结果的。</strong><strong>相当于</strong>你走进<strong>学校</strong>的<strong>教室</strong>还是走进<strong>图书馆</strong>的答案区，看到的东西完全不同。</span></li>
+  </ul>
+
+  <h3>★ 自一致性：一道题算五遍，投票选答案</h3>
+  <p>CoT 有个明显的软肋：<strong>它是一条单链，中间任何一步错了，后面全跟着错</strong>（回想 §8.2 的"无法回头修改"）。既然采样是随机的（§8.4），那能不能多算几遍，看看大家的答案是否一致？</p>
+  <p>这就是<strong>自一致性</strong>（Self-Consistency）的想法：</p>
+  <ul class="keylist">
+    <li><span class="k">论文</span><span class="v">《Self-Consistency Improves Chain of Thought Reasoning》</span></li>
+    <li><span class="k">作者与出处</span><span class="v">Wang et al.，arXiv 2203.11171，2022 年 3 月，后发表于 <strong>ICLR 2023</strong></span></li>
+    <li><span class="k">机制</span><span class="v"><mark class="key">采样多条不同的推理路径，然后对最终答案做多数投票。</mark></span></li>
+  </ul>
+  <pre><code>做法（假设采样 5 次，temperature 设成 0.7 让路径有差异）：
+
+  第 1 次推理 → ... → 答案：3.5
+  第 2 次推理 → ... → 答案：3.5    ← 走的路径不同，但结论一样
+  第 3 次推理 → ... → 答案：4      ← 这条算错了
+  第 4 次推理 → ... → 答案：3.5
+  第 5 次推理 → ... → 答案：3.5
+
+  投票统计：3.5 得 4 票，4 得 1 票
+  ★ 输出 3.5
+
+关键洞察：
+  正确答案往往只有一个，
+  但错误答案是五花八门的 ——
+  所以「多条路径殊途同归」本身就是正确的信号。</code></pre>
+  <p>论文摘要给出的提升幅度，这组数字可以放心引用：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>基准测试</th><th>提升</th><th>这个测试考什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GSM8K</strong></td><td><strong>+17.9%</strong></td><td>小学数学应用题（多步计算）</td></tr>
+        <tr><td>SVAMP</td><td>+11.0%</td><td>数学应用题（专门设计来考察是否真理解题意）</td></tr>
+        <tr><td>AQuA</td><td>+12.2%</td><td>代数类选择题</td></tr>
+        <tr><td>StrategyQA</td><td>+6.4%</td><td>需要多跳常识推理的是非题</td></tr>
+        <tr><td>ARC-challenge</td><td>+3.9%</td><td>小学科学题里最难的那一批</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>换成生活场景来理解这个机制</strong>：<strong>好比</strong>一位病人去<strong>医院</strong>看疑难病，一位医生的诊断可能出偏；但如果<strong>挂号</strong>找五位不同<strong>科室</strong>的专家分别独立看，其中四位都说同一个结论——<mark class="key">这个结论的可信度就远高于任何单独一位。</mark>而如果五位说了五种不同的答案，那恰好告诉你"这个病例本身就有争议，别轻信"。</p>
+  <p><strong>成本也要算清：</strong>采样 5 条就是 5 倍的输出 token，而输出是最贵的那部分（§8.2 讲过，是输入价的 5～6 倍）。<strong>所以自一致性是典型的"用钱买准确率"</strong>——适合高价值、低频次的场景（医疗辅助、财务核算、法律条款分析），不适合海量低价值请求。</p>
+
+  <h3>CoT 的家族：五种常见变体</h3>
+  <p>2022 年之后，围绕 CoT 衍生出一大堆方法。下面挑几个真正在实践中有用的：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方法</th><th>核心做法</th><th>适合什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>零样本 CoT</strong></td><td>加一句"让我们一步一步想"</td><td>成本最低，任何场景先试这个</td></tr>
+        <tr><td><strong>少样本 CoT</strong></td><td>给几个带完整推理过程的示例</td><td>需要固定推理格式、固定风格时</td></tr>
+        <tr><td><strong>自一致性</strong></td><td>采样多条路径 + 多数投票</td><td>高价值场景，愿意付几倍成本换准确</td></tr>
+        <tr><td><strong>Least-to-Most</strong></td><td>先让模型把大问题拆成一串小问题，再逐个解</td><td>问题层次很深、一次拆不清的情况</td></tr>
+        <tr><td><strong>Program-of-Thought</strong></td><td>让模型写出<strong>代码</strong>而不是写文字推理，真去执行代码拿结果</td><td>需要精确算术的场景——绕开了 §8.1 讲的分词导致的算术弱点</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后那一条特别值得留意。<strong>既然 §8.1 已经讲明白"模型因为分词的缘故天生算不准数"，那最聪明的做法就不是让它硬算，而是让它写一行 <code>print(14/4)</code> 然后真的跑一遍。</strong><mark class="key">这就是"让模型思考、让代码计算"的分工思想，也是今天所有主流 AI 助手都配了代码执行工具的原因。</mark></p>
+
+  <h3>CoT 的历史前奏：这件事其实酝酿了很久</h3>
+  <p>2022 年这两篇论文常被当成"横空出世"，其实它们踩在一条清晰的脉络上。<strong>知道这条脉络，你就能理解为什么当时的人会去想这件事。</strong></p>
+  <p>最早的伏笔在 2020 年 GPT-3 那篇论文《Language Models are Few-Shot Learners》。它揭示了一件事：<mark class="key">模型大到一定程度，只要在提示词里给几个示例，它就能"现学现用"，不必微调。</mark>这个能力叫<strong>上下文学习</strong>（In-Context Learning，简称 ICL）。<strong>换成大白话就是</strong>：你不用重新培训这位员工，只需要在派活时顺手给他看两份做好的样板，他就照着办了。</p>
+  <p>紧接着 2021 年，有人做了另一个方向的尝试：既然模型能模仿示例的<em>格式</em>，那它能不能模仿示例的<em>推理过程</em>？当时的做法是拿带推理过程的数据去<strong>微调</strong>模型（比如"scratchpad"这一系列工作，字面意思就是"草稿纸"）。<strong>这条路证明了"写过程有用"，但代价是要训练。</strong></p>
+  <p>Wei et al. 2022 的突破点正在这里：<strong>不训练，只在提示词里给 8 个带过程的示例，效果就出来了。</strong>而 Kojima et al. 2022 更绝——<strong>连示例都不给</strong>。<strong>本质上就是</strong>这三步：从"要训练"到"给示例"再到"给一句话"，成本一路降到几乎为零，而效果反而更普适。</p>
+  <p><strong>打个比方</strong>：这条脉络<strong>相当于</strong>教一位新来的<strong>会计</strong>怎么核账。第一代做法是送他去培训班上三个月课（微调）；第二代是给他八份做好的样账让他照着做（少样本 CoT）；第三代发现只要在派活时说一句"记得列清每一步"，他自己就会做（零样本 CoT）——<mark class="key">因为他其实一直会，只是之前没人要求他写出来。</mark></p>
+
+  <h3>一个真实的翻车案例：CoT 也会一路错到底</h3>
+  <p>光说好处不够诚实。下面这个例子是 CoT 最典型的失败模式，值得完整看一遍：</p>
+  <pre><code>问：一个水池有进水管和出水管。进水管每小时进 30 升，
+    出水管每小时出 20 升。水池容量 100 升，
+    现在水池是空的，同时打开两管，多久能装满？
+
+模型的 CoT：
+  第一步，进水速度是 30 升/小时。          ✓ 对
+  第二步，出水速度是 20 升/小时。          ✓ 对
+  第三步，净进水速度 = 30 + 20 = 50 升/小时。  ✗ 错了！应该是相减
+  第四步，装满需要 100 ÷ 50 = 2 小时。      ✓ 计算没错，但基于错误的第三步
+  答案：2 小时。                            ✗ 正确答案是 10 小时
+
+问题出在哪：
+  第三步一个符号错了（该减写成了加），
+  之后每一步的推导本身都没毛病 ——
+  这才是最要命的：整条链看起来严丝合缝，
+  错误被后面几步「合理的推导」掩盖了。</code></pre>
+  <p><strong>这就像</strong>一位<strong>会计</strong>做账，第一笔就把"支出"记进了"收入"栏，后面所有加减乘除都算得一丝不差，最后报表数字漂亮得体、格式无可挑剔——<mark class="key">恰恰因为后面都对，你更不会去怀疑第一笔。</mark></p>
+  <p>所以工程上有两条对应的防御手段。<strong>一是让它验算</strong>：加一句"算完后请把答案代回题目检查一次"。上面这道题只要代回去（2 小时 × 净速度，看看是不是 100 升，再看看出水管的水去哪了）就会发现不对。<strong>二是用自一致性</strong>：五条路径里如果只有一条犯了符号错误，投票就能把它筛掉。<strong>本质上就是</strong>拿"多花的成本"去换"错误被发现的概率"。</p>
+
+  <h3>把 CoT 的成本明明白白算一遍</h3>
+  <p>CoT 不是免费的，而且贵得比很多人想象的多。用 Claude Sonnet 4.6（输入 $3 / 输出 $15 每百万 token）算一笔：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>做法</th><th>输入 token</th><th>输出 token</th><th>单次成本</th><th>相对倍数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>直接问答案</td><td>60</td><td>5</td><td>约 $0.00025</td><td>1×</td></tr>
+        <tr><td>零样本 CoT</td><td>75</td><td>250</td><td>约 $0.0040</td><td><strong>约 16×</strong></td></tr>
+        <tr><td>少样本 CoT（8 示例）</td><td>1,200</td><td>250</td><td>约 $0.0074</td><td><strong>约 30×</strong></td></tr>
+        <tr><td>自一致性（5 条路径）</td><td>375</td><td>1,250</td><td>约 $0.0199</td><td><strong>约 80×</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看清最后一行：<strong>自一致性比直接问贵了大约八十倍。</strong>单次看只是两分钱，但如果你的服务一天处理十万次请求，那就是从 25 美元变成 2000 美元——<strong>一年下来差七十多万美元。</strong></p>
+  <p><mark class="key">所以正确的做法不是"全都上 CoT"，而是分级路由。</mark><strong>换成大白话就是</strong>：简单的问题走便宜的通道，难的问题才走贵的通道。具体怎么判断难不难？三种常见办法：<strong>一是用一个小模型先做难度分类</strong>；<strong>二是先直接问一次，如果模型自己表示"不太确定"就升级</strong>；<strong>三是按业务类型硬性划分</strong>（比如"查订单状态"走直接通道，"核算退款金额"走 CoT 通道）。</p>
+  <p><strong>好比</strong><strong>医院</strong>的<strong>分诊</strong>台：不是每个来的人都送去做全套检查，先看几眼分个轻重，头疼脑热的直接开药，胸闷气短的才推去做心脏彩超。<strong>相当于</strong>把最贵的资源留给最需要的人。</p>
+
+  <h3>CoT 不只用在数学题上</h3>
+  <p>因为经典论文都拿数学基准做实验，很多人误以为 CoT 只对算术有用。其实凡是<strong>需要多步才能推出结论</strong>的任务都适用，而且在实际业务里数学题反倒是最少见的一类。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>要求它写出的中间步骤</th><th>解决了什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>合同条款审查</td><td>先摘出原文、再判断风险类型、再给结论</td><td>防止它凭印象下判断，而且能追溯到原文哪一句</td></tr>
+        <tr><td>代码审查 / 排查 bug</td><td>先说明这段代码在做什么、再指出可疑处、再验证假设</td><td>防止它抓住一个表面症状就下定论</td></tr>
+        <tr><td>客服工单分类</td><td>先提取用户的诉求、再对照分类标准、再给类别</td><td>分类标准很细时，直接分类容易漏掉边界情况</td></tr>
+        <tr><td>数据分析结论</td><td>先描述数据特征、再列出可能解释、再排除不成立的</td><td>防止它只讲一个最显眼的解释就收尾</td></tr>
+        <tr><td>翻译长难句</td><td>先拆句子结构、再逐部分译、再组合润色</td><td>长句直译常常语序崩坏</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这五行有一个共同点，值得单独点出来</strong>：它们要求的都不是"算得更准"，而是<mark class="key">"先看清再判断"</mark>。<strong>换成大白话就是</strong>：不要一眼扫过去就下结论，先把手里有什么、要求什么摆清楚。<strong>好比</strong>一位<strong>医生</strong>接诊，不管病人多急，也得先问病史、量体温、看化验单，再下诊断——<strong>本质上就是</strong>把判断建立在明确列出的事实上，而不是建立在第一印象上。</p>
+  <p>还有一个很实用的变体：<strong>要求它写出"反方观点"再决定。</strong>比如"请先说出支持这个方案的三条理由，再说出反对的三条，最后给结论"。<strong>相当于</strong><strong>会议</strong>上专门指定一个人唱反调，防止全场一边倒。<mark class="key">这一招对"模型太爱附和用户"的毛病特别有效。</mark></p>
+
+  <h3>写出好 CoT 提示词的六条实操建议</h3>
+  <ul class="keylist">
+    <li><span class="k">别只说"一步一步想"，说清"哪几步"</span><span class="v">泛泛一句咒语有效，但"请按以下步骤：①先列出已知条件 ②再列出要求的量 ③写出计算式 ④算出结果 ⑤检查单位是否对"效果明显更好。<strong>给结构比给鼓励管用。</strong></span></li>
+    <li><span class="k">要求它先复述题目再动手</span><span class="v">"请先用自己的话把题意说一遍"能有效防止它误读题目。很多错误其实发生在理解阶段，而不是计算阶段。</span></li>
+    <li><span class="k">让它最后自己检查一遍</span><span class="v">"算完后请代回原题验算一次"。这一步几乎免费，却能抓住不少低级错误。</span></li>
+    <li><span class="k">明确要求结论的位置和格式</span><span class="v">推理写完之后，要求"最后一行只输出 <code>答案：XXX</code>"。<strong>这既方便程序解析，也符合 §8.3 讲的"重要的话放两头"——放在结尾的信息最容易被抓准。</strong></span></li>
+    <li><span class="k">别在需要低延迟的场景硬上 CoT</span><span class="v">CoT 会让输出 token 数增加好几倍，直接推高延迟和成本。做实时对话、意图分类这类简单任务，不要为了"看起来严谨"而强加 CoT。</span></li>
+    <li><span class="k">对推理模型不要重复叠加 CoT</span><span class="v">§8.6 那类模型已经把 CoT 训练进去了，你再手写一遍"一步一步想"往往不但没用，有些厂商还明确建议不要这么做——会干扰它自己的推理格式。<strong>换成大白话就是</strong>：人家已经养成了写草稿的习惯，你再站旁边喊"记得打草稿"，只会打断他。</span></li>
+  </ul>
+
+  <h3>CoT 的四个坑，事先知道能省很多麻烦</h3>
+  <p>CoT 不是万能药。下面这几条是实践中反复踩到的：</p>
+  <ul class="keylist">
+    <li><span class="k">坑一 · 过程漂亮但答案错</span><span class="v">这是最危险的情况：推理链条看起来逻辑严密、一步一步很有条理，可某一步的数字或事实是编的，结论跟着错。<mark class="key">"看起来在推理"和"真的在推理"是两件事。</mark><strong>好比</strong>一份写得工整漂亮的<strong>笔记</strong>，格式无可挑剔，但里面有一个数抄错了——工整反而让你不去怀疑它。</span></li>
+    <li><span class="k">坑二 · 过程只是事后编的解释</span><span class="v">有研究观察到，模型有时是"先有了倾向的答案，再倒着编一套过程去圆它"。所以别把 CoT 的过程当成模型真实内部机制的可靠证据——它是输出，不是脑扫描。</span></li>
+    <li><span class="k">坑三 · 对小模型效果有限甚至变差</span><span class="v">CoT 的收益和模型规模强相关。Wei 那篇论文用的是 540B 的大模型。<strong>在很小的模型上强加 CoT，它可能写出一串似是而非的步骤，反而把本来蒙对的答案推歪了。</strong></span></li>
+    <li><span class="k">坑四 · 简单任务上纯属浪费</span><span class="v">让模型判断一句话是好评还是差评，它本来一个 token 就答完了。加上 CoT 之后写了两百字，成本翻二十倍，准确率一点没涨。<strong>该用锤子的时候别抬起挖掘机。</strong></span></li>
+  </ul>
+
+  <h3>代码：把 CoT 和自一致性都跑一遍</h3>
+  <pre><code>from openai import OpenAI
+from collections import Counter
+import re
+
+client = OpenAI()
+Q = ("一个班 23 人，老师买 5 盒笔每盒 12 支，"
+     "先给每人发 2 支，剩下的平分给 4 个学习小组，每组分到几支？")
+
+def ask(prompt, T):
+    r = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=T, max_tokens=500,
+    )
+    return r.choices[0].message.content
+
+# ① 不用 CoT —— 逼它直接给答案
+print("=== 直接问 ===")
+print(ask(Q + "\n只输出一个数字，不要过程。", 0))
+
+# ② 零样本 CoT —— Kojima et al. 那句咒语
+print("\n=== 零样本 CoT ===")
+print(ask(Q + "\nLet's think step by step. 最后一行只输出「答案：X」。", 0))
+
+# ③ 自一致性 —— 采 5 条路径投票（Wang et al.）
+print("\n=== 自一致性（5 条路径投票） ===")
+answers = []
+for i in range(5):
+    text = ask(Q + "\n请一步一步推理。最后一行只输出「答案：X」。", 0.7)
+    m = re.search(r"答案[：:]\s*([\d.]+)", text)
+    if m:
+        answers.append(m.group(1))
+        print(f"  路径 {i+1} → {m.group(1)}")
+
+if answers:
+    winner, votes = Counter(answers).most_common(1)[0]
+    print(f"  投票结果：{winner}（得 {votes}/{len(answers)} 票）")
+
+# 成本提醒：③ 的输出 token 是 ② 的 5 倍，
+# 而输出价是输入价的 5~6 倍 —— 这一票投得不便宜。
+</code></pre>
+  <p>跑一遍你会看到三种结果的差异。<strong>更值得留意的是第③段的投票分布</strong>——如果五条路径给出了五个不同答案，那本身就是一个强烈的警告信号：<mark class="key">这道题模型其实没把握，你不该相信任何一个答案。</mark>这个"分歧度"信息在工程上很有用，可以用来决定"要不要转人工"。</p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"CoT 是心理暗示，属于玄学"</td><td>不对。它实实在在提高了计算量（多写 N 个 token = 多跑 N 次前向），并把中间结果锚定成硬事实</td></tr>
+        <tr><td>"CoT 让 GSM8K 提升了 XX%"</td><td>Wei et al. 摘要<strong>没有给这个百分比</strong>，只说达到当时 SOTA。有明确数字的是 Kojima et al.：GSM8K 10.4%→40.7%，MultiArith 17.7%→78.7%</td></tr>
+        <tr><td>"CoT 论文用了很多示例才做到"</td><td>Wei et al. 摘要明确：<strong>只用 8 个 CoT 示例</strong>提示 540B 模型，就超过了带 verifier 的微调 GPT-3</td></tr>
+        <tr><td>"CoT 写出的过程就是模型真实的思考"</td><td>不一定。有观察表明它有时是"先有答案再倒着编过程"。过程是输出，不是脑扫描</td></tr>
+        <tr><td>"任何模型加 CoT 都有效"</td><td>不对。收益和模型规模强相关，小模型上可能反而变差</td></tr>
+        <tr><td>"自一致性是免费的"</td><td>不对。采 5 条就是 5 倍输出 token，而输出是最贵的那部分</td></tr>
+        <tr><td>"推理模型也要手动加一句一步一步想"</td><td>通常不必，有些厂商还明确建议不要——会干扰它自己训练好的推理格式</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lab" data-lab="quiz"
+       data-q="零样本 CoT（Kojima et al., 2022）只在问题后加了一句「Let's think step by step」，论文摘要报告的 GSM8K 成绩变化是？"
+       data-opts="从 40.7% 提升到 78.7%|从 10.4% 提升到 40.7%|从 17.7% 提升到 78.7%|从 61.4% 提升到 90.8%"
+       data-answer="1"
+       data-explain="Kojima et al.《Large Language Models are Zero-Shot Reasoners》（arXiv 2205.11916，2022 年 5 月，NeurIPS 2022）摘要给出两组明确数字，模型是 text-davinci-002：MultiArith 从 17.7% 提升到 78.7%，GSM8K 从 10.4% 提升到 40.7%。选项 C 那组 17.7%→78.7% 是 MultiArith 的数据，别混。这两组数字之所以震撼，是因为模型一个参数都没改、一个示例都没给，加的只有六个英文单词。背后的机制不是玄学：模型没有内部草稿纸，输出栏是它唯一能存中间结果的地方，写出过程等于用「输出长度」换来了「思考深度」，同时把中间结果锚定成后续推理可以依赖的硬事实。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>思维链（CoT）</strong>就一句话：<mark class="key">让模型把中间推理步骤写出来，而不是直接跳到答案。</mark>它之所以有效，不是心理暗示，而是因为模型没有内部草稿纸——<strong>输出栏是它唯一能存中间结果的地方</strong>。多写 200 个 token，就是多跑 200 次前向，实实在在把计算量提高了几十倍，同时把每个中间结果锚定成后续可依赖的硬事实。</p>
+    <p>两篇奠基论文：<strong>Wei et al.</strong>《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》（arXiv 2201.11903，2022 年 1 月，NeurIPS 2022，Google），摘要明确<strong>仅用 8 个 CoT 示例</strong>提示 <strong>540B</strong>（PaLM）就在 GSM8K 达到当时 SOTA、超过带 verifier 的微调 GPT-3；<strong>Kojima et al.</strong>《Large Language Models are Zero-Shot Reasoners》（arXiv 2205.11916，2022 年 5 月，NeurIPS 2022），只加一句 <code>Let's think step by step</code>，<mark class="key">MultiArith 17.7% → 78.7%，GSM8K 10.4% → 40.7%</mark>。</p>
+    <p>再往上一层是<strong>自一致性</strong>（Wang et al.，arXiv 2203.11171，2022 年 3 月，ICLR 2023）：采样多条推理路径后多数投票，<strong>GSM8K +17.9%</strong>、SVAMP +11.0%、AQuA +12.2%、StrategyQA +6.4%、ARC-challenge +3.9%。代价是几倍的输出 token。</p>
+    <p>四个坑记住：<strong>过程漂亮但答案错、过程可能是事后编的、小模型上收益有限甚至变差、简单任务上纯属浪费。</strong></p>
+    <p>下一节是这条线的终点：既然"让它多想一会儿"这么有效，<strong>为什么不直接把这件事训练进模型里</strong>？2024 年 9 月，OpenAI 的 o1 给出了答案。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-4-sampling.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 8.4 · 采样参数</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./08-6-reasoning.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 8.6 · 推理模型</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 8.5</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

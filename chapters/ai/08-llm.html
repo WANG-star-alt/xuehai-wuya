@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 8 章 · 大语言模型 LLM · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html#vol-ai">智能篇</a>
+      <span class="sep">›</span>
+      <span>第 8 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 08</div>
+    <h1>第 8 章 · 大语言模型 LLM</h1>
+    <div class="cn">Large Language Model · 从一个字到一段推理</div>
+  </header>
+
+  <p class="lead">
+    上一章我们拆开了 Transformer 的心脏。这一章要回答的是另一个问题：<mark class="key">这个心脏装进机器之后，它到底是怎么跟你说话的？</mark>你在对话框里敲下一句话，屏幕上一个字一个字地往外冒——中间到底发生了什么？为什么它有时候胡说八道、有时候又能解开一道你自己都做不出的数学题？为什么"输入便宜、输出贵"？为什么把整本书塞进去，它偏偏漏掉中间那几页？这一章分六节，把这些每天都能亲眼看到的现象，一件一件归因到具体的技术机制上。
+  </p>
+
+  <h3>本章要回答什么</h3>
+  <p>LLM 是 <strong>Large Language Model</strong> 的缩写，中文叫"大语言模型"。这个词你已经听到耳朵起茧，但它具体大在哪儿、语言又是怎么被它拆开重组的，恐怕没几个人说得清。这一章不再讲架构图，而是讲<strong>运行时的真实过程</strong>：文字先被切成什么样的碎片（§8.1），碎片是怎么一块一块被吐出来的（§8.2），一次最多能塞进多少碎片、塞多了会怎样（§8.3），同一个问题为什么每次答得不一样、那几个旋钮各管什么（§8.4），为什么多说一句"我们一步一步想"就能让它算对（§8.5），以及 2024 年之后那批"会先想再答"的新模型到底改了什么（§8.6）。</p>
+
+  <p>具体来说，这六节各回答一个问题：</p>
+  <ul class="keylist">
+    <li><strong>模型眼里的一句话，长什么样？</strong>——它看不见汉字也看不见字母，它看见的是一串编号。一个汉字通常不是一个编号，也不是两个，这里面有一笔很多人算错的账。</li>
+    <li><strong>为什么它非得一个字一个字往外冒？</strong>——不是为了效果好看。要吐 100 个字，就得老老实实跑 100 次完整的模型，一次也省不掉。</li>
+    <li><strong>"上下文窗口"是什么窗？为什么窗越大越贵？</strong>——注意力的账是平方级的，长度翻一倍，成本翻四倍。而且长了以后，中间那段最容易被忽略。</li>
+    <li><strong>temperature、top-p 这几个旋钮到底在调什么？</strong>——它们不改模型，只改"从一堆候选里怎么挑"。调错了，要么车轱辘话来回说，要么胡言乱语。</li>
+    <li><strong>为什么让它"写出过程"就能变聪明？</strong>——因为过程本身就是算力。它没有草稿纸，那些中间步骤只能写在输出里。</li>
+    <li><strong>推理模型跟普通模型差在哪？</strong>——差在肯不肯"多想一会儿"，以及这份"多想"是怎么被训练出来的。这是 2024 年之后 AI 最大的一次范式转弯。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一个只会写下一个字的作家</span>
+    <p>想象一位极其特殊的作家：他被关在一间只有一张桌子的屋子里，桌上摊着已经写好的所有稿纸。他每次只被允许做一件事——<strong>读一遍全部稿纸，然后写下一个字</strong>。写完这一个字，纸被抽走重排，他再从头读一遍，再写下一个字。</p>
+    <p>他没有记忆，没有草稿本，没有"我心里已经想好了结尾"这回事。他手里唯一的凭据，就是桌上那摊纸。<mark class="key">这就是大语言模型的全部工作方式</mark>——一切你觉得神奇的地方（它怎么记住十轮前说的话、它怎么算出一道题、它为什么会突然编造）都能从这一句话里推出来。</p>
+    <p>桌子有多大，就是<strong>上下文窗口</strong>；一个字写在纸上占多少格子，就是<strong>Token</strong>；每写一个字都要重读全部稿纸，就是<strong>自回归</strong>；从一堆候选字里挑哪个落笔，就是<strong>采样</strong>；允许他先在纸上打一大段草稿再写答案，就是<strong>思维链</strong>；训练他"遇到难题必须先打草稿"，就是<strong>推理模型</strong>。这一章六节，正好就是这六件事。</p>
+  </div>
+
+  <h3>为什么这一章要单独拆出来讲</h3>
+  <p>第 7 章讲的是"模型内部长什么样"，属于结构问题。这一章讲的是"模型跑起来是什么样"，属于行为问题。<strong>两者中间隔着一条很深的沟，而绝大多数科普文章都掉在沟里了</strong>——它们讲完注意力就直接跳到"于是就有了 ChatGPT"，中间那一大段被略过去了。</p>
+  <p>可偏偏是被略过的那一段，才和你的日常使用直接相关。你抱怨"它把我前面说的忘了"，根子在上下文窗口和 Lost in the Middle；你抱怨"API 账单怎么这么贵"，根子在输出比输入贵五六倍，而这个差价来自 prefill 和 decode 两个阶段的硬件特性；你抱怨"同样的问题它两次答得不一样"，根子在采样是随机的；你惊讶"加一句咒语就变聪明了"，根子在思维链把推理过程变成了可见的中间计算。<mark class="key">把这六节读完，你对 LLM 的所有困惑都会有一个物理层面的解释，而不是只能归结为"AI 就是这样玄"。</mark></p>
+
+  <h3>这一章怎么读</h3>
+  <p>六节是<strong>严格递进</strong>的，强烈建议按顺序读。§8.1 的 Token 是全章的度量单位，不搞清它，后面讲窗口、讲计费、讲速度全是空的；§8.2 的自回归是全章的运行机制，§8.3 到 §8.6 全都是它的推论。§8.4 之后开始转向"怎么用得更好"，§8.5 和 §8.6 是同一条线的两段——先有人发现"提示词里加一句话就能提分"，后来才有人把这件事直接训练进模型。</p>
+  <p>§8.1 和 §8.4 各配了一个可以亲手玩的互动组件：一个让你看清一句中文被切成了几块，一个让你拖动温度滑块、亲眼看概率分布怎么被压平和拉尖。<strong>这两个组件建议真的动手拖一拖</strong>——很多人读十遍 softmax 公式不如拖一次滑块来得明白。</p>
+
+  <h3>本章的六节</h3>
+  <div class="cards">
+    <a class="card" href="./08-1-token.html">
+      <div class="card-num">§ 8.1</div>
+      <h4>Token 与分词</h4>
+      <p>模型眼里没有汉字，只有编号。一个汉字到底算几个 token？</p>
+    </a>
+    <a class="card" href="./08-2-autoregressive.html">
+      <div class="card-num">§ 8.2</div>
+      <h4>自回归生成</h4>
+      <p>吐 100 个字就得跑 100 次模型——为什么它只能一个字一个字来。</p>
+    </a>
+    <a class="card" href="./08-3-context.html">
+      <div class="card-num">§ 8.3</div>
+      <h4>上下文窗口</h4>
+      <p>桌子有多大、放多了会怎样，以及为什么中间那段最容易丢。</p>
+    </a>
+    <a class="card" href="./08-4-sampling.html">
+      <div class="card-num">§ 8.4</div>
+      <h4>采样参数</h4>
+      <p>temperature、top-p、top-k、惩罚项——四个旋钮各管什么。</p>
+    </a>
+    <a class="card" href="./08-5-cot.html">
+      <div class="card-num">§ 8.5</div>
+      <h4>思维链 CoT</h4>
+      <p>"让我们一步一步想"——一句话把正确率从一成拉到四成。</p>
+    </a>
+    <a class="card" href="./08-6-reasoning.html">
+      <div class="card-num">§ 8.6</div>
+      <h4>推理模型</h4>
+      <p>o1 与 DeepSeek-R1：把"多想一会儿"直接训练进模型里。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">Token 是唯一的计量单位</span><span class="v">窗口大小、价格、速度、限流，全部按 token 算。不搞清 token，后面的账全算不明白。</span></li>
+    <li><span class="k">一次前向只出一个 token</span><span class="v">这是 LLM 一切延迟和成本的根源。输出 500 个字，就是 500 次串行的模型调用。</span></li>
+    <li><span class="k">输入便宜、输出贵，是硬件决定的</span><span class="v">读你的问题可以整段并行算，写答案只能一个一个挤——所以主流 API 的输出价常是输入价的五六倍。</span></li>
+    <li><span class="k">同一个问题两次答案不同，是设计如此</span><span class="v">采样本来就带随机性。把温度调到 0 也不能保证完全复现，浮点运算和批处理都会插一手。</span></li>
+    <li><span class="k">推理能力不只靠模型大，也靠"想得久"</span><span class="v">2024 年之后最重要的发现：多花点推理时的算力去思考，效果提升和多花训练算力一样有效。</span></li>
+  </ul>
+
+  <div class="pager">
+    <a class="btn prev" href="./07-5-moe.html">
+      <span class="dir">← 上一章</span>
+      <span class="title">§ 7.5 · MoE 专家混合</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./08-1-token.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 8.1 · Token 与分词</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · 第 8 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

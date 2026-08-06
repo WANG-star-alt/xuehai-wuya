@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 8.2 · 自回归生成 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./08-llm.html">智能篇 · 第 8 章</a>
+      <span class="sep">›</span>
+      <span>§ 8.2</span>
+    </div>
+    <a href="./08-llm.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 8.2 · Section</div>
+    <h1>自回归生成</h1>
+    <div class="cn">Autoregressive Generation</div>
+  </header>
+
+  <p class="lead">
+    你有没有想过一个问题：为什么 ChatGPT 的答案是一个字一个字往外冒的？<mark class="key">这不是为了看起来像在打字，也不是网速慢——它真的只能一次算出一个字。</mark>要写 500 个字的答案，就得把整个上千亿参数的模型完整跑 500 遍，一遍也省不掉，而且这 500 遍必须严格排队、一个接一个。这一节要把这个机制彻底讲透，因为 LLM 世界里几乎所有关于"慢"和"贵"的问题，源头都在这里——包括那个所有人都在问的"为什么输出比输入贵五六倍"。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍜 一个只会做"下一勺"的厨师</div>
+    <p>想象一家<strong>餐厅</strong>后厨有位规矩极其古怪的<strong>厨师</strong>。他做菜的方式是这样的：</p>
+    <p>每往锅里加一样东西之前，他必须<strong>先把锅里已有的所有东西从头到尾看一遍</strong>——一片一片数清楚，闻一遍味道，然后才决定"下一勺该加盐还是加糖"。加完这一勺，他不许接着往下加，必须重新从头再把锅里的东西看一遍，才能决定下一勺。</p>
+    <p>你在<strong>窗口</strong>外面看着，会觉得他慢得不可理喻——菜是一勺一勺变出来的，而且越到后面越慢，因为锅里的东西越来越多，每次"从头看一遍"的时间也越来越长。</p>
+    <p><mark class="key">但他并不是笨，而是他的能力恰好只有一种：给定"目前锅里的全部内容"，判断"下一勺该放什么"。</mark>他没有菜谱，没有"我心里已经想好这道菜是宫保鸡丁"这种全局计划。整道菜就是这一个能力被反复调用几百次的结果。</p>
+    <div class="link">→ <strong>自回归</strong>（Autoregressive）= 每生成一个新单位，都要把"已经生成的全部内容"重新当作输入喂一遍。</div>
+  </div>
+
+  <h3>把"自回归"这个词拆开</h3>
+  <p><strong>自回归</strong>这三个字听着玄，拆开看其实很直白：<strong>「自」= 拿自己的输出当输入；「回归」= 统计学里"预测一个数值"的意思。</strong>合起来<strong>说白了就是</strong>：<mark class="key">我拿我刚才写出来的东西，当成下一步的题干，来预测再下一个该写什么。</mark></p>
+  <p>它对应的英文缩写是 <strong>AR</strong>（Autoregressive）。你会在论文里频繁看到"AR model"这个说法，指的就是这类"从左到右一个一个往外吐"的模型。GPT 里那个 G 就是 <strong>Generative</strong>（生成式），而它的生成方式正是自回归。</p>
+  <p>整个过程用文字写出来，不带任何数学也能看懂：</p>
+  <pre><code>你输入： "今天天气"
+
+第 1 次前向（跑一遍完整模型）
+  输入 = [今天, 天气]
+  模型输出 = 词表里每个 token 的概率
+       "很"    35%
+       "怎么"  22%
+       "不"    15%
+       ... （约 10 万个候选，各有一个概率）
+  挑一个 → "很"
+  现在已生成： "今天天气很"
+
+第 2 次前向（重新跑一遍完整模型）
+  输入 = [今天, 天气, 很]      ← 注意：把刚生成的"很"也塞回去了
+  模型输出 = 概率分布
+       "好"    41%
+       "热"    19%
+       "冷"    12%
+  挑一个 → "好"
+  现在已生成： "今天天气很好"
+
+第 3 次前向（再重新跑一遍完整模型）
+  输入 = [今天, 天气, 很, 好]
+  模型输出 = 概率分布
+       "。"      33%
+       "，"      21%
+       "&lt;EOS&gt;"   18%
+  挑一个 → "。"
+
+第 4 次前向
+  输入 = [今天, 天气, 很, 好, 。]
+  挑出 → &lt;EOS&gt;   ← 模型自己写下"结束"标记
+  停止。
+
+总共： 输出 4 个 token，跑了 4 次完整的模型前向。</code></pre>
+  <p>请特别注意最后一行。<mark class="key">输出 N 个 token = 跑 N 次完整模型。</mark>这条等式是本节的核心，后面所有结论都是它的推论。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 蒙眼下山，每一步都要重新摸一遍脚下</span>
+    <p><strong>好比</strong>你蒙着眼在<strong>下山</strong>。你没有地图，没有全局视野，唯一能做的就是：用脚在四周试探一圈，感觉哪边是下坡，然后迈一步。</p>
+    <p>迈完这一步，你不能凭刚才的印象继续走——因为位置变了，你必须<strong>重新用脚试探一圈</strong>，才能决定下一步。走一百步，就得试探一百次。</p>
+    <p><mark class="key">更要紧的是：你无法"撤回"。</mark>一旦这一步迈出去，你就站在新位置上了，之前那一步是好是坏，你只能在这个新位置上继续往下走。<strong>模型也一样——它一旦吐出了一个词，这个词就成了后续所有推理的既定前提，不会回头改。</strong></p>
+    <p>这解释了一个非常常见的现象：<strong>模型有时候会一路把话说错到底。</strong>它在第 3 个 token 上选了一个略微不妙的词（比如把一个人名记错了），后面 200 个 token 全都建立在这个错误之上，越编越圆、越圆越离不开。因为在它的世界里，<em>已经写下的东西就是事实</em>。<strong>这就是"幻觉"最常见的一种发生机制，跟"模型撒谎"没关系，纯粹是自回归这个结构决定的。</strong></p>
+  </div>
+
+  <h3>为什么不能一次把 100 个字全算出来</h3>
+  <p>这是最值得追问的一个"为什么"。既然 Transformer 号称"能并行处理整个序列"（第 7 章反复强调过），那为什么生成的时候反而变成了串行？</p>
+  <p>答案在于：<mark class="key">并行的前提是"输入已经全部知道"。</mark>训练的时候，整篇文章都摆在那儿，模型可以一次把 2048 个位置全算完（用一个叫"因果掩码"的技巧遮住未来，让每个位置只能看到自己左边的内容）。但生成的时候，<strong>第 51 个 token 是什么，取决于第 50 个 token 是什么；而第 50 个 token 此刻还不存在</strong>——你没法并行算一个还不存在的东西。</p>
+  <p>这件事在学术上有一句极其精准的表述。2022 年 11 月 Google 团队的投机解码论文（Leviathan et al.，arXiv 2211.17192）开篇就点明：<strong>解码 K 个 token 需要 K 次<em>串行</em>的模型前向</strong>。<strong>这一句话是解释"为什么 LLM 逐字输出"最权威的依据</strong>，值得记住。</p>
+  <p>用一个日常例子对比就更清楚了：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景</th><th>能不能并行</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>批改 100 份已经写好的<strong>作业</strong></td><td>能，找 100 个人同时改</td><td>100 份都在手上，互不依赖</td></tr>
+        <tr><td>写一篇 100 句的文章，每句要接上一句</td><td>不能</td><td>第 2 句必须等第 1 句定稿</td></tr>
+        <tr><td>LLM 处理你的输入（prefill）</td><td><strong>能</strong></td><td>你的整段话已经在手上了</td></tr>
+        <tr><td>LLM 生成答案（decode）</td><td><strong>不能</strong></td><td>下一个 token 依赖上一个</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后两行就是本节最重要的一张表，它把一次推理明确切成了两个性质完全不同的阶段。下面我们把这两个阶段单独讲。</p>
+
+  <h3>★ prefill 与 decode：两个完全不同的阶段</h3>
+  <p>这两个词是<strong>业界标准术语</strong>，几乎所有推理框架（vLLM、TensorRT-LLM、SGLang）的文档里都在用。搞懂它们，你就同时搞懂了 LLM 的延迟、吞吐和定价。</p>
+  <p><strong>Prefill（预填充）</strong>——处理你输入的那一段。你的 prompt 已经完整地摆在那儿了，所以模型可以<mark class="key">把整段话的所有 token 一次性并行算完</mark>，一次前向就搞定，不管你的输入是 100 个 token 还是 10 万个。它的特点是：</p>
+  <ul class="keylist">
+    <li><span class="k">计算密集（compute-bound）</span><span class="v">一次要做巨大的矩阵乘法，GPU 的算力单元被吃得满满的。这是 GPU 最喜欢的活儿。</span></li>
+    <li><span class="k">决定 TTFT</span><span class="v"><strong>TTFT</strong>（Time To First Token，"到第一个字出现要多久"）主要由 prefill 决定。你把一份 5 万字的文档扔进去，那个"转圈圈等半天才吐出第一个字"的过程，就是它在做 prefill。</span></li>
+    <li><span class="k">输入越长，这一步越慢</span><span class="v">而且是平方级慢（注意力的账），不是线性。</span></li>
+  </ul>
+  <p><strong>Decode（解码）</strong>——一个一个往外吐答案。每一步只算一个新 token，<mark class="key">严格串行，一步也不能省</mark>。它的特点恰好和 prefill 相反：</p>
+  <ul class="keylist">
+    <li><span class="k">显存带宽密集（memory-bandwidth-bound）</span><span class="v">这是最反直觉的一点：每生成一个 token，都要把<strong>整个模型的全部权重</strong>从显存里搬到计算单元里过一遍，但真正的计算量只够算一个 token。<strong>相当于</strong>为了炒一根青菜，把整个<strong>仓库</strong>的货全搬到<strong>案板</strong>上过一遍——搬货的时间远超炒菜的时间。</span></li>
+    <li><span class="k">决定 TPOT</span><span class="v"><strong>TPOT</strong>（Time Per Output Token，"每个输出字要多久"）由它决定。你在屏幕上看到的那个吐字速度，就是它。</span></li>
+    <li><span class="k">算力用不满</span><span class="v">GPU 的算力单元大部分时间在等数据搬过来。这就是为什么推理服务要"攒批"（把多个用户的请求凑一批一起算）——反正权重都搬过来了，顺手多算几个用户的，几乎不额外花时间。</span></li>
+  </ul>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>Prefill（读你的问题）</th><th>Decode（写答案）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>并行性</td><td><strong>整段并行</strong>，一次前向搞定</td><td><strong>严格串行</strong>，N 个 token 跑 N 次</td></tr>
+        <tr><td>瓶颈在哪</td><td>算力（compute-bound）</td><td>显存带宽（memory-bound）</td></tr>
+        <tr><td>决定什么指标</td><td>TTFT（等第一个字多久）</td><td>TPOT（每个字多久）</td></tr>
+        <tr><td>GPU 利用率</td><td>高，吃满算力</td><td>低，大量时间在搬权重</td></tr>
+        <tr><td>能否缓存复用</td><td><strong>能</strong>（前缀相同就复用，这是缓存折扣的来源）</td><td>不能</td></tr>
+        <tr><td>API 上对应</td><td>input tokens</td><td>output tokens</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>★ 这就是"输入便宜、输出贵"的全部答案</h3>
+  <p>现在我们可以来解那笔谁都想问的账了。把 §8.1 提过的价格表再摊一遍（查询日期 2026 年 8 月 6 日，单位：每百万 token 美元）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>输入价</th><th>输出价</th><th>倍数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPT-5.6 Sol</td><td>$5</td><td>$30</td><td><strong>6 倍</strong></td></tr>
+        <tr><td>Claude Opus 4.7</td><td>$5</td><td>$25</td><td><strong>5 倍</strong></td></tr>
+        <tr><td>Claude Sonnet 4.6</td><td>$3</td><td>$15</td><td>5 倍</td></tr>
+        <tr><td>DeepSeek-V4-Flash</td><td>$0.14（缓存命中 $0.0028）</td><td>$0.28</td><td>2 倍</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么普遍是五六倍？<mark class="key">因为处理 100 万个输入 token 只需要少量几次前向，而生成 100 万个输出 token 需要整整 100 万次前向。</mark></p>
+  <p><strong>把这个差距换算成可感知的量。</strong>假设你给模型一份 1000 token 的问题，它回答了 1000 token：</p>
+  <pre><code>Prefill（读你的 1000 token 问题）
+    1 次前向，一次算完 1000 个位置
+    → 对 GPU 来说是「一次大批量的矩阵乘法」，正中舒适区
+
+Decode（写 1000 token 的答案）
+    1000 次前向，每次只产出 1 个 token
+    每一次都要把整个模型的权重（几百 GB 级别）
+    从显存搬到计算单元过一遍
+    → 1000 次搬运，1000 次串行等待
+
+同样是 1000 个 token，硬件付出的代价差了三个数量级。
+价格上只差 5～6 倍，其实已经算厂商厚道了
+（因为「攒批」能把 decode 的成本摊薄给多个用户分担）。</code></pre>
+  <p>顺便说清另一件事：<strong>为什么缓存命中能便宜到十分之一甚至五十分之一？</strong>因为缓存省掉的正是 prefill——如果你这次请求的开头一大段和上次完全一样，服务端把上次 prefill 算出来的中间结果留着，这次直接拿来接着用，一次矩阵乘法都不用做。<strong>这就像</strong><strong>餐厅</strong>后厨提前熬好的一大锅高汤：不是每来一位客人都要重新熬八小时，舀一勺就上菜。<mark class="key">工程启示极其明确：把不变的长内容（系统提示词、知识库、示例）放在提示词最前面，变化的部分放最后，缓存命中率才高。</mark></p>
+  <p>还有一个不太被注意的推论：<strong>让模型"少说废话"是最直接的省钱手段。</strong>同样解决一个问题，一个啰嗦的提示词让它输出 2000 token，一个精炼的提示词让它输出 300 token，成本差近七倍——而这七倍是花在最贵的那一段上的。</p>
+
+  <h3>KV Cache：不重算前面的部分</h3>
+  <p>看到这里你可能会有个疑问：<em>如果每生成一个 token 都要"把已生成的全部内容重新喂一遍"，那生成第 1000 个 token 时是不是要重新算前 999 个 token 的注意力？那不是慢得没边了？</em></p>
+  <p>问得非常好，而答案是：<strong>确实是那么定义的，但工程上有个救命的优化，叫 KV Cache。</strong></p>
+  <p>回忆第 7 章：注意力要给每个 token 算出三样东西——<strong>Q</strong>（Query，我要问什么）、<strong>K</strong>（Key，我的标签是什么）、<strong>V</strong>（Value，我的内容是什么）。关键洞察是：<mark class="key">已经生成过的那些 token，它们的 K 和 V 是不会变的。</mark>第 5 个 token 的 K 和 V，在生成第 6 个、第 100 个、第 1000 个 token 时都完全一样。</p>
+  <p>所以做法很朴素：<strong>把算过的 K 和 V 都存起来，下一步直接拿来用，只算新 token 那一个的 Q、K、V。</strong></p>
+  <pre><code>没有 KV Cache（朴素做法）：
+  生成第 1 个 token → 算 1 个位置的 KV
+  生成第 2 个 token → 重算 2 个位置的 KV
+  生成第 3 个 token → 重算 3 个位置的 KV
+  ...
+  生成第 N 个 token → 重算 N 个位置的 KV
+  总计算量 ≈ 1+2+3+...+N ≈ N²/2     ← 平方级，灾难
+
+有 KV Cache：
+  生成第 1 个 token → 算 1 个新位置，存进 cache
+  生成第 2 个 token → 只算 1 个新位置，读 cache 里的 1 个
+  生成第 3 个 token → 只算 1 个新位置，读 cache 里的 2 个
+  ...
+  总计算量 ≈ N                        ← 线性，可以接受
+
+代价：cache 要占显存，而且随序列长度线性膨胀。</code></pre>
+  <p><strong>这就像</strong>你在<strong>图书馆</strong>查资料做<strong>笔记</strong>：<strong>你不会每查一本新书都把之前所有书重读一遍，而是把每本书的要点抄在便签上贴着——查新书时扫一眼那排便签就行。</strong>KV Cache 就是那排<strong>便签</strong>。</p>
+  <p>那 cache 要占多少显存？按定义可以直接推出一个公式：</p>
+  <pre><code>KV Cache 显存占用（按定义推导，非某篇论文的结论）
+
+  = 2 × 层数 × 序列长度 × KV头数 × head维度 × batch大小 × 每个数占的字节数
+    ↑
+    这个 2 是因为要存 K 和 V 两份
+
+读法：
+  「层数」    每一层 Transformer 都有自己的一套 KV，都得存
+  「序列长度」 对话越长，存的越多  → 线性增长
+  「batch」   同时服务的用户越多，存的越多 → 线性增长
+  「KV头数」  这一项是唯一能被架构优化砍掉的
+
+核心结论（这才是要记住的）：
+  KV Cache 随「序列长度」和「同时服务的用户数」线性增长。
+  它是长上下文推理最主要的显存瓶颈。</code></pre>
+  <p>请注意，这个公式我标注为<strong>「按定义推导」</strong>——它不出自某篇特定论文，就是把"要存什么"数一遍的结果。<strong>同时我刻意不给"某某模型占多少 GB"这类具体数字</strong>，因为那高度依赖具体层数、头数、精度和实现，随便报一个数只会误导人。<mark class="key">该记住的是趋势而不是数字：线性增长，且是长上下文的头号显存瓶颈。</mark></p>
+
+  <h3>为了砍掉 KV Cache，架构被改了三次</h3>
+  <p>上面那个公式里，唯一能动的项是"<strong>KV 头数</strong>"。于是整个行业沿着这一项做了三代优化，这条线索非常清楚：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方案</th><th>全称</th><th>做法</th><th>KV Cache 变化</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>MHA</strong></td><td>Multi-Head Attention</td><td>标准做法：每个注意力头有自己独立的 K 和 V</td><td>基准（最占显存）</td></tr>
+        <tr><td><strong>MQA</strong></td><td>Multi-Query Attention</td><td>所有头<strong>共用同一套</strong> K 和 V</td><td>降到 1/头数（极省，但效果有损）</td></tr>
+        <tr><td><strong>GQA</strong></td><td>Grouped-Query Attention</td><td>折中：头分成几组，<strong>每组共用一套</strong> K/V</td><td>降到 1/组数（当前主流选择）</td></tr>
+        <tr><td><strong>MLA</strong></td><td>Multi-head Latent Attention</td><td>把 K/V <strong>压缩成一个低维的"潜向量"</strong>再存，用时再还原</td><td>大幅下降，DeepSeek 采用</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>换成大白话说这四种的区别</strong>：<strong>好比</strong>一间<strong>办公室</strong>里八个人各干各的活。<strong>MHA</strong> 是八个人各配一台<strong>打印机</strong>，谁也不用等，但设备成本八倍；<strong>MQA</strong> 是八个人合用一台，省到极致但要排队、还容易互相将就；<strong>GQA</strong> 是分成两组、每组一台，既不太挤也不太浪费——这是今天多数模型的选择；<strong>MLA</strong> 走了另一条路，它不是减少设备数量，而是<strong>把要打印的文件先压缩成摘要存着，用的时候再展开</strong>，这是 DeepSeek 系列的招牌手法。</p>
+  <p><mark class="key">这四个缩写以后你在模型技术报告里会反复见到，它们背后的动因全在那个显存公式里——为了让 KV Cache 别把显存吃光。</mark></p>
+
+  <h3>训练和推理，其实是两套不同的活儿</h3>
+  <p>这里有一个特别容易被忽略、但一说就通的关键区别。<mark class="key">模型在训练时其实是"并行"的，只有在推理时才变成串行。</mark>很多人以为训练也是一个字一个字来的，那就完全误解了训练成本从何而来。</p>
+  <p>训练时，一整篇文章已经摆在那儿了。模型可以一次把整篇文章的每个位置都当成一道"填空题"同时做：第 1 个位置猜第 2 个字，第 2 个位置猜第 3 个字，第 100 个位置猜第 101 个字——<strong>这几千道题一次算完</strong>。为了防止作弊（第 5 个位置偷看第 6 个字的答案），加了一个叫<strong>因果掩码</strong>（Causal Mask）的东西，把每个位置右边的内容遮住。这套做法有个专门的名字叫 <strong>Teacher Forcing</strong>（教师强制）——每一步都拿<em>标准答案</em>当作前文，而不是拿模型自己上一步的输出。</p>
+  <p><strong>这就像</strong>老师批一整本<strong>作业</strong>：一百道填空题，老师可以同时批完，因为每道题的题干都是印在卷子上的既定内容，互不干扰。可等到<strong>考试</strong>的时候，学生必须一道一道往下做，而且第二道题的条件恰好是第一道题的答案——<strong>一旦第一道错了，后面全跟着歪</strong>。</p>
+  <p>这个差异带来一个有名的问题叫 <strong>Exposure Bias</strong>（曝光偏差）：训练时模型看到的前文永远是完美的标准答案，推理时看到的前文却是自己刚吐出来的、可能有瑕疵的内容。<mark class="key">它从没被训练过"如何在自己写歪了之后补救"</mark>——这又是幻觉和跑题的另一层结构性原因。<strong>换成大白话：一个只做过带答案的练习册、从没独立考过试的学生，第一次真上考场必然不适应。</strong></p>
+
+  <h3>把速度指标算成能感知的数</h3>
+  <p>厂商宣传里那些"每秒 100 token"的数字，得换算成日常能体会的量才有意义。<strong>业界经验值</strong>是 1 个 token 大约对应 0.6～0.7 个汉字（因为一个汉字约 0.6 个 token，反过来算），我们粗略按 1 token ≈ 1.5 个汉字来估：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>吐字速度</th><th>换算成汉字</th><th>直观感受</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>10 token/秒</td><td>约 15 字/秒</td><td>比正常人朗读稍快，看着略显吃力</td></tr>
+        <tr><td>30 token/秒</td><td>约 45 字/秒</td><td>比你能读进去的速度快，体感流畅</td></tr>
+        <tr><td>100 token/秒</td><td>约 150 字/秒</td><td>刷屏，眼睛完全跟不上</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>关键的心理学阈值是：<mark class="key">只要吐字速度超过人的阅读速度（每秒二十几个汉字），再快对体验的提升就很有限了。</mark>所以工程上优化 TTFT（让第一个字尽快出来）的收益，常常比继续拉高 TPOT 更明显——用户忍不了的是开头那段空白，而不是后面吐得不够快。<strong>这就像</strong><strong>地铁</strong>进站：让人焦虑的是站台屏幕上"暂无信息"，而不是列车时速再快十公里。</p>
+
+  <h3>模型怎么知道该停下来</h3>
+  <p>既然是"一个一个往外吐"，那它凭什么停？总不能吐到宇宙尽头。答案有三条，按优先级排：</p>
+  <ul class="keylist">
+    <li><span class="k">它自己吐出了 EOS</span><span class="v">最正常的情况。<strong>EOS</strong>（End Of Sequence，序列结束符）是词表里一个真实存在的 token。当模型觉得"话说完了"，EOS 的概率就会飙到最高，被采样选中，生成循环立刻终止。<mark class="key">注意：不是有个程序在旁边掐表喊停，是模型自己写下了"完"这个字。</mark></span></li>
+    <li><span class="k">撞上 max_tokens 上限</span><span class="v">你在 API 里设的输出上限。撞上了就硬切断，哪怕话没说完。<strong>你偶尔看到模型答案在半句话中间断掉，八成就是这个原因</strong>——不是它坏了，是额度用完了。</span></li>
+    <li><span class="k">撞上自定义的停止词</span><span class="v"><code>stop</code> 参数。你可以指定"一遇到这个字符串就停"，常用于让模型只填一个字段、不要往下续写。</span></li>
+  </ul>
+  <p>由此得到一条很实用的排查经验：<strong>答案在句子中间突然断掉 → 先查 max_tokens；答案该长却很短 → 查是不是提前吐了 EOS（提示词没说清要多详细）；答案停不下来、一直重复 → 采样参数问题，这是 §8.4 的主题。</strong></p>
+
+  <h3>流式输出：为什么你看到它在"打字"</h3>
+  <p>既然每一步都产出一个 token，那服务端有两个选择：<strong>等全部生成完，一次性把整段返回给你；或者每算出一个 token 就立刻推给你。</strong>后者就是<strong>流式输出</strong>（streaming）。</p>
+  <p>流式并不会让生成变快一分一秒——总耗时完全一样。它改变的只有一件事：<mark class="key">你的等待感受</mark>。让用户在 0.5 秒后看到第一个字、然后持续有字冒出来，体验上远好过让他对着空白转圈 15 秒然后一次性出现一整段。<strong>这就像</strong>在<strong>餐厅</strong><strong>排队</strong>，队伍缓慢但一直在动，比队伍完全不动却告诉你"很快就好"要让人安心得多。</p>
+  <p>技术上流式用的是 <strong>SSE</strong>（Server-Sent Events，服务器推送事件）——一个 HTTP 长连接，服务端边算边往里写数据。工程上要留意两件事：<strong>一是中途出错怎么办</strong>（已经推给用户的字收不回来了，得设计"追加一条错误提示"而不是"替换整个回答"）；<strong>二是别在前端逐 token 重排整个页面</strong>，那会卡到没法看，要用追加而不是重绘。</p>
+
+  <h3>投机解码：一个"不改变答案"的加速魔法</h3>
+  <p>既然串行是死结，能不能作弊？<strong>能，而且这个办法优雅得让人拍案。</strong></p>
+  <p>2022 年 11 月，Google 的 Leviathan 等人提出<strong>投机解码</strong>（Speculative Decoding），论文名《Fast Inference from Transformers via Speculative Decoding》（arXiv 2211.17192），后来入选 ICML 2023 Oral。思路是这样的：</p>
+  <pre><code>常规做法：
+  大模型 → 猜第 1 个 → 猜第 2 个 → 猜第 3 个 → ...
+  每一步都要跑一次庞大的大模型，慢。
+
+投机解码：
+  Step 1  让一个「小模型」（draft model，草稿模型）
+          快速连猜 K 个 token，比如猜 4 个：
+              "今天天气很好"
+
+  Step 2  把这 4 个猜测一起交给大模型，
+          让大模型「一次前向并行验证」——
+          注意：验证 4 个 token 和验证 1 个 token
+          对大模型来说耗时几乎一样
+          （因为 decode 是显存带宽瓶颈，不是算力瓶颈！）
+
+  Step 3  大模型逐个核对：
+              "今" ✓  "天" ✓  "天" ✓  "气" ✗
+          前 3 个采纳，从第 4 个开始丢掉重来。
+
+  结果：一次大模型前向，采纳了 3 个 token
+        → 相当于把 3 步压成 1 步。</code></pre>
+  <p>这里有两个点必须讲清，否则会误解：</p>
+  <ul class="keylist">
+    <li><span class="k">★ 它是无损的</span><span class="v">这是最关键的保证：<mark class="key">投机解码不改变输出分布</mark>。数学上可以证明，经过那个"接受/拒绝"的核对规则之后，最终输出的概率分布和大模型自己一个一个吐出来<strong>完全一致</strong>。所以它是纯粹的加速，不是"用小模型的质量换速度"。</span></li>
+    <li><span class="k">不需要重训练、不需要改架构</span><span class="v">它是一个纯推理阶段的技巧，现成的模型直接就能用。</span></li>
+    <li><span class="k">论文报告的实测</span><span class="v">在 T5-XXL 上取得 <strong>2×–3× 的加速，且输出与原模型完全一致</strong>。</span></li>
+  </ul>
+  <p><strong>为什么这招管用？</strong>因为它把"最贵的资源"换成了"最便宜的资源"。decode 阶段真正的瓶颈是<em>搬权重</em>（显存带宽），不是<em>算数</em>（算力）。既然权重都搬来了，顺手验证 4 个 token 和验证 1 个几乎不多花时间——<strong>那不如让小模型先胡乱猜几个，赌它猜对。猜对了净赚，猜错了也只损失一点小模型的算力。</strong></p>
+  <p><strong>打个比方</strong>：这<strong>相当于</strong>一位大领导审文件。原来是秘书写一句、领导批一句，来回跑八趟。现在改成秘书一口气写四句草稿一起递上去，领导一眼扫完："前三句照准，第四句重写。"<mark class="key">领导的批阅动作只花了一次，却推进了三句——而且最终定稿和领导逐句亲自写出来的一字不差。</mark></p>
+
+  <h3>自回归的先天局限：三件它做不好的事</h3>
+  <p>理解了机制，就能预判它的短板。这三条不是"训练不够"，是结构决定的：</p>
+  <ul class="keylist">
+    <li><span class="k">一、无法回头修改</span><span class="v">已生成的 token 是既定事实。开头三个字写偏了，后面 500 个字只能在偏了的基础上继续。这是幻觉、跑题、越说越离谱的结构性根源。人类写作会反复删改，自回归模型没有"删除键"。</span></li>
+    <li><span class="k">二、没有全局规划</span><span class="v">它不是先想好结构再落笔，而是每一步只做局部最优选择。让它写一首每句首字连起来是"春夏秋冬"的藏头诗，它很容易在第三句就崩——因为它是走一步看一步，没有"我必须给第四句留出个'冬'字"这种前瞻。</span></li>
+    <li><span class="k">三、输出长度直接等于时间和钱</span><span class="v">输出 2000 token 就是 2000 次串行前向，谁也绕不过去。这也解释了为什么推理模型（§8.6）那么慢那么贵——它们的"思考过程"本身就是几千个 output token。</span></li>
+  </ul>
+  <p>值得一提的是，学界一直在尝试非自回归的路子。<strong>扩散语言模型</strong>就是一条——它借用画图模型的思路，先生成一整段"模糊的草稿"，再一轮一轮把它"洗清楚"，理论上可以并行出很多 token。<strong>好比</strong>画画：自回归是从左上角开始一笔一笔画到右下角，扩散是先铺一层大色块、再一遍遍加细节。这条路线在 2025 年前后开始出现能用的模型，但<mark class="key">截至目前，主流生产级 LLM 仍然清一色是自回归的</mark>。别把研究方向当成已发生的事实。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="为什么主流 LLM API 的输出价格通常是输入价格的 5～6 倍？"
+       data-opts="输出的文字更有价值，所以厂商定价更高|输入可以整段并行算一次，输出必须每个 token 跑一次完整的模型前向|输出需要额外的内容安全审核，成本更高|输出的 token 占用的存储空间更大"
+       data-answer="1"
+       data-explain="根本原因在硬件层面。处理输入叫 prefill：你的整段话已经全部在手上，模型可以一次前向把所有位置并行算完，属于计算密集型，正中 GPU 舒适区。生成输出叫 decode：下一个 token 依赖上一个，必须严格串行，生成 N 个 token 就要跑 N 次完整前向，而每次都得把整个模型的权重从显存搬一遍，属于显存带宽密集型，GPU 算力大量空转。所以同样数量的 token，输出付出的硬件代价远高于输入。也正因为 prefill 的中间结果可以复用，才有了缓存命中的大幅折扣。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>自回归</strong>的全部内容就一句话：<mark class="key">每生成一个新 token，都要把已生成的全部内容重新当输入喂一遍——输出 N 个 token 就是 N 次串行的完整模型前向。</mark>投机解码论文那句"解码 K 个 token 需要 K 次串行前向"是最权威的表述。</p>
+    <p>由此切出两个性质相反的阶段：<strong>prefill</strong> 整段并行、计算密集、决定"等第一个字多久"（TTFT）、中间结果可缓存复用；<strong>decode</strong> 严格串行、显存带宽密集、决定"每个字多久"（TPOT）。<strong>这一条直接解释了主流 API 输出价是输入价 5～6 倍（GPT-5.6 Sol 6 倍、Claude Opus 4.7 5 倍），以及缓存命中能便宜到十分之一甚至五十分之一。</strong></p>
+    <p>工程上靠 <strong>KV Cache</strong> 把重算从平方级降到线性，代价是显存随序列长度和并发用户数<strong>线性增长</strong>——这正是 MQA / GQA / MLA（DeepSeek 用 MLA）这一串架构优化的全部动因。想再快，就用<strong>投机解码</strong>：小模型猜几个、大模型一次并行验证，<mark class="key">关键在于它保证不改变输出分布，是无损加速</mark>，论文在 T5-XXL 上报告 2×–3× 且输出完全一致。</p>
+    <p>下一节讲那张"桌子"到底有多大：<strong>上下文窗口</strong>，以及为什么塞进去的东西越多，中间那段越容易被漏掉。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-1-token.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 8.1 · Token 与分词</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./08-3-context.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 8.3 · 上下文窗口</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 8.2</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>
