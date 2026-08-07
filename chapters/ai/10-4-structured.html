@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 10.4 · 结构化输出 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./10-prompt.html">智能篇 · 第 10 章</a>
+      <span class="sep">›</span>
+      <span>§ 10.4</span>
+    </div>
+    <a href="./10-prompt.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 10.4 · Section</div>
+    <h1>结构化输出</h1>
+    <div class="cn">Structured Outputs</div>
+  </header>
+
+  <p class="lead">
+    前面三节，我们都在教模型「怎么把话说好」。这一节换一个方向：<mark class="key">怎么让模型把话说成程序能直接读的样子。</mark>你写一个应用，需要模型返回一个订单对象——里面有商品名、数量、单价、是否加急。模型很乐意帮你，可它今天返回 <code>{"qty": 3}</code>，明天返回 <code>{"quantity": "三"}</code>，后天在 JSON 前面加一句「好的，这是您要的结果：」。你的程序当场崩掉。这一节要讲的，就是把这件事从「求模型配合」变成「结构上不可能出错」的那套机制：<strong>JSON Schema、受约束解码、strict 模式、function calling 与 tool use</strong>。顺带我们还要拆一个流传很广的说法——「OpenAI 保证 100% 符合 schema」，这句话哪儿说对了，哪儿说漏了。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏦 银行柜台的那张表格</div>
+    <p>你去<strong>银行</strong>办一笔转账。理论上你完全可以拿一张白纸，写「麻烦把我账户里的三千块转给我妈，她卡号是……」，柜员看得懂，事儿也办得了。但<strong>银行</strong>从来不这么干——它给你一张<strong>印好格子的表格</strong>：收款人姓名一栏、账号一栏、金额一栏（还专门印了小数点位置），下面签名，右下角盖章。</p>
+    <p>为什么非得用表格？不是柜员看不懂白话，而是<mark class="key">白纸后面那套自动处理流程看不懂。</mark>表格扫描进系统，第 3 格固定是账号、第 5 格固定是金额，机器按格子取值，一秒钟处理一千笔。要是每个人写法都不一样，就得雇一屋子人一张张读、一笔笔录，还得防着有人把「三千」写成「叁仟元整」再写成「3k」。</p>
+    <p>更狠的一招是：<strong>金额那一栏印了固定格数的小方格</strong>，你只能一格填一个数字。这样你连「写错格式」的机会都没有——不是靠提醒你「请规范书写」，是靠格子在物理上不让你乱写。</p>
+    <div class="link">→ <strong>JSON Schema</strong> 就是那张印好格子的表格；<strong>Structured Outputs（结构化输出）</strong>就是那排让你没法填错的小方格——它不是提醒模型规范书写，而是让写错在机制上做不到。</div>
+  </div>
+
+  <h3>先把「结构化输出」这个词彻底说清</h3>
+  <p><strong>结构化输出</strong>（Structured Outputs）这个词听着玄，其实就是一句话：<mark class="key">让模型返回的不是一段人读的话，而是一份程序能直接解析的数据。</mark></p>
+  <p>什么叫「程序能直接解析」？举个最直白的对比。你让模型帮你分析一条用户评价，两种回答方式：</p>
+  <pre><code>【方式一 · 自然语言】
+这条评价整体偏正面，用户主要称赞了物流速度，
+但对包装有些不满意。我判断情感倾向为 4 分（满分 5 分）。
+
+【方式二 · 结构化】
+{
+  "sentiment": "positive",
+  "score": 4,
+  "aspects": [
+    { "topic": "logistics", "polarity": "positive" },
+    { "topic": "packaging",  "polarity": "negative" }
+  ]
+}</code></pre>
+  <p>方式一读起来更亲切，但你的程序拿它没办法——你得写正则去抠「4 分」，抠出来还得判断是不是「4.5 分」，还得处理模型改口说「四分」的情况。方式二可以一行代码解决：<code>json.loads(text)["score"]</code>。<strong>换成大白话：</strong>方式一是手写的<strong>便签</strong>，方式二是填好的<strong>表格</strong>。人看便签方便，机器看表格方便。</p>
+  <p>这里要先纠正一个常见的理解偏差。很多人以为结构化输出是「模型的一个高级功能，让它变聪明了」。<strong>完全不是。</strong>结构化输出不会让模型的判断变准一点点——它判断这条评价是 4 分还是 3 分，跟有没有开结构化输出毫无关系。<mark class="key">它保证的只有一件事：格式对。内容对不对，还是靠模型本身的能力，靠你前三节学的那些提示词技巧。</mark></p>
+  <p>把这件事分清很重要，因为它决定了你排查问题的方向：程序解析报错，是格式问题，开结构化输出能治；模型把「加急」判断错了，是理解问题，得改提示词或换模型，开一百遍结构化输出也没用。</p>
+
+  <h3>为什么「求模型配合」这条路走不通</h3>
+  <p>在结构化输出这套机制出现之前，全世界的开发者都在用三种土办法，而这三种办法都有各自的死法。这段值得讲清，因为它解释了为什么后来要动到解码层去。</p>
+  <p><strong>土办法一：在提示词里跪着求。</strong>「请只返回 JSON，不要有任何其他文字，不要加代码块标记，不要解释。」这句话大概是人类写给 AI 的话里重复次数最多的一句。它<em>大部分时候</em>有效——问题就在「大部分」。假设成功率 97%，听起来很高，可你一天处理十万条请求，就有三千条崩掉。<strong>打个比方：</strong>这就<strong>相当于</strong>一家<strong>餐厅</strong>在门口贴「请勿大声喧哗」，绝大多数人会遵守，但你没法靠这张纸保证今晚绝对安静。</p>
+  <p><strong>土办法二：事后清洗 + 重试。</strong>拿到回复先把前后的废话切掉，把三个反引号加 json 这类代码围栏标记剥掉，然后 <code>json.loads</code>，失败就重新问一遍。这条路能把成功率推到 99.9%，代价是：每次重试都要重新付一遍钱、重新等一遍时间，而且你永远不知道那 0.1% 什么时候撞上一个关键用户。更麻烦的是<mark class="key">「合法 JSON」和「我要的 JSON」是两回事</mark>——模型可能返回一个语法完全正确、但字段名写成 <code>quantity</code> 而不是 <code>qty</code> 的对象，<code>json.loads</code> 顺利通过，你的程序在下一行才炸。</p>
+  <p><strong>土办法三：给一堆示例（Few-shot）。</strong>这招确实有用，我们在 §10.2 专门讲过——示例比说明书好使。但它治的是「模型不知道你想要什么样子」，治不了「模型偶发地想加一句客套话」。而且示例要占 token，格式复杂时示例得写好几个，成本不低。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>做法</th><th>治什么</th><th>不治什么</th><th>代价</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>提示词里要求「只返回 JSON」</td><td>大部分格式跑偏</td><td>偶发的客套话、代码围栏、字段改名</td><td>几乎为零，但没有下限保证</td></tr>
+        <tr><td>清洗 + 失败重试</td><td>把成功率推高一个量级</td><td>本质随机性；重试可能连续失败</td><td>多付钱、多等时间、代码变脏</td></tr>
+        <tr><td>Few-shot 示例</td><td>让模型知道「长什么样」</td><td>不保证每次都照做</td><td>吃 token，复杂 schema 要写好几个例子</td></tr>
+        <tr><td><strong>受约束解码（Structured Outputs）</strong></td><td>格式层面的结构性保证</td><td>内容正确性；拒答与截断两种例外</td><td>需要模型和 API 支持；schema 有子集限制</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看这张表的最后一行你就明白思路转向了哪里：<mark class="key">既然「让模型配合」永远只能逼近 100%，那就换个思路——不让它有机会不配合。</mark></p>
+
+  <h3>JSON Schema：那张印好格子的表格</h3>
+  <p>要让机器检查格式，先得有一份「格式说明书」，而且这份说明书本身也得是机器能读的。这就是 <strong>JSON Schema</strong>（JSON 模式，读作「JSON 斯基马」）。</p>
+  <p><strong>JSON Schema 说白了就是</strong>：用 JSON 写的一份「这个 JSON 该长什么样」的规定。它规定有哪些字段、每个字段是什么类型（字符串还是数字）、哪些字段必须有、字符串只能从哪几个词里选、数组里装的是什么。</p>
+  <p>直接看一份完整实例。假设我们要从一段自然语言里抽出一个外卖订单：</p>
+  <pre><code>{
+  "type": "object",
+  "properties": {
+    "customer": {
+      "type": "string",
+      "description": "下单人姓名，从原文中原样抄出，不要编造"
+    },
+    "items": {
+      "type": "array",
+      "description": "订单里的所有商品行",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name":  { "type": "string" },
+          "qty":   { "type": "integer" },
+          "price": { "type": "number" }
+        },
+        "required": ["name", "qty", "price"],
+        "additionalProperties": false
+      }
+    },
+    "urgent": {
+      "type": "boolean",
+      "description": "原文是否明确表达了加急需求"
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["app", "phone", "walk_in"],
+      "description": "下单渠道，只能是这三个值之一"
+    }
+  },
+  "required": ["customer", "items", "urgent", "channel"],
+  "additionalProperties": false
+}</code></pre>
+  <p>逐个字段翻译一遍，这些术语一个都不许留着不解释：</p>
+  <ul class="keylist">
+    <li><span class="k"><code>"type": "object"</code></span><span class="v">最外面是一个「对象」——也就是用大括号包起来、里面是「键：值」成对出现的那种结构。<strong>好比</strong>一整张<strong>表格</strong>，而不是一句话。</span></li>
+    <li><span class="k"><code>properties</code></span><span class="v">「有哪些格子」。这里列了四格：下单人、商品清单、是否加急、下单渠道。</span></li>
+    <li><span class="k"><code>required</code></span><span class="v">「哪些格子必须填」。列进这个数组的字段，模型不许省略。<strong>相当于</strong>表格上打星号的必填项。</span></li>
+    <li><span class="k"><code>additionalProperties: false</code></span><span class="v">「不许自己加格子」。没有这一句，模型可能热情地多给你一个 <code>note</code> 字段，你的程序未必扛得住。<strong>相当于</strong>表格背面写着「请勿在空白处另附说明」。</span></li>
+    <li><span class="k"><code>"type": "array"</code> 配 <code>items</code></span><span class="v">「这一格里装的是一串同类东西，每一个又长这样」。商品清单里可以有一行也可以有十行，但每一行都必须有名称、数量、单价。</span></li>
+    <li><span class="k"><code>enum</code></span><span class="v">「只能从我给的这几个词里挑」。渠道只能是 app、电话、到店三个值。这一条极其好用——<mark class="key">它把「分类」问题从「模型自由发挥」变成了「从选项里选一个」</mark>，相当于把填空题改成了选择题。</span></li>
+    <li><span class="k"><code>description</code></span><span class="v">写给模型看的说明。★这一栏被严重低估——它是 schema 里唯一能承载语义指令的地方，「原样抄出不要编造」这种话写在这里，比写在系统提示词里更贴近字段本身。</span></li>
+  </ul>
+  <p>注意 <code>description</code> 那一条。<strong>很多人把 schema 当成纯粹的类型声明，只填 type 就交差了，这是浪费。</strong>schema 里的每个 description 都会随请求一起进入模型的上下文，它就是贴在格子旁边的小字提示。<strong>换成大白话：</strong><strong>银行</strong>表格上「金额一栏请用阿拉伯数字大写不作数」这行小字，就是 description。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 工厂流水线上的定位夹具</span>
+    <p>想象一条给玻璃杯印花的<strong>流水线</strong>。杯子沿<strong>传送带</strong>过来，机械臂负责在杯身正面印一朵花。</p>
+    <p><em>做法一 · 靠提醒</em>：在<strong>车间</strong>墙上贴一张告示——「请把杯子正面朝上摆放」。工人绝大多数时候会照做，但一天几万个杯子，总有几百个摆歪了，花印在杯底上，成为废品。<strong>这就是「在提示词里要求只返回 JSON」。</strong></p>
+    <p><em>做法二 · 事后挑废品</em>：印完之后加一道人工检查，印歪的挑出来重新洗掉再印一遍。良品率上去了，但每个废品都白花了一次墨、一次工时。<strong>这就是「解析失败就重试」。</strong></p>
+    <p><em>做法三 · 装一个夹具</em>：在<strong>传送带</strong>上焊一个凹槽，形状正好只有杯子正面朝上才放得进去。摆歪的杯子根本卡不进凹槽，压根到不了机械臂那一步。<mark class="key">这就是「受约束解码」——它不是在结果上纠错，而是在过程里让错误无法发生。</mark></p>
+    <p>三种做法的本质差别是：前两种把「保证正确」的责任交给了自觉和事后检查，第三种把它变成了<strong>物理约束</strong>。所以后面你会看到，OpenAI 的官方说法是 <code>constrained decoding</code>——「受约束的解码」，重点在「约束」这个词是硬的。</p>
+  </div>
+
+  <h3>★ 受约束解码：把不合法的 token 直接屏蔽掉</h3>
+  <p>这一段是本节技术含量最高、也最值得讲透的部分。OpenAI 在官方博文里明确说明，Structured Outputs 的实现机制是 <strong>constrained decoding</strong>（受约束解码）——<mark class="key">不是靠提示，也不是靠重试，而是在生成的每一步直接干预可选的 token。</mark></p>
+  <p>要理解它，先回忆 §8.2 讲过的生成过程。模型每生成一个 token，实际上是先算出「词表里每一个 token 接在这里的可能性有多大」，然后按某种采样策略挑一个。词表大约 20 万个 token，所以每一步都是一次「从 20 万个候选里选一个」。</p>
+  <p>受约束解码做的事，就是在「选一个」之前，<strong>把当前不可能合法的候选全部划掉——把它们的可能性直接压成零</strong>。走一遍例子你立刻就懂：</p>
+  <pre><code>目标 schema： { "urgent": boolean }
+模型已经生成了：   { "urgent":
+
+现在这一步，词表里 20 万个 token 中，
+在 JSON 语法 + 这份 schema 下，合法的只有极少数几个：
+
+    合法：  true    false    （以及可能的前导空格变体）
+    非法：  "       0        [        {       hello    好的    ...
+
+于是解码器把所有非法 token 的概率强制置为 0（业内叫「掩码」，mask）。
+模型现在哪怕内心极想写一句「好的，这是您要的结果」，
+它也无从下笔——那些 token 已经不在候选里了。
+
+再走一步：
+模型已经生成了：   { "urgent": true
+    合法：  }      ,（如果 schema 里还有别的必填字段）
+    非法：  其余全部
+
+所以最后一个字符必然是 }，JSON 不可能少一个括号。</code></pre>
+  <p>这套机制的精妙之处在于：<mark class="key">它不需要模型「理解」JSON 语法，也不需要模型「愿意」配合。</mark>约束在解码器那一层，是程序化的、确定的。<strong>好比</strong>考试用的答题卡——你想在选择题那一栏写作文也写不了，因为那里只有四个小方框。</p>
+  <p>技术上它是怎么知道「此刻合法的是哪些」的？OpenAI 博文里提到的做法是把 JSON Schema 先转成一种<strong>语法</strong>（可以理解成一台状态机——「现在处在哪个格子里、下一步允许出现什么」），然后在每一步查这台状态机，得到允许的 token 集合。第一次用某个新 schema 时需要做一次这样的预处理，所以官方也提到首次请求会有额外延迟，之后这份「语法」会被缓存复用。</p>
+  <p><strong>把这个机制的价值换算成可感知的量：</strong>假设不用约束时格式成功率是 99%，你一天十万次调用就有一千次要重试；重试也可能失败，还有一百次要二次重试。上了受约束解码，这一千次重试的钱、时间和监控告警一起消失了。<strong>而且更关键的是，你的代码里可以删掉那一大坨「先切前缀再剥围栏再 try except」的清洗逻辑</strong>——省下的维护成本比省下的 token 钱更值。</p>
+
+  <h3>JSON mode 与 Structured Outputs：一步之差，天壤之别</h3>
+  <p>这两个名字长得像，很多人混着用，但它们保证的东西完全不是一回事。这是本节第二个必须记牢的点。</p>
+  <p><strong>JSON mode</strong>（JSON 模式）是 OpenAI 在 2023 年 DevDay 开发者大会上推出的。它保证的是：<mark class="key">输出是一段合法的 JSON。</mark>仅此而已。合法的意思是括号配对、引号成对、逗号位置对、能被 <code>json.loads</code> 顺利吃下。<strong>但它不保证这段 JSON 长成你要的样子。</strong></p>
+  <p><strong>Structured Outputs</strong>（结构化输出）是 2024 年 8 月 6 日随官方博文《Introducing Structured Outputs in the API》推出的。它保证的是：输出会 <em>exactly match JSON Schemas provided by developers</em>——<strong>严格匹配你给出的 JSON Schema</strong>。</p>
+  <p>差别有多大？看一个具体的翻车现场：</p>
+  <pre><code>你的 schema 要求：
+  { "qty": integer, "urgent": boolean }
+
+【JSON mode 下可能出现的合法但错误的输出】
+  { "quantity": 3, "is_urgent": "yes" }     ← 合法 JSON！字段名不对、类型不对
+  { "qty": "three", "urgent": true }        ← 合法 JSON！数量成了字符串
+  { "qty": 3 }                              ← 合法 JSON！少了一个必填字段
+  { "qty": 3, "urgent": true, "note": "…" } ← 合法 JSON！多了一个字段
+
+  这四种 json.loads 全都能过。
+  你的程序在下一行 data["urgent"] 或 int(data["qty"]) 才炸。
+
+【Structured Outputs 下】
+  { "qty": 3, "urgent": true }              ← 只有这一种形状可能被生成出来</code></pre>
+  <p><strong>换成大白话：</strong>JSON mode 保证你交上来的是一张<strong>表格</strong>而不是一封信；Structured Outputs 保证你交上来的是<strong>我指定的那张表格</strong>，格子数一个不多一个不少。前者只管「有没有格式」，后者管「格式对不对」。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>JSON mode</th><th>Structured Outputs</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>推出时间</td><td>2023 年 DevDay</td><td>2024 年 8 月 6 日</td></tr>
+        <tr><td>保证「是合法 JSON」</td><td>是</td><td>是</td></tr>
+        <tr><td>保证「符合指定 schema」</td><td><strong>否</strong></td><td><strong>是</strong>（有两个前提，见下节）</td></tr>
+        <tr><td>字段名会不会被改</td><td>可能会</td><td>不会</td></tr>
+        <tr><td>会不会漏必填字段</td><td>可能会</td><td>不会</td></tr>
+        <tr><td>会不会多塞字段</td><td>可能会</td><td>配 <code>additionalProperties: false</code> 后不会</td></tr>
+        <tr><td>你还需要写校验代码吗</td><td><strong>必须写</strong></td><td>可省，但仍建议保留一层兜底</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>所以在能用 Structured Outputs 的场合，<strong>没有任何理由继续用 JSON mode</strong>。JSON mode 今天主要的价值是兼容老代码、以及在不支持新特性的模型上退而求其次。</p>
+
+  <h3>★★ 那个「100%」：评测分数不等于产品承诺</h3>
+  <p>这一段是本节最需要小心的地方，也是中文技术文章出错最集中的一处。</p>
+  <p>你会在无数篇介绍文章里看到「OpenAI 保证 100% 符合 schema」。这句话<strong>把两件不同的事混成了一件</strong>。让我们把官方原话拆开看。</p>
+  <p><strong>第一件事 · 评测分数。</strong>官方博文的原文是：<em>On our evals of complex JSON schema following, our new model <code>gpt-4o-2024-08-06</code> with Structured Outputs scores a perfect 100%. In comparison, <code>gpt-4-0613</code> scores less than 40%.</em> 翻译过来：在 OpenAI 自家的「复杂 JSON schema 遵循」评测集上，开了 Structured Outputs 的 <code>gpt-4o-2024-08-06</code> 拿了满分 100%；作为对照，<code>gpt-4-0613</code> 不到 40%。</p>
+  <p>请盯住这句话的限定语：<mark class="key">「在我们自己的评测集上」。</mark>这是一个 <strong>benchmark（基准测试）分数</strong>，是在一批特定题目上跑出来的结果，不是对所有情况的无条件承诺。<strong>好比</strong>一款车在<strong>厂家测试场</strong>的标准工况下跑出百公里油耗 4.9 升——这个数字是真的，也是可核对的，但你不能把它读成「这车在任何路况下油耗都是 4.9 升」。</p>
+  <p><strong>第二件事 · 产品层的可靠性表述，它带两个明确前提。</strong>官方另一处原文是：<em>When the response does not include a refusal <strong>and</strong> the model's response has not been prematurely interrupted (as indicated by <code>finish_reason</code>), then the model's response will reliably produce valid JSON matching the supplied schema.</em></p>
+  <p>拆成两个必须成立的条件：</p>
+  <ul class="keylist">
+    <li><span class="k">前提一 · 模型没有拒答</span><span class="v">如果你的请求触发了安全策略，模型会拒绝回答。这时候它不会硬凑一个符合 schema 的假数据给你，而是走另一条路。为此 API 新增了一个 <code>refusal</code> 字段——<strong>拒答变成了一个可以用代码判断的状态</strong>，而不是让你去猜「这段自然语言是不是在拒绝我」。这个设计其实很贴心。</span></li>
+    <li><span class="k">前提二 · 生成没有被提前打断</span><span class="v">如果输出撞上了 <code>max_tokens</code> 上限，或者触发了其他终止条件，JSON 就会在半路被切断——一个截断的 JSON 当然不是合法 JSON。判断依据是响应里的 <code>finish_reason</code> 字段：正常结束是 <code>stop</code>，撞上长度上限是 <code>length</code>。<mark class="key">看到 length 就说明你拿到的是半截数据，必须当失败处理。</mark></span></li>
+  </ul>
+  <p>所以正确的措辞是什么？</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>评价</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「OpenAI 保证 100% 符合 schema」</td><td><strong>不准确，别这么写</strong></td><td>把评测分数当成了无条件承诺，还漏掉了拒答与截断两个前提</td></tr>
+        <tr><td>「在 OpenAI 自家复杂 schema 评测集上达到 100%」</td><td><strong>准确</strong></td><td>如实交代了这是评测结果和它的范围</td></tr>
+        <tr><td>「在没有拒答、也没有被截断的前提下，输出会可靠地符合 schema」</td><td><strong>准确</strong></td><td>这是官方产品层表述的忠实翻译，两个前提都在</td></tr>
+        <tr><td>「上了 Structured Outputs 就不用做任何校验了」</td><td><strong>危险</strong></td><td>拒答和截断都要处理；网络错误、超时也照样存在</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这件事之所以值得单开一节，是因为它是<mark class="key">「实验室基准 vs 日常使用」这个鸿沟的一个标准案例</mark>。你以后会在 AI 领域反复遇到同一个套路：某个能力在一份基准测试上刷到接近满分，然后被简化成「AI 已经解决了这个问题」，最后在你的真实业务里出问题。<strong>养成一个习惯：看到一个漂亮的百分比数字，先问三句——在哪个数据集上测的？谁测的？有没有附加前提？</strong>这三句话能帮你过滤掉一大半技术宣传噪音。</p>
+
+  <h3>两条使用路径：function calling 与 response_format</h3>
+  <p>官方博文里给了两种用法，很多人只知道其中一种，结果在选型时纠结错了方向。<mark class="key">这两条路不是二选一的竞品，而是对应两种完全不同的场景。</mark></p>
+  <p><strong>路径一 · 给 function calling 装上 strict。</strong>在你定义的函数（tools）里加一句 <code>strict: true</code>。按发布时点的说明，这条路径支持所有支持 tools 的模型，从 <code>gpt-4-0613</code>、<code>gpt-3.5-turbo-0613</code> 那一批开始往后都行。</p>
+  <p><strong>路径二 · 用 response_format 的 json_schema。</strong><code>response_format</code> 这个参数新增了一个 <code>json_schema</code> 选项，配上 <code>strict: true</code>。按发布时点（2024 年 8 月）的说明，支持 <code>gpt-4o-2024-08-06</code> 和 <code>gpt-4o-mini-2024-07-18</code>。</p>
+  <p>★这里必须插一句<strong>时效提醒</strong>：上面这两串模型名单是 <strong>2024 年 8 月发布时点的信息</strong>。AI 领域一年就是一代，到你读这篇文章的时候支持范围早已扩大。<strong>具体支持哪些模型，请查 OpenAI 官方文档的 Structured Outputs 指南，本文列出的仅为发布时点快照，不要当成当前现状。</strong>本书在这类快速变化的事实上一律只写「有出处的时点信息 + 明确标注」，不写「据说现在支持全部模型」这种无法核实的话。</p>
+  <p>那两条路该怎么选？关键看<strong>结构化的结果要给谁用</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你的场景</th><th>选哪条路</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>模型要去调用你系统里的一个函数（查库存、下订单、发邮件）</td><td><strong>function calling + <code>strict: true</code></strong></td><td>结构化的目的是「组装函数参数」，参数错了函数就调不动</td></tr>
+        <tr><td>模型直接把结构化数据回给你/回给前端渲染</td><td><strong><code>response_format</code> 的 <code>json_schema</code></strong></td><td>没有函数要调，只是要一份规整的数据回执</td></tr>
+        <tr><td>从一段文本里抽取实体、做分类打标</td><td><code>response_format</code></td><td>典型的「一次抽取，直接入库」，不涉及外部动作</td></tr>
+        <tr><td>让模型在多个工具之间自己选一个用</td><td>function calling</td><td>选哪个工具本身就是要模型决定的事</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>把 function calling 和 structured outputs 的关系彻底说清</strong>，因为这是初学者最容易搞混的一对概念：</p>
+  <ul class="keylist">
+    <li><span class="k">function calling 是什么</span><span class="v"><strong>一套「让模型调用你定义的函数」的机制。</strong>你把函数的名字、干什么用、需要哪些参数告诉模型，模型在觉得需要时返回一个「我要调用 <code>check_stock</code>，参数是 <code>{"sku": "A17"}</code>」的请求，你的代码去真的执行，再把结果喂回去。</span></li>
+    <li><span class="k">structured outputs 是什么</span><span class="v"><strong>一种「保证输出严格贴合 schema」的约束能力。</strong>它本身不调用任何东西，它只管形状。</span></li>
+    <li><span class="k">两者的关系</span><span class="v"><mark class="key">不是竞争关系，而是后者作为一种能力被施加到前者之上。</mark>在 tools 定义里加 <code>strict: true</code>，就等于给 function calling 装上了 structured outputs 这个保险。<strong>好比</strong>「快递」是一套送货机制，「保价」是一项施加在它上面的保障——你不会问「该选快递还是选保价」。</span></li>
+    <li><span class="k">为什么还要 response_format 这条路</span><span class="v">因为有大量场景根本不需要调用任何工具，就是要一份结构化数据。为了这种场景硬定义一个假函数（业内曾经真的这么干过，叫「假 function 大法」）是别扭的，所以官方给了直接的路。</span></li>
+  </ul>
+
+  <h3>动手：OpenAI Structured Outputs 的完整可运行示例</h3>
+  <p>先看 <code>response_format</code> 这条路。下面这段代码可以直接跑，它做的事是从一段乱糟糟的口语订单里抽出规整数据：</p>
+  <pre><code># pip install openai
+import json
+from openai import OpenAI
+
+client = OpenAI()   # 从环境变量 OPENAI_API_KEY 读密钥
+
+ORDER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "customer": {"type": "string", "description": "下单人姓名，原文没提就填空字符串"},
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "qty":  {"type": "integer"},
+                },
+                "required": ["name", "qty"],
+                "additionalProperties": False,
+            },
+        },
+        "urgent":  {"type": "boolean", "description": "原文是否明确要求加急"},
+        "channel": {"type": "string", "enum": ["app", "phone", "walk_in"]},
+    },
+    "required": ["customer", "items", "urgent", "channel"],
+    "additionalProperties": False,
+}
+
+raw = "喂？我是三号楼的王姐，来两份宫保鸡丁、一份米饭，麻烦快点儿啊，孩子等着吃"
+
+resp = client.chat.completions.create(
+    model="gpt-4o-2024-08-06",          # ← 支持范围请查官方文档，此处为发布时点示例
+    messages=[
+        {"role": "system", "content": "你是订单录入员。只按 schema 抽取原文里明确出现的信息，绝不编造。"},
+        {"role": "user",   "content": raw},
+    ],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "order",
+            "schema": ORDER_SCHEMA,
+            "strict": True,             # ★ 这一行才是开启严格约束的开关
+        },
+    },
+)
+
+msg = resp.choices[0].message
+
+# ★ 两个前提都要检查，缺一个就是隐患
+if getattr(msg, "refusal", None):                 # 前提一：模型有没有拒答
+    raise RuntimeError("模型拒绝了这个请求：" + msg.refusal)
+if resp.choices[0].finish_reason != "stop":       # 前提二：有没有被截断
+    raise RuntimeError("输出未正常结束，finish_reason=" + resp.choices[0].finish_reason)
+
+data = json.loads(msg.content)     # 到这里可以放心解析
+print(json.dumps(data, ensure_ascii=False, indent=2))
+</code></pre>
+  <p>这段代码里有三行是<strong>最容易被教程省略、而生产环境绝不能省</strong>的：</p>
+  <ul class="keylist">
+    <li><span class="k"><code>"strict": True</code></span><span class="v">忘了这一行，你就退化成了 JSON mode——schema 只被当作提示参考，而不是硬约束。这是最常见的一个坑：schema 写得很认真，却忘了打开开关。</span></li>
+    <li><span class="k">检查 <code>refusal</code></span><span class="v">对应官方表述里的第一个前提。不检查它，拒答场景下你会拿到一个 <code>None</code> 去做 <code>json.loads</code>，报一个莫名其妙的错。</span></li>
+    <li><span class="k">检查 <code>finish_reason</code></span><span class="v">对应第二个前提。<code>length</code> 意味着 JSON 被切了半截。<strong>这个坑在 schema 里带长文本字段、或者数组可能很长时特别容易踩。</strong></span></li>
+  </ul>
+  <p>再看 <strong>function calling 加 strict</strong> 这条路。区别只在参数怎么传：</p>
+  <pre><code>tools = [{
+    "type": "function",
+    "function": {
+        "name": "check_stock",
+        "description": "查询某个商品在某个仓库的实时库存",
+        "parameters": {                 # ★ OpenAI 这里叫 parameters
+            "type": "object",
+            "properties": {
+                "sku":       {"type": "string",  "description": "商品编码，形如 A17-BLK"},
+                "warehouse": {"type": "string",  "enum": ["north", "south", "east"]},
+            },
+            "required": ["sku", "warehouse"],
+            "additionalProperties": False,
+        },
+        "strict": True,                 # ★ 给 function calling 装上结构化输出
+    },
+}]
+
+resp = client.chat.completions.create(
+    model="gpt-4o-2024-08-06",
+    messages=[{"role": "user", "content": "帮我看下 A17 黑色在北方仓还有货吗"}],
+    tools=tools,
+)
+
+call = resp.choices[0].message.tool_calls[0]
+args = json.loads(call.function.arguments)   # 有 strict 兜着，这里的形状是确定的
+print(args)          # {'sku': 'A17-BLK', 'warehouse': 'north'}
+
+# 你的代码真正去执行，然后把结果以 tool 角色回传（★ OpenAI 用独立的 tool 角色）
+result = {"sku": "A17-BLK", "warehouse": "north", "available": 42}
+messages_next = [
+    {"role": "user", "content": "帮我看下 A17 黑色在北方仓还有货吗"},
+    resp.choices[0].message,                       # 把模型那条 tool_calls 消息原样带回
+    {"role": "tool",
+     "tool_call_id": call.id,
+     "content": json.dumps(result, ensure_ascii=False)},
+]
+</code></pre>
+  <p>请留意最后那个 <code>{"role": "tool", ...}</code>。<mark class="key">OpenAI 用一个独立的 tool 角色来回传工具执行结果</mark>——这是它和 Anthropic 的一个结构性差异，下一段马上对比。</p>
+
+  <h3>Anthropic 那一边：Tool use 与 input_schema</h3>
+  <p>Anthropic（Claude 的公司）把这套能力叫 <strong>Tool use</strong>（工具使用）。它的整体思路一致、细节处处不同，而这些不同恰好是最容易在迁移代码时踩坑的地方。</p>
+  <p>先把一次完整往返走一遍。<strong>换成大白话，整个流程就四步</strong>：你告诉模型手边有哪些工具 → 模型说「我要用某个工具，参数是这些」 → 你真的去执行 → 你把执行结果交回去，模型接着说人话。</p>
+  <pre><code># pip install anthropic
+import json
+import anthropic
+
+client = anthropic.Anthropic()   # 从环境变量 ANTHROPIC_API_KEY 读密钥
+
+tools = [{
+    "name": "check_stock",
+    "description": "查询某个商品在某个仓库的实时库存。需要商品编码和仓库代号。",
+    "input_schema": {                    # ★ Anthropic 这里叫 input_schema（不是 parameters）
+        "type": "object",
+        "properties": {
+            "sku":       {"type": "string", "description": "商品编码，形如 A17-BLK"},
+            "warehouse": {"type": "string", "enum": ["north", "south", "east"]},
+        },
+        "required": ["sku", "warehouse"],
+    },
+    "strict": True,                      # ★ 严格等价物：保证参数严格贴合 schema
+}]
+
+question = "帮我看下 A17 黑色在北方仓还有货吗"
+
+resp = client.messages.create(
+    model="claude-sonnet-4-5",           # ← 模型名请查官方文档，随版本变化
+    max_tokens=1024,
+    tools=tools,
+    tool_choice={"type": "auto"},        # 默认值：由模型自行判断要不要用工具
+    messages=[{"role": "user", "content": question}],
+)
+
+# 响应的 content 是一个 block 列表，可能同时有 text block 和 tool_use block
+tool_use = next(b for b in resp.content if b.type == "tool_use")
+print(tool_use.name)    # 'check_stock'
+print(tool_use.input)   # {'sku': 'A17-BLK', 'warehouse': 'north'}
+
+# 真正执行
+result = {"available": 42}
+
+# ★ 把结果作为 tool_result block 回传，而且角色是 user（不是独立的 tool 角色）
+followup = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    tools=tools,
+    messages=[
+        {"role": "user",      "content": question},
+        {"role": "assistant", "content": resp.content},      # 原样带回模型那一轮
+        {"role": "user", "content": [{
+            "type": "tool_result",
+            "tool_use_id": tool_use.id,
+            "content": json.dumps(result, ensure_ascii=False),
+        }]},
+    ],
+)
+print(followup.content[0].text)
+</code></pre>
+  <p>把两家的差异列成表，这张表建议你收藏——迁移代码时一条条对着看：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比项</th><th>OpenAI</th><th>Anthropic</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>机制的官方叫法</td><td>Function calling / Structured Outputs</td><td><strong>Tool use</strong></td></tr>
+        <tr><td>参数 schema 的字段名</td><td><code>parameters</code></td><td><strong><code>input_schema</code></strong></td></tr>
+        <tr><td>严格模式开关</td><td><code>strict: true</code></td><td><code>strict: true</code>（严格等价物，官方表述为「确保 Claude 的工具调用始终精确匹配你的 schema」）</td></tr>
+        <tr><td>模型请求调工具时返回什么</td><td>消息里的 <code>tool_calls</code> 数组</td><td>内容块列表里的 <code>tool_use</code> block</td></tr>
+        <tr><td>执行结果怎么回传</td><td><strong>独立的 <code>tool</code> 角色消息</strong></td><td><strong><code>tool_result</code> block，角色是 <code>user</code></strong></td></tr>
+        <tr><td>并行调多个工具</td><td>支持</td><td><strong>默认开启</strong>，要关得显式设 <code>disable_parallel_tool_use</code></td></tr>
+        <tr><td>工具在哪儿执行</td><td>都在你的应用里</td><td><strong>分 client tools 与 server tools 两类</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中<strong>结果回传方式</strong>那一行是结构性差异，值得再强调一遍。OpenAI 的设计是「对话里多了一种说话人：工具」；Anthropic 的设计是「工具结果是用户递进去的一份材料」。<strong>好比</strong>你在<strong>医院</strong>看病：OpenAI 的模型是<mark class="key">检验科直接把化验单发到医生工作站</mark>（多了一个独立角色），Anthropic 的模型是<mark class="key">你自己拿着化验单回诊室交给医生</mark>（还是你在说话，只是手里多了一张单子）。两种流程都能看好病，但你写代码时格式完全不同，混着写必然报错。</p>
+
+  <h3>client tools 与 server tools：OpenAI 没有的那个二分</h3>
+  <p>Anthropic 有一个 OpenAI 没有完全对应概念的划分，理解它能省你不少功夫。</p>
+  <ul class="keylist">
+    <li><span class="k">client tools（客户端工具）</span><span class="v"><strong>在你自己的应用里执行的工具。</strong>模型说「我要调 <code>check_stock</code>」，你的代码去连数据库、拿结果、回传。上面那段示例就是这一类。你负责实现，也负责它的一切——权限、超时、错误处理。</span></li>
+    <li><span class="k">server tools（服务端工具）</span><span class="v"><strong>在 Anthropic 自己的基础设施上执行的工具，直接把结果返回给模型，不经过你的代码。</strong>官方提供的有 <code>web_search</code>（网页搜索）、<code>web_fetch</code>（抓取网页内容）、<code>code_execution</code>（执行代码）、<code>tool_search</code>（在大量工具里检索合适的工具）。<mark class="key">你只需要声明「允许它用」，剩下的整套往返在服务端就完成了。</mark></span></li>
+  </ul>
+  <p><strong>换成大白话，这个区别就是「自己下厨」和「叫外卖」</strong>。client tools 是你在自家<strong>厨房</strong>炒菜——原料、火候、洗碗全是你的事，但你想放多少盐完全自己说了算。server tools 是叫<strong>外卖</strong>——你只说「一份宫保鸡丁」，谁买菜、谁炒、谁洗锅都不用你管，菜直接送到桌上；代价是你无法干预它怎么做的。</p>
+  <p>什么时候用哪种？<strong>凡是涉及你自己的数据、自己的业务动作（下单、退款、改数据库）——必须是 client tools</strong>，因为只有你的系统知道这些事怎么做、以及有没有权限做。<strong>凡是通用能力（搜网页、跑一段计算）——用 server tools 更省事</strong>，你不必自己维护一个搜索接口和一个沙箱。</p>
+
+  <h3>怎么控制模型「要不要用工具」</h3>
+  <p>定义了工具，不等于模型每次都会用。这里有一个参数和一个技巧。</p>
+  <p><strong>参数：<code>tool_choice</code>。</strong>默认值是 <code>{"type": "auto"}</code>——由模型自己判断这次要不要调工具。这个默认值大多数时候是对的，但有两种情况你会想改它：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你想要的效果</th><th>怎么设</th><th>典型场景</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>模型自己决定（默认）</td><td><code>{"type": "auto"}</code></td><td>通用助手，有时需要查有时不需要</td></tr>
+        <tr><td>强制这一轮必须调工具</td><td>设为强制类型（<code>any</code> 或指定某个工具）</td><td>你的业务流程里这一步必须拿到结构化参数</td></tr>
+        <tr><td>关闭并行调用</td><td><code>{"type": "auto", "disable_parallel_tool_use": true}</code></td><td>你的工具有副作用、必须一个个来（比如连续扣款）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>技巧：用一句轻量指令抬高调用率。</strong>官方给的例子是在提示词里加一句 <em>Use the tools to investigate before responding.</em>（回答之前先用工具查一下）。这一句不强制，但能明显提高模型主动查证的倾向。<strong>好比</strong>你对一个新来的实习生说「不确定的事先查一下再答」——不是命令他每件事都查，是把他的默认习惯往「查」的方向拨了一格。</p>
+  <p>★关于<strong>并行工具调用</strong>那一行，有一个真实的坑必须点出来：<strong>Anthropic 默认是开启并行的</strong>，也就是模型可以一次性请求调用好几个工具。这在只读查询上是好事（三个查询同时发，更快），但如果你的工具带副作用就危险了——模型可能一次并行发起三笔扣款。<mark class="key">这和 OpenAI 的默认行为不同，从 OpenAI 迁过来的代码最容易在这里出事。</mark>处理办法就是那行 <code>disable_parallel_tool_use</code>，或者在你自己的执行层加幂等保护（同一个请求重复执行只生效一次）。</p>
+
+  <h3>schema 设计的六条实战经验</h3>
+  <p>约束机制帮你把「格式对」这件事兜住了，但<strong>schema 本身设计得好不好，直接决定内容质量</strong>。下面这六条是踩过坑之后的经验，逐条给理由。</p>
+  <ul class="keylist">
+    <li><span class="k">一 · 能用 enum 就别用自由字符串</span><span class="v">要分类，就把候选值全列进 <code>enum</code>。写成自由字符串，模型今天给你 <code>"积极"</code>，明天给 <code>"正面"</code>，后天给 <code>"positive"</code>，你的下游统计全乱。<strong>相当于</strong>把填空题改成选择题，出错空间直接归零。</span></li>
+    <li><span class="k">二 · 每个字段都写 description</span><span class="v">字段名是给程序看的，description 是给模型看的。<code>score</code> 这个名字模型不知道是 1-5 还是 0-100，写清楚「1 到 5 的整数，5 表示最满意」就没有歧义。<strong>这是零成本提升准确率的地方，别偷懒。</strong></span></li>
+    <li><span class="k">三 · 给「不知道」留一个合法出口</span><span class="v">★这条最重要。原文里压根没提下单人姓名，而 schema 要求 <code>customer</code> 必填且是字符串——模型只能编一个。<mark class="key">你用硬约束逼它必须填，它就必须给你幻觉。</mark>正确做法是允许空字符串、或加一个 <code>found: boolean</code> 字段、或把该字段从 required 里拿掉。<strong>好比</strong>问卷上必须有「不适用」这个选项，否则你收到的全是被迫瞎填的答案。</span></li>
+    <li><span class="k">四 · 让推理字段排在结论字段前面</span><span class="v">JSON 对象里字段是有顺序的，而模型是从左到右一个 token 一个 token 生成的。把 <code>reasoning</code>（理由）放在 <code>conclusion</code>（结论）前面，模型就是先想后答；顺序倒过来，它是先拍结论再补理由。<strong>这和 §10.3 讲的思维链是同一个道理，只是换到了 schema 里。</strong></span></li>
+    <li><span class="k">五 · 别把 schema 嵌得太深</span><span class="v">嵌套五六层的 schema 不但模型容易搞乱，你自己的下游代码也难写。<strong>宁可拆成两次调用</strong>：第一次抽大结构，第二次针对每一项抽细节。可读性和准确率一起提升。</span></li>
+    <li><span class="k">六 · 注意 schema 只支持 JSON Schema 的一个子集</span><span class="v">受约束解码要把 schema 编译成一台状态机，所以那些过于灵活的 JSON Schema 特性（复杂的条件分支、正则模式的完整支持等）通常不被允许，具体支持范围各家不同、且随版本变化。<strong>务必查当时的官方文档，别照着 JSON Schema 完整规范硬写。</strong></span></li>
+  </ul>
+
+  <h3>反模式 vs 正确做法：一张对照表</h3>
+  <p>把上面的经验反过来写成「常见错法」，对照着看更容易记住：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>反模式</th><th>会出什么事</th><th>正确做法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>写了 schema 但忘了 <code>strict: true</code></td><td>退化成 JSON mode，字段名和类型都可能跑偏，而且极难发现（大部分时候是对的）</td><td>开关一定要打开，并在代码评审时专门检查这一行</td></tr>
+        <tr><td>拿到结果直接 <code>json.loads</code>，不看 <code>refusal</code> 和 <code>finish_reason</code></td><td>拒答场景解析 None；截断场景解析半截 JSON</td><td>两个字段都判一遍，异常时走降级或重试逻辑</td></tr>
+        <tr><td>所有分类字段都用自由字符串</td><td>同义词满天飞，下游统计口径无法对齐</td><td>凡是有限集合，一律 <code>enum</code></td></tr>
+        <tr><td>把所有字段都写进 <code>required</code>，不给「未知」出口</td><td><strong>逼出幻觉</strong>——原文没有的信息被硬编出来</td><td>允许空值，或加显式的 <code>found</code> / <code>confidence</code> 字段</td></tr>
+        <tr><td>结论字段排在推理字段前面</td><td>模型先拍板再找理由，准确率下降</td><td>reasoning 在前，conclusion 在后</td></tr>
+        <tr><td>字段名很省，一个 description 都不写</td><td>模型靠猜，量纲和取值范围全凭运气</td><td>每个字段都写清含义、单位、取值范围</td></tr>
+        <tr><td>用 schema 硬约束去「治」内容错误</td><td>格式完美、内容照错，还以为已经解决了问题</td><td>格式归约束，内容归提示词与模型选型，两件事分开治</td></tr>
+        <tr><td>Anthropic 侧照抄 OpenAI 的 <code>parameters</code> 字段名</td><td>请求直接报错，或工具压根不被识别</td><td>Anthropic 用 <code>input_schema</code>，结果用 <code>tool_result</code> block 以 user 角色回传</td></tr>
+        <tr><td>迁到 Anthropic 后没关并行工具调用</td><td>带副作用的工具被一次并行触发多次</td><td>显式 <code>disable_parallel_tool_use</code>，或在执行层做幂等</td></tr>
+        <tr><td>schema 里塞五六层嵌套</td><td>模型容易漏字段，你的下游代码也难维护</td><td>拆成两次调用，先粗后细</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>一个容易被忽略的收益：结构化让评测变得可能</h3>
+  <p>前面讲的都是「不崩」。但结构化输出还有一个不那么显眼、长期价值更大的好处：<mark class="key">它让「这个提示词到底有没有变好」这件事第一次变得可以量化。</mark></p>
+  <p>想想自由文本的时代你怎么评测。你改了一版提示词，然后……人工读五十条回答，凭感觉判断「好像好一点」？这不是工程，这是玄学。<strong>换成大白话：</strong>这就<strong>好比</strong><strong>学校</strong>里改作文——两个老师给同一篇打分能差二十分，你没法拿这个分数去比较两种教学法。</p>
+  <p>而结构化输出把答案变成了字段。字段可以直接和标准答案比对：</p>
+  <pre><code>准备一份标注好的测试集（哪怕只有 100 条）：
+    raw_text  →  期望的结构化结果
+
+跑一遍，逐字段算准确率：
+    channel 字段准确率     97%
+    urgent  字段准确率     84%   ← 找到问题了
+    items   数量完全一致   91%
+
+现在你有了明确的改进方向：
+    去看那 16% 判错「加急」的样本，
+    发现原文说「孩子等着吃」这类隐含表达经常被漏掉，
+    于是在 urgent 字段的 description 里补一句：
+    「包括『快点』『等着用』这类隐含的紧急表达」
+
+改完再跑一遍：urgent 准确率 84% → 93%。
+这才叫工程——每一步改动都有一个可核对的数字支撑。</code></pre>
+  <p>这是<strong>结构化输出最容易被低估的价值</strong>：它不只是让程序不崩，它把提示词工程从「凭感觉调」变成了「看数字调」。<strong>相当于</strong>做菜从「凭手感撒盐」变成了用<strong>厨房</strong>秤——不是味觉不重要，而是有了刻度你才能复现和改进。这条思路我们下一节（§10.5 迭代与反模式）还会继续展开。</p>
+
+  <p>下面这个小测验检验一下本节最关键的两个区分——「JSON mode 与 Structured Outputs 差在哪」以及「100% 这个数字该怎么读」。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于 OpenAI Structured Outputs 那个「100%」的说法，下面哪种表述最准确？"
+       data-opts="OpenAI 官方保证输出 100% 符合 schema，任何情况下都不会例外|在 OpenAI 自家的复杂 schema 遵循评测集上，开启 Structured Outputs 的 gpt-4o-2024-08-06 拿到 100%；产品层的可靠性表述还带「未拒答」和「未被截断」两个前提|100% 指的是模型回答的内容正确率，所以开了之后就不会出现幻觉了|100% 只是营销说法，官方文档里压根没有这个数字"
+       data-answer="1"
+       data-explain="官方博文原文说的是：在 OpenAI 自己的复杂 JSON schema 遵循评测集上，开启 Structured Outputs 的 gpt-4o-2024-08-06 得了满分 100%，而 gpt-4-0613 不到 40%。这是一个评测分数，有明确的数据集范围，不是无条件承诺。产品层的表述则明确带两个前提：响应里没有 refusal（拒答），并且生成没有被提前打断（看 finish_reason）。所以「OpenAI 保证 100% 符合 schema」这句话既混淆了评测分数与产品承诺，也漏掉了两个前提。另外要分清：这个 100% 说的是「格式符合 schema」，跟内容对不对、有没有幻觉完全是两件事。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>结构化输出解决的是一个很具体的问题：<strong>让模型的回答从「人读的话」变成「程序能直接用的数据」</strong>。它保证格式，不保证内容——这条边界要牢牢记住。</p>
+    <p>技术路线是从「求配合」到「上约束」的转变：提示词里请求、事后清洗重试、Few-shot 示例，都只能逼近 100%；而 <strong>受约束解码</strong>（constrained decoding）在解码的每一步直接把不合法的 token 屏蔽掉，这是结构上的保证，就像<strong>流水线</strong>上那个只让杯子正面朝上放得进去的凹槽。</p>
+    <p>两个必须分清的对子：<strong>JSON mode</strong>（2023 年 DevDay）只保证是合法 JSON，<strong>Structured Outputs</strong>（2024 年 8 月 6 日）才保证严格匹配你给的 schema；<strong>function calling</strong> 是「让模型调用你的函数」的机制，<strong>structured outputs</strong> 是施加在它之上的约束能力，加一行 <code>strict: true</code> 就是给前者装上后者，两者不是竞品。</p>
+    <p><mark class="key">关于那个 100%：准确的说法是「在 OpenAI 自家复杂 schema 评测集上达到 100%」，而产品层的可靠性还带「未拒答」和「未被截断」两个前提——别写成「官方保证 100% 符合 schema」。</mark>这是「实验室基准 vs 日常使用」的一个标准案例，以后见到漂亮的百分比，先问在哪个数据集上测的、谁测的、有没有前提。</p>
+    <p>两家 API 的差异要记牢：OpenAI 用 <code>parameters</code> 和独立的 <code>tool</code> 角色；Anthropic 叫 <strong>Tool use</strong>，用 <code>input_schema</code>，结果以 <code>tool_result</code> block 走 <code>user</code> 角色回传，还多一个 client tools / server tools 的二分，并且<strong>默认开启并行工具调用</strong>。模型支持列表是快速变化的信息，本文给的是发布时点快照，实际请查官方文档。</p>
+    <p>下一节我们把视角拉回到你自己身上——<strong>提示词写不出效果时该怎么迭代，以及哪些流传很广的「技巧」其实经不起实证检验</strong>。你会读到一个挺有意思的结论：「威胁模型能提升表现」被一位知名科技公司创始人公开背书过，但正经的实证研究并不支持它。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./10-3-cot-prompt.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 10.3 · 思维链提示</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./10-5-iteration.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 10.5 · 迭代与反模式</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 10.4</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

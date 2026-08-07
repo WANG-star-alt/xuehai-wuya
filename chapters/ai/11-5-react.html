@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 11.5 · ReAct 与规划 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./11-agent.html">智能篇 · 第 11 章</a>
+      <span class="sep">›</span>
+      <span>§ 11.5</span>
+    </div>
+    <a href="./11-agent.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 11.5 · Section</div>
+    <h1>ReAct 与规划</h1>
+    <div class="cn">ReAct &amp; Planning</div>
+  </header>
+
+  <p class="lead">
+    上一节我们让模型学会了查资料。但查资料只是「一次性动作」——问一句、查一次、答一句。真正的任务不长这样：你让它「帮我订下周去杭州最便宜的高铁票并同步到日历」，它必须先查有哪些班次，看到结果后再决定选哪一班，订完了才知道要往日历里填什么。<mark class="key">每一步该干什么，取决于上一步看到了什么——这就叫「规划」，而 ReAct 是让模型学会边想边做的那篇奠基论文。</mark>这一节要把 ReAct 讲透，同时纠正两个流传极广的误区：它<strong>不是</strong>一个刚性的三步循环，它在 HotpotQA 上也<strong>并没有</strong>显著超越思维链。顺带我们要面对一个更硬的问题——为什么规划这件事在工程上难到今天最好的模型在真实客服任务上成功率还不到一半。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍳 照着菜谱做菜 vs 边尝边做</div>
+    <p>两个人在<strong>厨房</strong>里做同一道红烧肉。</p>
+    <p><strong>甲</strong>是「一次规划到底」派。他开火前先把全部步骤在脑子里排好：热锅、下油、炒糖色三十秒、下肉煎五分钟、加水、炖四十分钟、收汁。然后闭着眼一步步执行，中间绝不改主意。<em>结果糖色炒糊了，他照旧下肉——因为计划上写的是下肉。</em></p>
+    <p><strong>乙</strong>是「边尝边做」派。他每做一步都会<mark class="key">停下来看一眼、闻一下、尝一口</mark>，然后想：「颜色偏深了，糖色再炒下去要苦，赶紧下肉止住」。他脑子里那句「颜色偏深了」不是一个动作——他没往锅里加任何东西——但正是这句话决定了下一个动作是什么。</p>
+    <p>甲叫「先规划后执行」（plan-and-execute），乙叫 <strong>ReAct</strong>。<strong>两者的分水岭不在谁更聪明，而在于「看到结果之后还能不能改主意」。</strong></p>
+    <div class="link">→ <strong>ReAct</strong>（Reasoning + Acting 的合写，读作「瑞爱克特」，正好也是英文单词 react「反应」）= 让模型把「思考」也当成一种动作，穿插在真实动作之间：想一句、做一步、看一眼结果、再想一句。</div>
+  </div>
+
+  <h3>原始论文的坐标：谁、哪一年、用的什么模型</h3>
+  <p>ReAct 有一篇明确的原始论文，坐标如下。这些数字值得记住，因为网上关于 ReAct 的二手描述失真率相当高：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>内容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>论文标题</td><td>《ReAct: Synergizing Reasoning and Acting in Language Models》（ReAct：在语言模型中协同推理与行动）</td></tr>
+        <tr><td>arXiv 编号</td><td><strong>2210.03629</strong>（v1 为 <strong>2022 年 10 月 6 日</strong>，v3 为 2023 年 3 月 10 日）</td></tr>
+        <tr><td>正式发表</td><td><strong>ICLR 2023</strong>（PDF 页眉写着 Published as a conference paper at ICLR 2023）</td></tr>
+        <tr><td>作者</td><td>Shunyu Yao、Jeffrey Zhao、Dian Yu、Nan Du、Izhak Shafran、Karthik Narasimhan、Yuan Cao</td></tr>
+        <tr><td>机构</td><td><strong>普林斯顿大学计算机系</strong>（Yao、Narasimhan）+ <strong>Google Research, Brain team</strong>（其余五人）</td></tr>
+        <tr><td>一个细节</td><td>第一作者 Yao 在论文里标注了 Work during Google internship——这项工作是他在谷歌实习期间做的</td></tr>
+        <tr><td>基座模型</td><td><strong>PaLM-540B</strong>，而且是 <strong>frozen</strong>（冻结的，不做任何训练）+ few-shot prompting（少样本提示）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后一行特别重要，值得单独强调：<mark class="key">ReAct 从头到尾没有训练任何模型。</mark>它用的是一个冻结的 PaLM-540B，全部本事都来自「在提示词里给它看几个例子」。<strong>把这件事的分量换算一下</strong>：在决策类任务上，它拿这种「只给一两个例子」的办法，打赢了那些专门用模仿学习和强化学习训练出来的方法——<strong>后者要跑成千上万次试错训练，前者只写了一段提示词。</strong></p>
+  <p>「frozen」和「few-shot」两个词当场翻译一遍：<strong>frozen</strong>（冻结）说白了就是模型参数一个都不改，只当一个现成工具用；<strong>few-shot prompting</strong>（少样本提示）就是在提示词里先摆几个「问题—解法」的完整范例，让它照着这个格式往下写。<strong>好比</strong>你不培训一位新员工，只把三份写好的合格报告放他桌上说「照这个格式写」。</p>
+
+  <h3>★ 论文真正的形式化定义：thought 是一个特殊的动作</h3>
+  <p>这一段是本节最核心的一段，也是网上被写错最多的一段。绝大多数介绍 ReAct 的文章会给你画一个「Thought → Action → Observation」的三步循环圈图。那个图不算错，但它把论文最深刻的那个抽象给弄丢了。</p>
+  <p><strong>论文的原始表述是「扩展动作空间」。</strong>原文写的是：</p>
+  <pre><code>we augment the agent's action space to  Â = A ∪ L,
+where L is the space of language.
+
+An action â_t ∈ L in the language space, which we will refer to
+as a "thought" or a "reasoning trace", does not affect the external
+environment, thus leading to no observation feedback.
+
+Instead, a thought â_t aims to compose useful information by
+reasoning over the current context c_t, and update the context
+   c_{t+1} = (c_t, â_t)</code></pre>
+  <p>把这段翻译成人话，一句一句来：</p>
+  <ul class="keylist">
+    <li><span class="k">Â = A ∪ L</span><span class="v"><strong>A</strong> 是原本那些「真动作」的集合（搜索、点击、拿起某个物品）。<strong>L</strong> 是「语言」的集合——也就是任何一句话。<strong>∪</strong> 是集合的并集符号。所以这个式子说的是：<mark class="key">把「说一句话」也加进动作清单里，让它跟「点击按钮」平起平坐地成为一个合法动作。</mark></span></li>
+    <li><span class="k">does not affect the external environment</span><span class="v">这种「语言动作」<strong>不改变外部世界</strong>——你想一句话，网页不会跳转，物品不会被拿起，什么都没发生。</span></li>
+    <li><span class="k">thus leading to no observation feedback</span><span class="v">因此它<strong>没有观察反馈</strong>。做真动作会得到环境的回应（搜索会返回结果），而思考不会得到任何回应。</span></li>
+    <li><span class="k">update the context c_{t+1} = (c_t, â_t)</span><span class="v">它唯一的作用是<strong>把自己追加到上下文里</strong>。第 t+1 步的上下文，就是第 t 步的上下文再拼上刚才那句话。</span></li>
+  </ul>
+  <p>看懂这四行，你就抓住了 ReAct 的全部：<mark class="key">思考是一个「不改变外部环境、只更新自己上下文」的特殊动作。</mark></p>
+  <p>这个抽象为什么比三步循环图深刻？<strong>因为它把「要不要思考」也变成了模型自己的选择。</strong>如果思考是循环里被写死的第一步，那模型每一轮都必须想一句，哪怕这一步根本不需要想。而在论文的抽象里，思考只是动作清单上多出来的一个选项——<strong>模型可以在需要的时候用它，不需要的时候直接做事。</strong>这个区别直接引出下面那个必须纠正的误区。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 侦探的笔记本</span>
+    <p>想象一位<strong>侦探</strong>在办案。他能做的事分两大类。</p>
+    <p><em>第一类是「真动作」</em>：敲开一扇门问话、去<strong>银行</strong>调监控、把物证送去化验。这些动作有一个共同特征——<strong>做完之后，世界给你一个回应</strong>：门里的人说了句话，监控里有一个画面，化验单上有一行结果。它们会改变外部世界（至少改变了「谁知道你在查案」这件事），而且必然带回新信息。</p>
+    <p><em>第二类是他掏出笔记本写一行字</em>：「三位证人都提到了同一辆蓝色轿车——先去查这辆车。」<mark class="key">写这行字没有敲任何一扇门，没有任何人因此说话，世界完全没变。</mark>它唯一改变的是他自己的笔记本——也就是他脑子里那份「我目前知道什么」的记录。而正是这行字，决定了他下一个真动作是去车管所而不是继续挨家挨户敲门。</p>
+    <p>这就是论文那个式子的全部含义：<strong>笔记本上的一行字，和敲开一扇门，被放在同一张「我可以做什么」的清单上。</strong>区别只在于——敲门会带回观察，写笔记不会；写笔记只是把纸变厚了一点。</p>
+    <p>而好侦探的另一个特征也在这个类比里：<strong>他不是每敲一扇门就写一行字。</strong>线索明朗的时候他一路往下查，什么都不写；碰到几条线索互相矛盾时，才停下来坐在椅子上抽根烟、把笔记本摊开写半页。<mark class="key">写多少、什么时候写，是他自己判断的——而不是有人规定「每查一步必须写一行」。</mark></p>
+  </div>
+
+  <h3>★ 误区一：ReAct 不是刚性的三步循环</h3>
+  <p>现在我们可以正面纠正第一个误区了。<strong>网上最常见的画法是这样一个铁打的循环：</strong></p>
+  <pre><code>【网上常见的画法 —— 不准确】
+
+  ┌────────────────────────────────┐
+  │  Thought   →   Action   →   Observation  │
+  └────────────↑───────────────────┘
+               └──────── 循环 ────────┘
+
+  每一轮必须依次经过三步，一步不能少
+</code></pre>
+  <p>论文里<strong>没有</strong>规定这件事。相反，论文明确区分了<strong>两类任务的两种模式</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>知识密集型任务</th><th>决策类任务</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>论文用的评测</td><td><strong>HotpotQA</strong>（多跳问答）、<strong>Fever</strong>（事实核查）</td><td><strong>ALFWorld</strong>（文字版家务环境）、<strong>WebShop</strong>（模拟网购）</td></tr>
+        <tr><td>思考的密度</td><td><strong>密集思考</strong>——原文说 the task-solving trajectory consists of multiple thought-action-observation steps</td><td><strong>稀疏思考</strong>——原文说 thoughts only need to appear <strong>sparsely</strong> in the most relevant positions</td></tr>
+        <tr><td>谁决定思不思考</td><td colspan="2"><strong>模型自己决定</strong>——论文明确说思考与动作的出现是<strong>异步</strong>的，由模型自行判断</td></tr>
+        <tr><td>大白话</td><td>每查一步都要想一想「查到的这条说明了什么、下一步该查谁」</td><td>大部分时候埋头干活，只在关键岔路口停下来想一句</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么会有这个差别？<strong>因为两类任务的难点根本不在同一处。</strong></p>
+  <p><strong>知识密集型任务</strong>（比如「某电影导演的第二部作品的女主角是谁」）的难点在<em>推理链条</em>——你必须先查导演，才知道该查哪部电影；查到电影，才知道该查哪位女主角。<mark class="key">每一步的「下一步查什么」都需要动脑子，所以每步都得想。</mark></p>
+  <p><strong>决策类任务</strong>（比如 ALFWorld 里的「把一个凉了的苹果放到桌上」）的难点在<em>动作序列很长</em>——去厨房、打开冰箱、拿苹果、关冰箱、走到桌边、放下。这里面绝大多数步骤是显然的，<strong>不需要任何思考，想反而是浪费</strong>。真正需要想一句的地方只有一两处，比如「苹果不在冰箱里，那我得先去柜台找苹果，再放进冰箱冷一下」。</p>
+  <p><strong>打个比方</strong>，这就像开车：<strong>导航</strong>清晰的高速上你一路踩油门，脑子几乎不用转；到了没标识的复杂立交桥下才需要停一停想「该走哪个匝道」。<mark class="key">要求「每一百米都必须停车思考一次」的司机不叫谨慎，叫笨。</mark></p>
+  <p>所以正确的理解是：<strong>ReAct 是「思考与动作可以任意交织」的框架，三步循环只是它在知识密集型任务上的一种典型形态。</strong>你在写代码实现时可以（也常常应该）写成一个循环，但你要知道那是工程上的简化，不是论文的主张。</p>
+
+  <h3>★ 误区二：ReAct 在 HotpotQA 上并没有显著超越思维链</h3>
+  <p>第二个必须纠正的误区，涉及一个非常具体的事实陈述。</p>
+  <p>网上大量文章会写「ReAct 在 HotpotQA 上大幅超越了 CoT（思维链）」，甚至给出一个具体的提升幅度。<strong>这是事实错误。</strong>论文的原始表述是：ReAct <strong>outperforms vanilla action generation models while being competitive with chain-of-thought reasoning (CoT)</strong>。</p>
+  <p>逐字掰开看：</p>
+  <ul class="keylist">
+    <li><span class="k">outperforms vanilla action generation models</span><span class="v">它<strong>超越了</strong>「只会生成动作、不会思考」的朴素方法（也就是 Act-only）。这一条是明确的胜出。</span></li>
+    <li><span class="k">being competitive with CoT</span><span class="v">它与思维链<strong>各有胜负、水平相当</strong>。<mark class="key">competitive 这个词在论文语境里的意思是「打得有来有回」，不是「碾压」。</mark></span></li>
+    <li><span class="k">论文给出的最佳方案</span><span class="v">是 <strong>ReAct + CoT 的组合</strong>，而不是单用 ReAct。</span></li>
+  </ul>
+  <p>为什么会是这个结果？想清楚这一点，比记住数字有价值得多。<strong>思维链和 ReAct 各有一个致命弱点，而它们恰好互补：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>CoT（思维链）</th><th>ReAct</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>做法</td><td>只在脑子里一步步推，不查外部资料</td><td>推一步、查一次、看结果、再推</td></tr>
+        <tr><td>强项</td><td>推理链条组织得漂亮，不受检索质量拖累</td><td>有真实事实兜底，不容易凭空编造</td></tr>
+        <tr><td>致命弱点</td><td><strong>会一路自信地编</strong>——脑子里没有的事实，它照样推得头头是道</td><td><strong>被检索质量绑死</strong>——搜到的东西不对，它就顺着错的往下走，而且很难自己跳出来</td></tr>
+        <tr><td>生活类比</td><td>闭卷考的优等生：条理清楚，但记错的地方会一路错到底</td><td>开卷考但查错了页的学生：抱着错的那页死磕，反而不如凭印象</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看清这张表你就明白为什么组合最好：<strong>能查到就照着查到的答（ReAct 的路子），查不到或查得明显不对就退回自己推（CoT 的路子）。</strong>论文的组合策略正是这个意思。<mark class="key">这也是一条至今仍然成立的工程原则：给 Agent 留一条「工具失灵时的退路」，比把工具做得再准更重要。</mark></p>
+  <p>还有一处必须交代清楚：<strong>HotpotQA 和 Fever 上的精确 EM 数值我没有取到</strong>（只读到论文正文前三节）。EM 是 Exact Match（完全匹配，答案一字不差才算对）的缩写。<strong>所以本节不给这两个任务的具体分数</strong>——你在别处看到的那些精确到小数点后一位的数字，请自己回论文核对。<mark class="key">在技术写作里，「我没核到这个数所以不写」比「抄一个看起来很专业的数」要负责得多。</mark></p>
+
+  <h3>有明确提升数字的是决策类任务</h3>
+  <p>那么 ReAct 到底在哪里赢得明确？<strong>在两个决策类任务上，而且赢得相当漂亮：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>任务</th><th>提升</th><th>对比对象</th><th>用了几个示例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>ALFWorld</strong>（文字版家务环境）</td><td>绝对成功率 <strong>+34%</strong></td><td>模仿学习 / 强化学习方法</td><td rowspan="2"><strong>仅 1–2 个 in-context 示例</strong></td></tr>
+        <tr><td><strong>WebShop</strong>（模拟网购）</td><td>绝对成功率 <strong>+10%</strong></td><td>模仿学习 / 强化学习方法</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三个术语当场翻译：</p>
+  <ul class="keylist">
+    <li><span class="k">绝对成功率提升 +34%</span><span class="v">注意是「绝对」不是「相对」——比如从 40% 涨到 74%，而不是「涨了三成四」。这个区别很大。</span></li>
+    <li><span class="k">模仿学习（imitation learning）</span><span class="v">给模型看大量「人类专家怎么做」的完整示范，让它照着学。<strong>相当于</strong>让学徒跟着<strong>老师</strong>傅在<strong>车间</strong>里看上千遍再动手。</span></li>
+    <li><span class="k">in-context 示例</span><span class="v">「上下文内示例」——直接写在提示词里的范例，不涉及任何参数更新。</span></li>
+  </ul>
+  <p><strong>把这个对比换算成可感知的量</strong>：模仿学习和强化学习方法要在环境里跑成千上万次试错，训练成本以「多少张显卡跑多少天」计；而 ReAct 只需要在提示词里写一两个示例——<mark class="key">一边是招一个学徒在车间练三年，一边是给一位老师傅递两张写好的示范单。</mark>结果后者赢了三十四个百分点。这才是 ReAct 真正惊人的地方，比 HotpotQA 上那点分数差有意义得多。</p>
+
+  <h3>手写一个 ReAct 循环：把每一步都摊开</h3>
+  <p>把上面的道理落成代码。这里不用任何框架，从零写一个能跑的 ReAct 循环，好处是每一个环节你都看得见：</p>
+  <pre><code>import json, re
+from openai import OpenAI
+
+client = OpenAI()
+
+# ---------- 一、准备工具（真动作的集合 A）----------
+def search(query: str) -&gt; str:
+    """假装这是一个搜索引擎。真实场景换成你的检索或 API 调用。"""
+    FAKE_DB = {
+        "杭州东站 高铁": "G7501 07:12 到 09:03 二等座 ¥73；"
+                        "G1373 08:25 到 10:31 二等座 ¥73；"
+                        "D3115 06:48 到 09:55 二等座 ¥46",
+        "上海虹桥 出发站": "上海虹桥站，地铁 2/10/17 号线可达",
+    }
+    for k, v in FAKE_DB.items():
+        if all(w in query for w in k.split()):
+            return v
+    return "未找到相关结果"
+
+def calculate(expr: str) -&gt; str:
+    """只允许数字和四则运算，防止把整台机器交出去。"""
+    if not re.fullmatch(r"[0-9+\-*/(). ]+", expr):
+        return "表达式含非法字符，已拒绝"
+    try:
+        return str(eval(expr, {"__builtins__": {}}, {}))
+    except Exception as ex:
+        return f"计算失败：{ex}"
+
+TOOLS = {"search": search, "calculate": calculate}
+
+# ---------- 二、ReAct 提示词：用示例教它格式 ----------
+SYSTEM = """你在一个「思考—行动—观察」的循环里工作。
+
+每一轮你只能输出下面三种之一，且必须严格用这个前缀格式：
+
+Thought: 你的思考。这不会改变外部世界，只是把你的想法记进上下文。
+         需要想的时候才想；显然的一步可以不想，直接行动。
+Action:  工具名[参数]
+         可用工具：search[查询词]   calculate[算式]
+Final:   最终答案
+
+规则：
+1. 输出 Action 之后立刻停止，等我把 Observation 交给你，再继续。
+2. 一次只输出一个 Thought 或一个 Action，不要一次写完整条轨迹。
+3. 如果连续两次 Observation 都没有帮助，就直接输出 Final 说明查不到，
+   不要无限循环下去。
+
+示例（这就是论文里说的 in-context 示例，一两个就够）：
+
+Question: 上海虹桥到杭州东最早一班高铁几点？
+Thought: 我需要先查班次表。
+Action: search[杭州东站 高铁]
+Observation: G7501 07:12 到 09:03 …… D3115 06:48 到 09:55 ……
+Thought: 三班里 D3115 的 06:48 最早。
+Final: 最早一班是 D3115，06:48 发车。
+"""
+
+# ---------- 三、循环本体 ----------
+def react(question, max_steps=8):
+    msgs = [{"role": "system", "content": SYSTEM},
+            {"role": "user", "content": f"Question: {question}"}]
+
+    for step in range(1, max_steps + 1):
+        rsp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=msgs,
+            temperature=0,
+            stop=["Observation:"],      # 关键：不让它自己编造观察结果
+        )
+        out = rsp.choices[0].message.content.strip()
+        print(f"--- 第 {step} 步 ---\n{out}")
+        msgs.append({"role": "assistant", "content": out})
+
+        # 情况 1：给出最终答案，收工
+        if out.startswith("Final:"):
+            return out[len("Final:"):].strip()
+
+        # 情况 2：只是一句 Thought —— 不改变外部世界，也没有观察
+        m = re.search(r"Action:\s*(\w+)\[(.*?)\]", out, re.S)
+        if not m:
+            # 论文那个式子在这里体现得最清楚：
+            #   c_{t+1} = (c_t, â_t)
+            # 上下文变长了，外界什么都没发生，也没有 Observation 要喂回去
+            continue
+
+        # 情况 3：真动作 —— 执行工具，把观察结果喂回去
+        name, arg = m.group(1), m.group(2)
+        obs = TOOLS.get(name, lambda a: f"没有名为 {name} 的工具")(arg)
+        print(f"Observation: {obs}")
+        msgs.append({"role": "user", "content": f"Observation: {obs}"})
+
+    return "达到步数上限仍未得出结论（这是刻意的兜底，防止无限循环烧钱）"
+
+if __name__ == "__main__":
+    print("\n答案：", react("上海虹桥到杭州东最便宜的高铁多少钱？比最贵的省多少？"))</code></pre>
+  <p>这段代码里<strong>有五处细节是刻意的，每一处都对应一个真实的坑</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">stop 参数设为 Observation:</span><span class="v">这是整个实现里<strong>最关键的一行</strong>。不加它，模型会一口气把 Thought、Action、Observation、Final 全编完——<mark class="key">连搜索结果都是它自己想象出来的。</mark><strong>好比</strong>你派人去<strong>菜市场</strong>问价，他没出门就回来说「我问了，白菜三块」。</span></li>
+    <li><span class="k">Thought 那一支不喂 Observation 回去</span><span class="v">这里就是论文那个式子的代码化：思考只把自己追加进上下文（<code>msgs.append</code> 之后直接 <code>continue</code>），不执行任何工具，也没有观察结果。<strong>这三行代码就是 Â = A ∪ L 的全部实现。</strong></span></li>
+    <li><span class="k">提示词里明确说「显然的一步可以不想」</span><span class="v">这正是在实现「稀疏思考」——不强制每轮都想。如果你写死「必须先 Thought 再 Action」，就退回成刚性三步循环了。</span></li>
+    <li><span class="k">max_steps 硬上限</span><span class="v">没有这一行，一个卡住的 Agent 会一直循环调 API 直到你的账单爆掉。这不是可选项，是必需的保险栓。</span></li>
+    <li><span class="k">calculate 用正则白名单挡住 eval</span><span class="v">直接把 <code>eval</code> 暴露给模型，等于把你整台机器的钥匙交给一段不可控的文本。<strong>相当于</strong>让一位陌生人进你家<strong>门锁</strong>都不换。工具必须最小权限。</span></li>
+  </ul>
+
+  <h3>三种规划风格：ReAct 不是唯一的选择</h3>
+  <p>ReAct 是「边想边做」，但这不是唯一的规划方式。把常见的三种摆在一起对比，你选型时才有依据：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>风格</th><th>做法</th><th>生活类比</th><th>擅长</th><th>怕什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>一次到底</strong><br/>（plan-and-execute）</td><td>先把完整计划一次列全，再照单执行，中途不改</td><td>照着<strong>菜谱</strong>闭眼做菜</td><td>步骤稳定、环境可预测的任务；便宜，因为只规划一次</td><td>中途出岔子无法纠正，糖色炒糊了照旧下肉</td></tr>
+        <tr><td><strong>边想边做</strong><br/>（ReAct）</td><td>想一句、做一步、看结果、再想</td><td>边尝边调味</td><td>信息要一步步挖出来的任务</td><td>贵（每步一次模型调用）；容易在错路上打转</td></tr>
+        <tr><td><strong>先做再反省</strong><br/>（reflect / 自我批评）</td><td>做完一整轮，回头审一遍自己的产出，找出问题再重做</td><td>写完作业自己检查一遍再交</td><td>有明确对错标准的任务（代码能不能跑、测试能不能过）</td><td>没有可靠的判定标准时，它的「反省」也可能是错的</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>现实中的产品几乎都是混着用的：<strong>先用「一次到底」列一个粗计划（省钱），执行时用 ReAct 逐步推进并允许改主意（灵活），关键节点做一次「反省」验收（保质）。</strong><mark class="key">这不是折中，而是因为三者的成本和适用面确实不同——你不会为了买一瓶醋专门开个项目会，也不会盖一栋楼不画图纸。</mark></p>
+
+  <h3>规划为什么难：错误会累积，而且是乘法</h3>
+  <p>现在我们要面对这一节最硬的部分。上面那套东西看起来很美，为什么真实产品里 Agent 还是那么不可靠？<strong>Anthropic 官方在讨论 Agent 局限时给了一句非常精准的判断：</strong></p>
+  <p>原文是：<strong>Agents are stateful and errors compound</strong>（Agent 是有状态的，而错误会复合累积），并且<strong>minor system failures can be catastrophic for agents</strong>（对 Agent 来说，微小的系统故障可能是灾难性的）。</p>
+  <p>两个词要翻译：<strong>stateful</strong>（有状态的）<strong>说白了就是</strong>「后面的步骤依赖前面的结果」；<strong>compound</strong> 是金融里「复利」那个词，意思是<mark class="key">错误不是相加，是相乘。</mark></p>
+  <p><strong>把这句话换算成可感知的量</strong>，一算就明白为什么这么可怕：</p>
+  <pre><code>假设每一步的成功率都是 95%（听起来相当高了）
+
+  走  5 步全对的概率 = 0.95^5  ≈ 77%     还行
+  走 10 步全对的概率 = 0.95^10 ≈ 60%     开始难看
+  走 20 步全对的概率 = 0.95^20 ≈ 36%     大半会失败
+  走 50 步全对的概率 = 0.95^50 ≈ 7.7%    基本别指望
+
+换成 99% 的单步成功率呢？
+
+  走 50 步全对 = 0.99^50 ≈ 60%
+  走 100 步全对 = 0.99^100 ≈ 37%
+
+结论：单步准确率的一点点差距，
+      在长任务里会被放大成天壤之别。</code></pre>
+  <p>这就是为什么「单步测试全过，串起来就崩」是 Agent 开发的日常。<strong>好比</strong>一条<strong>流水线</strong>上有五十道工序，每道工序的良品率 95% 听起来很不错，但整条线的成品率只有 7.7%——<mark class="key">工厂管理者盯的从来不是单道工序的良品率，而是整线成品率，这个直觉在 Agent 工程里同样成立。</mark></p>
+  <p>Anthropic 还补了一句更让人头疼的：<strong>One step failing can cause agents to explore entirely different trajectories, leading to unpredictable outcomes</strong>（一步失败会导致 Agent 探索完全不同的轨迹，产生不可预测的结果）。</p>
+  <p><strong>注意这跟普通程序的报错完全不是一回事。</strong>普通程序某一步失败，你会看到一个明确的异常堆栈，程序停在那里。而 Agent 某一步失败，它<em>不会停</em>——它会拿着这个错误的观察结果，煞有介事地推导出一条全新的路线，然后一路走下去。<strong>相当于</strong>你派人去办事，他走错了一个路口，不但没回头，还根据「我现在在这条街上」重新规划了一整天的行程，晚上回来交给你一份完全无关的报告。</p>
+
+  <h3>调试为什么困难：同一个提示词，两次跑出两种结果</h3>
+  <p>Agent 开发的第二个硬骨头是调试。Anthropic 的原话是：<strong>Agents make dynamic decisions and are non-deterministic between runs, even with identical prompts</strong>（Agent 做的是动态决策，即使提示词完全相同，不同次运行之间也是非确定性的）。</p>
+  <p><strong>non-deterministic</strong>（非确定性）这个词是理解一切的关键。<strong>换成大白话：</strong>同样的输入，跑两次可能走出两条完全不同的路。</p>
+  <p>为什么？三个来源叠加：</p>
+  <ul class="keylist">
+    <li><span class="k">来源一 · 采样本身带随机</span><span class="v">模型每一步输出都是从概率分布里采样出来的（§8.4 讲过 temperature 和 top-p）。就算把 temperature 调到 0，浮点运算的顺序、批处理的分组方式仍可能带来微小差异。</span></li>
+    <li><span class="k">来源二 · 外部世界在变</span><span class="v">工具返回的东西本身就在变——搜索结果每天不同，网页改版，接口偶尔超时。<strong>Agent 的输入里天然包含了整个外部世界。</strong></span></li>
+    <li><span class="k">来源三 · 一步之差，全盘不同</span><span class="v">前两条造成的一点点差异，会因为「错误累积」被放大成两条完全不同的轨迹。</span></li>
+  </ul>
+  <p><strong>这件事对开发方式的影响是根本性的。</strong>普通软件的调试方式是「复现 bug → 定位 → 修 → 验证不再复现」，这一整套的前提是<em>bug 可复现</em>。而 Agent 的 bug 常常复现不了——<mark class="key">你看到它昨天办错了一件事，今天用同一个提示词跑一遍，它办对了。你什么都没改。</mark></p>
+  <p><strong>这就像</strong>一位<strong>客服</strong>接线员偶尔会把工单转错部门，你调出录音听，这一通接得挺好；再听一通，也挺好。你压根抓不到那通出错的电话。<strong>正确的应对不是「反复重试指望复现」，而是：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">全程留痕（tracing）</span><span class="v">把每一步的 Thought、Action、Observation 原文全部记下来，出问题时回放整条轨迹。<strong>相当于</strong>给每一通电话都录音——你不指望它不出错，你指望出错时能查。</span></li>
+    <li><span class="k">按分布看，不按单次看</span><span class="v">同一个任务跑 20 次，统计成功率。<strong>单次成功不能证明任何事情</strong>，这是 Agent 评测和普通测试最大的区别。</span></li>
+    <li><span class="k">给有副作用的动作加审批</span><span class="v">读操作可以放开随便试，<strong>写操作（发邮件、下单、删文件、转账）必须人工确认或有严格白名单</strong>。非确定性系统 + 不可撤销的副作用 = 事故。</span></li>
+  </ul>
+
+  <h3>pass^k：生产环境真正该看的那个指标</h3>
+  <p>上面说「要按分布看」，那具体看什么指标？这里有一份非常有说服力的公开数据，来自 <strong>τ-bench</strong>（tau-bench，一个模拟真实客服场景的 Agent 评测基准）：</p>
+  <ul class="keylist">
+    <li><span class="k">论文</span><span class="v">arXiv <strong>2406.12045</strong>，来自 <strong>Sierra AI 与普林斯顿大学</strong></span></li>
+    <li><span class="k">原文结论</span><span class="v">even state-of-the-art function calling agents (like gpt-4o) succeed on <strong>&lt;50%</strong> of the tasks, and are <strong>quite inconsistent</strong>（<strong>pass^8 &lt;25%</strong> in retail）</span></li>
+  </ul>
+  <p>翻译一遍：<mark class="key">即使是当时最先进的函数调用 Agent（如 GPT-4o），任务成功率也不到 50%，而且相当不稳定——在零售场景下，pass^8 低于 25%。</mark></p>
+  <p><strong>pass^k 这个指标值得讲透，它是本节最实用的一个概念。</strong></p>
+  <p>先说它的定义：<strong>pass^k = 同一个任务连续跑 k 次，k 次全都成功的概率。</strong>注意是「全都」——一次失败就不算。</p>
+  <p>它跟另一个常见指标 <strong>pass@k</strong> 长得很像但意思正好相反，这两个极易混淆：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>指标</th><th>含义</th><th>生活类比</th><th>谁关心它</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>pass@k</strong>（读「pass at k」）</td><td>跑 k 次，<strong>至少有一次</strong>成功的概率</td><td>投 10 份简历，只要有一家录我就行</td><td>研究者、榜单——衡量「模型有没有这个能力」</td></tr>
+        <tr><td><strong>pass^k</strong>（读「pass 的 k 次方」）</td><td>跑 k 次，<strong>次次都</strong>成功的概率</td><td>连续 8 天上班都不迟到</td><td><strong>生产环境</strong>——衡量「能不能放心交给它」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>为什么生产环境必须看 pass^k？</strong>因为你的用户不会「重试八次挑一次好的」。<strong>相当于</strong>你雇一位<strong>保姆</strong>接孩子放学：她「一周里至少有一天准时到」（pass@5 很高）没有任何意义，你要的是「五天都准时」（pass^5 高）。<mark class="key">在服务场景里，偶尔办对不算本事，次次不出错才叫可靠。</mark></p>
+  <p><strong>把 τ-bench 那个数字换算成可感知的量</strong>：零售场景下 pass^8 不到 25%，意思是——同一件事让它办八遍，八遍全对的概率不到四分之一。<strong>换个说法：如果你有一百个用户各自问同一类问题八次，其中七十五个以上的人至少会碰到一次翻车。</strong>这就是为什么今天严肃的商业 Agent 产品都保留了人工兜底通道，而不是全自动化。</p>
+  <p>顺手记一个推论：<mark class="key">pass^k 会随 k 指数下降，所以「把任务拆短」本身就是最有效的可靠性手段。</mark>一个需要走 30 步的任务，拆成三个各 10 步、中间有人工或程序化校验点的子任务，整体成功率会明显好于一口气跑 30 步——这跟工厂在流水线中间设质检工位是同一个道理。</p>
+
+  <h3>让规划更靠谱的七个工程手段</h3>
+  <p>知道了难在哪，接下来是怎么办。下面这些是工程实践中被反复验证有效的做法，<strong>注意它们都不是论文结论，是工程取舍</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>手段</th><th>怎么做</th><th>治什么病</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>硬性步数上限</td><td>循环里写死 <code>max_steps</code>，超了就退出并报告</td><td>无限循环烧钱</td></tr>
+        <tr><td>缩小工具集</td><td>一次只给它这个任务需要的三五个工具，不要一口气挂二十个</td><td>选错工具；工具描述挤占上下文</td></tr>
+        <tr><td>工具返回值收窄</td><td>不要把整个 API 原始 JSON 甩回去，只留需要的几个字段</td><td>观察结果太长，把关键信息埋掉</td></tr>
+        <tr><td>写操作加审批</td><td>凡是不可撤销的动作（下单、发信、删除）必须过一道确认</td><td>非确定性 + 不可逆副作用 = 事故</td></tr>
+        <tr><td>失败重试要换法子</td><td>同样的查询失败两次就别再试第三次，改写查询或换工具</td><td>在错路上原地打转</td></tr>
+        <tr><td>全程 tracing</td><td>Thought / Action / Observation 原文全存，可回放</td><td>bug 不可复现，无法定位</td></tr>
+        <tr><td>按分布评测</td><td>同一批任务跑多次，看成功率和 pass^k，不看单次</td><td>被一次好运误导</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中「缩小工具集」这条最容易被忽视，值得多说一句。<strong>很多人以为工具越多 Agent 越能干，实际恰恰相反</strong>——工具的描述文字全都要塞进提示词，二十个工具的说明可能占掉几千 token，不但贵，还让模型在一堆相似选项里犯选择困难。<mark class="key">这就像给一个新来的<strong>装修</strong>工递上一整柜子工具，他反而找不到该用哪把螺丝刀；只递给他这活儿要用的三样，他干得又快又准。</mark></p>
+
+  <h3>一个真实感的完整轨迹：看它在哪一步救了自己</h3>
+  <p>光看代码不如看一条真实轨迹。下面这条是 ReAct 处理一个多跳问题时的典型样子，<strong>注意第 3 步——那句话没做任何事，但它是整条轨迹的转折点</strong>：</p>
+  <pre><code>Question: 《活着》的作者，他哪一年出生的县，现在归哪个市管？
+
+1  Thought: 这是个多跳问题，得分三段查：先查作者，
+            再查他的出生地，最后查那个地方现在的行政归属。
+2  Action:  search[《活着》 作者]
+   Observation: 《活着》是余华的长篇小说，1993 年出版。
+
+3  Thought: 拿到作者是余华。注意问题问的是「出生的县」，
+            但很多资料只写他的籍贯或成长地，这两个不一定
+            是同一个地方——我得专门去查「出生地」这三个字，
+            而不是笼统地搜「余华 哪里人」。
+            ↑ 这一步没有执行任何工具，外部世界什么都没发生
+              它只是把「查询要更精确」这个判断写进了上下文
+              这就是 c_{t+1} = (c_t, â_t)
+
+4  Action:  search[余华 出生地]
+   Observation: 未找到相关结果
+
+5  Thought: 换个说法试试，别在同一个查询上耗第三次。
+6  Action:  search[余华 出生 浙江]
+   Observation: 余华，1960 年出生于浙江杭州，后随父母迁往海盐县。
+
+7  Thought: 这条资料说的是「出生于杭州，后迁往海盐」——
+            那么出生地是杭州，海盐是成长地。
+            如果我在第 3 步没想那一句，很可能直接把海盐
+            当成出生地答出去了。
+8  Final:   余华 1960 年出生于浙江杭州，杭州本身即为地级市
+            （不属于任何县）；他成长的海盐县今属浙江嘉兴市。
+            另需说明：出生地与成长地在此题中并非同一处。</code></pre>
+  <p><strong>这条轨迹有三处值得反复看：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">第 3 步是纯思考，救了整道题</span><span class="v">它没敲任何一扇门、没查任何东西，只是提醒自己「出生地和籍贯可能不是一回事」。<mark class="key">这就是论文那个抽象的价值所在：一个不改变外部世界的动作，改变了后续所有动作的方向。</mark></span></li>
+    <li><span class="k">第 5 步体现了「失败要换法子」</span><span class="v">第 4 步查不到，它没有把同一个查询再试一遍，而是改了说法。这一条在提示词里写明了。</span></li>
+    <li><span class="k">第 8 步主动说明了歧义</span><span class="v">它没有硬给一个干脆的答案，而是把「出生地≠成长地」这个关键区分讲了出来。<strong>一个好 Agent 的标志之一，是知道什么时候该说「这里有歧义」而不是硬答。</strong></span></li>
+  </ul>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「ReAct 就是 Thought-Action-Observation 三步循环，每轮必须走完」</td><td><strong>不准确。</strong>论文的形式化定义是扩展动作空间 Â = A ∪ L，thought 只是清单上多出来的一个「不改变外部环境、只更新上下文」的动作。论文明确指出决策类任务里 thoughts only need to appear <strong>sparsely</strong>，由模型自行决定思考与动作的异步出现</td></tr>
+        <tr><td>「ReAct 在 HotpotQA 上大幅超越 CoT」</td><td><strong>事实错误。</strong>原文是 outperforms vanilla action generation models while being <strong>competitive with</strong> CoT——与思维链水平相当。<strong>论文给出的最佳方案是 ReAct + CoT 组合</strong></td></tr>
+        <tr><td>「ReAct 的 HotpotQA EM 分数是 XX.X」</td><td>本节不给这个数——<strong>我只读到论文正文前三节，没有取到精确 EM 数值</strong>。见到精确数字请自行回论文核对</td></tr>
+        <tr><td>「ReAct 需要专门训练一个模型」</td><td>不需要。论文用的是 <strong>frozen 的 PaLM-540B</strong> 加 few-shot prompting，一个参数都没改。决策类任务上<strong>只用了 1–2 个 in-context 示例</strong></td></tr>
+        <tr><td>「ReAct 全面优于所有方法」</td><td>有明确提升数字的是决策类任务：<strong>ALFWorld 绝对成功率 +34%、WebShop +10%</strong>（对比模仿学习 / 强化学习方法）。知识密集型任务上它与 CoT 各有胜负</td></tr>
+        <tr><td>「Agent 出错和普通程序报错一样，看堆栈就行」</td><td>不一样。Anthropic 明确指出 Agent <strong>errors compound</strong>，一步失败会让它探索<strong>完全不同的轨迹</strong>，而不是停在那里报错</td></tr>
+        <tr><td>「同一个提示词跑两次结果应该一样」</td><td>不会。Anthropic 原文：<strong>non-deterministic between runs, even with identical prompts</strong>。所以要全程 tracing，要按分布评测</td></tr>
+        <tr><td>「pass@k 高说明 Agent 可靠」</td><td>混淆了两个指标。pass@k 是「至少一次成功」，pass^k 是「k 次全成功」。<strong>生产环境该看 pass^k</strong>——τ-bench 里 GPT-4o 级别的 Agent 在零售场景 pass^8 不到 25%</td></tr>
+        <tr><td>「给 Agent 挂的工具越多越强」</td><td>相反。工具描述占上下文、增加选择困难。<strong>一次只给这个任务需要的几个工具</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>写给要动手的人：八条实操建议</h3>
+  <ul class="keylist">
+    <li><span class="k">先算一遍你的任务需要几步</span><span class="v">用 0.95^n 估一下理论上限。如果算出来只有 20%，那不是提示词的问题，是<strong>任务拆得太长</strong>——先想办法拆短，再谈优化。</span></li>
+    <li><span class="k">stop 参数必须设</span><span class="v">不让模型自己编造 Observation。这是手写 ReAct 时第一个也是最容易漏的坑。</span></li>
+    <li><span class="k">不要强制每轮都思考</span><span class="v">在提示词里明说「显然的一步可以直接行动」。这既省 token 又符合论文原意——稀疏思考是论文明确写了的。</span></li>
+    <li><span class="k">给 CoT 留一条退路</span><span class="v">工具查不到时允许它凭已有知识回答（并标明这是推测）。<strong>论文的最佳方案就是 ReAct + CoT 组合</strong>，不要做成非查到不可。</span></li>
+    <li><span class="k">max_steps 和预算上限都要有</span><span class="v">步数上限防死循环，token 预算上限防账单意外。两者缺一不可。</span></li>
+    <li><span class="k">同一查询失败两次就换法子</span><span class="v">写进提示词。不写的话它会在同一个死胡同里撞好几次。</span></li>
+    <li><span class="k">写操作一律走审批</span><span class="v">读随便试，写必须确认。非确定性系统配不可逆动作，是所有 Agent 事故的共同配方。</span></li>
+    <li><span class="k">评测跑 20 次看分布</span><span class="v">记录成功率、平均步数、平均 token、pass^k。<strong>单次跑通不能证明任何事</strong>——这句话值得贴在显示器上。</span></li>
+  </ul>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于 ReAct 论文（arXiv 2210.03629，ICLR 2023）在 HotpotQA 上的表现，下面哪种说法符合原文？"
+       data-opts="ReAct 在 HotpotQA 上大幅超越了思维链 CoT，是当时的最优单一方法|ReAct 超越了只生成动作的朴素方法，但与 CoT 水平相当，最佳方案是 ReAct 与 CoT 组合|ReAct 在 HotpotQA 上明显不如 CoT，论文建议放弃 ReAct|论文没有在 HotpotQA 上做实验"
+       data-answer="1"
+       data-explain="原文的表述是 ReAct outperforms vanilla action generation models while being competitive with chain-of-thought reasoning——它超越了只会生成动作、不会思考的朴素方法（Act-only），但与思维链是 competitive，也就是打得有来有回、水平相当，不是碾压。论文给出的最佳方案是 ReAct 与 CoT 的组合。原因也很好理解：CoT 的弱点是脑子里没有的事实照样能一路自信地编，ReAct 的弱点是被检索质量绑死、搜错了就顺着错的走。两者恰好互补，所以组合最好。顺带说明：HotpotQA 与 Fever 的精确 EM 数值本节没有给出，因为只读到论文正文前三节，没有从一手来源取到这两个数字。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>ReAct 的全部精髓在论文那一个式子里：<strong>Â = A ∪ L</strong>——把「说一句话」也加进动作清单，让它跟「点击按钮」平起平坐。这种语言动作叫 <strong>thought</strong>，它的定义特征是<mark class="key">不改变外部环境、因此没有观察反馈，唯一作用是把自己追加进上下文（c_t+1 = (c_t, â_t)）</mark>。这个抽象比任何一张三步循环图都深刻，因为它把「要不要想」交给了模型自己。</p>
+    <p>两个必须记住的纠偏：<strong>第一，ReAct 不是刚性的三步循环</strong>——知识密集型任务（HotpotQA、Fever）用密集思考，决策类任务（ALFWorld、WebShop）里 thoughts only need to appear <strong>sparsely</strong>，思考与动作异步出现，由模型自行决定。<strong>第二，ReAct 在 HotpotQA 上并未显著超越 CoT</strong>——原文是 competitive with，最佳方案是两者组合。有明确提升数字的是决策类任务：<strong>ALFWorld 绝对成功率 +34%、WebShop +10%</strong>，而且只用了 1–2 个 in-context 示例、基座是 frozen 的 PaLM-540B。</p>
+    <p>规划难在两处，Anthropic 官方说得最准：<strong>errors compound</strong>（单步 95% 走 20 步只剩 36%，一步失败还会让它探索完全不同的轨迹），以及 <strong>non-deterministic between runs, even with identical prompts</strong>（同样的提示词跑两次走两条路，bug 常常复现不了）。</p>
+    <p>因此生产环境该看的指标是 <strong>pass^k</strong>（连续 k 次全成功的概率），不是 pass@k。τ-bench（arXiv 2406.12045，Sierra AI / 普林斯顿）的实测是：连 GPT-4o 级别的函数调用 Agent 任务成功率也不到 50%，零售场景 <strong>pass^8 不到 25%</strong>。<mark class="key">把任务拆短，本身就是最有效的可靠性手段。</mark></p>
+    <p>下一节我们跳出单个 Agent——<strong>工具怎么标准化接入（MCP），以及多个 Agent 一起干活到底值不值得</strong>。那一节有一组很硬的官方数字，也有一个「教材刚写完就过时」的鲜活案例。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./11-4-rag.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 11.4 · RAG 检索增强</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./11-6-mcp.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 11.6 · MCP 与多 Agent</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 11.5</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 11 章 · AI 智能体 Agent · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html#vol-ai">智能篇</a>
+      <span class="sep">›</span>
+      <span>第 11 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 11</div>
+    <h1>第 11 章 · AI 智能体 Agent</h1>
+    <div class="cn">AI Agent · 从「会说」到「会做」</div>
+  </header>
+
+  <p class="lead">
+    第 10 章我们学会了怎么把话说清楚，让模型给出更好的回答。但无论提示词写得多漂亮，它交给你的始终只是<strong>一段文字</strong>。它不会替你去查今天的航班，不会真的把文件改掉，不会在发现查错了之后自己换个关键词重来一遍。<mark class="key">这一章讲的就是那道分水岭：怎么让一个只会输出文字的模型，变成一个能自己决定下一步做什么、能真的动手、能发现错了再改的「干活的东西」。</mark>这个东西业界叫 <strong>Agent</strong>（读作「诶真特」，中文常译「智能体」或「代理」）。这一章分六节，我们会把它的每个零件拆开来看，也会诚实地告诉你它现在到底有多不靠谱——用真实的基准分数，而不是宣传口号。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍲 请人做饭：给菜谱，还是请厨师上门</div>
+    <p>你想吃一顿红烧肉，有两种请人帮忙的方式。</p>
+    <p><strong>方式一：让人给你写菜谱。</strong>对方文笔极好，写出来的菜谱条理清楚、火候讲得明明白白，甚至还贴心提醒你「五花肉要选三层分明的」。但菜谱写完，事情就结束了。<em>肉还是得你自己去买，锅还是得你自己烧，糖色炒糊了他也不知道。</em></p>
+    <p><strong>方式二：请一位厨师上门。</strong>你只说一句「今晚想吃红烧肉」。他自己拉开<strong>冰箱</strong>看看有什么、发现没有八角就下楼去<strong>菜市场</strong>买、尝一口觉得咸了就加半碗水、发现今天的肉太瘦就临时改成小炒肉并且回头跟你说一声。<mark class="key">整个过程你没有下过第二道指令。</mark></p>
+    <p>前面十章讲的所有东西——分词、注意力、采样、提示词——造出来的是<strong>那位会写菜谱的人</strong>。这一章要做的，是给他配上眼睛（能查）、手（能动）、记性（记得刚才尝过咸了）和一套「没做好就再来一遍」的做事习惯，让他变成<strong>那位上门的厨师</strong>。</p>
+    <div class="link">→ <strong>Agent</strong>（智能体）= 一个以大模型为大脑、能调用外部工具、能保存中间状态、并且能在循环中自己决定下一步做什么的程序。</div>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>「Agent」这个词在 2024 到 2026 年被用得极滥，几乎每个产品都自称是 Agent。所以本章的第一件事不是吹它有多强，而是<strong>先把定义收紧</strong>：一个东西凭什么才配叫 Agent，一个套了几层提示词的聊天机器人为什么不算。收紧定义之后，才好谈它由哪些零件组成。</p>
+  <p>六节各回答一个具体问题：</p>
+  <ul class="keylist">
+    <li><strong>凭什么叫 Agent，它现在到底行不行？</strong>——不看宣传视频，看四个权威基准的真实分数。有一个数字你要先有心理准备：在一份专门测「客服式多轮任务」的基准里，论文发表时最好的模型连续八次都做对的概率<strong>不到四分之一</strong>。</li>
+    <li><strong>模型怎么才能真的「动手」？</strong>——它其实一根手指也没有。它能做的只是<em>写一张纸条</em>说「请帮我调用这个函数、参数是这些」，真正动手的是你的程序。这套纸条的格式，就是工具调用。</li>
+    <li><strong>它怎么才能记住事？</strong>——模型天生没有记忆，每次都是失忆重来。要让它记住，只能在外面另建一套账本，而这套账本怎么建、什么时候取，直接决定了 Agent 能不能干长活。</li>
+    <li><strong>知识不在模型脑子里怎么办？</strong>——先查资料再回答，这条路叫 RAG。它是目前企业里落地最多的一种 Agent 形态。</li>
+    <li><strong>「自己决定下一步」这件事在代码里长什么样？</strong>——答案朴素得让人意外：一个 while 循环。ReAct 就是给这个循环里的每一轮加上「先想一句、再做一步、看看结果」的固定节奏。</li>
+    <li><strong>每接一个新工具都要重写一遍适配代码，有没有统一插头？</strong>——MCP 想做的就是工具界的 USB-C。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 新来的实习生</span>
+    <p>把 Agent 想成<strong>办公室</strong>里刚入职第一天的实习生，你会立刻明白它的全部本事和全部毛病。</p>
+    <p>这位实习生<em>脑子很好</em>——学历漂亮，什么领域的名词都听得懂，写文档一流。但他有四个特点：<strong>第一，他没有权限</strong>，不能直接改数据库、不能刷公司的卡，凡是要动真东西都得写一张申请单交给你，你批了他才能办——这就是<strong>工具调用</strong>；<strong>第二，他记性极差</strong>，昨天交代的事今天全忘，你必须让他随手记在本子上，第二天先翻本子——这就是<strong>记忆系统</strong>；<strong>第三，公司的内部规章他一条都不知道</strong>，问他也是瞎猜，得先带他去档案室查——这就是 <strong>RAG</strong>；<strong>第四，他做事容易一条道走到黑</strong>，第一步走偏了就一路偏下去，得手把手教他「每做一步停下来看一眼结果，不对就换个法子」——这就是 <strong>ReAct</strong>。</p>
+    <p><mark class="key">而本章最重要的那条现实提醒，也藏在这个类比里：实习生犯的错是会叠加的。</mark>他第一步把客户名字记错了，后面所有的邮件、报表、通知全都错，而且他自己一路上完全没有察觉。Anthropic 官方的工程博客把这件事写得很直白：<em>Agents are stateful and errors compound</em>（智能体是有状态的，错误会累积），对普通程序只是小毛病的失败，对 Agent 可能是灾难性的。<strong>所以给 Agent 派活的核心手艺，不是把提示词写得多华丽，而是设计好「哪一步必须让人过目」。</strong></p>
+  </div>
+
+  <h3>为什么这一章值得单独拆出来讲</h3>
+  <p>前十章讲的都是<strong>模型本身</strong>：它内部怎么算、怎么训练、怎么被提示。这一章第一次跨出模型，讲<strong>模型之外的那套系统</strong>。这个跨越比它听起来要大得多——你面对的不再是「怎么让它答得更好」这种单点问题，而是「一个会犯错、还不告诉你它犯了错的部件，怎么被安全地放进一个真实系统里」这种工程问题。</p>
+  <p>这也是为什么本章会反复出现两类内容：<strong>一类是机制</strong>（工具调用的报文长什么样、记忆怎么存怎么取、循环怎么写），<strong>另一类是现实局限</strong>（基准分数有多低、错误怎么累积、调试为什么难、哪些坑是官方自己承认的）。<mark class="key">只讲机制不讲局限的 Agent 教程，会让你造出一个演示时很惊艳、上线三天就出事的东西。</mark></p>
+  <p>再补一句时间感：把语言模型接上工具这件事，工业界的起点相当明确——<strong>2023 年 6 月 13 日</strong>，OpenAI 发布 function calling（函数调用），第一次让模型能以稳定的结构化格式说出「我要调用哪个函数、参数是什么」。在那之前，人们只能靠正则表达式去猜模型输出里的意图，脆得一碰就碎。<strong>到本书写作的 2026 年，这套东西已经演进了三年多，中间换过参数名、换过接口、长出了统一协议</strong>——这些演进本身也在本章里讲，因为网上大量教程还停在旧写法上，照抄会直接报错。</p>
+
+  <h3>这一章怎么读</h3>
+  <p>六节的依赖关系比第 8 章更松，但仍建议按顺序：<strong>§11.1 是定义和期望管理</strong>，先把「它到底行不行」搞清楚，后面才不至于对着一堆技术细节盲目乐观；<strong>§11.2 和 §11.3 是两个基础零件</strong>（手和记性），是所有 Agent 的必需品；<strong>§11.4 的 RAG 是 §11.3 记忆系统的一个具体大规模应用</strong>，读完 §11.3 再读它会顺很多；<strong>§11.5 的 ReAct 把前面所有零件串成一个能跑的循环</strong>，是全章的收拢点；<strong>§11.6 的 MCP 是工程化的一步</strong>，解决「工具太多、接法太乱」的问题。</p>
+  <p>另外，§9.2 讲过的 <strong>Embedding</strong>（嵌入，把文字变成一串数字，意思近的数字也近）在 §11.3 和 §11.4 会被反复用到。如果你对「余弦相似度」和「向量检索」已经没什么印象了，建议先回头翻一眼 <strong>§9.2</strong>，那里有一个可以亲手拖动向量、看夹角变化的互动组件。</p>
+
+  <h3>本章的六节</h3>
+  <div class="cards">
+    <a class="card" href="./11-1-what-is-agent.html">
+      <div class="card-num">§ 11.1</div>
+      <h4>Agent 是什么</h4>
+      <p>凭什么才配叫智能体？四个权威基准的真实分数，以及官方自己承认的那些坑。</p>
+    </a>
+    <a class="card" href="./11-2-tool-calling.html">
+      <div class="card-num">§ 11.2</div>
+      <h4>工具调用</h4>
+      <p>模型其实一根手指也没有。它只是写了张纸条——纸条的格式与两家的结构差异。</p>
+    </a>
+    <a class="card" href="./11-3-memory.html">
+      <div class="card-num">§ 11.3</div>
+      <h4>记忆系统</h4>
+      <p>它每次都失忆重来。要它记住，只能在外面另建一套账本。</p>
+    </a>
+    <a class="card" href="./11-4-rag.html">
+      <div class="card-num">§ 11.4</div>
+      <h4>RAG 检索增强</h4>
+      <p>先查资料再回答。企业里落地最多的一种 Agent 形态。</p>
+    </a>
+    <a class="card" href="./11-5-react.html">
+      <div class="card-num">§ 11.5</div>
+      <h4>ReAct 循环</h4>
+      <p>「自己决定下一步」在代码里其实就是一个 while 循环：想一句、做一步、看一眼。</p>
+    </a>
+    <a class="card" href="./11-6-mcp.html">
+      <div class="card-num">§ 11.6</div>
+      <h4>MCP 协议</h4>
+      <p>工具界的 USB-C：一次接好，处处能用——以及它带来的新安全风险。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">模型自己什么都做不了</span><span class="v">它唯一的输出是文字。所谓「Agent 帮我订了机票」，真正订票的永远是你写的那段代码，模型只是说了一句「请调用订票函数、参数如下」。搞清这一点，你就不会被「AI 自动化」这个词唬住。</span></li>
+    <li><span class="k">错误会累积，而且它不会告诉你</span><span class="v">Anthropic 官方原文：<em>errors compound</em>，而且 <em>minor system failures can be catastrophic for agents</em>。一步走偏，后面整条路径全歪。设计 Agent 的第一要务是划定「必须人工确认」的关卡。</span></li>
+    <li><span class="k">同样的提示词，两次跑出来可能完全不同</span><span class="v">官方原文：Agent <em>non-deterministic between runs, even with identical prompts</em>（就算提示词一模一样，多次运行之间也不确定）。这让传统「输入固定、输出固定」的测试方法直接失效。</span></li>
+    <li><span class="k">别用宣传视频估算它的能力，用基准</span><span class="v">四个权威基准：SWE-bench（改真实 GitHub issue）、WebArena（真的操作网页）、GAIA（通用助手任务）、τ-bench（多轮客服一致性）。论文发表时的数字普遍低得惊人——τ-bench 里最好的模型成功率不到 50%，连续八次都成功的概率在零售场景下不到 25%。</span></li>
+    <li><span class="k">工具描述写得烂，比工具少更致命</span><span class="v">Anthropic 官方给过一个数字：让一个专门测工具的 Agent 去重写那些有缺陷的工具描述后，后续 Agent 的任务完成时间下降了 <strong>40%</strong>。同一批工具、同一个模型，只改了说明书。</span></li>
+    <li><span class="k">工具越多不等于越强</span><span class="v">官方判据非常好记：<strong>如果一个人类工程师都无法明确说出这活儿该用哪个工具，就不能指望 AI 做得更好。</strong>职责重叠的臃肿工具集，是最常见的失败模式之一。</span></li>
+  </ul>
+
+  <div class="pager">
+    <a class="btn prev" href="./10-5-iteration.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 10.5 · 迭代与反模式</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./11-1-what-is-agent.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 11.1 · Agent 是什么</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · 第 11 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

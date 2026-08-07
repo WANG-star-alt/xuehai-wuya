@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 10.2 · Few-shot 示例 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./10-prompt.html">智能篇 · 第 10 章</a>
+      <span class="sep">›</span>
+      <span>§ 10.2</span>
+    </div>
+    <a href="./10-prompt.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 10.2 · Section</div>
+    <h1>Few-shot 示例</h1>
+    <div class="cn">Few-shot Prompting &amp; In-Context Learning</div>
+  </header>
+
+  <p class="lead">
+    "光说不如给个例子"——这句老话在提示词里成立到令人吃惊的程度。<mark class="key">但关于"给几个例子"这件事，中文互联网上流传的答案和提出这个词的那篇论文，差了整整一个数量级。</mark>"Few-shot 就是给三五个例子"这句话你一定听过。而 GPT-3 那篇《Language Models are Few-Shot Learners》里，few-shot 的示例数原文写的是 <strong>"typically 10 to 100"</strong>——10 到 100 个。三五个是当代工程实践的建议（Anthropic 官方给的正是 3 到 5 个），跟论文的做法不是一回事。这一节要做的第一件事，就是把这两个数字彻底分开；然后讲清 in-context learning 到底是怎么回事、示例该怎么挑、以及论文自己诚实列出的失效清单。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🥟 教人包饺子：说十遍不如包一个给他看</div>
+    <p>你要教一个从没进过<strong>厨房</strong>的人包饺子。</p>
+    <p><em>方式一 · 纯讲</em>："取一张皮，放适量馅，对折捏合，边缘要压紧，捏出褶子。"每个字他都懂，可"适量"是多少？"褶子"往哪个方向捏？捏出来的东西大概像个小笼包，也可能像个馄饨。</p>
+    <p><em>方式二 · 包一个给他看</em>：你不说话，当着他的面包三个，摆在<strong>案板</strong>上。第一个是标准的，第二个馅少了一点、你顺手把它捏成月牙形补救，第三个皮破了、你演示怎么用另一张皮补。</p>
+    <p>他看完那三个，比听你讲十分钟管用得多。<strong>因为示例同时传递了三层信息</strong>：包成什么样（目标形态）、怎么包（操作过程）、遇到意外怎么处理（边缘情况）。这三层里，后两层几乎无法用语言精确描述。</p>
+    <p><mark class="key">Few-shot 提示就是"包几个给它看"。你不描述规则，你直接给出几对「输入 → 输出」，让模型自己从中提取规律。</mark>这一招之所以有效，是因为很多要求你自己也说不清楚，但你一眼能认出对不对。</p>
+    <div class="link">→ <strong>Few-shot</strong>（读作"菲乌·夏特"，字面"少量样本"）= 在提示词里给出几组"输入 → 输出"的示范，让模型照着办。<strong>不改动模型任何参数</strong>，全部发生在你那一段文字里。</div>
+  </div>
+
+  <h3>三个词先分清：zero-shot、one-shot、few-shot</h3>
+  <p>这三个词都出自 GPT-3 那篇论文，而且论文给了非常明确的定义。<strong>它们共同的前提最关键，也最常被忽略：三者都不做梯度更新、不做微调。</strong></p>
+  <p>先把"梯度更新"这个词翻译一下。<strong>梯度更新</strong>（gradient update）说白了就是"改动模型内部的参数"——那是训练干的事，要显卡、要时间。而这三种设定<mark class="key">全都在"模型一个参数都不改"的前提下进行</mark>，差别只在于你在提示词里放了几个示例。这一点决定了它们的性质：这不是学习，这是"看着办"。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>设定</th><th>论文里的定义</th><th>你在提示词里放什么</th><th>要不要改模型参数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>zero-shot</strong><br>零样本</td><td>不给任何示例，只给一段自然语言的任务说明</td><td>"把下面这句英文翻译成中文：……"</td><td><strong>不改</strong></td></tr>
+        <tr><td><strong>one-shot</strong><br>单样本</td><td>只给一个示例</td><td>任务说明 + 一组「输入 → 输出」</td><td><strong>不改</strong></td></tr>
+        <tr><td><strong>few-shot</strong><br>少样本</td><td><mark class="key">在上下文窗口容量允许的范围内，给尽可能多的示例</mark></td><td>任务说明 + 若干组「输入 → 输出」，论文里通常 <strong>10 到 100 个</strong></td><td><strong>不改</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意 few-shot 那一行的定义。<strong>论文的原意不是"给少量几个"，而是"在窗口装得下的前提下，能给多少给多少"。</strong>那个 "few"（少）是相对于传统机器学习来说的——传统方法要几千上万条标注数据才能学一个任务，而这里只要几十条放在提示词里就行，所以叫"少"。<mark class="key">"少"是相对训练数据的"少"，不是相对你的直觉的"少"。这是整个混淆的源头。</mark></p>
+
+  <h3>GPT-3 那篇论文的准确信息</h3>
+  <p>既然本节要靠这篇论文立论，先把它的身份信息核准：</p>
+  <ul class="keylist">
+    <li><span class="k">论文标题</span><span class="v">《Language Models are Few-Shot Learners》（语言模型是少样本学习者）</span></li>
+    <li><span class="k">第一作者与团队</span><span class="v">Brown 等，共 <strong>31 位作者</strong>，末位作者是 <strong>Dario Amodei</strong>（后来创立 Anthropic 的那位）</span></li>
+    <li><span class="k">arXiv 编号与日期</span><span class="v"><strong>2005.14165</strong>，<strong>2020 年 5 月 28 日</strong></span></li>
+    <li><span class="k">发表情况</span><span class="v"><strong>NeurIPS 2020 收录</strong>。网上常说它拿了"最佳论文奖"——<strong>这一点没有取得证据，本节不采用这个说法</strong>。收录本身已经足够说明分量，不必替它加封号</span></li>
+    <li><span class="k">模型规模</span><span class="v">GPT-3，<strong>1750 亿参数</strong>。换算成可感知的量：如果把每个参数写在一张 A4 纸上，纸摞起来大约有 <strong>17 公里高</strong>——比珠峰的两倍还高</span></li>
+    <li><span class="k">论文用的核心术语</span><span class="v"><strong>in-context learning</strong>（上下文内学习）。论文用它指 meta-learning（元学习）的<strong>内循环</strong></span></li>
+  </ul>
+  <p>"in-context learning"这个词值得当场翻译。<strong>in-context</strong> 就是"在上下文里"，也就是在你那段提示词里；<strong>learning</strong> 是学习。合起来<mark class="key">就是"模型在读你这段提示词的过程中，临时摸清了这个任务该怎么做"</mark>——读完这次请求，它什么都不记得，下次得重新看一遍示例。</p>
+  <p>为什么论文管它叫"元学习的内循环"？<strong>元学习</strong>（meta-learning，"学习怎么学习"）分两层：外循环是漫长的预训练，模型在里面见过无数种任务模式；内循环是每一次具体推理，模型在提示词里认出"哦，这是那类任务"，然后调用已有的模式。<strong>打个比方</strong>：外循环是一个人上了十几年学、见过各种题型；内循环是他考试时看了两道例题，立刻明白这张卷子考什么。<mark class="key">他不是在考场上学会了新知识，他是认出了该用哪套已有的本事。</mark></p>
+
+  <h3>★★ 最容易写错的一条：10 到 100，不是 3 到 5</h3>
+  <p>这是本节最有价值的澄清点，值得单开一节反复说。</p>
+  <p><strong>GPT-3 论文里，few-shot 的示例数原文写的是 "typically 10 to 100"</strong>——通常 10 到 100 个。这个数字受限于模型的上下文窗口能装多少。</p>
+  <p>而中文技术文章里几乎一致地写着"few-shot 就是给 3 到 5 个例子"。这句话<strong>并不是凭空编的</strong>——它来自当代工程实践，而且有权威出处：<strong>Anthropic 官方文档建议给 3 到 5 个示例</strong>。</p>
+  <p><mark class="key">两个数字都是对的，但它们回答的是两个不同的问题。混着用，就会在两个场合同时判断失误。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>GPT-3 论文（2020）</th><th>当代工程实践（Anthropic 官方建议）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>示例数</td><td><strong>通常 10 到 100 个</strong></td><td><strong>3 到 5 个</strong></td></tr>
+        <tr><td>要回答的问题</td><td>不做任何微调，纯靠上下文，模型的能力上限在哪儿？</td><td>在真实产品里，性价比最高的示例数是多少？</td></tr>
+        <tr><td>为什么是这个数</td><td>为了把 in-context learning 的能力推到极致，窗口能塞多少塞多少</td><td>够用即可。示例占 token、占钱、占窗口，而且当代模型的指令遵循能力远强于 2020 年</td></tr>
+        <tr><td>对示例的要求</td><td>从数据集里采样，追求数量与覆盖</td><td><strong>相关、多样、有结构</strong>；贴近真实用例、覆盖边缘情况</td></tr>
+        <tr><td>使用场合</td><td>读论文、理解基准测试设定、比较模型能力</td><td>写产品提示词、控制成本</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么工程实践能把数字降这么多？两个原因。<strong>第一，模型本身变了。</strong>2020 年的 GPT-3 是一个纯粹的"续写机器"，你得用大量示例把它"扳"到任务上；今天的模型经过了指令微调和 RLHF（Reinforcement Learning from Human Feedback，"基于人类反馈的强化学习"），你直接说要求它就懂，示例只是用来消除歧义、对齐细节。<strong>第二，示例是要花钱的。</strong>每个示例都占 token，都要按输入价计费，还要挤占上下文窗口。100 个示例可能占掉几千个 token，每次请求都要重发一遍。</p>
+  <p><strong>换成大白话：</strong>论文在实验室里测"最多能做到多好"，所以不计成本地堆示例；产品里问"花最少的钱做到够好"，所以三五个就收手。<strong>好比</strong>测<strong>汽车</strong>极速要在专业赛道上把油门踩到底，而日常通勤没人这么开。<mark class="key">拿赛道数据去指导日常驾驶，或者拿通勤经验去质疑赛道成绩，两种做法都不对。</mark></p>
+
+  <h3>论文的实测数据：从 zero 到 few 到底涨多少</h3>
+  <p>光讲定义太虚，看论文给的两组具体数字。这两组都可以放心引用：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>数据集</th><th>指标</th><th>zero-shot</th><th>one-shot</th><th>few-shot</th><th>zero → few 的差</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>CoQA</strong>（对话式问答）</td><td>F1</td><td>81.5</td><td>84.0</td><td><strong>85.0</strong></td><td>+3.5</td></tr>
+        <tr><td><strong>TriviaQA</strong>（常识问答）</td><td>准确率</td><td>64.3%</td><td>68.0%</td><td><strong>71.2%</strong></td><td>+6.9 个百分点</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看这两行有两个值得注意的地方。</p>
+  <p><strong>第一，从 zero 到 one 的那一跳，往往比从 one 到 few 的那一跳更大。</strong>CoQA 是 81.5 → 84.0 → 85.0，第一步涨 2.5，第二步只涨 1.0。TriviaQA 是 64.3 → 68.0 → 71.2，第一步涨 3.7，第二步涨 3.2。<mark class="key">这个规律的实用含义很直接：如果你现在一个示例都没给，那么加第一个示例的性价比最高。</mark><strong>好比</strong>教人认路，第一次带他走一遍效果最大，第二次第三次的边际收益就小了。</p>
+  <p><strong>第二，涨幅是几个百分点的量级，不是翻倍。</strong>Few-shot 是有效的手段，但它不是魔法。有些文章把 few-shot 说成"能让模型能力质变"，那是夸大。<strong>真正会出现质变级提升的是 §10.3 要讲的思维链</strong>——那里有一组 17.7% 到 78.7% 的数字，那才叫质变。</p>
+
+  <h3>论文最核心的那张图讲了什么</h3>
+  <p>如果只能从 GPT-3 那篇论文里记住一个结论，应该是它 Figure 1.3 表达的那件事，而不是任何一个具体分数：</p>
+  <div class="callout">
+    <span class="tag">Key · 核心论点</span>
+    <p><strong>随着模型规模变大：zero-shot 的表现平稳提升，而 few-shot 的提升更快。</strong></p>
+    <p>换句话说，<mark class="key">模型越大，越擅长 in-context learning</mark>——大模型不只是"知道得更多"，它更擅长"看几个例子就明白你要什么"。这个"从例子里领会意图"的能力，本身是随规模涌现出来的。</p>
+  </div>
+  <p>这个结论比任何一个分数都重要，因为它解释了一件你可能观察到的现象：<strong>同样一份带示例的提示词，在小模型上几乎没用，在大模型上效果明显。</strong>不是你的示例写得不好，是小模型"领会力"不够。<strong>这就像</strong>带<strong>学徒</strong>：老师傅示范一遍就能上手的活儿，新手看十遍还是不会——不是示范得不清楚，是接收端的能力不同。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 装修师傅看的那块样板</span>
+    <p>你家<strong>装修</strong>，要贴一面很特别的墙砖：横竖交错、每三块换一次色、边角要留特定的缝。</p>
+    <p><em>做法一 · 写规范书</em>：你熬夜写了两千字的施工说明，画了示意图，标了尺寸。师傅读完，皱着眉说"我大概明白了"——然后贴出来的东西跟你想的不一样。因为"错缝要错多少""换色的节奏从哪块开始"这些事，文字怎么写都有歧义。</p>
+    <p><em>做法二 · 贴一块样板</em>：你自己在角落贴出 <strong>1 平米</strong>，让他照着来。他看两眼就懂了，连你没说出口的"哦原来横向要对齐"都一起懂了。</p>
+    <p><em>做法三 · 贴三块样板</em>：一块标准区、一块<strong>阴角</strong>处怎么收边、一块遇到<strong>插座</strong>怎么绕。这三块把典型情况和麻烦情况都覆盖了，师傅贴一整面墙都不会来问你。</p>
+    <p><mark class="key">这就是 few-shot 的全部道理。做法一是纯指令，做法二是 one-shot，做法三是精心策展的 few-shot。</mark>注意做法三的关键不是"多"，而是<strong>三块样板各自负责一类情况</strong>——这正是 Anthropic 说的"相关、多样、有结构"。而如果你贴的三块样板全是标准区，那第二块第三块就是白贴，这也解释了为什么示例的<strong>多样性</strong>比数量重要。</p>
+  </div>
+
+  <h3>★ 示例怎么挑：官方给的三个词</h3>
+  <p>Anthropic 官方文档对示例的要求浓缩成三个词：<strong>相关（relevant）、多样（diverse）、有结构（structured）</strong>。加上两条补充要求：<strong>贴近你真实的用例</strong>，以及<strong>覆盖边缘情况</strong>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>要求</th><th>说白了是什么意思</th><th>反例（常见错误）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>相关</strong></td><td>示例和你真正要处理的输入长得像——同样的领域、同样的句式、同样的数据形态</td><td>你要处理的是客服聊天记录，示例却是正式的书面公文</td></tr>
+        <tr><td><strong>多样</strong></td><td>几个示例之间不重复，各自覆盖一类不同情况</td><td>给了五个例子，全是"正面评价 → 好评"这一种，模型学不到怎么处理负面和中性</td></tr>
+        <tr><td><strong>有结构</strong></td><td>每个示例的输入和输出边界清楚、格式统一，最好用标签包裹</td><td>示例和指令混在一堆文字里，模型分不清哪段是示例、哪段是要它做的事</td></tr>
+        <tr><td><strong>贴近真实用例</strong></td><td>直接从你的真实数据里挑，不要自己编"干净漂亮"的假例子</td><td>示例都是格式规整的短句，实际输入却是带错别字、带表情、带换行的真实用户留言</td></tr>
+        <tr><td><strong>覆盖边缘情况</strong></td><td>把那几种"最容易出错"的情形各放一个进去</td><td>只给了正常情况，模型遇到空输入、超长输入、多种意图混在一起时就乱了</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>关于"有结构"，官方明确建议<strong>用 <code>&lt;example&gt;</code> 标签把每个示例包裹起来</strong>。这个做法看着琐碎，收益很实在——它让"示例区"和"指令区""待处理数据区"之间有了明确的墙。§10.4 会把这套标签体系讲透，这里先看它长什么样：</p>
+  <pre><code>请把用户反馈归入四类之一：功能缺陷 / 体验问题 / 功能建议 / 无效反馈。
+
+&lt;examples&gt;
+&lt;example&gt;
+输入：点进去就闪退，我都装了三遍了
+输出：功能缺陷
+&lt;/example&gt;
+
+&lt;example&gt;
+输入：这个按钮藏太深了吧，找了半天
+输出：体验问题
+&lt;/example&gt;
+
+&lt;example&gt;
+输入：希望能支持导出 Excel
+输出：功能建议
+&lt;/example&gt;
+
+&lt;example&gt;
+输入：啊啊啊啊
+输出：无效反馈
+&lt;/example&gt;
+
+&lt;example&gt;
+输入：闪退问题什么时候修？另外能不能加个夜间模式
+输出：功能缺陷
+备注：一条反馈含多个意图时，取更严重的那一类
+&lt;/example&gt;
+&lt;/examples&gt;
+
+现在请处理这一条：
+输入：更新完之后字变得特别小，看不清</code></pre>
+  <p>数一下这里给了几个示例：<strong>五个</strong>，正好在 3 到 5 个这个建议区间的上限。而且这五个不是随便挑的——前四个各占一类（<strong>多样</strong>），第五个专门处理"一条反馈含多个意图"这种<strong>边缘情况</strong>，还顺手用"备注"字段把规则明确写了出来。<mark class="key">这个"备注"是个好技巧：当示例本身可能引起疑问时，在示例内部把判断依据写清，比在指令区加一条抽象规则更有效。</mark></p>
+
+  <h3>★ 不要堆砌边缘情况：官方明确反对的做法</h3>
+  <p>刚说完"要覆盖边缘情况"，紧接着必须补一条反向的警告，否则很容易过头。</p>
+  <p><strong>Anthropic 官方对此有一句非常直白的表态</strong>：团队常常会把一长串边缘情况（a laundry list of edge cases）塞进提示词里——<strong>"We do not recommend this."</strong>（我们不推荐这样做。）</p>
+  <p>官方给出的替代方案是：<strong>策展一组多样的、典型的（canonical）示例</strong>。<strong>canonical</strong> 这个词值得翻译一下——它指"最标准、最能代表一类情况的那一个"。也就是说，与其列举二十种可能出错的情形，不如挑出五种最有代表性的，各给一个示例。</p>
+  <p>为什么堆砌边缘情况反而不好？<strong>三个原因</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">提示词会变得脆弱</span><span class="v">每加一条特例，就多一条可能和其他条冲突的规则。加到第二十条时，你自己都说不清它们有没有互相矛盾。<mark class="key">这本质上是把复杂的 if-else 逻辑硬编码进了自然语言里——而自然语言没有编译器帮你检查冲突。</mark></span></li>
+    <li><span class="k">维护成本失控</span><span class="v">业务一变，你得回头逐条审二十条特例哪些还成立。而且改动任何一条都可能影响其他情形的表现，每次都要重新全量测试。</span></li>
+    <li><span class="k">模型的泛化能力被浪费了</span><span class="v">给几个典型示例，模型能自己推广到没见过的情况；给一堆特例，它反而倾向于逐条对号入座，遇到清单外的情况就懵。<strong>好比</strong>教<strong>司机</strong>开车，教会他"看清路况、留出余量"比给他背一本"遇到这种路口该怎么办"的两百条手册更管用。</span></li>
+  </ul>
+  <p>这条原则和 §10.4 要讲的"正确的高度"（right altitude）是同一件事的两面：<strong>提示词既不该是硬编码的规则堆，也不该是笼统到没有信号的空话。</strong>而官方特别强调的一句是——<mark class="key">"minimal 不等于 short"（精简不等于短）</mark>。精简是指"没有冗余、没有互相打架的规则"，不是指字数少。一份三千字但每一段都在提供不同信号的提示词，比一份五百字但反复强调同一件事的提示词更"精简"。</p>
+
+  <h3>★ 论文诚实列出的失效清单</h3>
+  <p>这一段能显著提升你对 few-shot 的判断力，因为它来自论文自己的坦白。</p>
+  <p><strong>GPT-3 那篇论文明确列出了 few-shot 效果不佳的任务类别</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>任务类别</th><th>代表数据集</th><th>这类任务在考什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>自然语言推理</strong></td><td><strong>ANLI</strong> 等</td><td>判断两句话之间是"蕴含 / 矛盾 / 无关"。要的是逻辑关系判断，不是知识</td></tr>
+        <tr><td><strong>阅读理解</strong></td><td><strong>RACE</strong>、<strong>QuAC</strong> 等</td><td>读一段较长的文章后回答问题，常需要跨句子整合和多步推理</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这份清单的价值在于它划出了 few-shot 的能力边界。<mark class="key">Few-shot 擅长的是"教会模型输出格式和判断口味"，不擅长的是"给模型它本来不具备的推理能力"。</mark></p>
+  <p><strong>换成大白话：</strong>你给几个例子，能让它明白"哦，你要的是这种风格、这种格式、这种粒度的判断"；但如果这道题本身需要它做三步逻辑推演而它做不到，那给一百个例子也变不出来。<strong>好比</strong>你给学生看三道解得漂亮的证明题，他能学会答题的书写格式和排版，但如果他压根不掌握那个定理，例题再多也证不出新题。</p>
+  <p>顺带说，这也解释了为什么 CoT（思维链）在 few-shot 之后才被发现是个大突破——<strong>因为它攻的正是 few-shot 攻不下的那块阵地：让模型把推理过程一步步写出来</strong>。这是下一节的主题。</p>
+  <p>论文愿意把自己方法的失效场景写进去，这件事本身值得学。<strong>在技术判断上，一个方法的边界比它的战绩更有用</strong>——战绩告诉你它能干什么，边界告诉你什么时候别用它、该换别的招。</p>
+
+  <h3>示例的顺序、数量、格式：几个实操细节</h3>
+  <p>下面这些是工程实践里反复被验证的经验，不是论文结论，如实标注为经验做法：</p>
+  <ul class="keylist">
+    <li><span class="k">格式一致性比内容更重要</span><span class="v">所有示例的输入输出格式必须完全统一——同样的标签、同样的分隔符、同样的字段顺序。<strong>格式不统一会直接抵消示例的作用</strong>，因为模型不知道该学哪种。</span></li>
+    <li><span class="k">示例里的标签分布要留意</span><span class="v">如果你给的五个示例里四个都是"通过"、一个"不通过"，模型可能会倾向于输出"通过"。分类任务里让各类别数量尽量均衡。</span></li>
+    <li><span class="k">顺序有影响，但方向不好预测</span><span class="v">示例的排列顺序会影响结果，这在实践中被反复观察到。<strong>但哪种顺序更好没有普适规律</strong>，只能测。§10.5 会讲怎么测。</span></li>
+    <li><span class="k">示例放在指令之后、待处理数据之前</span><span class="v">这是最常见也最稳的排法：先说要干什么，再给示范，最后给真正要处理的东西。</span></li>
+    <li><span class="k">示例区和数据区一定要有明确的墙</span><span class="v">用 <code>&lt;examples&gt;</code> 和 <code>&lt;input&gt;</code> 这类标签隔开。<mark class="key">最常见的一类失败是模型把你的示例当成了要处理的数据，或者把待处理的数据当成了新示例继续往下编。</mark></span></li>
+    <li><span class="k">输出侧也要给示范</span><span class="v">示例的价值一半在输入、一半在输出。如果你的输出要带某种口吻、某种结构、某种精确到标点的格式，示例里就要如实体现出来。</span></li>
+  </ul>
+
+  <h3>什么时候该用 few-shot，什么时候不必</h3>
+  <p>给一张判断表。因为示例是要花钱的，不该无条件加。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>情形</th><th>建议</th><th>理由</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>输出格式复杂、用文字很难描述清楚</td><td><strong>强烈建议用</strong></td><td>示例是描述格式最高效的手段，一个例子胜过三段说明</td></tr>
+        <tr><td>判断标准带主观口味（什么算"重要"、什么算"合格"）</td><td><strong>强烈建议用</strong></td><td>口味没法定义，只能示范。这是 few-shot 最不可替代的场景</td></tr>
+        <tr><td>要做批量分类、抽取，且类别边界模糊</td><td><strong>建议用</strong></td><td>示例能把边界钉住，尤其是那几个容易混的类别之间</td></tr>
+        <tr><td>任务本身极其常见（翻译、摘要、改写）</td><td>可以先不用</td><td>模型见过海量此类数据，zero-shot 通常够好。先测再决定要不要加</td></tr>
+        <tr><td>需要的是深度多步推理</td><td>不要指望 few-shot</td><td>论文自己列了 ANLI、RACE、QuAC 这类的失效情况。该用 CoT（§10.3）</td></tr>
+        <tr><td>上下文预算非常紧张</td><td>谨慎用，先算账</td><td>示例每次请求都要重发。如果示例固定不变，把它放提示词最前面吃前缀缓存折扣（见 §8.1）</td></tr>
+        <tr><td>已经有几千条标注数据</td><td>考虑微调</td><td>数据量到了这个级别，微调的效果和长期成本通常都优于把示例塞进每次请求</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后一行值得多说一句。<strong>Few-shot 和微调是同一个坡上的两个位置。</strong>示例三五个，用 few-shot；标注数据几千条，用微调。中间那一大段灰色区域，判断依据是<mark class="key">这份提示词要被调用多少次</mark>——调用一万次，那几千个示例 token 就被付了一万遍，微调的一次性成本反而便宜。<strong>好比</strong>租房和买房：住三个月租，住十年买，中间那几年得算账。</p>
+
+  <h3>Few-shot 到底"学"到了什么：一个值得警惕的细节</h3>
+  <p>这一段稍微深一点，但它能让你对示例的作用有个更准的判断。</p>
+  <p>直觉上我们会以为：模型从示例里"学到了任务的规则"。但更贴近实情的说法可能是——<mark class="key">示例主要在做三件事：告清任务是哪一类、钉住输出的格式、划定标签的取值范围。</mark>至于"每一条输入到输出的映射关系"，模型很大程度上是靠预训练里已有的能力去补的。</p>
+  <p><strong>这件事的实用含义</strong>：如果一个任务是模型压根没见过、也无法从常识推导的（比如你们公司内部一套自创的编码规则），那么给三五个示例往往不够，模型会"照着格式套，但内容全靠猜"。这种时候更该做的是<strong>把规则明确写出来</strong>，而不是指望示例把规则传递过去。</p>
+  <p><strong>好比</strong>教人用一台<strong>洗衣</strong>机：如果这机器的按钮布局符合常规，你演示一次他就全会了；但如果这台机器有个"必须先按住电源三秒才能选程序"的怪脾气，你演示十次他也未必注意到那三秒——你得直接说出来。<mark class="key">示例传递的是"看得见的形态"，说不出的怪规则得靠文字明说。</mark></p>
+  <p>反过来也成立：<strong>凡是"你自己也说不清、但一眼能认出对不对"的要求，就必须靠示例</strong>。文案的调性、摘要的详略、代码注释的粒度、翻译里哪些词该保留英文——这些东西写成规则会变成一堆自相矛盾的形容词，给三个例子反而一目了然。<strong>说白了：能说清的用文字，说不清的用例子，两样都不省。</strong></p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"few-shot 就是 3 到 5 个，这是论文定义"</td><td><strong>混了两件事。</strong>GPT-3 论文写的是通常 10 到 100 个；3 到 5 个是当代工程实践建议（Anthropic 官方口径）</td></tr>
+        <tr><td>"few-shot 是一种训练/微调"</td><td>不是。论文明确前提是<strong>不做梯度更新、不做微调</strong>——模型参数一个都不改，全部发生在提示词里</td></tr>
+        <tr><td>"示例越多越准"</td><td>边际收益递减，且要花钱占窗口。论文数据显示 zero→one 那一跳最大，one→few 明显变缓</td></tr>
+        <tr><td>"few-shot 能解决推理题"</td><td>论文自己列了失效清单：ANLI 等自然语言推理、RACE 与 QuAC 等阅读理解。推理题该用 CoT</td></tr>
+        <tr><td>"边缘情况列得越全越好"</td><td>官方明确反对堆砌一长串边缘情况（原话 "We do not recommend this"），应改为策展一组典型示例</td></tr>
+        <tr><td>"精简就是写短"</td><td>官方特别强调 <strong>minimal 不等于 short</strong>。精简指没有冗余与冲突，不指字数少</td></tr>
+        <tr><td>"GPT-3 那篇论文拿了 NeurIPS 最佳论文奖"</td><td><strong>这一点没有取得证据。</strong>可确认的是 NeurIPS 2020 收录。不要给论文加没核实的封号</td></tr>
+        <tr><td>"示例格式随便，模型能看懂"</td><td>格式不统一会直接削弱示例作用。所有示例必须同标签、同分隔符、同字段顺序</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于「few-shot 到底该给几个示例」，下面哪种说法最准确？"
+       data-opts="就是 3 到 5 个，这是 GPT-3 论文的定义|GPT-3 论文里 few-shot 通常是 10 到 100 个（受上下文窗口限制）；而 3 到 5 个是当代工程实践的建议，两者不是一回事|示例越多一定越好，能塞多少塞多少，任何场景都适用|示例数量无所谓，模型只看指令不看示例"
+       data-answer="1"
+       data-explain="Brown 等《Language Models are Few-Shot Learners》（arXiv 2005.14165，2020-05-28，NeurIPS 2020 收录）对 few-shot 的定义是：在不做梯度更新、不做微调的前提下，在上下文窗口容量允许的范围内给尽可能多的示例，原文写的是 typically 10 to 100，也就是通常 10 到 100 个。而中文文章常说的「3 到 5 个」来自当代工程实践——Anthropic 官方文档正是建议给 3 到 5 个，要求「相关、多样、有结构」，贴近真实用例并覆盖边缘情况。两个数字都对，但回答的是不同问题：论文问的是「纯靠上下文，能力上限在哪」，工程问的是「性价比最高是多少」。选项 C 忽略了示例要花 token 和钱，而且论文自己列出了 ANLI、RACE、QuAC 等 few-shot 效果不佳的任务。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>Few-shot 就是"包几个饺子给它看"</strong>——不描述规则，直接给几对「输入 → 输出」，让它自己提取规律。三种设定的共同前提是<mark class="key">一个模型参数都不改</mark>：zero-shot 不给示例只给说明，one-shot 给一个，few-shot 在窗口装得下的前提下尽量多给。论文管这个能力叫 <strong>in-context learning</strong>，并把它定位为元学习的内循环。</p>
+    <p>本节最该记住的澄清：<strong>GPT-3 论文里 few-shot 通常是 10 到 100 个示例；Anthropic 官方给工程实践的建议是 3 到 5 个。</strong>两个数字回答的是不同问题，混着用会两头判断失误。论文的实测数字是 CoQA 的 81.5 / 84.0 / 85.0 与 TriviaQA 的 64.3% / 68.0% / 71.2%——涨幅是几个百分点，不是翻倍，而且<strong>从零到一那一跳性价比最高</strong>。核心论点是：<mark class="key">模型越大，越擅长从例子里领会你要什么。</mark></p>
+    <p>挑示例要"相关、多样、有结构"，用 <code>&lt;example&gt;</code> 标签包好。但<strong>不要堆砌一长串边缘情况</strong>——官方原话是"We do not recommend this"，应改为策展一组典型示例；并且记住 <strong>minimal 不等于 short</strong>。最后，论文诚实列出了 few-shot 的失效清单：<strong>ANLI 等自然语言推理、RACE 与 QuAC 等阅读理解</strong>。它能教格式和口味，教不出本来不具备的推理能力。</p>
+    <p>而那块攻不下的阵地，正是下一节的主题——<strong>让模型把推理过程一步一步写出来</strong>。那里的提升幅度是从 17.7% 到 78.7%，真正的质变。顺带还要拆一个流传更广的传说："深呼吸，一步步想"这句咒语究竟是谁想出来的。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./10-1-four-elements.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 10.1 · 提示词四要素</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./10-3-cot-prompt.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 10.3 · 思维链提示</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 10.2</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 10.3 · 思维链提示 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./10-prompt.html">智能篇 · 第 10 章</a>
+      <span class="sep">›</span>
+      <span>§ 10.3</span>
+    </div>
+    <a href="./10-prompt.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 10.3 · Section</div>
+    <h1>思维链提示</h1>
+    <div class="cn">Chain-of-Thought Prompting</div>
+  </header>
+
+  <p class="lead">
+    这一节有两件事要讲，而且两件都足够让人坐直。<mark class="key">第一件是真的：只在题目后面加一句"Let's think step by step"（我们一步一步想），MultiArith 数据集的准确率从 17.7% 涨到 78.7%，GSM8K 从 10.4% 涨到 40.7%——一句话，四倍。</mark>第二件是关于那句流传更广的咒语："Take a deep breath and work on this problem step-by-step."（深呼吸，一步一步解决这个问题）。它得了 80.2 分，超过了前一句的 71.8。但它<strong>不是任何一个人悟出来的技巧——它是 Google DeepMind 让一个大模型当优化器，自动搜索出来的一串字符</strong>。而且那 80.2 分死死绑定在一个特定组合上，换个模型就不成立。这一节把两件事都拆到底。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">✏️ 心算和列竖式的差别</div>
+    <p>问你一道题：<strong>一件商品原价 128 元，先打八折，再用一张满 100 减 15 的券，最后加 12 元运费，实付多少？</strong></p>
+    <p>你要是被逼着"立刻说出答案，不许算"，大概率会说错——或者说出一个大致数字，比如"一百块左右吧"。</p>
+    <p>但如果给你一张纸，你会这么写：128 × 0.8 = 102.4；102.4 ≥ 100，可用券，102.4 − 15 = 87.4；87.4 + 12 = 99.4。<strong>答案 99.4 元。</strong>准确无误。</p>
+    <p>关键在哪儿？<mark class="key">不是你变聪明了，是那张纸帮你存住了中间结果。</mark>心算之所以容易错，是因为你得同时在脑子里攥住"102.4"这个数、记着还有券没用、还没算运费——三件事一起攥，手一滑就掉一个。</p>
+    <p>而 LLM 的处境比你还苛刻：<strong>它压根没有那张纸。</strong>它的"草稿纸"就是它自己的输出。所以你要它算对，唯一的办法是<strong>允许并要求它把中间步骤写出来</strong>——写出来的那些字，就是它的竖式。</p>
+    <div class="link">→ <strong>思维链</strong>（Chain-of-Thought，简称 <strong>CoT</strong>，读作"C-O-T"，字面"思维的链条"）= 让模型把中间推理步骤逐条写出来，而不是直接跳到答案。它之所以有效，因为<strong>写出来的过程本身就是运算</strong>。</div>
+  </div>
+
+  <h3>先把"思维链"这个词彻底说清</h3>
+  <p><strong>思维链</strong>这个名字听着挺哲学，其实指的就是<mark class="key">从题目走到答案之间的那一串中间步骤，一条接一条，像链条一样</mark>。你在小学做应用题时老师要求"写出解题过程"，那个过程就是一条思维链。</p>
+  <p>而 <strong>思维链提示</strong>（Chain-of-Thought Prompting）说白了就是：<strong>你在提示词里想办法让模型把那串步骤写出来</strong>。办法有两种，后面会详细分开讲——一种是给它几个"带解题过程的例题"（few-shot CoT），一种是干脆只加一句"一步一步想"（zero-shot CoT）。</p>
+  <p>为什么这招管用？这里有个关键认识，值得记牢：<mark class="key">模型没有"内心"。它没有一块看不见的地方可以偷偷演算。</mark>我们在 §8.2 讲过它的运行方式——每生成一个 token，就要把之前所有 token 重读一遍。这意味着：</p>
+  <ul class="keylist">
+    <li><span class="k">中间结果只能存在输出里</span><span class="v">它没有草稿本、没有临时变量、没有寄存器。<strong>"102.4"这个中间数如果没被写出来，下一步就无从引用。</strong></span></li>
+    <li><span class="k">写出来的每个 token 都是一次完整的前向计算</span><span class="v">让它多写 200 个字的推理过程，就等于让它多跑 200 次完整的模型。<mark class="key">过程不是"表演给你看"，过程本身就是算力的投入。</mark></span></li>
+    <li><span class="k">不写过程 = 逼它一步跳到答案</span><span class="v">从题目直接跳到数字，中间那几步的计算量被彻底跳过了。<strong>它不是懒得算，是没有地方算。</strong></span></li>
+  </ul>
+  <p><strong>换成大白话：</strong>你不给它纸，它就只能心算；你给它纸，它就能列竖式。<mark class="key">"思维链提示"这四个字翻译成人话，就是"请把纸拿出来用"。</mark></p>
+
+  <h3>第一篇论文：8 个例题让 540B 模型拿下当时的 SOTA</h3>
+  <p>提出这件事的是 <strong>Wei 等人的《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》</strong>（《思维链提示激发大语言模型的推理能力》），arXiv 编号 <strong>2201.11903</strong>，<strong>2022 年 1 月</strong>，Google 研究团队，收录于 <strong>NeurIPS 2022</strong>。</p>
+  <p>论文摘要里最值得记住的是这几个数字和事实：</p>
+  <ul class="keylist">
+    <li><span class="k">只用 8 个 CoT 示例</span><span class="v">不是几百个，就 <strong>8 个</strong>带解题过程的例题。这数量和 §10.2 讲的 3 到 5 个是同一个量级</span></li>
+    <li><span class="k">模型规模 540B</span><span class="v"><strong>5400 亿参数</strong>的 PaLM 模型。换算成可感知的量：这是 GPT-3（1750 亿）的三倍多</span></li>
+    <li><span class="k">在 GSM8K 上达到当时的 SOTA</span><span class="v"><strong>SOTA</strong>（State Of The Art，"当前最好水平"）。而且<strong>超过了带 verifier 的微调版 GPT-3</strong>——verifier 是个专门训练来验算答案的辅助模型。<mark class="key">也就是说：光靠改提示词，打赢了专门微调过还配了验算器的方案。</mark></span></li>
+  </ul>
+  <p><strong>这里必须严谨一句</strong>：论文摘要<strong>没有给出 CoT 在 GSM8K 上的具体百分比</strong>。网上流传的各种"CoT 让 GSM8K 从 X% 涨到 Y%"的数字，本节一律不采用——因为无法核实它们来自摘要还是来自正文哪一张表、用的是哪个模型规模。<mark class="key">"超过带 verifier 的微调 GPT-3、达到当时 SOTA"这个表述已经足够有力，不需要给它编一个百分比。</mark></p>
+  <p>那么 few-shot CoT 长什么样？关键在于<strong>示例里不只给答案，还要给解题过程</strong>：</p>
+  <pre><code>━━━ 普通 few-shot（只给答案）━━━
+Q: 小明有 5 个球，又买了 2 筒，每筒 3 个。他现在有几个球？
+A: 11
+
+Q: 食堂原有 23 个苹果，午餐用了 20 个，又买回 6 个。现在有几个？
+A: 9                                    ← 只有答案，没有过程
+
+
+━━━ few-shot CoT（给答案，也给过程）━━━
+Q: 小明有 5 个球，又买了 2 筒，每筒 3 个。他现在有几个球？
+A: 小明原来有 5 个球。2 筒球，每筒 3 个，所以是 2 × 3 = 6 个。
+   5 + 6 = 11。答案是 11。
+
+Q: 食堂原有 23 个苹果，午餐用了 20 个，又买回 6 个。现在有几个？
+A: 食堂原来有 23 个。用掉 20 个后剩 23 − 20 = 3 个。
+   又买了 6 个，所以 3 + 6 = 9。答案是 9。
+                                        ← 过程被完整示范了出来
+
+Q: （这里放真正要问的题）
+A:</code></pre>
+  <p>看出差别了吗？<mark class="key">右边这种写法里，示例教给模型的不是"答案是什么"，而是"该怎么一步步走到答案"。</mark>模型看完两个带过程的例题，回答新题时也会自动开始写过程——而一写过程，它就有了中间结果可以引用。</p>
+  <p><strong>好比</strong>你在<strong>教室</strong>里看<strong>黑板</strong>上老师的板书：如果板书只写"答案 9"，你学不到任何东西；如果板书写了"23 − 20 = 3，3 + 6 = 9"，你下一题就会照着这个格式列式子。<strong>示例传递的是格式，而这个格式恰好强制了运算的发生。</strong></p>
+
+  <h3>★ 第二篇论文：一句话，17.7% 到 78.7%</h3>
+  <p>Wei 那篇论文还需要你手写 8 个带过程的例题，有点麻烦。四个月后，另一篇论文发现了一件更省事、也更让人吃惊的事。</p>
+  <p><strong>Kojima 等人的《Large Language Models are Zero-Shot Reasoners》</strong>（《大语言模型是零样本推理者》），arXiv 编号 <strong>2205.11916</strong>，<strong>2022 年 5 月</strong>，收录于 <strong>NeurIPS 2022</strong>。</p>
+  <p>它做的事简单到近乎滑稽：<strong>一个例题都不给，只在问题后面加一句 "Let's think step by step."</strong>（我们一步一步想。）</p>
+  <p>摘要里给的数字非常明确，可以放心引用（模型是 <strong>text-davinci-002</strong>）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>数据集</th><th>这数据集考什么</th><th>不加那句话</th><th>加了那句话</th><th>变化</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>MultiArith</strong></td><td>多步算术应用题</td><td><strong>17.7%</strong></td><td><strong>78.7%</strong></td><td>约 <strong>4.4 倍</strong></td></tr>
+        <tr><td><strong>GSM8K</strong></td><td>小学数学应用题（八千多道）</td><td><strong>10.4%</strong></td><td><strong>40.7%</strong></td><td>约 <strong>3.9 倍</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>停下来体会一下这组数字有多不寻常。<mark class="key">17.7% 到 78.7%，中间隔着的只有六个英文单词，模型一个参数都没改。</mark></p>
+  <p><strong>把这个变化换算成可感知的量</strong>：MultiArith 上原本十道题错八道，加了一句话之后十道题对将近八道。<strong>这就像</strong>一个学生<strong>考试</strong>从二十来分变成将近八十分——而中间发生的唯一一件事，是允许他在卷子上写解题步骤而不是只填答案。<strong>他的知识水平一点没变，你只是把"必须口算"的规则取消了。</strong></p>
+  <p>这个发现的深层含义比数字更重要：<strong>模型原本就"会"这些题，它只是被"必须一步给出答案"的格式挡住了。</strong>能力一直在那儿，缺的是施展它的空间。<mark class="key">这也顺带说明，很多我们以为的"模型能力不足"，实际上是"提示词把它的手绑住了"。</mark></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 让人报菜价，还是让人拿计算器</span>
+    <p>你在<strong>菜市场</strong>买了一堆东西：土豆 3 斤每斤 2.5 元，排骨 1.8 斤每斤 32 元，鸡蛋 12 个每个 0.9 元，还有一把葱老板送的。</p>
+    <p><em>情形一 · 逼他口算</em>：你说"直接告诉我多少钱，别算"。摊主是个心算高手也会犯错——他得同时攥住 7.5、57.6、10.8 三个数再加起来，而且 1.8 × 32 这一步本身就容易错。他大概会说"七十六？不对，八十？大概七十五吧"。</p>
+    <p><em>情形二 · 让他拿计算器，一样一样按</em>：他按 3 × 2.5 = 7.5，记在小票上；1.8 × 32 = 57.6，记上；12 × 0.9 = 10.8，记上；然后 7.5 + 57.6 + 10.8 = 75.9。<strong>报价 75.9 元</strong>，一分不差。</p>
+    <p><mark class="key">这两种情形里，摊主的算术能力完全一样。差别只在于：第二种情形允许他把中间结果写在小票上。</mark></p>
+    <p>思维链就是那张小票。而这个类比还能再进一步——<strong>小票的价值不只是"存住数"，它还让错误可以被发现</strong>。情形一里他报个 80 元你没法查；情形二里你扫一眼小票，立刻能看出"1.8 × 32 = 57.6 这步对不对"。<strong>这正是思维链的第二个好处：它把黑箱变成了可审的账。</strong>模型算错时，你能指出错在第几步，而不是只能说"它答错了"。</p>
+  </div>
+
+  <h3>两种 CoT 的对照：什么时候用哪种</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>few-shot CoT（Wei 等）</th><th>zero-shot CoT（Kojima 等）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>做法</td><td>给若干个带完整解题过程的例题</td><td>只加一句"让我们一步一步想"</td></tr>
+        <tr><td>出处</td><td>arXiv 2201.11903（NeurIPS 2022）</td><td>arXiv 2205.11916（NeurIPS 2022）</td></tr>
+        <tr><td>准备成本</td><td>高——要手写例题和推理过程</td><td>几乎为零——加一句话</td></tr>
+        <tr><td>Token 成本</td><td>较高，示例每次都要重发</td><td>极低</td></tr>
+        <tr><td>对推理格式的控制力</td><td><strong>强</strong>。你能精确规定每步该写什么、怎么排版</td><td>弱。它按自己的习惯写，格式不稳定</td></tr>
+        <tr><td>适合的场景</td><td>推理有特定套路、输出格式有严格要求、领域有专门的判断顺序</td><td>通用推理题、快速验证"这题加了 CoT 有没有用"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>实用建议：<mark class="key">先用 zero-shot CoT 试一句，成本几乎为零。</mark>如果效果够了就收手；如果它的推理格式不符合你的要求（比如它跳步、或者把结论写在中间不好提取），再升级成 few-shot CoT，用例题把格式钉死。</p>
+
+  <h3>第三篇论文：多做几遍，投票选答案</h3>
+  <p>还有一篇必须提，因为它是 CoT 最自然的延伸。</p>
+  <p><strong>Wang 等人的《Self-Consistency Improves Chain of Thought Reasoning》</strong>（《自一致性提升思维链推理》），arXiv 编号 <strong>2203.11171</strong>，<strong>2022 年 3 月</strong>，收录于 <strong>ICLR 2023</strong>。</p>
+  <p>它的做法说白了就一句：<strong>同一道题让模型带着随机性算好几遍，得到好几条不同的推理路径，然后看哪个最终答案出现次数最多，就采纳它。</strong>这叫<strong>自一致性</strong>（Self-Consistency），本质是多数投票。</p>
+  <p>摘要给出的提升幅度（这组数字可以放心引用）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>数据集</th><th>考什么</th><th>提升</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GSM8K</strong></td><td>小学数学应用题</td><td><strong>+17.9%</strong></td></tr>
+        <tr><td><strong>SVAMP</strong></td><td>算术应用题（带干扰项）</td><td><strong>+11.0%</strong></td></tr>
+        <tr><td><strong>AQuA</strong></td><td>代数应用题（选择题）</td><td><strong>+12.2%</strong></td></tr>
+        <tr><td><strong>StrategyQA</strong></td><td>需要多步策略的是非题</td><td><strong>+6.4%</strong></td></tr>
+        <tr><td><strong>ARC-challenge</strong></td><td>较难的科学常识题</td><td><strong>+3.9%</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么投票有效？因为<mark class="key">错法各有各的错，对法却往往是同一个。</mark>模型算错时，不同次的错误各不相同——这次少算了运费，下次把折扣算反了，再下次进位错了。这些错误答案分散在各处。而算对的那几次，答案是同一个数。于是"出现最多的那个答案"很可能就是对的。</p>
+  <p><strong>拿生活里的事打个比方</strong>：一件事你问五个人，得到五个答案。如果有三个人说的是同一个数、另外两个各说一个数，你多半会信那三个人。<strong>这不是因为人多就对，而是因为"独立犯同一个错"比"独立得出同一个正确答案"要难得多。</strong></p>
+  <p>但要注意代价：<mark class="key">自一致性要跑 N 遍，成本就是 N 倍。</mark>跑 10 条路径，输出 token 花 10 份钱、等 10 倍时间（除非并行）。所以它适用于<strong>准确率极其重要、单次成本可以接受的场景</strong>——比如财务核算、医疗辅助判断，不适合高并发的实时对话。<strong>好比</strong>重要的<strong>体检</strong>指标要复查三次，感冒量个体温就没必要量五遍。</p>
+
+  <h3>★★ "深呼吸，一步步想"的真实来源</h3>
+  <p>现在讲本节最反常识的一段，也是全章最值得记住的故事之一。</p>
+  <p>你大概见过这句"更强的咒语"：<strong>"Take a deep breath and work on this problem step-by-step."</strong>（深呼吸，一步一步解决这个问题。）常见的传播版本是："有人发现给 AI 加一句「深呼吸」，它就会更认真，分数还能再提高。"</p>
+  <p><strong>真相是：这句话不是任何人想出来的技巧。它是一个大模型自动搜索出来的字符串。</strong></p>
+  <p>出处是 <strong>《Large Language Models as Optimizers》</strong>（《大语言模型作为优化器》，提出了名为 <strong>OPRO</strong> 的方法），arXiv 编号 <strong>2309.03409</strong>，<strong>2023 年 9 月 7 日</strong>，<strong>Google DeepMind</strong>（作者中包括 <strong>Quoc V. Le</strong> 和 <strong>Denny Zhou</strong>），收录于 <strong>ICLR 2024</strong>。</p>
+  <p><strong>OPRO</strong> 干的事说白了是：<mark class="key">让一个 LLM 充当"优化器"，不断生成候选提示词、拿去打分、根据分数再生成更好的候选——像一个自动化的猜谜循环，把提示词当成待优化的参数来搜。</mark>"Take a deep breath..." 就是这个搜索过程的产物之一，由 <strong>PaLM 2-L-IT</strong> 这个优化器搜出来的。</p>
+  <p>看论文 Table 1 里那一组分数（<strong>GSM8K 数据集，zero-shot 设定，打分模型统一是预训练的 PaLM 2-L</strong>）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>提示词</th><th>来源</th><th>得分</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>（空字符串，什么都不加）</td><td>基线</td><td><strong>34.0</strong></td></tr>
+        <tr><td>"Let's work this out in a step by step way to be sure we have the right answer."</td><td>Zhou et al. 2022b</td><td><strong>58.8</strong></td></tr>
+        <tr><td>"Let's think step by step."</td><td>Kojima et al. 2022</td><td><strong>71.8</strong></td></tr>
+        <tr><td>"Break this down."</td><td>PaLM 2-L 搜出</td><td><strong>79.9</strong></td></tr>
+        <tr><td><strong>"Take a deep breath and work on this problem step-by-step."</strong></td><td><strong>PaLM 2-L-IT 搜出（OPRO 产物）</strong></td><td><strong>80.2</strong></td></tr>
+        <tr><td>（gpt-3.5-turbo 搜出的最佳提示）</td><td>gpt-3.5-turbo 搜出</td><td><strong>78.5</strong></td></tr>
+        <tr><td>（gpt-4 搜出的最佳提示）</td><td>gpt-4 搜出</td><td><strong>74.5</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里有三件事必须讲清，缺一件就会读出错误结论。</p>
+
+  <h3>★ 第一件事：它是搜出来的，不是想出来的</h3>
+  <p><mark class="key">"深呼吸"这四个字不承载任何人类洞见。</mark>没有人推理出"模型需要放松一下"，也没有人观察到"提到呼吸能让它更专注"。<strong>它就是搜索空间里恰好得分最高的那个字符串。</strong></p>
+  <p>这件事的意义比那 0.4 分（80.2 对 79.9）大得多。<strong>它说明提示词的效果和"这句话在人类看来有没有道理"关系很弱。</strong>同一张表里，"Break this down."（把它拆开）得了 79.9，跟"深呼吸"几乎打平——而这两句话在语义上毫无共同点。</p>
+  <p><strong>换成大白话：</strong>不要试图从"这句话为什么有道理"去推断它有不有效。<strong>好比</strong>你去<strong>药店</strong>买药，不能靠"这个名字听起来管用"来选。<mark class="key">有效性是测出来的，不是想出来的。</mark></p>
+  <p>顺带说，这一点也让"提示词大师"这个身份变得可疑：<strong>如果最佳提示词能被机器搜出来、而且搜出来的东西人类根本想不到，那么"凭经验和语感调提示词"的天花板可能相当低。</strong>这是 §10.5 要正面处理的问题。</p>
+
+  <h3>★ 第二件事：80.2 绑定在一个特定组合上</h3>
+  <p>这是最容易被漏掉、也最容易导致踩坑的一点。<strong>那个 80.2 分，绑定了三个条件：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">打分模型是 PaLM 2-L</span><span class="v">而且是<strong>预训练版</strong>的 PaLM 2-L 作为 scorer（打分模型）。换个模型，这个分数不成立</span></li>
+    <li><span class="k">数据集是 GSM8K</span><span class="v">小学数学应用题。换个任务类型，不成立</span></li>
+    <li><span class="k">设定是 zero-shot</span><span class="v">不给示例。换成 few-shot，不成立</span></li>
+  </ul>
+  <p>证据就在同一张表里：<mark class="key">用 gpt-4 搜出来的最佳提示，只有 74.5 分——比用 PaLM 2-L-IT 搜出来的 80.2 低了将近 6 分。</mark>用 gpt-3.5-turbo 搜的是 78.5，也不如 80.2。</p>
+  <p>也就是说，<strong>连"用哪个模型去搜"都会显著影响搜出来的东西好不好</strong>，更不用说换掉被测的模型了。论文自己对此有明确表态：<strong>最优的提示格式可以是模型特定（model-specific）、任务特定（task-specific）的。</strong></p>
+  <p><strong>这一点的实用含义非常直接</strong>：你在自己的模型上加一句"深呼吸，一步步想"，<mark class="key">很可能一点提升都没有，甚至变差。</mark>因为你既不是在用 PaLM 2-L 打分，也可能不是在做 GSM8K 那类题。<strong>好比</strong>别人家<strong>洗衣</strong>机的最佳程序是"标准 + 高转速"，你照抄到自己那台不同型号的机器上，衣服可能就洗坏了。<strong>参数是绑定设备的。</strong></p>
+
+  <h3>★ 第三件事："up to"是最多，不是平均</h3>
+  <p>OPRO 论文报告的总体增益是：<strong>GSM8K 上最多高 8%，Big-Bench Hard 上最多高 50%</strong>（相对于人类设计的提示词）。</p>
+  <p><mark class="key">注意"最多"（up to）这两个字。这是所有技术报道里最容易被偷偷抹掉的限定词。</mark></p>
+  <p>"最多高 50%"意味着：在若干个测试任务里，<strong>表现最好的那一个</strong>提升了 50%。其他任务提升了多少？可能是 20%，可能是 3%，也可能没提升。<strong>把"最多高 50%"读成"平均高 50%"或者"能高 50%"，是一个非常常见也非常严重的误读。</strong></p>
+  <p><strong>拿生活里的事打个比方</strong>：<strong>超市</strong>门口贴着"全场最高五折"，你不会以为所有商品都是五折——你知道那意思是"有某几件是五折，多数不是"。<mark class="key">技术论文里的 "up to" 和超市的"最高"是完全一样的用法，读法也该一样。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常见的转述</th><th>论文实际说的</th><th>问题在哪</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"OPRO 能让准确率提升 50%"</td><td>Big-Bench Hard 上<strong>最多</strong>高 50%</td><td>抹掉了"最多"，把最好情况当成了普遍情况</td></tr>
+        <tr><td>"深呼吸这句咒语能提分到 80 分"</td><td>PaLM 2-L 作 scorer + GSM8K + zero-shot 这一组合下是 80.2</td><td>抹掉了全部三个绑定条件</td></tr>
+        <tr><td>"这是最强的提示词"</td><td>论文说最优提示格式可以是模型特定、任务特定的</td><td>不存在"最强"，只存在"在某条件下最优"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>★★ 最反直觉的一条：语义相近，效果差 13 个百分点</h3>
+  <p>OPRO 论文里有一节的标题本身就是一个结论——<strong>语义相似的指令可能产生截然不同的准确率</strong>（论文 §5.2.3）。</p>
+  <p>看这两句话：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>提示词</th><th>中文意思</th><th>GSM8K 得分</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"Let's think step by step."</td><td>我们一步一步想。</td><td><strong>71.8</strong></td></tr>
+        <tr><td>"Let's work this out in a step by step way to be sure we have the right answer."</td><td>我们一步一步把这道题解出来，以确保我们得到正确的答案。</td><td><strong>58.8</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>把两句中文放在一起读一遍。<mark class="key">它们的意思几乎完全一样，第二句甚至更详细、更强调"要确保正确"——按人类的语感，第二句该更好或至少不差。结果它低了 13 个百分点。</mark></p>
+  <p>13 个百分点是什么概念？<strong>换算成可感知的量</strong>：一百道题里多错十三道。这个差距比很多"换一代模型"带来的差距还大——而中间隔着的只是同一个意思的两种说法。</p>
+  <p>这条事实的杀伤力在于，<strong>它直接否定了"凭语感优化提示词"这套方法论的可靠性</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">你无法从语义推断效果</span><span class="v">两句意思一样的话，效果可以差十几个点。<strong>那么"我觉得这版写得更清楚"就不能作为改进的依据。</strong></span></li>
+    <li><span class="k">提示词效果是脆弱的</span><span class="v">改一个词、加一个从句、调一下语序，都有可能显著改变结果，而方向无法预判。</span></li>
+    <li><span class="k">所以只能测，不能猜</span><span class="v">这是本章反复要说的那件事：<mark class="key">任何提示词改动，都必须在同一批评测数据上量一遍。</mark>没有评测集，你的每次"优化"都是在赌。</span></li>
+    <li><span class="k">也别过度解读单个分数</span><span class="v">同理，看到某句咒语得了高分，也不要立刻信。先问：在哪个模型上？哪个任务上？什么设定下？</span></li>
+  </ul>
+  <p><strong>好比</strong>调收音机：你以为往右转一点会更清楚，实际上可能突然全是噪音——<strong>唯一可靠的办法是转一点、听一下、再转一点，而不是先在脑子里推理"往哪边转应该更好"。</strong></p>
+
+  <h3>CoT 该怎么用：可直接复制的提示词模板</h3>
+  <p>把这一节的所有结论落到实操上。下面几个模板可以直接拿走。</p>
+  <p><strong>模板一 · 最简版（零成本先试这个）</strong></p>
+  <pre><code>（你的问题）
+
+请一步一步思考，把每一步的中间结果都写出来，最后给出答案。</code></pre>
+  <p><strong>模板二 · 规定推理结构（推荐用于生产环境）</strong></p>
+  <pre><code>（你的问题）
+
+请按以下结构作答：
+
+【已知条件】
+（把题目里给出的数据逐条列出，一行一条）
+
+【推理步骤】
+第 1 步：（做什么，算式，得到什么中间结果）
+第 2 步：（……）
+第 N 步：（……）
+
+【答案】
+（只写最终结果，不要重复解释）
+
+【自查】
+（用一句话说明你如何验证这个答案合理，比如代回原题检验）</code></pre>
+  <p>模板二比模板一好的地方在于：<mark class="key">答案被放在固定的标记里，程序可以稳定地提取出来。</mark>模板一的输出格式不稳定，答案可能藏在最后一句话中间，正则很难抓。这是"可控性"和"零成本"之间的取舍。</p>
+  <p><strong>模板三 · 让它先分类再决定要不要展开推理（省钱做法）</strong></p>
+  <pre><code>（你的问题）
+
+先判断这个问题属于哪一类：
+  A 类 —— 直接查事实即可回答，无需计算或多步推演
+  B 类 —— 需要计算或多步推演
+
+如果是 A 类，直接给答案，不要写推理过程。
+如果是 B 类，按「已知条件 / 推理步骤 / 答案」的结构展开。
+请先写出你的判断（A 或 B），再作答。</code></pre>
+  <p>模板三处理的是一个真实痛点：<strong>不是所有问题都需要 CoT，而 CoT 是要花钱的</strong>——它让输出变长好几倍，而输出通常比输入贵五六倍（见 §8.1）。让模型自己先分个类，能显著降低平均成本。</p>
+
+  <h3>CoT 的代价和适用边界</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>代价 / 边界</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>输出 token 暴涨</strong></td><td>推理过程可能比答案长十倍，而输出价通常是输入价的五六倍。这是 CoT 最实在的成本</td></tr>
+        <tr><td><strong>延迟变长</strong></td><td>每个 token 都是一次前向计算（§8.2）。写 300 字推理，就是多跑几百次模型，用户要多等</td></tr>
+        <tr><td><strong>对简单任务无益甚至有害</strong></td><td>分类、抽取、翻译这类任务加 CoT，往往只是多花钱多等待，还可能因为过度推理把简单判断绕错</td></tr>
+        <tr><td><strong>写出来的过程不等于真实的计算过程</strong></td><td>这一点要诚实：<mark class="key">模型写出的推理链是"看起来合理的解释"，不一定忠实反映它内部到底怎么得出答案的。</mark>它有时会写出错误的步骤却给出正确答案，也会写出漂亮的步骤却得到错误答案</td></tr>
+        <tr><td><strong>推理模型已内置了这件事</strong></td><td>2024 年之后那批"会先想再答"的推理模型（见 §8.6）把 CoT 训练进了模型里。<strong>对它们再手动加"一步一步想"通常没必要，某些厂商甚至明确建议不要这么做</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>倒数第二行值得多说一句，因为它关系到你能不能信任那串推理。<strong>不要把模型写出的推理链当成"它的内心活动录像"。</strong>更贴近实情的理解是：那串文字既是运算（因为中间结果确实被存下来并被后续引用了），也是一段生成出来的文本（因此可能包含事后合理化的成分）。<mark class="key">实用建议：把推理链当成"可审的账目"去核对具体步骤，而不是当成"它为什么这么想"的权威解释。</mark></p>
+
+  <h3>把这一节的结论合成一条判断流程</h3>
+  <p>信息量有点大，最后收成一条可以照着走的流程。遇到一个任务，按这个顺序想：</p>
+  <pre><code>第 1 问：这个任务需要多步推演，还是查一下事实就行？
+    └ 只需查事实（分类、抽取、翻译、改写）
+         → 不加 CoT。加了只是多花钱多等待
+    └ 需要多步推演（算数、逻辑判断、方案权衡、代码调试）
+         → 继续第 2 问
+
+第 2 问：我用的是已内置推理的模型（会先想再答的那批）吗？
+    └ 是 → 通常不必再手加「一步一步想」，某些厂商明确建议不要加
+    └ 不是 → 继续第 3 问
+
+第 3 问：先零成本试一句「请一步一步思考，写出中间结果」
+    └ 效果够了 → 收手，别过度工程
+    └ 格式不稳定、答案不好提取
+         → 升级到「模板二」，用固定标记框住答案
+    └ 推理套路有行业特定顺序
+         → 升级到 few-shot CoT，用带过程的例题把套路钉死
+
+第 4 问：准确率是否重要到值得付 N 倍成本？
+    └ 是（财务核算、合规审查这类）
+         → 上自一致性：跑多条路径，取出现最多的答案
+    └ 不是 → 停在第 3 问的结果
+
+第 5 问（不管走到哪一步都要做）：
+    我有没有一批固定的测试题，能量出「改这一版到底变好了还是变差了」？
+    └ 没有 → 先去建，否则你所有的调整都是在赌（§10.5）</code></pre>
+  <p>第 5 问是这套流程里唯一不可跳过的一步。<mark class="key">因为本节已经用 71.8 对 58.8 这组数字证明了：你的语感在这件事上不可信。</mark><strong>好比</strong>你去<strong>医院</strong>调药量，医生不会问你"感觉怎么样"就加倍，他要看化验单上的数。<strong>提示词的化验单就是评测集。</strong></p>
+  <p>还有一句提醒放在这儿：<strong>不要因为一个技巧"在论文里很惊人"就默认它对你有用。</strong>本节讲的三篇论文，用的模型分别是 PaLM 540B、text-davinci-002、以及各种规模的实验模型——这些跟你今天在用的模型都不一样。<mark class="key">论文告诉你的是"这条路是通的"，不是"照抄这个数字就能达到"。</mark>把论文当地图看，不当保单看。</p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"深呼吸这句咒语是某位提示词大师发现的"</td><td><strong>不是。</strong>它是 OPRO（arXiv 2309.03409，Google DeepMind，ICLR 2024）让 LLM 当优化器<strong>自动搜索出来</strong>的字符串</td></tr>
+        <tr><td>"加了深呼吸就能到 80 分"</td><td>那个 80.2 绑定在 PaLM 2-L 作 scorer + GSM8K + zero-shot 这一组合上。同表里 gpt-4 搜出的最佳只有 74.5</td></tr>
+        <tr><td>"OPRO 能提升 50%"</td><td>论文说的是 Big-Bench Hard 上<strong>最多</strong>（up to）高 50%、GSM8K 上最多高 8%。"最多"不是"平均"</td></tr>
+        <tr><td>"说法越详细越强调，效果越好"</td><td>反例就在论文里：更详细的那句 58.8，更简短的那句 71.8，<strong>差 13 个百分点</strong></td></tr>
+        <tr><td>"CoT 在 GSM8K 上把分数提高了 X%"（带具体数字）</td><td>Wei 那篇论文的<strong>摘要没有给具体百分比</strong>。可靠的表述是"仅用 8 个 CoT 示例提示 540B 模型，在 GSM8K 达到当时 SOTA，超过带 verifier 的微调 GPT-3"</td></tr>
+        <tr><td>"Kojima 那组数字也不可靠"</td><td>那组是可以放心用的：摘要明确给出 MultiArith 17.7% → 78.7%、GSM8K 10.4% → 40.7%，模型是 text-davinci-002</td></tr>
+        <tr><td>"任何任务加 CoT 都更好"</td><td>不对。简单分类抽取加 CoT 只是多花钱多等待。而对已内置推理的模型，手动加通常没必要</td></tr>
+        <tr><td>"推理链就是模型的真实思考过程"</td><td>不能这么断言。它既是运算也是生成的文本，可能包含事后合理化。<strong>当可审的账目用，别当内心录像看</strong></td></tr>
+        <tr><td>"自一致性是免费的提升"</td><td>不是。跑 N 条路径就是 N 倍成本。摘要给的提升是 GSM8K +17.9%、SVAMP +11.0%、AQuA +12.2%、StrategyQA +6.4%、ARC-challenge +3.9%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于「Take a deep breath and work on this problem step-by-step.」这句提示词，下面哪种说法最准确？"
+       data-opts="它是研究者凭经验总结出的最强通用咒语，任何模型任何任务加上都能提分|它是 OPRO 让 LLM 当优化器自动搜索出来的产物；80.2 分绑定在 PaLM 2-L 作打分模型、GSM8K、zero-shot 这一特定组合上，换模型就不成立|它说明提到「呼吸」能让模型放松从而更专注，这是已被证实的机制|它得分 80.2，比 Let's think step by step 的 71.8 高，所以在所有场景下都该用前者"
+       data-answer="1"
+       data-explain="《Large Language Models as Optimizers》（提出 OPRO，arXiv 2309.03409，2023-09-07，Google DeepMind，含 Quoc V. Le 与 Denny Zhou，ICLR 2024）的做法是让一个 LLM 充当优化器去自动搜索提示词。这句「深呼吸」正是 PaLM 2-L-IT 搜出来的产物，不承载任何人类洞见——同一张表里语义毫不相干的 Break this down. 得了 79.9，几乎打平。而 80.2 这个分数绑定三个条件：打分模型是预训练的 PaLM 2-L、数据集是 GSM8K、设定是 zero-shot；同表中用 gpt-4 搜出的最佳提示只有 74.5，用 gpt-3.5-turbo 搜出的是 78.5。论文自己明确说：最优提示格式可以是模型特定、任务特定的。所以选项 A 和 D 的「通用」「所有场景」都不成立。选项 C 属于给一个搜索产物编造机制解释。论文另有一条更反直觉的结论：语义相似的指令可能产生截然不同的准确率——Let's think step by step. 得 71.8，而语义几乎一样但更详细的 Let's work this out in a step by step way to be sure we have the right answer. 只有 58.8，差了 13 个百分点。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>思维链的全部道理是"把纸拿出来用"。</strong>模型没有草稿本、没有临时变量，中间结果只能存在它自己的输出里。所以<mark class="key">写出来的过程不是表演，过程本身就是算力</mark>——多写 200 字推理，就是多跑 200 次完整的模型。</p>
+    <p>三篇奠基论文各占一格：<strong>Wei 等</strong>（arXiv 2201.11903，NeurIPS 2022）用<strong>仅 8 个 CoT 示例</strong>提示 <strong>540B</strong> 模型，在 GSM8K 达到当时 SOTA，<strong>超过带 verifier 的微调 GPT-3</strong>（摘要未给具体百分比，不要编）；<strong>Kojima 等</strong>（arXiv 2205.11916）只加一句"Let's think step by step"，把 MultiArith 从 <strong>17.7% 拉到 78.7%</strong>、GSM8K 从 <strong>10.4% 拉到 40.7%</strong>；<strong>Wang 等</strong>（arXiv 2203.11171，ICLR 2023）用多条路径投票，GSM8K <strong>+17.9%</strong>、SVAMP +11.0%、AQuA +12.2%、StrategyQA +6.4%、ARC-challenge +3.9%。</p>
+    <p>关于"深呼吸"那句咒语，三条必须记住：<strong>①它是 OPRO 让 LLM 自动搜出来的，不是人想出来的</strong>——同表里语义毫不相干的"Break this down."得 79.9，几乎打平；<strong>②那 80.2 分绑定在 PaLM 2-L 作 scorer + GSM8K + zero-shot 上</strong>，同表 gpt-4 搜出的最佳仅 74.5，论文明说最优格式可以是模型特定、任务特定的；<strong>③论文报告的是"最多"高 8% / 50%，不是平均。</strong></p>
+    <p>而最该改变你习惯的一条是：<mark class="key">语义几乎一样的两句话，71.8 对 58.8，差 13 个百分点。</mark>这意味着"我觉得这版更清楚"不能作为改进依据——提示词效果高度脆弱、无法从语义直觉推断。<strong>下一节讲怎么用结构化标签把提示词整理成能维护的工程产物；再下一节讲怎么建立"改一版就量一次"的闭环。</strong></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./10-2-fewshot.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 10.2 · Few-shot 示例</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./10-4-structured.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 10.4 · 结构化提示</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 10.3</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>

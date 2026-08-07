@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>§ 11.6 · MCP 与多 Agent · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css">
+<link rel="stylesheet" href="../../_shared/css/interactive.css">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./11-agent.html">智能篇 · 第 11 章</a>
+      <span class="sep">›</span>
+      <span>§ 11.6</span>
+    </div>
+    <a href="./11-agent.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 11.6 · Section</div>
+    <h1>MCP 与多 Agent</h1>
+    <div class="cn">Model Context Protocol &amp; Multi-Agent</div>
+  </header>
+
+  <p class="lead">
+    前面五节我们把一个 Agent 该有的零件都装齐了：工具、记忆、检索、规划。现在剩下两个真正决定它能不能长成产品的问题。第一个是<strong>接口</strong>——你的 Agent 要接公司的数据库、Slack、日历、代码仓库，每接一个都要重写一遍胶水代码，接口的数量是「Agent 数 × 数据源数」，这笔账迟早会压死人。第二个是<strong>协作</strong>——多请几个 Agent 一起干，是不是就更快更强？<mark class="key">这一节的答案会让你意外：官方实测多 Agent 能带来 90.2% 的性能提升，但它烧掉的 token 是普通聊天的十五倍，而且在编码任务上官方明说「不适用」。</mark>另外还有一个更有意思的东西——MCP 的核心概念在 2026 年 7 月刚被官方改过一次，教材写完就过时，这件事本身值得当一课来讲。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔌 出国旅行带的那一袋转接头</div>
+    <p>回想一下十几年前出国旅行的行李箱。你要带一袋<strong>转接头</strong>：英标的、美标的、欧标的、澳标的，还有一个万用的但插上去松松垮垮。<mark class="key">同一个手机<strong>充电器</strong>，因为墙上的<strong>插座</strong>形状不同，你得配四个头。</mark></p>
+    <p>更麻烦的是这笔账怎么算：如果你有 3 个电器、要去 5 个国家，最坏情况下要准备 15 种搭配。<strong>电器多一个，转接头就要多买五个。</strong></p>
+    <p>后来 USB-C 出现了。它没让任何一个电器变强，也没让任何一个插座变大——<strong>它只是让所有人同意用同一个形状</strong>。于是那一袋转接头变成了一根线。</p>
+    <p><strong>MCP 干的活儿，就是给「AI 应用」和「数据源」之间定一个 USB-C 那样的统一形状。</strong>它不让模型变聪明，它让「接上去」这件事从 15 种搭配变成 1 种协议。</p>
+    <div class="link">→ <strong>MCP</strong>（Model Context Protocol，模型上下文协议）= 一套开放标准，规定了 AI 应用怎么跟外部数据源和工具对话，让每个数据源只需实现一次，就能被所有支持 MCP 的 AI 应用使用。</div>
+  </div>
+
+  <h3>MCP 的官方坐标：谁、哪一天、原话怎么说</h3>
+  <p>MCP 有明确的官方公告，坐标如下：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>内容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>公告</td><td>Anthropic 官方博客《Introducing the Model Context Protocol》</td></tr>
+        <tr><td>发布日期</td><td><strong>2024 年 11 月 25 日</strong></td></tr>
+        <tr><td>发明人</td><td><strong>David Soria Parra</strong> 与 <strong>Justin Spahr-Summers</strong>（均来自 Anthropic）</td></tr>
+        <tr><td>发布时同步开源</td><td>协议规范 + SDK、Claude Desktop 的本地 MCP server 支持、一批预置 server（Google Drive、Slack、GitHub、Git、Postgres、Puppeteer）</td></tr>
+        <tr><td>发布时点名的早期采用方</td><td><strong>Block、Apollo</strong>（已集成）；<strong>Zed、Replit、Codeium、Sourcegraph</strong>（开发工具厂商合作中）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>官方的定义原文值得逐字读一遍，因为它把「MCP 是什么」说得比任何二手解释都准：</p>
+  <p><strong>a new standard for connecting AI assistants to the systems where data lives, including content repositories, business tools, and development environments. Its aim is to help frontier models produce better, more relevant responses.</strong></p>
+  <p>翻译：一套用于把 AI 助手连接到「数据实际所在的那些系统」的新标准，涵盖内容仓库、业务工具和开发环境；目的是帮助前沿模型给出更好、更相关的回答。</p>
+  <p>请注意最后那句 <strong>help frontier models produce better, more relevant responses</strong>——<mark class="key">MCP 的目标不是让模型更聪明，而是让模型能看到该看的东西。</mark>这个定位非常清晰，也解释了为什么它是「协议」而不是「模型技术」。</p>
+
+  <h3>它要解决的到底是什么问题：一笔 N×M 的账</h3>
+  <p>官方对设计动因的表述同样值得逐字看：</p>
+  <p><strong>even the most sophisticated models are constrained by their isolation from data—trapped behind information silos and legacy systems. Every new data source requires its own custom implementation, making truly connected systems difficult to scale.</strong></p>
+  <p>翻译：即使最先进的模型也受制于「与数据相隔离」这件事——被困在信息孤岛和老旧系统背后。<strong>每接一个新数据源都要写一套自己的定制实现</strong>，这让「真正互联的系统」难以规模化。</p>
+  <p>两个词当场翻译：<strong>information silos</strong>（信息孤岛）<strong>说白了就是</strong>「数据各自锁在各自的系统里，互相不通气」；<strong>legacy systems</strong>（老旧系统）指那些还在跑、但没人愿意动的旧软件。</p>
+  <p><strong>而官方给的解法原话是</strong>：It provides a universal, open standard... <strong>replacing fragmented integrations with a single protocol</strong>（提供一个通用的开放标准……用单一协议取代碎片化的集成）。</p>
+  <p>这笔账画出来最直观：</p>
+  <pre><code>【MCP 之前】每个 AI 应用 × 每个数据源，各写一套
+
+   Claude ────┬── 自己写的 Slack 接法
+              ├── 自己写的 GitHub 接法
+              └── 自己写的 Postgres 接法
+   Cursor ────┬── 又写一遍 Slack 接法
+              ├── 又写一遍 GitHub 接法
+              └── 又写一遍 Postgres 接法
+   你的应用 ──┬── 再写一遍 Slack 接法
+              ├── 再写一遍 GitHub 接法
+              └── 再写一遍 Postgres 接法
+
+   3 个应用 × 3 个数据源 = 9 套代码
+   N 个应用 × M 个数据源 = N×M 套   ← 这就是「碎片化集成」
+
+【MCP 之后】每一边只实现一次
+
+   Claude ───┐                    ┌─── Slack MCP server
+   Cursor ───┼──── MCP 协议 ──────┼─── GitHub MCP server
+   你的应用 ─┘                    └─── Postgres MCP server
+
+   3 + 3 = 6 套代码
+   N + M 套   ← 从乘法变成了加法</code></pre>
+  <p><strong>把这个差别换算成可感知的量</strong>：假设有 10 个 AI 应用和 50 个数据源。乘法是 500 套集成代码，加法是 60 套。<mark class="key">而且乘法模式下，每新增一个数据源，全部 10 个应用都得各自改一遍代码；加法模式下只需写一个 server，10 个应用当天全都能用。</mark></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 螺丝和螺母的国标</span>
+    <p>想象一个还没有<strong>标准件</strong>的年代。每家<strong>工厂</strong>自己车<strong>螺丝</strong>、自己车<strong>螺母</strong>，尺寸全凭手感。结果是：A 厂的螺丝只能配 A 厂的螺母。你要修一台 B 厂的机器，得专门去 B 厂买配件；哪天 B 厂倒闭了，这台机器就成了废铁。</p>
+    <p>后来有了<strong>国标</strong>（以及国际标准）：M6 就是 M6，螺距、牙型、公差全都写在纸上。<mark class="key">从那天起，谁生产的螺丝都能拧进谁生产的螺母。</mark></p>
+    <p>这件事的关键在于——<strong>标准没有让任何一颗螺丝变得更结实。</strong>它只做了一件事：让「能不能拧上」这个问题从「取决于你买的是谁家的」变成「一定能」。而这一件事，直接催生了整个现代制造业的供应链——因为你终于可以只做螺丝、不做整机，而市场依然要你。</p>
+    <p><strong>MCP 就是 AI 应用世界的这份螺纹国标。</strong>它没让 Claude 或 GPT 变强一点点，它只是让「一个 Slack 连接器」这种东西第一次有了独立存在的价值：<strong>你写一个 Slack MCP server，全世界所有支持 MCP 的 AI 应用当天就都能用它</strong>——你不需要跟任何一家模型公司谈合作。</p>
+    <p>顺带说，官方自己也承认了一个更贴切的技术类比：<strong>MCP takes some inspiration from the Language Server Protocol</strong>（MCP 从语言服务器协议中获得了一些灵感）。这不是别人的猜测，是官方自述，可以放心引用。</p>
+  </div>
+
+  <h3>LSP 类比：为什么这个参照系特别贴切</h3>
+  <p>官方提到的 <strong>LSP</strong>（Language Server Protocol，语言服务器协议）值得展开，因为它是一个已经被历史验证过的成功案例。</p>
+  <p>LSP 解决的是编辑器世界里一模一样的账。<strong>在 LSP 之前</strong>：VS Code 要支持 Python 的自动补全，得自己写一套 Python 语义分析；要支持 Go，再写一套 Go 的。而 Vim 想支持 Python，又得自己从头写一套。<mark class="key">M 个编辑器 × N 种语言 = M×N 套插件，全世界的程序员在重复劳动。</mark></p>
+  <p><strong>LSP 之后</strong>：语言方只需写一个「语言服务器」（比如 Python 的 Pylance、Rust 的 rust-analyzer），编辑器方只需实现一次 LSP 客户端。<strong>结果是任何编辑器都能一夜之间支持几十种语言。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>LSP（编辑器世界）</th><th>MCP（AI 应用世界）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>协议底座</td><td>JSON-RPC</td><td><strong>JSON-RPC 2.0</strong></td></tr>
+        <tr><td>一边是</td><td>编辑器（VS Code、Vim、Emacs）</td><td>AI 应用 / Host（Claude Desktop、IDE、你的产品）</td></tr>
+        <tr><td>另一边是</td><td>语言服务器（Pylance、rust-analyzer）</td><td>MCP server（Slack、GitHub、Postgres 连接器）</td></tr>
+        <tr><td>要解决的账</td><td>M 个编辑器 × N 种语言</td><td>N 个应用 × M 个数据源</td></tr>
+        <tr><td>解完之后</td><td>M + N</td><td>N + M</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>JSON-RPC 2.0</strong> 这个词也翻译一下：<strong>RPC</strong> 是 Remote Procedure Call（远程过程调用），<strong>说白了就是</strong>「让另一台机器上的一个函数替我跑一下，把结果给我」。JSON-RPC 就是用 JSON 这种文本格式来描述「我要调哪个函数、参数是什么」。<strong>相当于</strong>你给<strong>餐厅</strong>后厨递一张标准格式的<strong>菜单</strong>点单条：「菜名：宫保鸡丁，要求：不要花生」——后厨照单做菜，不用跟你面谈。</p>
+
+  <h3>三个角色：Hosts、Clients、Servers</h3>
+  <p>现行的官方规范把参与者分成三种角色。这三个词很容易混，用一个类比一次说清：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>角色</th><th>是什么</th><th>类比：一家公司里的</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Host</strong>（宿主）</td><td>那个真正跟用户打交道、内部装着模型的应用程序</td><td>老板——他有需求，也是他在跟客户说话</td></tr>
+        <tr><td><strong>Client</strong>（客户端）</td><td>Host 内部为每一个 server 各开一条连接的那个组件</td><td><strong>秘书</strong>——每对接一家供应商就派一位专职秘书</td></tr>
+        <tr><td><strong>Server</strong>（服务端）</td><td>提供具体能力的那一头：连着 Slack、连着数据库、连着文件系统</td><td>供应商——各管一摊专业活儿</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么要把 Host 和 Client 分开？<strong>因为一个 Host 通常要同时连好几个 server，而每条连接的状态、权限、生命周期都是独立的。</strong><mark class="key">一位秘书专门对接一家供应商，比让老板一个人同时跟五家供应商在同一个会议室里说话要清楚得多。</mark></p>
+
+  <h3>★ Server 能提供什么：Resources、Prompts、Tools</h3>
+  <p>MCP server 能给出三类东西。<strong>官方对这三者的一句话说明如下</strong>，我把原文和翻译并列，因为这三个词的边界很容易被讲混：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>官方说明</th><th>大白话</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Resources</strong></td><td>Context and data, for the user or the AI model to use</td><td>给人或模型用的<strong>上下文和数据</strong>——是「读得到的东西」</td><td>档案柜里的文件：你可以取出来看</td></tr>
+        <tr><td><strong>Prompts</strong></td><td>Templated messages and workflows for users</td><td>给用户用的<strong>模板消息和工作流</strong>——是「预先写好的套路」</td><td>公司里的标准表单：填空就能发起一件事</td></tr>
+        <tr><td><strong>Tools</strong></td><td>Functions for the AI model to execute</td><td>给模型<strong>执行</strong>的函数——是「做得到的事」</td><td>工具箱里的螺丝刀：拿起来能干活</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最容易搞混的是 <strong>Resources</strong> 和 <strong>Tools</strong>。分界线其实很清楚：<mark class="key">Resources 是「你可以读什么」，Tools 是「你可以做什么」。</mark>读一份文件是 Resource，把文件删掉是 Tool。<strong>好比</strong>去<strong>图书馆</strong>：「架子上有哪些书」是 Resources，「帮我把这本书借出去」是 Tools——后者有副作用，前者没有。</p>
+  <p>而 <strong>Prompts</strong> 那一条注意它的服务对象是 <strong>for users</strong>——<strong>是给人用的</strong>。它是 server 作者预先写好的一段模板，用户在界面上点一下就能用，比如「帮我把这个 GitHub issue 总结成一段周报」。<strong>相当于</strong>银行柜台旁边摆的那叠已经印好格式的<strong>发票</strong>申请单——不用你自己想该写什么。</p>
+
+  <h3>★★ Client 端能力：只剩 Elicitation，而且有三项已被弃用</h3>
+  <p>接下来是本节<strong>时效性最强、也最容易写错</strong>的一段。如果你手边有一本 2025 年出版的 AI 工程书，它这一节大概率已经过时了。</p>
+  <p><strong>先说现在的正确说法：客户端能力现在只列 Elicitation 一项。</strong></p>
+  <ul class="keylist">
+    <li><span class="k">Elicitation（信息征询）</span><span class="v">server 可以主动向用户索取额外信息。<strong>说白了就是</strong>：干活干到一半发现缺个参数，server 有权反过来问用户一句「请问你要哪个仓库」。<strong>相当于</strong><strong>装修工</strong>量到一半打电话问你「主卧的插座要装几个」——不是他自作主张，也不是干不下去，而是有一条正式的通道回头问你。</span></li>
+  </ul>
+  <p><strong>然后说被弃用的那三项</strong>——这一条极其重要：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>特性</th><th>原本干什么</th><th>状态</th><th>官方给的迁移建议</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Sampling</strong></td><td>server 反过来请 client 调用 LLM 帮它生成一段内容</td><td rowspan="3"><strong>已在 2026-07-28 修订中正式标记为 Deprecated（弃用），编号 SEP-2577</strong></td><td>直接对接 LLM 供应商的 API</td></tr>
+        <tr><td><strong>Roots</strong></td><td>告诉 server「你能碰的文件根目录在哪」</td><td>通过工具参数、resource URI 或 server 配置传递路径</td></tr>
+        <tr><td><strong>Logging</strong></td><td>server 把日志通过协议发回 client</td><td>直接写 stderr，或用 OpenTelemetry</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>按官方的 feature lifecycle（特性生命周期）政策，被弃用的特性至少还会保留 12 个月</strong>，所以现有实现不会立刻崩掉。但从写文档、写教材、做技术选型的角度：</p>
+  <p><mark class="key">如果你把 Sampling 列为「MCP 四大核心概念」之一，截至 2026 年 8 月，这已经是过时信息。</mark></p>
+  <p><strong>正确的说法是</strong>：Resources / Tools / Prompts 三大 server 能力 + Elicitation 客户端能力；早期的 Sampling / Roots / Logging 已被官方弃用。</p>
+  <p>这件事本身特别值得当一课来讲。<strong>你可能会觉得「一本书刚出版就有一节过时了」很尴尬，但这恰恰是快速演进领域的常态，而不是意外。</strong>三个可迁移的经验：</p>
+  <ul class="keylist">
+    <li><span class="k">经验一 · 写技术内容必须标注核实时间</span><span class="v">「截至 2026 年 8 月」这七个字不是废话，它是让读者判断信息新鲜度的唯一依据。<strong>不标时间的技术断言，三个月后就是有害信息。</strong></span></li>
+    <li><span class="k">经验二 · 分清「原理」和「接口」的半衰期</span><span class="v">JSON-RPC 是什么、N×M 为什么要变成 N+M、LSP 的历史经验——这些十年后还成立。而具体有哪几个 capability、字段叫什么名字，<strong>半年就可能变</strong>。学习时该把重量压在前者。</span></li>
+    <li><span class="k">经验三 · 一手规范永远优先于二手教程</span><span class="v">包括本节在内的任何二手内容都会滞后。<strong>动手实现时以官方规范页面为准</strong>，把教程当地图不当法条。</span></li>
+  </ul>
+
+  <h3>★ 版本号的官方内部不一致：如实呈现</h3>
+  <p>这里还有一件有意思的事，也是做技术核实时的一个典型情形：<strong>官方文档自己内部对不上。</strong></p>
+  <p>具体情况是这样：</p>
+  <ul class="keylist">
+    <li><span class="k">versioning 页面说</span><span class="v"><code>/specification/versioning</code> 页面上写着 The <strong>current</strong> protocol version is <strong>2025-11-25</strong></span></li>
+    <li><span class="k">latest 页面实际指向</span><span class="v"><code>/specification/latest</code> 实际解析到的是 <strong>2026-07-28</strong></span></li>
+    <li><span class="k">而 2026-07-28 显然是生效的</span><span class="v">它已有完整 changelog，并且 Roots 页面上明确标注了 deprecated as of protocol version <strong>2026-07-28</strong></span></li>
+    <li><span class="k">但 changelog 里又有 draft 字样</span><span class="v">changelog 中出现 introduced in this <strong>draft</strong>（在本草案中引入）的表述</span></li>
+  </ul>
+  <p>那么该怎么写？<strong>正确做法是如实呈现两个数字，不要单给一个：</strong></p>
+  <p><mark class="key">截至 2026 年 8 月，官方 versioning 页标注的 current 版本为 2025-11-25，最新修订为 2026-07-28。</mark></p>
+  <p>为什么不挑一个「看起来更权威」的写？<strong>因为挑哪一个都会误导一部分读者。</strong>写 2025-11-25，读者会以为 Sampling 还没被弃用；写 2026-07-28，读者去查 versioning 页面会发现跟你说的不一样，然后怀疑整篇文章。<strong>把矛盾如实摆出来，读者自己能判断——这比替读者做一个可能错的决定负责得多。</strong></p>
+  <p><strong>顺带这也是一个很好的观察：</strong>一份活跃演进中的规范，其文档的各个页面之间出现短暂不一致是很正常的。<strong>相当于</strong>一个正在<strong>施工</strong>的<strong>工地</strong>，图纸改了三版，墙上贴的那张可能还是第二版。<mark class="key">看到这种情形不要慌，也不要急着断言谁错了——记下时间、记下两处出处，就是最专业的处理。</mark></p>
+
+  <h3>2026-07-28 的其他重大变更：MCP 变成无状态了</h3>
+  <p>那次修订改的不止是弃用三个特性，还有一系列结构性调整。<strong>这些改动的方向高度一致：让协议更简单、更适合大规模部署。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>变更</th><th>具体内容</th><th>为什么这么改（大白话）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>协议变为无状态</strong>（stateless）</td><td>移除 <code>initialize</code> / <code>notifications/initialized</code> 握手；移除协议级 session 和 <code>Mcp-Session-Id</code> 请求头</td><td>有状态意味着服务端要记住「你是谁、上次说到哪」，这在多台机器负载均衡时很难办。无状态后每个请求都自带全部信息，随便哪台机器都能接</td></tr>
+        <tr><td><strong>协议版本与客户端能力改为随请求携带</strong></td><td>放在每个请求的 <code>_meta</code> 字段里</td><td>既然没有握手了，那这些信息就得每次都带上——<strong>相当于</strong>去<strong>银行</strong>办事不再办会员卡，而是每次都出示身份证</td></tr>
+        <tr><td><strong>新增 <code>server/discover</code></strong></td><td>一个 RPC 方法，规范规定 server <strong>MUST</strong>（必须）实现</td><td>客户端连上来第一句话就是「你都有什么能力」。既然取消了握手，就需要一个明确的「自我介绍」入口</td></tr>
+        <tr><td><strong>新增 MRTR</strong>（Multi Round-Trip Requests，多轮往返请求）</td><td>取代原先「server 主动发起请求」的模式</td><td>原来 server 可以反过来敲客户端的门（Sampling 就是这么干的），现在改成在一次请求的多轮往返里完成</td></tr>
+        <tr><td><strong>HTTP+SSE 传输已弃用</strong></td><td>自 <strong>2025-03-26</strong> 起弃用，推荐 <strong>Streamable HTTP</strong></td><td>SSE（Server-Sent Events）要维持一条长连接，运维成本高；Streamable HTTP 更贴近普通 HTTP 的用法</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中「无状态」这个改动最值得体会，因为它是所有大规模服务的必经之路。<strong>用一个类比说透</strong>：</p>
+  <p><strong>有状态</strong>就像一家只有一位老<strong>客服</strong>的小店——你打电话过去，她记得你上次买了什么、说到哪儿了，体验很好。但她一请假，或者店里要同时接一千个电话，就完了：<mark class="key">因为「上下文」只在她一个人脑子里。</mark></p>
+  <p><strong>无状态</strong>就像大型<strong>客服</strong>中心——每次打进来随机分给一位坐席，所以你每次都得把订单号说一遍。麻烦一点，但代价是换来了「随便加坐席就能扩容」的能力。<strong>协议设计从有状态转向无状态，几乎总是因为要上规模。</strong></p>
+  <p>官方还给出了几个扩展机制，简单记一下方向：</p>
+  <ul class="keylist">
+    <li><span class="k">Tasks</span><span class="v">处理<strong>异步长任务</strong>——有些活儿要跑十分钟，不能让请求一直挂着。<strong>相当于</strong>洗衣店给你一张取衣单，洗完了你再来取，而不是站在那儿等两小时。</span></li>
+    <li><span class="k">Skills over MCP</span><span class="v">把「技能」这种更高层的封装也通过 MCP 分发。</span></li>
+    <li><span class="k">MCP Apps</span><span class="v"><strong>对话内嵌交互 UI</strong>——不只返回文字，还能在对话里嵌一个能点的界面。<strong>相当于</strong>客服不再口述「你要选套餐 A 还是 B」，而是直接推给你一个可以点的<strong>菜单</strong>。</span></li>
+  </ul>
+
+  <h3>动手写一个最小 MCP server</h3>
+  <p>说了这么多，一个 MCP server 到底长什么样？下面是一个能跑的最小例子。<strong>看完你会发现它朴素到几乎让人失望——而这正是一个好协议该有的样子。</strong></p>
+  <pre><code># 安装： pip install mcp
+#
+# 这个 server 提供两样东西：
+#   · 一个 Tool（模型可以执行的函数）
+#   · 一个 Resource（模型或用户可以读的数据）
+# 注意区别：Tool 有副作用/会算东西，Resource 只是「读得到的内容」。
+
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("库房助手")          # server 的名字，会显示给用户
+
+# ---------- Tools：Functions for the AI model to execute ----------
+@mcp.tool()
+def stock_check(sku: str) -&gt; str:
+    """查询某个货号当前库存。sku 例如 A-1001。"""
+    FAKE = {"A-1001": 42, "A-1002": 0, "B-2003": 7}
+    if sku not in FAKE:
+        return f"没有货号 {sku} 的记录"
+    n = FAKE[sku]
+    return f"{sku} 当前库存 {n} 件" + ("（已缺货）" if n == 0 else "")
+
+@mcp.tool()
+def restock_request(sku: str, qty: int) -&gt; str:
+    """发起补货申请。这是一个有副作用的动作，所以属于 Tool。"""
+    if qty &lt;= 0:
+        return "补货数量必须大于 0，已拒绝"
+    if qty &gt; 1000:
+        return "单次补货上限 1000 件，请拆单——这是刻意的护栏"
+    # 真实场景这里会写数据库 / 调 ERP 接口
+    return f"已为 {sku} 提交补货申请 {qty} 件，待主管审批"
+
+# ---------- Resources：Context and data for the user or model ----------
+@mcp.resource("warehouse://rules")
+def rules() -&gt; str:
+    """库房规章。这是「读得到的东西」，没有任何副作用，所以是 Resource。"""
+    return (
+        "1. 单次补货上限 1000 件，超出须拆单。\n"
+        "2. 缺货货号优先补货，队列按缺货时长排序。\n"
+        "3. 所有补货申请须经主管审批后生效。\n"
+    )
+
+# ---------- Prompts：Templated messages and workflows for users ----------
+@mcp.prompt()
+def daily_report(area: str) -&gt; str:
+    """给用户用的模板：一键生成某区域的库存日报。"""
+    return (
+        f"请为库房 {area} 区生成今日库存日报，要求：\n"
+        f"1. 先读 warehouse://rules 了解规章；\n"
+        f"2. 列出所有缺货货号；\n"
+        f"3. 对缺货货号给出建议补货量，但不要直接提交申请。\n"
+    )
+
+if __name__ == "__main__":
+    # 本地运行时走 stdio（标准输入输出），
+    # 部署到线上则用 Streamable HTTP —— 注意 HTTP+SSE 自 2025-03-26 起已弃用
+    mcp.run()</code></pre>
+  <p><strong>这段代码里有四处值得留意，都对应本节讲过的概念：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">Tool 与 Resource 的分界线画得很清楚</span><span class="v"><code>stock_check</code>（查库存，要算）和 <code>restock_request</code>（提申请，有副作用）是 Tool；<code>rules</code>（一段固定的规章文本，纯读）是 Resource。<mark class="key">拿不定主意时问一句：「这件事做完，世界变了吗？」变了就是 Tool。</mark></span></li>
+    <li><span class="k">Prompt 是给人用的</span><span class="v"><code>daily_report</code> 不是给模型自动调的，是用户在界面上点一下、填个区域名就能发起的模板。注意它最后一句刻意写了「不要直接提交申请」——<strong>模板本身就是一道护栏。</strong></span></li>
+    <li><span class="k">工具里写了硬性上限</span><span class="v"><code>qty &gt; 1000</code> 直接拒绝。<strong>护栏要写在 server 里，不要只写在提示词里</strong>——提示词能被绕过，代码不能。</span></li>
+    <li><span class="k">docstring 就是模型看到的说明书</span><span class="v">函数的文档字符串会被当作工具描述交给模型。<mark class="key">写得含糊，模型就用错；这一行文字的重要性不亚于函数体。</mark></span></li>
+  </ul>
+
+  <h3>MCP 的采用现状：只说有一手来源的</h3>
+  <p>关于「谁支持了 MCP」，网上传闻极多。<strong>本节只写有官方一手来源的，并明确标注证据。</strong></p>
+  <p><strong>OpenAI 已官方支持 MCP——这一条有两条独立的官方证据：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>证据</th><th>内容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>① OpenAI 官方开发者文档《MCP and Connectors》</td><td>MCP 作为 Responses API 的<strong>内置工具类型</strong>：<code>{"type": "mcp", "server_url": ...}</code>；支持 <strong>Streamable HTTP 与 HTTP/SSE</strong>；支持 <code>allowed_tools</code> 工具过滤与 <code>require_approval</code> 审批流；并提供 OpenAI 自维护的 <strong>Connectors</strong>（对流行服务的 MCP 封装，如 Google Workspace、Dropbox），以及 <strong>Secure MCP Tunnel</strong>（把私有/内网 MCP server 接进来）</td></tr>
+        <tr><td>② OpenAI Agents Python SDK 官方文档</td><td>有专门的 MCP 章节，支持四种接入方式：<strong>HostedMCPTool、MCPServerStreamableHttp、MCPServerSse、MCPServerStdio</strong>，另有 <strong>MCPServerManager</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意那两个参数——<code>allowed_tools</code> 和 <code>require_approval</code>——它们其实就是上一节讲过的两条工程原则的官方落地：<strong>缩小工具集</strong>和<strong>写操作加审批</strong>。<mark class="key">一个协议的成熟度，往往就体现在它是不是把安全护栏做成了一等公民的参数，而不是留给使用者自己想办法。</mark></p>
+  <p><strong>Anthropic 侧</strong>：Messages API 提供 <strong>MCP connector</strong>，无需自建 MCP client 即可连接远程 MCP server。</p>
+  <p><strong>而下面这一条必须说清，因为它比「某家大厂宣布支持」更能说明 MCP 的行业地位。</strong></p>
+
+  <h3>★★ 治理已中立化：MCP 进了 Linux Foundation</h3>
+  <p>MCP 现在的正式主体是 <strong>Model Context Protocol a Series of LF Projects, LLC</strong>——也就是说，<mark class="key">它已经被置于 Linux Foundation 旗下的 LF Projects 之下，不再是 Anthropic 一家的项目。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>现状</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>主体</td><td>Model Context Protocol a Series of LF Projects, LLC（<strong>Linux Foundation</strong> 旗下 LF Projects）</td></tr>
+        <tr><td>许可</td><td>代码与规范采用 <strong>Apache 2.0</strong>；文档采用 <strong>CC BY 4.0</strong></td></tr>
+        <tr><td>治理原则（原文）</td><td>membership is for <strong>individuals, not companies</strong>... there are <strong>no seats reserved for specific companies</strong>（成员资格属于个人而非公司，没有为特定公司预留席位）</td></tr>
+        <tr><td>现任 Lead Maintainers</td><td><strong>David Soria Parra、Den Delimarsky</strong></td></tr>
+        <tr><td>Core Maintainers</td><td><strong>7 人</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么这一条比「OpenAI 宣布支持」更重要？<strong>因为「谁在支持」会变，而「谁拥有」决定了它能不能被信任。</strong></p>
+  <p><strong>换成大白话：</strong>如果一个「开放标准」的最终决定权还在某一家公司手里，那所有竞争对手在采用它之前都会犹豫——<mark class="key">万一哪天这家公司改规则、加限制、或者把它做成自家产品的护城河怎么办？</mark>这不是多疑，是历史上反复发生过的事。</p>
+  <p>而「成员资格属于个人而非公司、没有为特定公司预留席位」这一条，恰恰是针对这个疑虑的正面回答。<strong>相当于</strong>一条马路的产权从「某家沿街商铺的私人车道」变成了「市政道路」——<strong>从那一刻起，对面那家竞争的商铺也愿意让顾客走这条路了。</strong></p>
+  <p><strong>这里必须做一个严格的限定：微软、谷歌官方支持 MCP 的一手公告我没有取到</strong>（搜索只返回自媒体内容）。所以本节提到生态时的准确说法是：<mark class="key">OpenAI（官方文档确认）、Anthropic（官方文档确认），以及 Linux Foundation 治理下的社区生态。</mark><strong>不要断言微软或谷歌已官方支持</strong>——哪怕这件事听起来很可能是真的，没核到一手来源就不该写成事实。</p>
+
+  <h3>MCP 的另一面：接入变简单，攻击面也变大</h3>
+  <p>现在说代价。这一段的分量不亚于前面所有优点。</p>
+  <p><strong>OpenAI 官方文档里有一句非常直白的警告：</strong>A <strong>malicious server can exfiltrate sensitive data</strong> from anything that enters the model's context（一个恶意的 server 可以把进入模型上下文的任何敏感数据窃取出去）。</p>
+  <p><strong>exfiltrate</strong> 这个词翻译一下：它是「把数据偷偷运出去」的意思，比 steal 更强调「悄悄地、成规模地搬走」。</p>
+  <p>为什么 MCP 会放大这个风险？把逻辑捋一遍：</p>
+  <ul class="keylist">
+    <li><span class="k">第一步 · 上下文是共享的</span><span class="v">模型的上下文里同时装着：你的问题、你的公司文档、A server 返回的内容、B server 返回的内容。<mark class="key">所有 server 的输出都进了同一个池子。</mark></span></li>
+    <li><span class="k">第二步 · 工具是模型自己选的</span><span class="v">模型决定调哪个工具、传什么参数。如果它被上下文里某段文字诱导（就是 §11.4 讲过的提示词注入），它可能把 A server 给的敏感数据，当成参数传给 B server。</span></li>
+    <li><span class="k">第三步 · 而 B server 是第三方写的</span><span class="v">MCP 生态的价值就在于「任何人都能写 server」，但这也意味着<strong>你装的那个 server 是谁写的、它把参数发到哪去了，你未必清楚</strong>。</span></li>
+  </ul>
+  <p><strong>这就像</strong>你家<strong>装修</strong>时来了五个工种的师傅，钥匙都给了。<mark class="key">整体效率高了很多，但你家的门禁从「一把钥匙一个人」变成了「五把钥匙五个人，其中有几个你只在网上见过」。</mark>方便和风险是同一枚硬币。</p>
+  <p><strong>该怎么办？三条最基本的：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">用工具白名单</span><span class="v">OpenAI 的 <code>allowed_tools</code> 就是干这个的。只放开这个任务确实需要的工具，别把整个 server 的能力全打开。</span></li>
+    <li><span class="k">给写操作开审批</span><span class="v"><code>require_approval</code>。凡是会把数据发出去、或者产生不可撤销后果的调用，都过一道人工确认。</span></li>
+    <li><span class="k">对 server 来源做尽调</span><span class="v">跟你不会随便运行网上下载的 exe 是同一个道理。<strong>一个 MCP server 拿到的权限，往往比一个普通程序更大——因为它连着你的真实业务数据。</strong></span></li>
+  </ul>
+
+  <h3>从一个 Agent 到多个 Agent：AutoGen 的思路</h3>
+  <p>现在换到本节的下半场。工具接口标准化之后，一个自然的想法是：<strong>既然一个 Agent 能干活，多请几个一起干是不是更好？</strong></p>
+  <p>这个方向有一篇微软的官方论文，坐标如下：</p>
+  <ul class="keylist">
+    <li><span class="k">论文标题</span><span class="v">《AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation》（AutoGen：通过多 Agent 对话实现下一代大模型应用）</span></li>
+    <li><span class="k">arXiv 编号</span><span class="v"><strong>2308.08155</strong>（2023 年 8 月 16 日，v2 为 2023 年 10 月 3 日）</span></li>
+    <li><span class="k">作者与机构</span><span class="v">共 <strong>14 人</strong>，微软主导，含 Qingyun Wu、Chi Wang、Ahmed Hassan Awadallah、Ryen W. White、<strong>Doug Burger</strong>（微软技术院士）等</span></li>
+  </ul>
+  <p>它的核心主张是：让 agent 变成 <strong>customizable, conversable</strong>（可定制的、可对话的）的单元，并且可以自由组合三类模式——<strong>LLM、人类输入、工具</strong>。对话模式既可以用自然语言定义，也可以用代码编程定义。</p>
+  <p><strong>customizable, conversable 翻译一下：</strong>「可定制」是说每个 agent 的角色、能力、可用工具都可以单独配；<strong>「可对话」是关键</strong>——<mark class="key">agent 之间的协作方式就是「互相说话」，而不是通过某种特殊的机器协议。</mark></p>
+  <p>为什么这个设计有意思？<strong>相当于</strong>一家<strong>公司</strong>的<strong>会议</strong>室：里面可以坐着几位各有专长的员工（LLM agent）、一位真人（人类输入）、桌上摆着一台能跑代码的电脑（工具）。<strong>他们之间的协作媒介就是「开会说话」——这套形式对三类参与者一视同仁，所以能自由组合。</strong></p>
+  <p>顺带做一个必要的限定：<strong>另一个常被一起提到的框架 CrewAI，我没有取到它的权威论文或官方技术报告。</strong>所以本节只把它作为「开源框架」提及，<mark class="key">不赋予它论文级的权威</mark>。这跟前面对微软/谷歌是否支持 MCP 的处理是同一个原则。</p>
+
+  <h3>Anthropic 的多 Agent 研究系统：架构长什么样</h3>
+  <p>比论文更能说明工程现实的，是 Anthropic 那篇多 Agent 工程博客《How we built our multi-agent research system》（我们是怎么构建多 Agent 研究系统的），作者为 Jeremy Hadfield、Barry Zhang、Kenneth Lien 等。<strong>发布日期我没有取到，所以不写日期。</strong></p>
+  <p>它的架构是 <strong>orchestrator-worker</strong>（编排者—工作者）模式：</p>
+  <pre><code>            ┌─────────────────────────┐
+            │     LeadResearcher      │  ← orchestrator（编排者）
+            │  负责：拆解问题、派活、汇总  │
+            └────────────┬────────────┘
+                         │
+        ① 先把自己的计划写进 Memory
+           为什么必须写？因为上下文超过 200,000 token
+           会被截断——计划要是只放在上下文里，
+           跑到一半就可能被截没了
+                         │
+        ② 派生若干 Subagents 并行搜索
+           ┌─────────┬─────────┬─────────┐
+           ▼         ▼         ▼         ▼
+       Subagent1  Subagent2  Subagent3  …   ← workers
+       各自有独立上下文，互不干扰
+       lead 通常并行起 3–5 个
+       每个 subagent 又可并行用 3+ 个工具
+                         │
+        ③ 结果汇总回 LeadResearcher
+                         │
+                         ▼
+                ┌───────────────┐
+                │ CitationAgent │  ← 专门处理引用归属
+                │ 哪句话来自哪个源 │
+                └───────────────┘</code></pre>
+  <p>这个架构里有<strong>三处设计值得单独记住</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">计划要落到 Memory，不能只放上下文</span><span class="v">因为超过 <strong>200,000 token</strong> 会被截断。<strong>好比</strong>项目经理不能只把计划记在脑子里，必须写在白板上——<mark class="key">开了一天会之后，脑子里最早那部分已经被挤掉了。</mark></span></li>
+    <li><span class="k">Subagent 各有独立上下文</span><span class="v">这是多 Agent 最大的技术优势：<strong>每个 subagent 都有一份完整的、干净的上下文预算</strong>。五个 subagent 等于把可用的「工作台面」扩大了五倍，而且互不干扰。</span></li>
+    <li><span class="k">专门有一个 CitationAgent</span><span class="v">引用归属（哪句话来自哪个来源）被单独拆成一个 agent 来做。<strong>这个细节说明了一件事：多 Agent 的价值往往不在「更聪明」，而在「让每个环节都有人专门负责」</strong>——就像出版社里校对和排版是两个不同的岗位。</span></li>
+  </ul>
+
+  <h3>★★ 多 Agent 到底值不值：一组必须带上下文的官方数字</h3>
+  <p>接下来是本节最重要的一组数据。Anthropic 在这篇博客里给出了自己的内部实测，<strong>而这组数字是被滥用最严重的一组</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>指标</th><th>数字</th><th>原文条件（★ 必须一起引用）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>性能增益</strong></td><td><strong>+90.2%</strong></td><td>Claude Opus 4 作 lead + Claude Sonnet 4 作 subagents，相对<strong>单体</strong> Claude Opus 4，在 <strong>Anthropic 内部 research eval</strong> 上</td></tr>
+        <tr><td><strong>Token 代价</strong></td><td>Agent 约为 chat 的 <strong>4 倍</strong>；<br/><strong>多 Agent 系统约为 chat 的 15 倍</strong></td><td>原文标注 in our data（基于我们的数据）</td></tr>
+        <tr><td><strong>变量解释力</strong></td><td>三因素解释 BrowseComp 评测中 <strong>95%</strong> 的性能方差，其中 <strong>token 用量单独解释 80%</strong></td><td>另两个因素为工具调用次数与模型选择</td></tr>
+        <tr><td><strong>并行化收益</strong></td><td>复杂查询的研究时间<strong>缩短最多 90%</strong></td><td>lead 并行起 3–5 个 subagent；subagent 并行用 3 个以上工具</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>现在说为什么这组数字必须带限定。</strong>两个限定，缺一个都构成误导：</p>
+  <ul class="keylist">
+    <li><span class="k">限定一 · 90.2% 是内部评测，不是公开基准</span><span class="v">原文写的是 our <strong>internal</strong> research eval。<mark class="key">这意味着这个数字无法被第三方复现，也无法跟别家的数字做横向比较。</mark>它是有价值的工程经验，但它不是榜单成绩。</span></li>
+    <li><span class="k">限定二 · Anthropic 自己划了适用边界</span><span class="v">原文：some domains that require all agents to <strong>share the same context</strong> or involve <strong>many dependencies between agents are not a good fit</strong>... <strong>most coding tasks involve fewer truly parallelizable tasks than research</strong>, and LLM agents are <strong>not yet great at coordinating and delegating</strong> to other agents in real time。</span></li>
+  </ul>
+  <p>把限定二完整翻译一遍，因为它每一句都在打某种流行说法的脸：</p>
+  <ul class="keylist">
+    <li><span class="k">要求所有 agent 共享同一上下文的场景，不适合</span><span class="v">多 Agent 的核心优势正是「各有独立上下文」。如果任务要求大家看到同样的东西，这个优势就变成了纯粹的成本。</span></li>
+    <li><span class="k">agent 之间依赖很多的场景，不适合</span><span class="v">A 必须等 B 的结果、B 又要等 C——这种任务并行不起来，多请人只是多付钱。</span></li>
+    <li><span class="k">大多数编码任务，比研究任务更难并行</span><span class="v"><mark class="key">这一句直接否掉了「多 Agent 是写代码的未来」这种流行叙事。</mark>写代码是高度串行的：接口没定好，下游没法动手；改了一处，别处全要跟着改。</span></li>
+    <li><span class="k">LLM agent 目前还不擅长实时协调和分派</span><span class="v">原文 not yet great——注意是 <strong>yet</strong>（尚未），这是一个关于现状的判断，不是关于原理的否定。</span></li>
+  </ul>
+  <p><strong>所以正确的引用方式是这样的一整句话，而不是那个孤零零的 90.2%：</strong></p>
+  <p><mark class="key">在 Anthropic 的内部研究评测上，多 Agent 系统（Opus 4 作 lead + Sonnet 4 作 subagents）相对单体 Opus 4 有 90.2% 的性能提升，代价是 token 用量约为普通聊天的 15 倍；而 Anthropic 自己明确指出，需要共享上下文、agent 间依赖多、以及大多数编码任务，都不适合这套架构。</mark></p>
+  <p><strong>把 15 倍这个代价换算成可感知的量</strong>：假设一次普通对话的成本是一顿<strong>早饭</strong>钱（比如 5 块），那么单 Agent 大约是 20 块（一份<strong>外卖</strong>），而多 Agent 系统是 75 块（一顿正经<strong>餐厅</strong>饭）。<strong>如果这个任务本身的价值撑不起 75 块，那 90.2% 的性能提升就毫无意义。</strong>这也正是 Anthropic 官方给出的判据原文：multi-agent systems require tasks where the <strong>value of the task is high enough to pay for</strong> the increased performance（多 Agent 系统需要那些「任务价值足够高，值得为提升的性能付费」的场景）。</p>
+  <p>顺带那个「token 用量单独解释 80% 性能方差」的发现也很值得琢磨。<strong>它的含义是：在 BrowseComp 这类评测上，一个 Agent 系统表现好不好，八成可以由「它花了多少 token」来预测。</strong><mark class="key">换成大白话：很多所谓的「架构创新」带来的提升，本质上是「花了更多钱」带来的提升。</mark>这是评判任何 Agent 架构宣传时该有的第一反应——先问它花了多少 token。</p>
+
+  <h3>协调失控：官方举的那几个真实例子</h3>
+  <p>Anthropic 博客里还有一段特别适合科普，因为它描述的失败方式非常具体、非常好笑，也非常真实。原文是：</p>
+  <p><strong>Early agents made errors like spawning 50 subagents for simple queries, scouring the web endlessly for nonexistent sources, and distracting each other with excessive updates</strong>（早期的 agent 会犯这样的错：为简单查询派生 50 个 subagent、为不存在的来源无休止地翻遍全网、用过多的状态更新互相干扰）。</p>
+  <p>三种失控方式各自对应一个很好认的病：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>失控方式</th><th>病根</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>为简单查询派生 50 个 subagent</td><td>没有对「任务复杂度」和「该派几个人」建立对应关系</td><td>老板为了买一瓶醋派了 50 个人去<strong>超市</strong></td></tr>
+        <tr><td>为不存在的来源无休止翻遍全网</td><td>不知道什么时候该承认「这东西不存在」</td><td>让人去找一本没出版过的书，他在<strong>图书馆</strong>待了三天</td></tr>
+        <tr><td>用过多的状态更新互相干扰</td><td>沟通本身消耗了比干活更多的资源</td><td>一个五人小组，每人每十分钟发一次进度汇报，结果全天都在读汇报</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>官方还举了一个更具体的分工失效例子，值得完整记住：<strong>一个 subagent 去查 2021 年的汽车芯片危机，另外两个却在重复调查 2025 年的供应链。</strong><mark class="key">三个人干了两件事，其中两个人干的是同一件事——这就是分工失效的教科书样本。</mark></p>
+  <p><strong>好比</strong>三位<strong>装修工</strong>进场，包工头只说了一句「把卫生间弄好」：一个人在贴瓷砖，另两个都在换同一根水管。<strong>不是他们不努力，是分工描述得不够具体。</strong>这也直接给出了工程上的解法：<strong>lead agent 派活时必须写清「你负责什么、不负责什么、输出格式是什么」</strong>，含糊的任务描述必然导致重复劳动。</p>
+
+  <h3>同步执行瓶颈：多 Agent 现在最硬的一个限制</h3>
+  <p>还有一个结构性限制值得单独讲：<strong>lead agent 是同步等待 subagent 的。</strong></p>
+  <p><strong>同步等待</strong><strong>说白了就是</strong>：lead 派完活之后就站在那儿等，等到所有 subagent 都交活才能继续。这带来三个后果：</p>
+  <ul class="keylist">
+    <li><span class="k">无法中途干预</span><span class="v">subagent 走错了方向，lead 在它交活之前看不到、也管不了。</span></li>
+    <li><span class="k">单个卡住就阻塞全系统</span><span class="v">四个 subagent 里有一个卡在一个死循环里，另外三个早交完了也没用，整个任务停在那儿。<mark class="key">这就是「最慢的那一环决定整体速度」。</mark></span></li>
+    <li><span class="k">失败恢复很贵</span><span class="v">中途出问题往往只能整批重做，因为中间状态难以精确恢复。</span></li>
+  </ul>
+  <p><strong>相当于</strong>一位<strong>包工头</strong>派了四个人去四个工地，规定「全都干完了一起回来汇报」。<strong>其中一个人的<strong>水电</strong>改造卡住了，另外三个人只能在原地等着，谁也不能先交工。</strong>而包工头因为约好了「干完再说」，甚至不知道有人卡住了。</p>
+  <p>这个限制也解释了为什么本章前面反复强调的那些原则在多 Agent 场景下更加重要：<strong>硬性步数上限、超时机制、全程 tracing。</strong><mark class="key">单 Agent 卡住你烧一份钱，多 Agent 卡住你同时烧五份。</mark></p>
+
+  <h3>单 Agent 还是多 Agent：一张决策表</h3>
+  <p>把上面所有的官方限定整理成一张可以直接照着用的表：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>如果你的任务……</th><th>选什么</th><th>依据</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>子任务之间<strong>相互独立</strong>，可以真正并行（如「调研五家竞品各自的定价」）</td><td><strong>多 Agent 值得试</strong></td><td>并行化能让研究时间缩短最多 90%</td></tr>
+        <tr><td>需要<strong>广度优先</strong>地探索很多方向，各方向上下文互不相干</td><td><strong>多 Agent 值得试</strong></td><td>subagent 各有独立上下文，等于扩大了总的上下文预算</td></tr>
+        <tr><td>要求所有 agent <strong>共享同一上下文</strong></td><td><strong>用单 Agent</strong></td><td>官方原文：not a good fit</td></tr>
+        <tr><td>agent 之间<strong>依赖关系很多</strong>（A 等 B，B 等 C）</td><td><strong>用单 Agent</strong></td><td>官方原文：not a good fit</td></tr>
+        <tr><td>是<strong>编码任务</strong></td><td><strong>优先单 Agent</strong></td><td>官方原文：most coding tasks involve fewer truly parallelizable tasks than research</td></tr>
+        <tr><td>任务价值<strong>撑不起 15 倍 token 成本</strong></td><td><strong>用单 Agent</strong>，甚至用普通对话</td><td>官方判据：value of the task is high enough to pay for</td></tr>
+        <tr><td>需要<strong>实时干预、随时改方向</strong></td><td><strong>用单 Agent</strong></td><td>lead 同步等待 subagent，中途无法干预</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>如果只能记一条，记这条：<mark class="key">多 Agent 的适用条件是「任务能真正拆成互不依赖的几摊」，而不是「任务很难」。</mark>难而串行的任务（比如重构一个大型代码库），多请几个 Agent 只会让协调开销吃掉全部收益。</p>
+
+  <h3>常见误解一次澄清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常听到的说法</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「MCP 的四大核心概念是 Resources、Prompts、Tools、Sampling」</td><td><strong>截至 2026 年 8 月已是过时信息。</strong>正确说法：<strong>Resources / Tools / Prompts</strong> 三大 server 能力 + <strong>Elicitation</strong> 客户端能力；<strong>Sampling / Roots / Logging 已在 2026-07-28 修订中正式标记为 Deprecated（SEP-2577）</strong>，按 feature lifecycle 政策至少保留 12 个月</td></tr>
+        <tr><td>「MCP 当前版本号是 XXXX-XX-XX」（只给一个数）</td><td>官方文档内部存在不一致，应如实呈现两个：<strong>versioning 页标注的 current 版本为 2025-11-25，最新修订为 2026-07-28</strong></td></tr>
+        <tr><td>「MCP 有 session，要先握手」</td><td>2026-07-28 起<strong>协议变为无状态</strong>：移除 <code>initialize</code> / <code>notifications/initialized</code> 握手，移除协议级 session 与 <code>Mcp-Session-Id</code> header；版本与客户端能力改为随请求放在 <code>_meta</code> 里</td></tr>
+        <tr><td>「MCP 推荐用 HTTP+SSE 传输」</td><td><strong>HTTP+SSE 自 2025-03-26 起已弃用</strong>，推荐 <strong>Streamable HTTP</strong></td></tr>
+        <tr><td>「MCP 是 Anthropic 的私有协议」</td><td>不再是。现主体为 <strong>Model Context Protocol a Series of LF Projects, LLC</strong>（<strong>Linux Foundation</strong> 旗下），Apache 2.0 / CC BY 4.0，治理明确「成员资格属于个人而非公司，没有为特定公司预留席位」</td></tr>
+        <tr><td>「微软、谷歌都已官方支持 MCP」</td><td><strong>本节不作此断言</strong>——微软、谷歌的一手官方公告未取到。可确认的是 <strong>OpenAI（官方文档）、Anthropic（官方文档）</strong>，以及 Linux Foundation 治理下的社区生态</td></tr>
+        <tr><td>「MCP 让接入变简单，所以更安全」</td><td>相反。OpenAI 官方警告：<strong>a malicious server can exfiltrate sensitive data</strong> from anything that enters the model's context。要用 <code>allowed_tools</code> 白名单、<code>require_approval</code> 审批、对 server 来源做尽调</td></tr>
+        <tr><td>「多 Agent 提升 90%，所以应该都上多 Agent」</td><td><strong>典型的数字滥用。</strong>90.2% 是 Anthropic <strong>内部</strong> research eval（非公开基准），配置为 Opus 4 作 lead + Sonnet 4 作 subagents 对比单体 Opus 4；代价是 <strong>token 约为 chat 的 15 倍</strong>；且官方明说需共享上下文、依赖多的场景以及<strong>大多数编码任务不适用</strong></td></tr>
+        <tr><td>「多 Agent 是写代码的未来」</td><td>官方原文正相反：<strong>most coding tasks involve fewer truly parallelizable tasks than research</strong>，而且 LLM agent <strong>not yet great at coordinating and delegating</strong></td></tr>
+        <tr><td>「新架构带来了性能提升」</td><td>先问它花了多少 token。Anthropic 的发现是：三因素解释 BrowseComp 上 95% 的性能方差，其中 <strong>token 用量单独解释 80%</strong></td></tr>
+        <tr><td>「CrewAI 有权威论文支撑」</td><td>本节未取到它的权威论文或官方技术报告，<strong>仅作为开源框架提及</strong>。AutoGen 则有微软官方论文 arXiv 2308.08155</td></tr>
+        <tr><td>「多 Agent 起得越多越强」</td><td>官方举的失控实例：<strong>为简单查询派生 50 个 subagent</strong>、为不存在的来源无休止翻遍全网、用过多状态更新互相干扰。实践中 lead 通常并行起 <strong>3–5 个</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>写给要动手的人：八条实操建议</h3>
+  <ul class="keylist">
+    <li><span class="k">接工具优先走 MCP，不要手写胶水</span><span class="v">哪怕现在只有一个应用一个数据源。N×M 变 N+M 的收益在第三个数据源出现时就开始显现。</span></li>
+    <li><span class="k">Tool 与 Resource 分清楚</span><span class="v">判据是一句话：「这件事做完，世界变了吗？」变了写成 Tool，没变写成 Resource。混着写会让模型不知道哪些操作是危险的。</span></li>
+    <li><span class="k">护栏写在 server 代码里</span><span class="v">数量上限、权限校验、参数白名单——写在 server 里而不是提示词里。<strong>提示词能被注入绕过，代码不能。</strong></span></li>
+    <li><span class="k">工具的 docstring 当成产品文案来写</span><span class="v">它就是模型看到的全部说明。写得含糊，模型就用错。这一行文字的重要性不亚于函数体。</span></li>
+    <li><span class="k">上生产前先查规范的当前版本</span><span class="v">这个领域半年一变。本节写的是截至 2026 年 8 月的状况，<strong>动手时以官方规范页面为准</strong>。</span></li>
+    <li><span class="k">先把单 Agent 做扎实再考虑多 Agent</span><span class="v">上一节讲过，单步 95% 走 20 步只剩 36%。<strong>单 Agent 不可靠时，多 Agent 只会把不可靠乘以五。</strong></span></li>
+    <li><span class="k">上多 Agent 前先算成本</span><span class="v">按 15 倍 token 估一遍。如果这个任务的商业价值撑不起，就不要上——这是官方给的判据，不是我的意见。</span></li>
+    <li><span class="k">派活的描述必须具体到「不负责什么」</span><span class="v">否则就会出现「一个查 2021 年芯片危机、两个重复查 2025 年供应链」那种分工失效。写清边界和输出格式。</span></li>
+  </ul>
+
+  <div class="lab" data-lab="quiz"
+       data-q="截至 2026 年 8 月，关于 MCP 的核心概念，下面哪种说法是正确的？"
+       data-opts="四大核心概念是 Resources、Prompts、Tools、Sampling|Resources / Tools / Prompts 是三大 server 能力，Elicitation 是客户端能力；Sampling / Roots / Logging 已被官方弃用|只有 Tools 一种能力，其余都是社区扩展|Sampling 是最新加入的客户端能力，Elicitation 已被弃用"
+       data-answer="1"
+       data-explain="这是本节时效性最强的一条。现行官方规范的说法是：server 端提供三大能力——Resources（Context and data, for the user or the AI model to use）、Prompts（Templated messages and workflows for users）、Tools（Functions for the AI model to execute）；客户端能力现在只列 Elicitation（server 主动向用户索取额外信息）。而 Sampling、Roots、Logging 三项已在 2026-07-28 修订中被正式标记为 Deprecated，编号 SEP-2577，官方给的迁移路径分别是：Sampling 改为直接对接 LLM 供应商 API、Roots 改为通过工具参数或 resource URI 或 server 配置传路径、Logging 改为写 stderr 或用 OpenTelemetry。按 feature lifecycle 政策，被弃用的特性至少保留 12 个月，所以现有实现不会立刻失效——但如果你还把 Sampling 当成四大核心概念之一，那已经是过时信息了。这也是本节想传达的一个方法论：写技术内容必须标注核实时间，并且把重量压在半衰期长的原理上，而不是随时会变的接口细节上。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>MCP</strong>（Model Context Protocol，Anthropic 官方公告 <strong>2024 年 11 月 25 日</strong>，发明人 <strong>David Soria Parra 与 Justin Spahr-Summers</strong>）是 AI 应用世界的那份螺纹国标：它没让模型变聪明，只是把「N 个应用 × M 个数据源」的乘法账变成了 <strong>N + M</strong> 的加法账。技术上基于 <strong>JSON-RPC 2.0</strong>，三角色 <strong>Hosts / Clients / Servers</strong>，官方自述灵感部分来自 <strong>Language Server Protocol</strong>。</p>
+    <p><mark class="key">最该更新的一条：截至 2026 年 8 月，正确的说法是 Resources / Tools / Prompts 三大 server 能力 + Elicitation 客户端能力，而 Sampling / Roots / Logging 已在 2026-07-28 修订中被正式标记为 Deprecated（SEP-2577）。把 Sampling 列为「四大核心概念」之一已属过时信息。</mark>版本号也要如实呈现两个：官方 versioning 页标注的 current 版本为 <strong>2025-11-25</strong>，最新修订为 <strong>2026-07-28</strong>。那次修订还让协议<strong>变为无状态</strong>（移除握手与 session）、新增 <code>server/discover</code> 与 <strong>MRTR</strong>；HTTP+SSE 自 2025-03-26 起弃用，推荐 <strong>Streamable HTTP</strong>。</p>
+    <p>生态上最有分量的一条不是「某厂宣布支持」，而是<strong>治理已中立化</strong>：MCP 现为 <strong>Linux Foundation</strong> 旗下 LF Projects，Apache 2.0 / CC BY 4.0，「成员资格属于个人而非公司，没有为特定公司预留席位」。可确认的官方支持方是 <strong>OpenAI</strong>（Responses API 内置 <code>mcp</code> 工具类型、Connectors、Secure MCP Tunnel、Agents SDK 四种接入）与 <strong>Anthropic</strong>（Messages API 的 MCP connector）。代价是攻击面变大——OpenAI 官方警告 <strong>a malicious server can exfiltrate sensitive data</strong>。</p>
+    <p>多 Agent 侧记住一整句话而不是一个数字：<strong>在 Anthropic 内部研究评测上，Opus 4 作 lead + Sonnet 4 作 subagents 相对单体 Opus 4 提升 90.2%，代价是 token 约为普通聊天的 15 倍；而官方明确指出需共享上下文、agent 间依赖多、以及大多数编码任务都不适用</strong>。架构是 <strong>orchestrator-worker</strong>（LeadResearcher 把计划写进 Memory 因为超过 200,000 token 会截断 → 并行派 3–5 个 Subagents → CitationAgent 处理引用）。<mark class="key">另一个值得记住的发现是：token 用量单独解释了 BrowseComp 上 80% 的性能方差——很多「架构创新」的提升，本质是「花了更多钱」。</mark></p>
+    <p>第 11 章到此结束。从工具调用到 MCP，从 ReAct 到多 Agent，你会发现<strong>这一章反复出现的其实是同一句话：能力容易做，可靠性才难做。</strong>下一章我们从零件回到全局，看一眼这整个生态的地图。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./11-5-react.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 11.5 · ReAct 与规划</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled" href="#">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 12 章 · 生态地图（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 11.6</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js"></script>
+  <script src="../../_shared/js/float-pager.js"></script>
+</body>
+</html>
