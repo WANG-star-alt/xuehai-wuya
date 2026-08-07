@@ -255,7 +255,10 @@
 }
 
 .node .node-bg {
-  fill: rgba(255, 255, 255, 0.92);
+  /* 用不透明纯白而非半透明：半透明会让下层画布颜色透上来，
+     在浏览器强制深色模式下节点底会被染深，而 SVG 的 fill 文字
+     颜色反转不了，导致深色字压深色底看不见 */
+  fill: #ffffff;
   stroke: rgba(226, 220, 207, 0.9);
   stroke-width: 1.5;
   transition: all 0.18s;
@@ -272,7 +275,9 @@
 .node .node-meta {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  fill: #8a8579;
+  /* 从 #8a8579 加深：原色配白底只有约 3.4:1 对比度，低于无障碍
+     标准 4.5:1，在小字号下本就偏淡，强制深色模式下更看不清 */
+  fill: #6b665c;
   pointer-events: none;
 }
 

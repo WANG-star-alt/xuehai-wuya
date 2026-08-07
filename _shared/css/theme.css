@@ -8,6 +8,10 @@
 @font-face { font-family: 'JBMono'; src: url('../fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
 
 :root {
+  /* 与各页面 meta 呼应：拒绝浏览器的强制深色反转。
+     SVG 的 fill 不会被反转，若页面被反转就会出现
+     深色字压深色底（知识树节点文字消失）的问题。 */
+  color-scheme: only light;
   --bg: #faf7f2; --bg2: #f2ede4; --bg3: #ffffff;
   --ink: #2b2a26; --ink-soft: #4a4842; --muted: #8a8579;
   --rule: #e2dccf; --accent: #556b3d; --accent2: #a05a2c;
