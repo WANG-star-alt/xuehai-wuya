@@ -274,7 +274,13 @@
        data-answer="1"
        data-explain="Brown 等《Language Models are Few-Shot Learners》（arXiv 2005.14165，2020-05-28，NeurIPS 2020 收录）对 few-shot 的定义是：在不做梯度更新、不做微调的前提下，在上下文窗口容量允许的范围内给尽可能多的示例，原文写的是 typically 10 to 100，也就是通常 10 到 100 个。而中文文章常说的「3 到 5 个」来自当代工程实践——Anthropic 官方文档正是建议给 3 到 5 个，要求「相关、多样、有结构」，贴近真实用例并覆盖边缘情况。两个数字都对，但回答的是不同问题：论文问的是「纯靠上下文，能力上限在哪」，工程问的是「性价比最高是多少」。选项 C 忽略了示例要花 token 和钱，而且论文自己列出了 ANLI、RACE、QuAC 等 few-shot 效果不佳的任务。"></div>
 
-  <div class="callout">
+    <h3>最后一个提醒：示例是「样品」，不是「说明书」</h3>
+  <p>很多人给示例时会不自觉地写成教程，一条示例后面跟三行解释。<strong>这其实搞错了示例的作用。</strong></p>
+  <p>打个<strong>裁缝</strong>店的比方：你想做一件衬衫，最有效的办法不是给裁缝写一篇《衬衫工艺说明》，而是<strong>带一件你满意的衬衫过去</strong>，说「照这个做，领子改成立领」。<mark class="key">样品传递的信息量，远远超过同等篇幅的文字描述。</mark></p>
+  <p><strong>相当于</strong>在<strong>照相</strong>馆里，你说「拍得自然一点」摄影师未必懂，但你翻出一张手机里存的照片说「像这张」，他立刻就知道了。<strong>说白了</strong>——示例的价值在于它是一个<strong>可以直接比对的成品</strong>，不是一段需要理解的规则。</p>
+  <p>所以写示例时，把力气花在<strong>让示例本身足够典型</strong>上，而不是花在给示例加注释上。如果你发现必须写一大段解释才能让示例说得通，那通常说明<strong>这条示例选得不够好</strong>，该换一条，而不是该加注释。</p>
+
+<div class="callout">
     <span class="tag">Recap · 收束</span>
     <p><strong>Few-shot 就是"包几个饺子给它看"</strong>——不描述规则，直接给几对「输入 → 输出」，让它自己提取规律。三种设定的共同前提是<mark class="key">一个模型参数都不改</mark>：zero-shot 不给示例只给说明，one-shot 给一个，few-shot 在窗口装得下的前提下尽量多给。论文管这个能力叫 <strong>in-context learning</strong>，并把它定位为元学习的内循环。</p>
     <p>本节最该记住的澄清：<strong>GPT-3 论文里 few-shot 通常是 10 到 100 个示例；Anthropic 官方给工程实践的建议是 3 到 5 个。</strong>两个数字回答的是不同问题，混着用会两头判断失误。论文的实测数字是 CoQA 的 81.5 / 84.0 / 85.0 与 TriviaQA 的 64.3% / 68.0% / 71.2%——涨幅是几个百分点，不是翻倍，而且<strong>从零到一那一跳性价比最高</strong>。核心论点是：<mark class="key">模型越大，越擅长从例子里领会你要什么。</mark></p>

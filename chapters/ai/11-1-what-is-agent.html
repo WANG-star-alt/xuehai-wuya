@@ -56,12 +56,13 @@
       </tbody>
     </table>
   </div>
-  <p>用大白话总结这张表：<mark class="key">Agent = 大脑（模型）+ 手（工具）+ 记性（状态）+ 一个「没干完就再来一遍」的循环。</mark>四样里最容易被忽略的是第四样。很多产品把前三样都做了，但只跑一轮就交差——那不叫 Agent，那叫一个接了工具的问答接口。</p>
+  <p><strong>简单说</strong>，用大白话总结这张表：<mark class="key">Agent = 大脑（模型）+ 手（工具）+ 记性（状态）+ 一个「没干完就再来一遍」的循环。</mark>四样里最容易被忽略的是第四样。很多产品把前三样都做了，但只跑一轮就交差——那不叫 Agent，那叫一个接了工具的问答接口。</p>
 
   <h3>为什么「一个 while 循环」是关键分界</h3>
-  <p>这里值得停一下，因为这是全章最重要的直觉。<strong>模型本身是一个纯函数：给它一段文字，它返回一段文字，中间没有任何「时间」。</strong>它不会等，不会看，不会试。所谓的「自主」完全不在模型里，而在<em>模型外面那个循环</em>里。</p>
+  <p>这里值得停一下，因为这是全章最重要的直觉。<strong>模型本身是一个纯函数：给它一段文字，它返回一段文字，中间没有任何「时间」。</strong><strong>换成大白话</strong>——它不会等，不会看，不会试。所谓的「自主」完全不在模型里，而在<em>模型外面那个循环</em>里。</p>
   <p>打个<strong>厨房</strong>的比方：模型是<strong>那口锅</strong>，火候到了它就把菜炒出来，你放什么它炒什么，它不会自己去尝一口。而 Agent 是<strong>站在锅前的人</strong>：他尝一口觉得淡了，撒盐，再尝一口，还是淡，再撒一点，直到觉得对了才关火。<mark class="key">「尝—调—再尝」这个动作根本不在锅里，锅永远只是那口锅。</mark></p>
-  <p>所以当有人说「这个模型是一个 Agent」时，严格来说是句错话。模型不是 Agent，<strong>模型是 Agent 的一个零件</strong>。Agent 是一段程序，这段程序恰好在每一轮里都去问一次模型。这个循环最朴素的形态，我们在这一节末尾会直接给出代码，你会发现它短得让人意外。</p>
+  <p><strong>相当于</strong>再换一个更贴近办公室的说法：模型是那台<strong>打印机</strong>，你发什么它印什么，印歪了它不知道；Agent 是那个<strong>盯着打印机的人</strong>，他会拿起纸看一眼，发现歪了就重新对齐纸盒再印一次。<strong>本质上就是</strong>「谁在负责检查结果」这一件事的归属变了。</p>
+  <p><strong>说白了</strong>，当有人说「这个模型是一个 Agent」时，严格来说是句错话。模型不是 Agent，<strong>模型是 Agent 的一个零件</strong>。Agent 是一段程序，这段程序恰好在每一轮里都去问一次模型。这个循环最朴素的形态，我们在这一节末尾会直接给出代码，你会发现它短得让人意外。</p>
 
   <div class="callout analogy">
     <span class="tag">Analogy · 装修队的包工头</span>
@@ -90,7 +91,7 @@
   <p>另外要注意「各自持有独立上下文」这个设计。它的好处是<strong>互不干扰、能并行、总的可用上下文被放大了好几倍</strong>；它的坏处是<em>三个 Subagent 之间是瞎的</em>——A 查过的东西 B 不知道，于是很容易重复劳动。这个坏处马上就会在下面的「协调失控」里现形。</p>
 
   <h3>局限一：错误会累积，而且没有刹车</h3>
-  <p>这是 Agent 和普通软件最本质的差别，也是官方讲得最重的一条。原文是：</p>
+  <p><strong>这一条听着玄，其实就是</strong>「一步错、步步错」在自动化系统里的放大版。这是 Agent 和普通软件最本质的差别，也是官方讲得最重的一条。原文是：</p>
   <div class="callout">
     <span class="tag">Anthropic 官方原文</span>
     <p><em>Agents are stateful and <strong>errors compound</strong>... minor system failures can be <strong>catastrophic</strong> for agents.</em></p>
@@ -103,7 +104,7 @@
   <p>所以做 Agent 的第一手艺不是提示词，而是<strong>在哪里放检查点</strong>。凡是「做了就无法撤销」的动作——发邮件、付款、删数据、提交代码——都应该有一道人工确认或者一道可回滚设计。这个原则在 §11.5 讲 ReAct 循环时会具体落成代码。</p>
 
   <h3>局限二：同样的提示词，跑两次结果不同</h3>
-  <p>官方原文：</p>
+  <p><strong>换成大白话</strong>：同一道题让它做两遍，它可能走两条完全不同的路。官方原文：</p>
   <div class="callout">
     <span class="tag">Anthropic 官方原文</span>
     <p><em>Agents make dynamic decisions and are <strong>non-deterministic between runs, even with identical prompts</strong>.</em></p>
@@ -128,7 +129,7 @@
   <p>为什么会这样？回到前面说的架构细节：<mark class="key">Subagent 各自持有独立上下文，它们彼此是瞎的。</mark>A 不知道 B 正在查什么，所以「不要重复」这件事只能靠 LeadResearcher 在派活时就把边界划死。用<strong>装修</strong>类比：如果包工头只说一句「你们三个把这屋子弄好」，那必然有两个人在同一面墙上打钉。他必须说「你负责水电、你负责吊顶、你负责地面，谁都别碰别人的活」。<strong>Agent 的任务描述里，「你不负责什么」和「你负责什么」一样重要。</strong></p>
 
   <h3>局限四：它不会天然地判断来源可靠性</h3>
-  <p>这一条我认为是普通人最该知道的一条，因为它直接关系到你该不该相信 Agent 给你的答案。官方在人工测试中发现，早期 agent：</p>
+  <p><strong>打个比方</strong>，这就像一个刚学会用<strong>超市</strong>货架的人：他会拿最显眼、摆在最前排的那一盒，而不是翻到后面去看保质期更好的那一盒。<strong>本质上就是</strong>「显眼」被误当成了「可靠」。这一条我认为是普通人最该知道的一条，因为它直接关系到你该不该相信 Agent 给你的答案。官方在人工测试中发现，早期 agent：</p>
   <div class="callout">
     <span class="tag">Anthropic 官方原文</span>
     <p><em>consistently chose <strong>SEO-optimized content farms</strong> over authoritative but less highly-ranked sources like academic PDFs or personal blogs.</em></p>
@@ -190,7 +191,7 @@
   <p>先说一件事：<strong>GAIA 那一行的对比是最刺眼的。</strong>人类 92%，GPT-4 带插件 15%。而 GAIA 的题目按官方描述是「对人类很简单」的问题。<mark class="key">这个 92% 对 15% 的落差，恰好说明了 Agent 现在真正缺的不是知识，而是「把好几个步骤串起来不出错」的这种能力。</mark>用<strong>学校</strong>打比方：这不是知识点没背会，是<em>应用题读不懂题意、算到第三步串行了</em>。</p>
 
   <h3>pass^k：一个比「成功率」诚实得多的指标</h3>
-  <p>τ-bench 提出的 <strong>pass^k</strong>（读作「pass 的 k 次方」）这个指标，我认为是整个 Agent 评测领域最值得普通人理解的一个概念。它测的是：<mark class="key">同一个任务连续跑 k 次，k 次全都成功的概率。</mark></p>
+  <p>τ-bench 提出的 <strong>pass^k</strong>（读作「pass 的 k 次方」）这个指标，我认为是整个 Agent 评测领域最值得普通人理解的一个概念。<strong>说白了它就一句话</strong>：<mark class="key">同一个任务连续跑 k 次，k 次全都成功的概率。</mark></p>
   <p>为什么这比普通成功率重要得多？打个<strong>外卖</strong>的比方。有两个骑手：</p>
   <div class="table-wrap">
     <table>
@@ -255,6 +256,65 @@
     <p>本书写作时（2026 年 8 月），<strong>上述四个基准 leaderboard 的当前最高分我没有取到</strong>——它们的榜单页面是由 JavaScript 动态渲染的，静态抓取拿不到数据。所以本节<strong>不给出任何 2026 年的 SOTA 分数</strong>。</p>
     <p>能核实的最近的官方分数只有一个：<strong>mini-SWE-agent 在 SWE-bench Verified 上的 65%（2025 年 7 月）</strong>。如果你需要今天的最新排名，请直接去 swebench.com、webarena.dev 以及 Hugging Face 上的 GAIA leaderboard 查看。</p>
     <p><mark class="key">顺便提醒：任何一篇不标注日期、不标注具体子集（Full 还是 Verified）的 SWE-bench 分数，都不值得相信。</mark>因为 2294 题上的 30% 和 500 题上的 30% 完全不是一回事。</p>
+  </div>
+
+  <h3>Agent、工作流、Copilot、RPA：四个最容易混的东西</h3>
+  <p>本节开头那张表给了 Agent 的四个特征，但真正让人困惑的往往不是定义本身，而是<strong>「那我手上这个东西到底算不算」</strong>。所以再补一张横向对照表，把市面上四类经常被混为一谈的东西摆到一起。<strong>先把两个缩写当场翻译清楚：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">Copilot（副驾驶）</span><span class="v">字面意思就是飞机上的<strong>副驾驶</strong>。特点是——<mark class="key">它坐在你旁边给建议，方向盘始终在你手上。</mark>代码补全就是最典型的形态：它写一段，你决定接不接受。</span></li>
+    <li><span class="k">RPA（Robotic Process Automation，机器人流程自动化）</span><span class="v">一种早于大模型很多年就有的技术。<strong>说白了就是</strong>：录一段「鼠标点这里、键盘敲那个、再复制到这一格」的操作脚本，让机器每天照着重放一遍。<mark class="key">它极其可靠，但也极其死板——界面挪个位置它就全废了。</mark></span></li>
+  </ul>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>下一步谁决定</th><th>能动手吗</th><th>遇到意外怎么办</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Copilot</strong></td><td><strong>你</strong>，它只提建议</td><td>要你点「接受」才生效</td><td>它不管，你自己处理</td><td>副驾驶指路，你踩油门</td></tr>
+        <tr><td><strong>RPA</strong></td><td><strong>脚本写死的</strong></td><td>能，而且执行得非常精确</td><td><mark class="key">直接报错停住</mark>——它没有「变通」这个概念</td><td>自动<strong>洗衣机</strong>：按固定程序转，衣服卡住了它也照转</td></tr>
+        <tr><td><strong>工作流</strong><br>Workflow</td><td><strong>你排好的流程</strong>，模型只在每个格子里填内容</td><td>能，但只能按你排的顺序动</td><td>走到你写过的分支就能应付，没写过的就卡住</td><td><strong>餐厅</strong>后厨的标准流程卡：切菜→下锅→装盘</td></tr>
+        <tr><td><strong>Agent</strong></td><td><strong>它自己</strong></td><td>能，而且自己决定用哪个工具</td><td><mark class="key">看到结果不对，自己换个办法再试</mark></td><td>那位会临时改路线的<strong>司机</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最值得琢磨的是第三行和第四行的分界——<strong>工作流和 Agent 的区别不在于用了多强的模型，而在于「路线是谁排的」。</strong>很多团队宣称自己上了 Agent，实际做的是：写了一段有七个步骤的流程，每步调一次大模型。<mark class="key">这是工作流，而且这没什么不好——恰恰相反，凡是能用工作流解决的事情，就不该用 Agent。</mark></p>
+  <p>为什么？因为前面那些基准分数已经说明了问题：<strong>自主性是要付代价的。</strong>你把「决定下一步」的权力交给模型，就同时把「决定错了」的风险也交出去了。而工作流的路线是你排的，它虽然笨，但它<em>可预测、可测试、出错能定位</em>。</p>
+  <p><strong>用装修打个比方：</strong>贴瓷砖这种活儿，流程是固定的（弹线、抹灰、上砖、勾缝），<mark class="key">你要的是一个严格照流程干活的工人，不是一个会「临场发挥换个新贴法」的工人。</mark>而「这套老房子该怎么改」这种活儿，才需要一个能自己看现场、自己判断、自己调整方案的人。<strong>所以选型的第一个问题永远是：这件事的步骤是固定的吗？</strong>固定就用工作流，不固定才上 Agent。</p>
+
+  <h3>那什么任务现在真的适合交给 Agent</h3>
+  <p>把上面全部内容合起来，可以得出一套相当实用的判断标准。<strong>核心思路是：既然它单次成功率不高、错误还会累积，那就只在「错了代价小、对了收益大、而且能验证」的地方用它。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>判断维度</th><th>适合交给 Agent</th><th>现在别交</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>错了的代价</strong></td><td>改错了能一键回退（代码有 git、文件有备份、草稿没发出去）</td><td><mark class="key">不可撤销</mark>——转账、发邮件、删库、下单、对外发布</td></tr>
+        <tr><td><strong>能不能验证</strong></td><td><strong>有自动化的对错判据</strong>：测试跑不跑通、编译过不过、数字对不对得上</td><td>只能靠人主观判断好坏，且没人有空逐个看</td></tr>
+        <tr><td><strong>步数长短</strong></td><td>三五步之内能收尾</td><td>需要连着走二三十步不出错——<strong>pass^k 那张表算过，这基本不可能</strong></td></tr>
+        <tr><td><strong>失败的可见性</strong></td><td>失败会立刻很明显（报错、跑不通）</td><td>失败是<strong>静默的</strong>：结果看起来很像对的，错了没人发现</td></tr>
+        <tr><td><strong>典型例子</strong></td><td>改一个有测试覆盖的 bug、整理一批文件、查资料写初稿、把日志跑成报表</td><td>无人值守地回复客户、自动执行财务操作、生成直接对外发布的内容</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第四行「失败的可见性」是最容易被忽略、也最要命的一条。<strong>换成大白话：一个会大声报错的 Agent，比一个悄悄给出似是而非答案的 Agent 安全得多。</strong>报错你会去修；<mark class="key">而一份格式漂亮、语气自信、其中一个数字算错了的报表，会一路流到老板的会上。</mark></p>
+  <p><strong>这就像</strong>找人帮你去<strong>菜市场</strong>买菜：他买错了菜（拿了茄子而不是西葫芦），你回家一看就知道，换掉就行；可他要是买了一条不新鲜的鱼，看起来一模一样——<strong>这种错误你要到吃完才发现。</strong>所以正确的做法不是「不让他买」，而是「让他买那些一眼能看出好坏的东西」。</p>
+  <p>最后给一条贯穿全章的准则，后面五节都会不断回到它：<mark class="key">给 Agent 的自主权，应当正好等于「它出错时你能承受的损失」。</mark>这句话既不悲观也不乐观，它只是把上面那些真实分数翻译成了工程决策。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="关于四个 Agent 基准在各自论文发表时的最好成绩，下面哪一组数字是准确的？"
+       data-opts="SWE-bench 上 Claude 2 达到 65%，GAIA 上 GPT-4 带插件达到 92%|WebArena 上最佳 GPT-4 agent 为 14.41%，而人类为 78.24%；GAIA 上人类 92%，带插件的 GPT-4 仅 15%|四个基准论文发表时的最佳成绩都在 60% 以上，与人类相当|τ-bench 上 gpt-4o 成功率超过 80%，pass^8 也在 70% 以上"
+       data-answer="1"
+       data-explain="这些都是各篇论文发表当时的数字，务必连同「论文发表时」这个限定一起记。WebArena（arXiv 2307.13854，CMU）里最佳的 GPT-4 agent 只做到 14.41%，而人类是 78.24%；GAIA（arXiv 2311.12983，Hugging Face 与 Meta，466 道题）里人类 92%，带插件的 GPT-4 只有 15%，而 GAIA 的题目按官方描述是「对人类很简单」的。另外两个：SWE-bench（arXiv 2310.06770，ICLR 2024，普林斯顿 NLP，2294 个真实 GitHub issue、12 个 Python 仓库）论文发表时最佳是 Claude 2 的 1.96%——注意 65% 那个数字是 2025 年 7 月 mini-SWE-agent 在 SWE-bench Verified（500 题人工筛选子集）上的成绩，子集和年份都不一样，不能混着说；τ-bench（arXiv 2406.12045，Sierra AI 与普林斯顿）里 gpt-4o 成功率不到 50%，零售域 pass^8 不到 25%。选项三和选项四都严重高估了当时的真实水平。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>Agent 的定义要收紧到四个特征：<strong>自主决策</strong>（下一步是它自己定的）、<strong>能动手</strong>（有工具能改变外部世界）、<strong>有状态</strong>（记得前面做过什么）、<strong>在循环里</strong>（做完看结果，不满意再来一轮）。<mark class="key">缺了自主性就是工作流，缺了工具就是聊天机器人，缺了状态就是单次问答，缺了循环就是一次性函数调用。</mark></p>
+    <p>它现在的真实水平必须连同「论文发表时」这个限定一起记：<strong>SWE-bench</strong>（arXiv 2310.06770，ICLR 2024，普林斯顿 NLP，2294 个真实 issue / 12 个仓库）论文时最佳 <strong>Claude 2 仅 1.96%</strong>；<strong>WebArena</strong>（arXiv 2307.13854，CMU）最佳 GPT-4 agent <strong>14.41%</strong> 对人类 <strong>78.24%</strong>；<strong>GAIA</strong>（arXiv 2311.12983，Hugging Face + Meta，466 题）人类 <strong>92%</strong> 对带插件 GPT-4 <strong>15%</strong>；<strong>τ-bench</strong>（arXiv 2406.12045，Sierra AI / 普林斯顿）gpt-4o <strong>不到 50%</strong>、零售域 <strong>pass^8 不到 25%</strong>。近期唯一可引的官方分数是 <strong>mini-SWE-agent 用 100 行 Python 在 SWE-bench Verified 上的 65%（2025 年 7 月）</strong>。</p>
+    <p><strong>pass^k</strong> 比单次成功率诚实得多——0.95 的八次方只有 0.66，<mark class="key">一个「95 分」的 Agent 在连续八步的任务上是不及格的。这就是「演示惊艳、上线出事」的全部数学原因。</mark></p>
+    <p>官方自己承认的局限一条都别忘：<strong>错误会累积</strong>（Agent 有状态，小故障对它可能是灾难性的）、<strong>调试极难</strong>（同样的提示词跑两次结果不同）、<strong>协调会失控</strong>（为一个简单问题派出 50 个副手、为不存在的资料无休止地翻网页）、<strong>不会天然判断来源可靠性</strong>（早期版本一贯偏好搜索引擎优化过的内容农场，而不是权威但排名靠后的学术 PDF 和个人博客）。</p>
+    <p>选型上记住两条：<strong>能用工作流解决的事就别上 Agent</strong>——分界不在模型多强，而在「路线是谁排的」；以及<mark class="key">给 Agent 的自主权，应当正好等于「它出错时你能承受的损失」</mark>。优先挑那些错了能回退、有自动判据可验证、步数短、失败会大声报错的任务。</p>
+    <p>下一节我们把它的那只「手」拆开看——你会发现<strong>模型压根没有手，它只是写了一张格式规整的纸条</strong>，这就是工具调用。</p>
   </div>
 
   <div class="pager">
