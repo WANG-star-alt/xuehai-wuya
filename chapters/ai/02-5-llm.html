@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="only light">
 <title>§ 2.5 · 大语言模型 · LLM · 学海无涯</title>
-<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-30">
-<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-30">
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-31">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-31">
 </head>
 <body>
 <article class="page">
@@ -114,7 +114,7 @@
   </ul>
   <p>还有一个更隐蔽的影响：<strong>分词方式会造成语言之间的不公平</strong>。早期模型的词表以英文为中心，同样内容的中文、阿拉伯语、泰语要消耗几倍的 token，意味着同样的内容更贵、更容易撑爆上下文、效果也更差。这就是为什么各家在做中文模型时都要重新训练分词器、扩充中文词表——它不是锦上添花，而是直接影响成本和性能的基础设施。本页末尾的分词器互动组件可以让你亲手看看一段文字是怎么被切碎的，读完全文后不妨回去试一试。</p>
 
-  <h3>规模一览（截至 2026）</h3>
+  <h3>规模一览（举例以公开数字为准，型号会随迭代变化）</h3>
   <div class="table-wrap">
     <table>
       <thead>
@@ -275,13 +275,13 @@
         <tr><th>阵营</th><th>代表</th><th>特色</th></tr>
       </thead>
       <tbody>
-        <tr><td>OpenAI</td><td>GPT-4o / o3 / o4</td><td>综合能力最强，推理和多模态领先</td></tr>
+        <tr><td>OpenAI</td><td>GPT-5.6 Sol / Terra / Luna</td><td>官方文档首推 Sol 处理复杂推理与编码，Terra 平衡成本，Luna 面向高吞吐（截至 2026 年 8 月）</td></tr>
         <tr><td>Anthropic</td><td>Claude 系列</td><td>长文本、安全性、写作水平顶尖</td></tr>
-        <tr><td>Google</td><td>Gemini 1.5 / 2.0</td><td>超长上下文（百万 token）、多模态强</td></tr>
+        <tr><td>Google</td><td>Gemini 3.6 / 3.5 系列</td><td>超长上下文、原生多模态；<strong>Gemini 2.0 系列官方已标注关停</strong></td></tr>
         <tr><td>Meta</td><td>Llama</td><td>开源旗手，可本地部署</td></tr>
-        <tr><td>DeepSeek</td><td>V3 / R1</td><td>高性价比、推理见长，开源</td></tr>
+        <tr><td>DeepSeek</td><td>V4-Flash / V4-Pro</td><td>高性价比、缓存命中价极低，开放权重；旧的 deepseek-chat / deepseek-reasoner 已于 2026-07-24 弃用</td></tr>
         <tr><td>阿里</td><td>Qwen · 通义千问</td><td>开源生态强，中文表现好</td></tr>
-        <tr><td>字节</td><td>豆包 / Doubao</td><td>用户量最大，快速迭代</td></tr>
+        <tr><td>字节</td><td>豆包 / Doubao</td><td>中文场景投入大、迭代快，快速迭代</td></tr>
         <tr><td>月之暗面</td><td>Kimi</td><td>超长文本擅长</td></tr>
       </tbody>
     </table>
@@ -330,8 +330,8 @@
   <div class="page-foot">Xue Hai Wu Ya · § 2.5 · LLM</div>
 
 </article>
-  <script src="../../_shared/js/interactive.js?v=ct-30"></script>
-  <script src="../../_shared/js/float-pager.js?v=ct-30"></script>
-  <script src="../../_shared/js/theme-toggle.js?v=ct-30"></script>
+  <script src="../../_shared/js/interactive.js?v=ct-31"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-31"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-31"></script>
 </body>
 </html>

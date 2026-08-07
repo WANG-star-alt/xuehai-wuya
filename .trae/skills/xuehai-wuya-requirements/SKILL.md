@@ -234,16 +234,27 @@ let scale, translateX, translateY;
 - 移动端触摸目标**不小于 40px**（工具栏按钮 `min-height: 40px`）
 - 加 `@media (hover: none)` 关掉移动端 hover 粘滞
 
-### 3.5 暗色模式规范（★ 2026-08-07 新增）
+### 3.5 深浅主题规范（★ 2026-08-07 定稿，已上线）
 
-**站点原本只有一套浅色变量**，用户在手机上看到的「黑色模式」曾是浏览器/系统的**强制反转**。要理解这个根因链条：
+**最终方案：右上角按钮手动切换，不依赖系统与浏览器。**
 
-> 强制反转能改 CSS 背景，**但改不了 SVG 里硬编码的 `fill` 值** → 知识树节点文字写死深色 → 深色字压深色底 → 看不见
+**为什么不用 `prefers-color-scheme`（这是走了弯路才想清楚的）**：
+用户手机上的「黑色模式」来自浏览器的**强制深色网页**功能。它能反转 CSS 背景，**但反转不了 SVG 的 `fill`** → 知识树节点底被染深、节点文字仍是深墨 `#2b2a26` → 深色字压深色底 → 字完全消失。而且各家浏览器行为不一致，跟它较劲改不干净。
 
-**必须遵守的三条**：
-1. **每个 HTML 页面都要有** `<meta name="color-scheme" content="light dark">`（插在 `viewport` 之后）。声明后浏览器不再强制反转，避免「双重处理」把颜色搞乱。**新建页面必须带这一行。**
-2. **暗色规则只覆盖颜色变量，绝不动版式与字体。** 在 `theme.css` 的 `:root` 之后用 `@media (prefers-color-scheme: dark)` 覆盖，全站自动跟随。
-3. 底色用**带暖调的深色而非纯黑**（`#1c1e1b` / `#23261f` / `#282b24`），保留纸感。
+**当前实现（三个文件配合）**：
+1. `_shared/js/theme-toggle.js` —— 注入右上角圆形按钮，切换 `<html data-theme="dark">`，选择存 `localStorage`（键名 `xhwy-theme`）跨页面保持；同时同步 `<meta name="theme-color">` 让手机地址栏跟着变色
+2. `_shared/css/theme.css` —— `.theme-toggle` 按钮样式 + `[data-theme="dark"]` 深色变量（只覆盖颜色，版式字体一律不动）
+3. `assets/cognition-tree.css` —— 知识树独立深色块
+
+**必须遵守**：
+1. **每个 HTML 页面都要有** `<meta name="color-scheme" content="only light">`（插在 `viewport` 之后）。`only` 关键字拒绝浏览器强制反转。**新建页面必须带这一行**，并在 body 末尾引 `theme-toggle.js`（放在 `float-pager.js` 之后）。
+2. 深色态自己声明 `color-scheme: only dark`，让滚动条等原生控件跟着变深，否则深色页面配浅色滚动条很割裂。
+3. 深色规则用 **`[data-theme="dark"]` 属性选择器**，**不要用 `@media (prefers-color-scheme: dark)`** ——后者会让浏览器给无显式 `background` 的元素套深色 UA 样式，在浅色系统下冒出深色块（已踩过这个坑）。
+4. 底色用**带暖调的深色而非纯黑**（`#1c1e1b` / `#23261f` / `#282b24`），保留纸感。
+5. **无背景的容器必须显式给 `background`**（如 `.tree-canvas` 要写 `background: var(--bg)`），不能依赖 UA 默认值。
+6. 首页 `index.html` 样式全在**内联 `<style>`** 里、且**不引用 `theme.css`**，所以按钮样式与深色变量要在首页单独写一份。改主题时容易漏掉首页。
+
+**实测基准值**（深色下知识树，可用于回归验证）：节点文字 `rgb(237,240,230)`、节点底 `rgba(44,48,42,.95)`、画布底 `rgb(28,30,27)`、连线 `rgba(150,165,130,.42)`，对比度约 12:1。
 
 **纯靠变量覆盖不到、必须单独处理的地方**：
 - `pre` / `code` 底色与边框
@@ -479,6 +490,12 @@ len(re.findall(r'[\u4e00-\u9fff]', re.sub(r'<[^>]+>', '', s)))
 
 `N` 递增（**当前 `ct-17`**，每次改完 +1）。旧版 `kmap-XX` 已废弃。
 
+**★ 缓存号必须覆盖所有静态资源（2026-08-07 血泪教训）**
+
+改了 `theme.css` 后用户连说两次「还是没改」，根因是：**正文页引用 CSS 一直没带版本号**（`href="../../_shared/css/theme.css"`），浏览器直接用缓存，新文件压根没下载。首页的 `cognition-tree.css` 有 `?v=ct-NN` 所以那部分改动能看到，`theme.css` 从来没带过——**这是长期存在的漏洞，只因以前没改过 theme.css 才没暴露**。
+
+现在全站 `theme.css` / `interactive.css` / `interactive.js` / `float-pager.js` / `theme-toggle.js` 都带 `?v=ct-NN`。**改任何共享资源后必须递增缓存号**，用脚本批量替换 `ct-旧` → `ct-新`（98 个页面一次搞定）。
+
 ### 7.5 交付前自检规范（★ 每次改完必做）
 
 **批量操作优先用脚本**——新增/修改多个页面时，写一个临时 Python 脚本放在临时工作目录跑，不要逐个手改。避免高频工具调用触发 `AccountRateLimitExceeded`（HTTP 429）。
@@ -505,6 +522,24 @@ len(re.findall(r'[\u4e00-\u9fff]', re.sub(r'<[^>]+>', '', s)))
 1. **不要立刻重试**，先用**一条**命令确认磁盘上的实际进度（很可能任务已完成，只是回执丢了）
 2. 确认已完成的部分**立即提交推送**保住成果
 3. 剩余部分**降低并发**（改成 1 个 agent）继续，不要原样重试
+
+**★ 浏览器验证要一次取全数据（2026-08-07 又踩一次 429）**
+
+用浏览器实测主题切换时，我做了导航 → 点击 → 两次 JS 求值 → 截图 → 读图，连续 6 次调用，撞了限流。**正确做法是一次 `browser_evaluate` 把所有要查的值一起返回**：
+
+```javascript
+// 一次拿全：主题状态 + 关键元素计算样式
+const r = document.documentElement;
+return JSON.stringify({
+  dataTheme: r.getAttribute('data-theme'),
+  bodyBg: getComputedStyle(document.body).backgroundColor,
+  nodeTitleFill: getComputedStyle(document.querySelector('.node .node-title')).fill,
+  nodeBgFill: getComputedStyle(document.querySelector('.node .node-bg')).fill,
+  saved: localStorage.getItem('xhwy-theme')
+});
+```
+
+另注意：**浏览器工具的 `browser_click` 可能被派发两次**（我点一次切换按钮，结果切过去又切回来，误判为「功能没生效」）。用 `browser_evaluate` 里直接 `el.click()` 更可控。
 
 **★ 改 CSS / JS 前必须先核实标识符真实存在（2026-08-07 定，已犯过两次）**
 
@@ -594,6 +629,33 @@ git add . ; git commit -m '<type>(<scope>): <description>' ; git push
 - `fix`: bug 修复
 - `style`: 样式调整
 - `refactor`: 重构
+
+## 内容时效性维护（★ 2026-08-07 建立）
+
+AI 领域产品迭代极快，**写的时候对、半年后就错**。已建立的做法与本次核查结论：
+
+**已验证有效的三条写法**（让内容抗过期）：
+1. **凡是会变的数字都带查询日期**——「截至 2026 年 8 月 6 日」。读者能自己判断新鲜度，且我们不必反复改。
+2. **取不到权威来源就主动留白**，写明「未取得」。本站在 ChartQA、Llama/Gemini 上下文窗口、embedding 单价、SWE-bench 2026 SOTA 上都这么做了，核查时被确认为「稳健写法」。
+3. **举例加「系」字**——写「DeepSeek V3/V4 系」而不是「DeepSeek-V3」，免疫小版本迭代。
+
+**要避免的三种表述**：
+1. **「最新」「当前最强」「旗舰」**——这类词几个月就失效。改成带日期的描述或「官方文档首推」。
+2. **排名式断言**（如「用户量最大」）——除非有官方数据，否则违反本站自己的核实原则。已把 §2.5 豆包那处改为「中文场景投入大、迭代快」。
+3. **标题与内容自相矛盾**——如「规模一览（截至 2026）」下面举的全是 2024 年型号。已改为「举例以公开数字为准，型号会随迭代变化」。
+
+**2026-08-07 核查结论**：全站 85 篇整体时效性良好，§8.1/§8.2/§8.3/§9.5/§11.6 的价格、上下文窗口、MCP 规范全部逐项对得上官方文档，不需返工。已修订 4 处：
+- **电学篇 §1.5 急救章：AHA 2020 → 2025 指南**（2025-10-22 发表于 Circulation，官方明确「supersede」2020 版）。★ 这条最要紧，涉及急救准确性。注意按压频率 100~120/分、深度 5~6 cm、比例 30:2 这三个数字未见 2025 版改动，很可能沿用，但**版本标签必须换**。
+- §2.5 主流模型表：GPT-4o/o3/o4 → GPT-5.6 Sol/Terra/Luna；Gemini 1.5/2.0 → 3.6/3.5 系（**2.0 官方已标注关停**）；DeepSeek V3/R1 → V4-Flash/V4-Pro（旧 deepseek-chat/reasoner 已于 2026-07-24 弃用）
+- §2.5 规模表标题、豆包排名断言
+- §7.5 MoE 举例加「系」字
+
+**下次需要复查的时间点**：
+- **2026-09-24：Sora API 停止服务**。届时 `09-5-speech-video.html` 里「API 尚在服务」的表述、第 240 行代码块、quiz 选项都要改成「已全面停运」。这是全站唯一有明确到期日的内容。
+- 各家模型换代时复查 §2.5、§7.5、§8.1~8.3 的型号与价格。
+- **待补核实**：ElevenLabs 定价（$6/月 Starter、$11–22/月 Creator）本次未取得官方页面；`o3 / o4-mini` 主线模型能否直接调用未取得明确结论。
+
+**一个值得写进正文的教学点**：OpenAI 官方文档自身不一致——`developers.openai.com` 首推 GPT-5.6 Sol，而 `platform.openai.com` 仍写「use gpt-5.5, our flagship model」。这与 §11.6 处理 MCP 版本号矛盾（versioning 页写 2025-11-25、latest 解析到 2026-07-28）手法同源，都能教读者「官方文档也会自相矛盾，要并列呈现而非挑一个」。
 
 ## 常见 bug 记录
 
