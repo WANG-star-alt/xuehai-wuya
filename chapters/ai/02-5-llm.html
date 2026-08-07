@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="only light">
 <title>§ 2.5 · 大语言模型 · LLM · 学海无涯</title>
-<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-31">
-<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-31">
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-32">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-32">
 </head>
 <body>
 <article class="page">
@@ -281,11 +281,33 @@
         <tr><td>Meta</td><td>Llama</td><td>开源旗手，可本地部署</td></tr>
         <tr><td>DeepSeek</td><td>V4-Flash / V4-Pro</td><td>高性价比、缓存命中价极低，开放权重；旧的 deepseek-chat / deepseek-reasoner 已于 2026-07-24 弃用</td></tr>
         <tr><td>阿里</td><td>Qwen · 通义千问</td><td>开源生态强，中文表现好</td></tr>
-        <tr><td>字节</td><td>豆包 / Doubao</td><td>中文场景投入大、迭代快，快速迭代</td></tr>
+        <tr><td>字节</td><td>豆包 / Doubao</td><td>中文场景投入大、迭代快</td></tr>
         <tr><td>月之暗面</td><td>Kimi</td><td>超长文本擅长</td></tr>
       </tbody>
     </table>
   </div>
+  <h3>★ 一个诚实的提醒：这张表明年就不准了</h3>
+  <p>上面那张表，我写的时候是准的，<strong>但你读到它的时候很可能已经不准了</strong>。这不是偷懒，而是这个领域的客观状况——模型型号的迭代速度比任何教材的修订速度都快。所以这里教你一件比"记住哪个模型最强"有用得多的事：<mark class="key">怎么自己去查，以及查的时候会遇到什么坑。</mark></p>
+  <p>最大的坑是：<strong>官方文档自己会前后矛盾。</strong>这听起来不可思议，但它真实发生，而且相当常见。</p>
+  <p>就在我核对这一节的 2026 年 8 月 7 日，OpenAI 的两个官方文档站点给出了不同答案：<code>developers.openai.com</code> 的模型页把 <strong>GPT-5.6 Sol</strong> 列在最前面推荐；而 <code>platform.openai.com</code> 的模型页上还写着 "use gpt-5.5, our flagship model"（用 gpt-5.5，我们的旗舰模型）。<strong>同一家公司、同一天、两个官方页面，说法不一致。</strong></p>
+  <p><strong>换成大白话</strong>：这就像去一家餐厅，门口的招牌写着"本店招牌菜是红烧肉"，进去翻开菜单，菜单第一页却推荐"今日主打糖醋鱼"。<strong>不是有人在骗你，是招牌换得比菜单快</strong>——大公司的文档分散在不同团队维护，更新节奏对不齐，落后的那一份就成了"过期的官方说法"。</p>
+  <p>遇到这种情况，<strong>正确做法不是挑一个自己信，而是把两个都摆出来</strong>。你可以说"截至某日，A 页面推荐 X，B 页面仍写 Y"——这既诚实，也把判断权交还给读者。<mark class="key">硬要在两个官方说法里选一个当"真相"，那是你在替官方做决定，而你并没有这个依据。</mark></p>
+  <p>这不是 OpenAI 独有的毛病。本书 § 11.6 讲 MCP 协议时会遇到一模一样的情况：MCP 官方的版本说明页写着"当前版本是 2025-11-25"，但它的"最新规范"链接实际指向 2026-07-28 的修订版，而且那份修订已经有了完整的变更日志。<strong>两个官方页面互相打脸，我们同样把两个都写了出来。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你看到的说法</th><th>不该怎么做</th><th>该怎么做</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>两个官方页面说法不同</td><td>挑一个看起来更新的当真相</td><td>并列写出两者，标注各自出处与查询日期</td></tr>
+        <tr><td>某模型被称为「最新」「最强」</td><td>直接抄进笔记当结论</td><td>记下"某日某官方页面如此表述"，日期是关键</td></tr>
+        <tr><td>自媒体给出的排名与跑分</td><td>当作事实引用</td><td>回到官方文档或论文原文核对，查不到就写"未取得"</td></tr>
+        <tr><td>某产品「即将上线」</td><td>当作已经可用</td><td>区分公告与实际可用性，注明状态与时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>所以给你的实用建议是</strong>：需要确认某个模型的当前状态时，直接去厂商的 API 文档页（不是营销博客），那里的型号列表和定价通常是最新的，因为它要对开发者的账单负责。<strong>说白了</strong>——<mark class="key">要花钱的那一页，通常比不花钱的那一页更新得勤。</mark></p>
+
   <p>这张表最重要的一条分野是<strong>开源与闭源</strong>，它决定了你能不能把模型握在自己手里。这里还要先澄清一个用词问题：多数所谓"开源模型"其实是<strong>开放权重（open-weight）</strong>——它公开了训练好的参数，让你能下载、部署、微调，但通常<strong>不公开训练数据和完整训练代码</strong>，而且许可协议往往带有商用规模限制。<mark class="key">这和软件领域"开源"的严格含义并不相同，是行业里被广泛借用的一个宽松说法。</mark></p>
   <div class="table-wrap">
     <table>
@@ -330,8 +352,8 @@
   <div class="page-foot">Xue Hai Wu Ya · § 2.5 · LLM</div>
 
 </article>
-  <script src="../../_shared/js/interactive.js?v=ct-31"></script>
-  <script src="../../_shared/js/float-pager.js?v=ct-31"></script>
-  <script src="../../_shared/js/theme-toggle.js?v=ct-31"></script>
+  <script src="../../_shared/js/interactive.js?v=ct-32"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-32"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-32"></script>
 </body>
 </html>
