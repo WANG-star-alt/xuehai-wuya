@@ -400,8 +400,20 @@
     console.log('[cognition-tree] fitCanvas:', { availW, availH, worldW, worldH, scale });
   }
 
-  function zoom(delta) {
-    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * delta));
+  function zoom(delta, cx, cy) {
+    const old = scale;
+    const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * delta));
+    if (next === old) return;
+    // 若给了焦点（鼠标位置 / 双指中心），让该点在缩放前后保持不动
+    if (typeof cx === 'number' && typeof cy === 'number') {
+      const canvas = document.getElementById('tree-canvas');
+      const r = canvas ? canvas.getBoundingClientRect() : { left: 0, top: 0 };
+      const px = cx - r.left;
+      const py = cy - r.top;
+      translateX = px - (px - translateX) * (next / old);
+      translateY = py - (py - translateY) * (next / old);
+    }
+    scale = next;
     applyTransform();
   }
 
@@ -546,12 +558,94 @@
         if (canvas) canvas.style.cursor = 'grab';
       });
 
-      // 滚轮缩放
+      // 滚轮缩放（以鼠标位置为焦点）
       canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 1 / 1.1 : 1.1;
-        zoom(delta);
+        zoom(delta, e.clientX, e.clientY);
       }, { passive: false });
+
+      // ===== 触摸支持：单指拖动 / 双指捏合缩放 / 双击缩放 =====
+      let touchDrag = null;   // 单指平移状态
+      let pinch = null;       // 双指缩放状态
+      let lastTap = 0;        // 上一次单指抬起的时间（用于识别双击）
+
+      const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      const mid = (a, b) => ({
+        x: (a.clientX + b.clientX) / 2,
+        y: (a.clientY + b.clientY) / 2
+      });
+
+      // SVG 元素的 closest() 在个别旧版移动浏览器上不可靠，这里手动向上找
+      const inNode = (el) => {
+        let n = el;
+        while (n && n !== canvas) {
+          const c = n.getAttribute && n.getAttribute('class');
+          if (c && /\bnode\b/.test(c)) return true;
+          n = n.parentNode;
+        }
+        return false;
+      };
+
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          // 手指按在节点上时不平移，留给节点自己的点击
+          if (inNode(e.target)) { touchDrag = null; return; }
+          const t = e.touches[0];
+          touchDrag = { x: t.clientX, y: t.clientY, tx: translateX, ty: translateY };
+          pinch = null;
+        } else if (e.touches.length === 2) {
+          // 双指：进入捏合缩放，禁掉平移
+          touchDrag = null;
+          const [a, b] = [e.touches[0], e.touches[1]];
+          const m = mid(a, b);
+          pinch = { d: dist(a, b), s: scale, cx: m.x, cy: m.y };
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        if (pinch && e.touches.length === 2) {
+          const [a, b] = [e.touches[0], e.touches[1]];
+          const nd = dist(a, b);
+          if (pinch.d > 0) {
+            // 相对起始状态整体计算，避免累积误差
+            const target = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinch.s * (nd / pinch.d)));
+            zoom(target / scale, pinch.cx, pinch.cy);
+          }
+          e.preventDefault();
+        } else if (touchDrag && e.touches.length === 1) {
+          const t = e.touches[0];
+          translateX = touchDrag.tx + (t.clientX - touchDrag.x);
+          translateY = touchDrag.ty + (t.clientY - touchDrag.y);
+          applyTransform();
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', (e) => {
+        // 双指松开一根后，避免残留状态导致跳变
+        if (e.touches.length < 2) pinch = null;
+        if (e.touches.length === 0) {
+          // 双击缩放：两次轻触间隔小于 300ms 且未发生拖动
+          const now = Date.now();
+          const moved = touchDrag &&
+            (Math.abs(translateX - touchDrag.tx) > 6 || Math.abs(translateY - touchDrag.ty) > 6);
+          if (!moved && e.changedTouches.length === 1 &&
+              !inNode(e.changedTouches[0].target)) {
+            if (now - lastTap < 300) {
+              const t = e.changedTouches[0];
+              zoom(scale < MAX_SCALE * 0.6 ? 1.6 : 1 / 1.6, t.clientX, t.clientY);
+              lastTap = 0;
+            } else {
+              lastTap = now;
+            }
+          }
+          touchDrag = null;
+        }
+      });
+
+      canvas.addEventListener('touchcancel', () => { touchDrag = null; pinch = null; });
     }
 
     // 窗口尺寸变化

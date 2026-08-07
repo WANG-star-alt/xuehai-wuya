@@ -230,6 +230,11 @@
   position: relative;
   cursor: grab;
   user-select: none;
+  /* 关键：告诉浏览器这块区域的手势由脚本自己处理，
+     否则单指拖动会被当成滚页面、双指捏合会被当成缩放整页 */
+  touch-action: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tree-canvas svg {
@@ -592,7 +597,8 @@
     gap: 14px;
   }
   .tree-canvas {
-    height: 500px;
+    /* 手机上给树更多纵向空间，并用视口高度自适应 */
+    height: min(70vh, 560px);
   }
   .tree-detail-panel {
     max-height: none;
@@ -600,18 +606,24 @@
   }
   .tree-toolbar {
     padding: 10px 12px;
-    gap: 6px;
+    gap: 8px;
+    /* 按钮多时可横向滑动，不再挤成两行 */
+    flex-wrap: wrap;
   }
   .tree-toolbar button {
-    padding: 5px 10px;
-    font-size: 11px;
+    /* 触摸目标不小于 40px，符合移动端可点击尺寸 */
+    padding: 9px 13px;
+    font-size: 12px;
+    min-height: 40px;
+    touch-action: manipulation;
   }
   .width-control {
-    padding: 3px 8px;
-    gap: 6px;
+    padding: 5px 10px;
+    gap: 8px;
   }
   .width-control input[type="range"] {
-    width: 70px;
+    width: 96px;
+    height: 28px;
   }
   .width-control label {
     font-size: 11px;
@@ -622,5 +634,12 @@
   }
   .detail-meta {
     grid-template-columns: 1fr;
+  }
+}
+
+/* 触摸设备通用：手机上 hover 态会「粘住」，需要关掉 */
+@media (hover: none) {
+  .tree-canvas {
+    cursor: default;
   }
 }
