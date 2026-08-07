@@ -643,3 +643,155 @@
     cursor: default;
   }
 }
+
+/* ============================================================
+   暗色模式适配
+   站点本身只有一套浅色变量，用户看到的「黑色模式」来自系统 /
+   浏览器的强制深色：它能反转 CSS 背景，但反转不了 SVG 里
+   硬编码的 fill 值，于是深色文字落在深色底上就看不见了。
+   这里显式提供一套深色配色，覆盖节点、文字、连线与右侧面板。
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  /* ---- 画布与面板容器 ---- */
+  .tree-map-panel {
+    background: rgba(28, 30, 27, 0.92);
+    border-color: rgba(120, 130, 110, 0.28);
+  }
+  .tree-detail-panel {
+    background: rgba(28, 30, 27, 0.92);
+    border-color: rgba(120, 130, 110, 0.28);
+    color: #e8e4da;
+  }
+  .tree-toolbar {
+    background: rgba(34, 37, 32, 0.9);
+    border-color: rgba(120, 130, 110, 0.28);
+  }
+  .tree-toolbar button {
+    background: rgba(52, 58, 48, 0.9);
+    border-color: rgba(130, 145, 115, 0.35);
+    color: #dfe3d6;
+  }
+  .tree-toolbar button:hover {
+    background: rgba(70, 82, 60, 0.95);
+    color: #f2f5ec;
+  }
+  .width-control {
+    background: rgba(52, 58, 48, 0.7);
+    border-color: rgba(130, 145, 115, 0.3);
+  }
+  .width-control label,
+  .width-control #node-width-value {
+    color: #c9cfbe;
+  }
+
+  /* ---- 节点：底色转深、文字转亮（这是本次要修的核心）---- */
+  .node .node-bg {
+    fill: rgba(44, 48, 42, 0.95);
+    stroke: rgba(130, 145, 115, 0.38);
+  }
+  .node .node-title {
+    fill: #edf0e6;
+  }
+  .node .node-meta {
+    fill: #9aa48c;
+  }
+  .node:hover .node-bg {
+    fill: rgba(58, 66, 52, 0.97);
+    stroke: rgba(160, 178, 138, 0.6);
+  }
+  .node.selected .node-bg {
+    fill: rgba(74, 92, 58, 0.95);
+    stroke: #a5b98d;
+  }
+  .node.selected .node-title {
+    fill: #ffffff;
+  }
+
+  /* ---- 连线：浅色底下的深线在深底上会消失 ---- */
+  .edge {
+    stroke: rgba(150, 165, 130, 0.42);
+  }
+
+  /* ---- 状态圆点：白描边在深色节点上太扎眼，深绿在深底上又看不出 ---- */
+  .node .spec-dot.pass,
+  .node .spec-dot.todo {
+    stroke: rgba(28, 30, 27, 0.9);
+  }
+  .node.selected .spec-dot {
+    stroke: rgba(20, 24, 18, 0.9);
+  }
+  .node .branch-dot.has-link {
+    fill: #93b06f;
+    stroke: #c3d6a6;
+  }
+  .node .branch-dot.expandable {
+    fill: #5d7048;
+    stroke: #93a87a;
+  }
+  .node .branch-dot.leaf {
+    fill: #55584f;
+    stroke: #7d8177;
+  }
+  .node:hover .branch-dot.has-link {
+    fill: #d78f52;
+    stroke: #f0c39a;
+  }
+  .node:hover .branch-dot.expandable {
+    fill: #7d9463;
+    stroke: #b5cba2;
+  }
+
+  /* 详情面板里的状态文字 */
+  .meta-value.spec-pass {
+    color: #86c294;
+  }
+
+  /* ---- 右侧详情面板文字 ---- */
+  .detail-title {
+    color: #f0f3e9;
+  }
+  .detail-desc {
+    color: #c4cbb8;
+  }
+  .detail-depth,
+  .path-label,
+  .meta-label {
+    color: #97a088;
+  }
+  .path-value,
+  .meta-value {
+    color: #dfe4d5;
+  }
+  .detail-path {
+    background: rgba(52, 58, 48, 0.6);
+    border-color: rgba(130, 145, 115, 0.25);
+  }
+  .detail-empty {
+    color: #8b9480;
+  }
+  .detail-header {
+    border-color: rgba(130, 145, 115, 0.25);
+  }
+  .detail-btn {
+    background: rgba(90, 112, 68, 0.9);
+    border-color: rgba(165, 185, 141, 0.4);
+    color: #f2f5ec;
+  }
+  .detail-btn:hover {
+    background: rgba(110, 136, 84, 0.95);
+  }
+
+  /* ---- 图例与搜索结果 ---- */
+  .tree-legend {
+    color: #9aa48c;
+  }
+  .search-result {
+    background: rgba(52, 58, 48, 0.9);
+    border-color: rgba(130, 145, 115, 0.3);
+    color: #dfe4d5;
+  }
+  .search-result:hover {
+    background: rgba(74, 92, 58, 0.95);
+    color: #f2f5ec;
+  }
+}

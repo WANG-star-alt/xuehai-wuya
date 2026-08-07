@@ -19,6 +19,39 @@
   --shadow: 0 1px 2px rgba(43,42,38,.04), 0 8px 24px rgba(43,42,38,.06);
 }
 
+/* ============================================================
+   深色模式：只覆盖颜色变量，版式与字体完全不动。
+   这样全站页面自动跟随，无需逐页改动。
+   底色不用纯黑，仍保留一点暖调，尽量维持原本的纸感。
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1e1b; --bg2: #23261f; --bg3: #282b24;
+    --ink: #e8e4da; --ink-soft: #c4c8ba; --muted: #949c88;
+    --rule: #3a3f35; --accent: #93b06f; --accent2: #d78f52;
+    --accent-soft: #2e3328;
+    --shadow: 0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.38);
+  }
+  /* 代码块与行内代码在深色下需要更低的底色对比 */
+  pre, code {
+    background: #23261f !important;
+    border-color: #3a3f35 !important;
+  }
+  /* 表格斑马纹反向 */
+  tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, .022);
+  }
+  /* 高亮句：浅色下是淡黄底，深色下改成低饱和暖底，避免刺眼 */
+  mark, mark.key {
+    background: rgba(215, 143, 82, .20) !important;
+    color: #f0e6d8 !important;
+  }
+  /* 图片与图表在深色下略降亮度，避免发光感 */
+  img, svg image {
+    filter: brightness(.92);
+  }
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; scroll-behavior: smooth; }
 body {
