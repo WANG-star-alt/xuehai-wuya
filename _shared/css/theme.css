@@ -8,9 +8,11 @@
 @font-face { font-family: 'JBMono'; src: url('../fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
 
 :root {
-  /* 与各页面 meta 呼应：拒绝浏览器的强制深色反转。
-     SVG 的 fill 不会被反转，若页面被反转就会出现
-     深色字压深色底（知识树节点文字消失）的问题。 */
+  /* only light 有两个作用：
+     ① 拒绝手机浏览器的「强制深色网页」自动反转——它能反转 CSS 背景
+        却反转不了 SVG 的 fill，会让知识树节点文字消失
+     ② 深色由页面右上角的按钮手动控制（见下方 [data-theme="dark"]），
+        不依赖系统设置，两种模式都由我们自己完全掌控 */
   color-scheme: only light;
   --bg: #faf7f2; --bg2: #f2ede4; --bg3: #ffffff;
   --ink: #2b2a26; --ink-soft: #4a4842; --muted: #8a8579;
@@ -32,6 +34,9 @@
    只覆盖颜色，版式与字体完全不动。
    ============================================================ */
 [data-theme="dark"] {
+  /* 深色态下明确声明 dark，让滚动条、输入框等浏览器原生控件
+     也跟着变深，否则深色页面配浅色滚动条会很割裂 */
+  color-scheme: only dark;
   --bg: #1c1e1b; --bg2: #23261f; --bg3: #282b24;
   --ink: #e8e4da; --ink-soft: #c4c8ba; --muted: #949c88;
   --rule: #3a3f35; --accent: #93b06f; --accent2: #d78f52;
@@ -518,4 +523,56 @@ body.has-float-pager { padding-bottom: 100px; }
   .pager .home { grid-column: span 2; padding: 0.65rem; }
   ul.keylist li { grid-template-columns: 1fr; gap: 0.15rem; }
   .cards { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   主题切换按钮（由 _shared/js/theme-toggle.js 注入）
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 60;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  background: var(--bg3);
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background .18s, color .18s, border-color .18s, transform .12s;
+  /* 触摸目标够大，且点击不出现蓝色高亮 */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.theme-toggle:hover {
+  color: var(--accent2);
+  border-color: var(--accent2);
+}
+.theme-toggle:active {
+  transform: scale(.92);
+}
+
+/* 深色下按钮自身也要跟着变 */
+[data-theme="dark"] .theme-toggle {
+  background: #282b24;
+  border-color: #3a3f35;
+  color: #e8e4da;
+}
+[data-theme="dark"] .theme-toggle:hover {
+  color: #d78f52;
+  border-color: #d78f52;
+}
+
+@media (max-width: 720px) {
+  .theme-toggle {
+    top: 10px;
+    right: 10px;
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
 }
