@@ -118,16 +118,20 @@ pre code {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.15em;
-  color: var(--muted);
+  /* 用 --ink-soft 而不是 --muted：面包屑是导航信息，需要足够对比度。
+     原先的 --muted (#8a8579) 在手机浏览器的「强制深色网页」模式下
+     会被压得几乎看不见（那种模式无视 color-scheme 声明）。 */
+  color: var(--ink-soft);
   text-transform: uppercase;
 }
 .topbar a {
-  color: var(--muted);
+  color: var(--ink-soft);
   transition: color .15s;
 }
 .topbar a:hover { color: var(--accent2); }
 .topbar .breadcrumb { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.topbar .breadcrumb .sep { color: var(--rule); }
+/* 分隔符可以淡一些，但不能用 --rule（那是边框色，太浅） */
+.topbar .breadcrumb .sep { color: var(--muted); }
 
 /* 章节头 */
 .chapter-head {
@@ -158,7 +162,9 @@ pre code {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.2em;
-  color: var(--muted);
+  /* 提到 --ink-soft：这是章节副标题（如「AI Agent · 从会说到会做」），
+     属于需要读的信息，用 --muted 在强制深色模式下会看不见 */
+  color: var(--ink-soft);
   text-transform: uppercase;
   flex-basis: 100%;
 }
@@ -498,7 +504,8 @@ body.has-float-pager { padding-bottom: 100px; }
   font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.25em;
-  color: var(--muted);
+  /* 页脚「学海无涯 · 网络篇 · § 1.1」是定位信息，需要能读清 */
+  color: var(--ink-soft);
   text-transform: uppercase;
 }
 
