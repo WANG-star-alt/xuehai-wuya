@@ -20,36 +20,43 @@
 }
 
 /* ============================================================
-   深色模式：只覆盖颜色变量，版式与字体完全不动。
-   这样全站页面自动跟随，无需逐页改动。
-   底色不用纯黑，仍保留一点暖调，尽量维持原本的纸感。
+   深色配色（当前未启用）
+   站点声明 color-scheme: light，因此不用媒体查询——否则浏览器会给
+   没有显式 background 的元素套深色 UA 样式，在浅色系统下冒出深色块。
+   改用 [data-theme="dark"] 属性选择器：将来加主题切换按钮时，
+   执行 document.documentElement.dataset.theme = "dark" 即可启用整套配色。
+   只覆盖颜色，版式与字体完全不动。
    ============================================================ */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1c1e1b; --bg2: #23261f; --bg3: #282b24;
-    --ink: #e8e4da; --ink-soft: #c4c8ba; --muted: #949c88;
-    --rule: #3a3f35; --accent: #93b06f; --accent2: #d78f52;
-    --accent-soft: #2e3328;
-    --shadow: 0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.38);
-  }
-  /* 代码块与行内代码在深色下需要更低的底色对比 */
-  pre, code {
-    background: #23261f !important;
-    border-color: #3a3f35 !important;
-  }
-  /* 表格斑马纹反向 */
-  tbody tr:nth-child(even) {
-    background: rgba(255, 255, 255, .022);
-  }
-  /* 高亮句：浅色下是淡黄底，深色下改成低饱和暖底，避免刺眼 */
-  mark, mark.key {
-    background: rgba(215, 143, 82, .20) !important;
-    color: #f0e6d8 !important;
-  }
-  /* 图片与图表在深色下略降亮度，避免发光感 */
-  img, svg image {
-    filter: brightness(.92);
-  }
+[data-theme="dark"] {
+  --bg: #1c1e1b; --bg2: #23261f; --bg3: #282b24;
+  --ink: #e8e4da; --ink-soft: #c4c8ba; --muted: #949c88;
+  --rule: #3a3f35; --accent: #93b06f; --accent2: #d78f52;
+  --accent-soft: #2e3328;
+  --shadow: 0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.38);
+}
+
+/* 代码块与行内代码 */
+[data-theme="dark"] pre,
+[data-theme="dark"] code {
+  background: #23261f;
+  border-color: #3a3f35;
+}
+
+/* 表格斑马纹反向 */
+[data-theme="dark"] tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, .022);
+}
+
+/* 高亮句：浅色的淡黄底在深色下太刺眼，改低饱和暖底 */
+[data-theme="dark"] mark,
+[data-theme="dark"] mark.key {
+  background: rgba(215, 143, 82, .20);
+  color: #f0e6d8;
+}
+
+/* 图片略降亮度，消除发光感 */
+[data-theme="dark"] img {
+  filter: brightness(.92);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 声明同时支持浅色与深色：这样系统开深色时走我们自己的深色配色，
-       而不是让浏览器强制反转（反转能改 CSS 背景，却改不了 SVG 的 fill，
-       会导致知识树文字变成深色压深色而看不见） -->
-  <meta name="color-scheme" content="light dark">
+  <!-- 本站为纸感浅色设计。声明 light 有两个作用：
+       ① 阻止移动端浏览器强制反转配色（反转能改 CSS 背景却改不了 SVG 的 fill，
+          会让知识树文字变成深色压深色而看不见）
+       ② 避免声明 light dark 时，浏览器给无显式 background 的元素
+          套深色 UA 默认样式，导致浅色下冒出深色块 -->
+  <meta name="color-scheme" content="light">
   <title>学海无涯 · 智能 · 网络 · 界面</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='6' y='6' width='88' height='88' rx='14' fill='%23faf7f2' stroke='%23556b3d' stroke-width='4'/%3E%3Cpath d='M22 40 Q34 32 50 40 T78 40' fill='none' stroke='%234a6d8c' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M22 55 Q34 47 50 55 T78 55' fill='none' stroke='%23556b3d' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M22 70 Q34 62 50 70 T78 70' fill='none' stroke='%238a5a7a' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
 
@@ -411,7 +413,7 @@
       text-transform: uppercase;
     }
   </style>
-  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-26" />
+  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-27" />
 </head>
 <body>
   <article class="page">
@@ -963,7 +965,7 @@
 
   </article>
 
-  <script src="./assets/tree-data.js?v=ct-26"></script>
-  <script src="./assets/cognition-tree.js?v=ct-26"></script>
+  <script src="./assets/tree-data.js?v=ct-27"></script>
+  <script src="./assets/cognition-tree.js?v=ct-27"></script>
 </body>
 </html>

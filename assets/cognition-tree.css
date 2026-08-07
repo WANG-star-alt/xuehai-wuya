@@ -230,6 +230,10 @@
   position: relative;
   cursor: grab;
   user-select: none;
+  /* 必须显式给背景：否则会用浏览器 UA 默认值，而站点声明了
+     color-scheme: light dark 之后，UA 默认背景在部分浏览器上
+     会变成深色，导致浅色模式下画布出现深色块 */
+  background: var(--bg);
   /* 关键：告诉浏览器这块区域的手势由脚本自己处理，
      否则单指拖动会被当成滚页面、双指捏合会被当成缩放整页 */
   touch-action: none;
@@ -651,147 +655,118 @@
    硬编码的 fill 值，于是深色文字落在深色底上就看不见了。
    这里显式提供一套深色配色，覆盖节点、文字、连线与右侧面板。
    ============================================================ */
-@media (prefers-color-scheme: dark) {
-  /* ---- 画布与面板容器 ---- */
-  .tree-map-panel {
-    background: rgba(28, 30, 27, 0.92);
-    border-color: rgba(120, 130, 110, 0.28);
-  }
-  .tree-detail-panel {
-    background: rgba(28, 30, 27, 0.92);
-    border-color: rgba(120, 130, 110, 0.28);
-    color: #e8e4da;
-  }
-  .tree-toolbar {
-    background: rgba(34, 37, 32, 0.9);
-    border-color: rgba(120, 130, 110, 0.28);
-  }
-  .tree-toolbar button {
-    background: rgba(52, 58, 48, 0.9);
-    border-color: rgba(130, 145, 115, 0.35);
-    color: #dfe3d6;
-  }
-  .tree-toolbar button:hover {
-    background: rgba(70, 82, 60, 0.95);
-    color: #f2f5ec;
-  }
-  .width-control {
-    background: rgba(52, 58, 48, 0.7);
-    border-color: rgba(130, 145, 115, 0.3);
-  }
-  .width-control label,
-  .width-control #node-width-value {
-    color: #c9cfbe;
-  }
+/* ============================================================
+   知识树深色配色（当前未启用，同 theme.css 用 [data-theme="dark"]）
+   注意：SVG 的 fill / stroke 不会被浏览器的强制反转改到，
+   所以深色下必须显式覆盖，否则深色文字会压在深色底上看不见。
+   ============================================================ */
+[data-theme="dark"] .tree-canvas {
+  background: var(--bg);
+}
+[data-theme="dark"] .tree-map-panel,
+[data-theme="dark"] .tree-detail-panel {
+  background: rgba(28, 30, 27, .92);
+  border-color: rgba(120, 130, 110, .28);
+}
+[data-theme="dark"] .tree-detail-panel {
+  color: #e8e4da;
+}
+[data-theme="dark"] .tree-toolbar {
+  background: rgba(34, 37, 32, .9);
+  border-color: rgba(120, 130, 110, .28);
+}
+[data-theme="dark"] .tree-toolbar button {
+  background: rgba(52, 58, 48, .9);
+  border-color: rgba(130, 145, 115, .35);
+  color: #dfe3d6;
+}
+[data-theme="dark"] .width-control {
+  background: rgba(52, 58, 48, .7);
+  border-color: rgba(130, 145, 115, .3);
+}
+[data-theme="dark"] .width-control label,
+[data-theme="dark"] .width-control #node-width-value {
+  color: #c9cfbe;
+}
 
-  /* ---- 节点：底色转深、文字转亮（这是本次要修的核心）---- */
-  .node .node-bg {
-    fill: rgba(44, 48, 42, 0.95);
-    stroke: rgba(130, 145, 115, 0.38);
-  }
-  .node .node-title {
-    fill: #edf0e6;
-  }
-  .node .node-meta {
-    fill: #9aa48c;
-  }
-  .node:hover .node-bg {
-    fill: rgba(58, 66, 52, 0.97);
-    stroke: rgba(160, 178, 138, 0.6);
-  }
-  .node.selected .node-bg {
-    fill: rgba(74, 92, 58, 0.95);
-    stroke: #a5b98d;
-  }
-  .node.selected .node-title {
-    fill: #ffffff;
-  }
+/* 节点：底色转深、文字转亮（这是深色下最关键的一处） */
+[data-theme="dark"] .node .node-bg {
+  fill: rgba(44, 48, 42, .95);
+  stroke: rgba(130, 145, 115, .38);
+}
+[data-theme="dark"] .node .node-title {
+  fill: #edf0e6;
+}
+[data-theme="dark"] .node .node-meta {
+  fill: #9aa48c;
+}
+[data-theme="dark"] .node.selected .node-bg {
+  fill: rgba(74, 92, 58, .95);
+  stroke: #a5b98d;
+}
+[data-theme="dark"] .node.selected .node-title {
+  fill: #ffffff;
+}
 
-  /* ---- 连线：浅色底下的深线在深底上会消失 ---- */
-  .edge {
-    stroke: rgba(150, 165, 130, 0.42);
-  }
+/* 连线：浅底上的深色线在深底上同样会消失，容易漏改 */
+[data-theme="dark"] .edge {
+  stroke: rgba(150, 165, 130, .42);
+}
 
-  /* ---- 状态圆点：白描边在深色节点上太扎眼，深绿在深底上又看不出 ---- */
-  .node .spec-dot.pass,
-  .node .spec-dot.todo {
-    stroke: rgba(28, 30, 27, 0.9);
-  }
-  .node.selected .spec-dot {
-    stroke: rgba(20, 24, 18, 0.9);
-  }
-  .node .branch-dot.has-link {
-    fill: #93b06f;
-    stroke: #c3d6a6;
-  }
-  .node .branch-dot.expandable {
-    fill: #5d7048;
-    stroke: #93a87a;
-  }
-  .node .branch-dot.leaf {
-    fill: #55584f;
-    stroke: #7d8177;
-  }
-  .node:hover .branch-dot.has-link {
-    fill: #d78f52;
-    stroke: #f0c39a;
-  }
-  .node:hover .branch-dot.expandable {
-    fill: #7d9463;
-    stroke: #b5cba2;
-  }
+/* 状态圆点：白描边在深色节点上太扎眼；深绿在深底上看不出 */
+[data-theme="dark"] .node .spec-dot.pass,
+[data-theme="dark"] .node .spec-dot.todo {
+  stroke: rgba(28, 30, 27, .9);
+}
+[data-theme="dark"] .node .branch-dot.has-link {
+  fill: #93b06f;
+  stroke: #c3d6a6;
+}
+[data-theme="dark"] .node .branch-dot.expandable {
+  fill: #5d7048;
+  stroke: #93a87a;
+}
+[data-theme="dark"] .node .branch-dot.leaf {
+  fill: #55584f;
+  stroke: #7d8177;
+}
 
-  /* 详情面板里的状态文字 */
-  .meta-value.spec-pass {
-    color: #86c294;
-  }
+/* 详情面板文字 */
+[data-theme="dark"] .detail-title {
+  color: #f0f3e9;
+}
+[data-theme="dark"] .detail-desc {
+  color: #c4cbb8;
+}
+[data-theme="dark"] .detail-depth,
+[data-theme="dark"] .path-label,
+[data-theme="dark"] .meta-label {
+  color: #97a088;
+}
+[data-theme="dark"] .path-value,
+[data-theme="dark"] .meta-value {
+  color: #dfe4d5;
+}
+[data-theme="dark"] .detail-path {
+  background: rgba(52, 58, 48, .6);
+  border-color: rgba(130, 145, 115, .25);
+}
+[data-theme="dark"] .detail-empty {
+  color: #8b9480;
+}
+[data-theme="dark"] .detail-btn {
+  background: rgba(90, 112, 68, .9);
+  border-color: rgba(165, 185, 141, .4);
+  color: #f2f5ec;
+}
 
-  /* ---- 右侧详情面板文字 ---- */
-  .detail-title {
-    color: #f0f3e9;
-  }
-  .detail-desc {
-    color: #c4cbb8;
-  }
-  .detail-depth,
-  .path-label,
-  .meta-label {
-    color: #97a088;
-  }
-  .path-value,
-  .meta-value {
-    color: #dfe4d5;
-  }
-  .detail-path {
-    background: rgba(52, 58, 48, 0.6);
-    border-color: rgba(130, 145, 115, 0.25);
-  }
-  .detail-empty {
-    color: #8b9480;
-  }
-  .detail-header {
-    border-color: rgba(130, 145, 115, 0.25);
-  }
-  .detail-btn {
-    background: rgba(90, 112, 68, 0.9);
-    border-color: rgba(165, 185, 141, 0.4);
-    color: #f2f5ec;
-  }
-  .detail-btn:hover {
-    background: rgba(110, 136, 84, 0.95);
-  }
-
-  /* ---- 图例与搜索结果 ---- */
-  .tree-legend {
-    color: #9aa48c;
-  }
-  .search-result {
-    background: rgba(52, 58, 48, 0.9);
-    border-color: rgba(130, 145, 115, 0.3);
-    color: #dfe4d5;
-  }
-  .search-result:hover {
-    background: rgba(74, 92, 58, 0.95);
-    color: #f2f5ec;
-  }
+/* 图例与搜索结果 */
+[data-theme="dark"] .tree-legend {
+  color: #9aa48c;
+  border-bottom-color: rgba(255, 255, 255, .08);
+}
+[data-theme="dark"] .search-result {
+  background: rgba(52, 58, 48, .9);
+  border-color: rgba(130, 145, 115, .3);
+  color: #dfe4d5;
 }
