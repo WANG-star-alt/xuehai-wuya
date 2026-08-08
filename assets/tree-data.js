@@ -155,14 +155,14 @@
         ], { href: 'chapters/ai/12-landscape.html' }),
       createNode('ai-13', '第 13 章 · 局限与风险',
         '幻觉、偏见、版权、深度伪造、Prompt 注入——AI 的暗面。',
-        '待撰写',
+        '约 4.9 万字',
         [
-          createNode('ai-13-1', '§ 13.1 · 幻觉', '它不是在骗你，它是在"合理地猜"——原理与缓解。', '待撰写', []),
-          createNode('ai-13-2', '§ 13.2 · 偏见与公平性', '训练数据里的偏见会被模型放大。', '待撰写', []),
-          createNode('ai-13-3', '§ 13.3 · 隐私与版权', '你输入的内容去哪了、生成物归谁。', '待撰写', []),
-          createNode('ai-13-4', '§ 13.4 · 深度伪造', '换脸、拟声、假视频——如何识别与防范。', '待撰写', []),
-          createNode('ai-13-5', '§ 13.5 · Prompt 注入与安全', '越狱、间接注入——大模型时代的新攻击面。', '待撰写', [])
-        ]),
+          createNode('ai-13-1', '§ 13.1 · 幻觉', '它不是在骗你，它是在"合理地猜"——原理与缓解。', '9195 字', [], { href: 'chapters/ai/13-1-hallucination.html', spec: 'pass'}),
+          createNode('ai-13-2', '§ 13.2 · 偏见与公平性', '训练数据里的偏见会被模型放大。', '9793 字', [], { href: 'chapters/ai/13-2-bias.html', spec: 'pass'}),
+          createNode('ai-13-3', '§ 13.3 · 隐私与版权', '你输入的内容去哪了、生成物归谁。', '9887 字', [], { href: 'chapters/ai/13-3-privacy-copyright.html', spec: 'pass'}),
+          createNode('ai-13-4', '§ 13.4 · 深度伪造', '换脸、拟声、假视频——如何识别与防范。', '8499 字', [], { href: 'chapters/ai/13-4-deepfake.html', spec: 'pass'}),
+          createNode('ai-13-5', '§ 13.5 · Prompt 注入与安全', '越狱、间接注入——大模型时代的新攻击面。', '8844 字', [], { href: 'chapters/ai/13-5-prompt-injection.html', spec: 'pass'})
+        ], { href: 'chapters/ai/13-limits.html' }),
       createNode('ai-14', '第 14 章 · 与 AI 共处',
         '把 AI 当学习助手、写作伙伴、编程搭档——但保留人类判断。',
         '待撰写',

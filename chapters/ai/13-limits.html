@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 13 章 · 局限与风险 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-34">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html#vol-ai">智能篇</a>
+      <span class="sep">›</span>
+      <span>第 13 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 13</div>
+    <h1>第 13 章 · 局限与风险</h1>
+    <div class="cn">The Limits · 知道边界在哪，才能用得更好</div>
+  </header>
+
+  <p class="lead">
+    前面十二章基本都在讲「它能做什么」。这一章要认真讲「它做不到什么、以及做错的时候会错成什么样」。<mark class="key">但请先记住这一章的基调：这不是一章劝你别用 AI 的内容，恰恰相反——它是一章教你把 AI 用得更放心的内容。</mark><strong>打个比方</strong>：驾校教的不只是踩油门，还要教你刹车距离、盲区在哪、雨天多久打滑。学会这些不是为了让你别开车，是为了让你敢上路。这一章的每一节都遵循同一个结构：先把风险讲透、讲出限定条件，再给可操作的应对方法。另外这一章有一个别的章节没有的特殊要求——<strong>本章涉及大量法律与安全内容，所有法律部分都会写清司法辖区与案件当前状态，并且必须先声明一句：本文不构成法律建议。</strong>
+  </p>
+
+  <div class="callout">
+    <span class="tag">重要声明</span>
+    <p><strong>本章不构成法律建议。</strong>§13.3 提到的所有诉讼与法规，仅为截至 <strong>2026 年 8 月 8 日</strong>的公开司法记录与官方文本转述，用于帮助你理解「争议焦点在哪里」，<mark class="key">不能作为任何具体行为的合法性依据</mark>。案件状态随时变化，法律在不同国家和地区（司法辖区）差别极大。<strong>真要做决定，请咨询你所在辖区的执业律师。</strong></p>
+  </div>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔪 一把很好用的菜刀</div>
+    <p>你家厨房里有一把很锋利的刀。它切菜又快又整齐，是你做饭效率的一半。现在问：这把刀「危险」吗？</p>
+    <p>答案取决于你怎么问。如果问「它会不会伤人」，会。如果问「所以应该扔掉吗」，显然不应该。<strong>正确的问题是第三个：一把刀有哪几种典型的伤人方式，以及分别怎么防。</strong></p>
+    <p>厨房里其实早就有一整套成熟答案：<strong>切菜时手指要弯成猫爪</strong>（防切到指甲盖）、<strong>刀不能刀口朝上放在水槽里</strong>（防伸手进去摸到）、<strong>递刀要递刀柄</strong>（防对方接到刀刃）、<strong>切生肉和切熟食分两块板</strong>（防交叉污染）。你看，这些规则没有一条是「别用刀」，全都是「在这种具体情形下这样做」。</p>
+    <p><mark class="key">这一章要给你的，就是 AI 的那份「猫爪握法清单」。</mark>五节对应五类典型的「割手方式」：它会一脸认真地说错话（幻觉）、它会把数据里的老偏见照搬甚至放大（偏见）、你喂给它的东西和它吐出来的东西归属存疑（隐私与版权）、它能造出以假乱真的人脸和声音（深度伪造）、别人能用一段藏在网页里的文字劫持它替你干活（Prompt 注入）。</p>
+    <div class="link">→ 风险不是「用不用」的问题，是「在哪种场景下、用哪种握法」的问题。本章五节 = 五种握法。</div>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>这一章的写法比其他章更严格，因为它踩在两块特别容易出错的地上：<strong>法律</strong>和<strong>安全</strong>。这两个领域有一个共同特征——<mark class="key">流传最广的说法往往错得最离谱，而且错的方式很有规律：把「上诉中」说成「已判决」，把「和解」说成「败诉」，把「特定假设下的结论」说成「永恒真理」，把「某个数据集上的误报率」说成「整体准确率」。</mark></p>
+  <p>所以本章正文里你会反复看到三类看起来啰嗦的标注，它们不是学术做作，是防错装置：</p>
+  <ul class="keylist">
+    <li><span class="k">论文一律给 arXiv 编号 + 是否同行评议</span><span class="v">「同行评议」（peer review）说白了就是<strong>论文投给期刊或会议后，由同领域其他研究者匿名审过一遍才放行</strong>。<strong>相当于</strong>饭馆开业前的卫生检查——过了不代表菜一定好吃，但至少不是谁都能开。而 <strong>arXiv 预印本</strong>（preprint）是作者自己上传的、没经过这道检查的版本。本章两类都引，但会明确告诉你哪篇是哪类。</span></li>
+    <li><span class="k">法律一律给辖区 + 当前状态</span><span class="v">「司法辖区」（jurisdiction）<strong>其实就是</strong>「这事儿归哪个地方的法院管、按哪套法律判」。<strong>打个比方</strong>：小区物业的规定管不到隔壁小区。美国加州北区联邦地区法院的一个裁定，对英国法院没有约束力，对中国法院更没有。而「当前状态」要区分<strong>审理中 / 已作出部分简易判决 / 上诉中 / 已和解结案</strong>——这四种状态的分量完全不同。</span></li>
+    <li><span class="k">数字一律绑定「哪个模型 + 哪个测试集 + 哪一天」</span><span class="v">脱离数据集的「幻觉率百分之几」「检测准确率百分之几」是本章最反对的表述方式。<strong>本质上就是</strong>：说「这个学生考了 58 分」必须说清是哪门考试、哪一年的卷子，否则这个数字毫无意义。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 体温计与「不可能造出完美体温计」</span>
+    <p>本章有一个结论最容易被误传，值得在总览页就先解释清楚，因为它关系到你读完这一章会带走什么态度。</p>
+    <p>有一篇论文（<strong>arXiv 2401.11817</strong>，新加坡国立大学，标题 <em>Hallucination is Inevitable: An Innate Limitation of Large Language Models</em>，2024-01-22 首版，<strong>arXiv 预印本，尚未见同行评议记录</strong>）从计算学习理论出发，论证了「幻觉不可能被完全消除」。这句话在中文互联网上经常被简化成「AI 永远不可能说准话」。</p>
+    <p><mark class="key">这个简化是错的，而且错得很关键。</mark>论文的结论是在一个<strong>被严格定义的形式化世界</strong>里成立的：那里「幻觉」被定义为「一个可计算的语言模型与一个可计算的真实函数之间的不一致」，推理依据是「模型学不完所有可计算函数」。<strong>换成大白话就是</strong>：如果要求一个东西能正确回答<em>所有可能的问题</em>，那数学上办不到。</p>
+    <p><strong>打个比方</strong>：数学上可以证明「不存在一支能准确测量宇宙中任何物体温度的温度计」——从绝对零度到恒星核心，没有一根玻璃管能全覆盖。这个结论完全正确，但它<strong>丝毫不影响</strong>你家那支腋下体温计在 35–42 ℃ 这个区间里好用得很。<mark class="key">「一般意义上不可能」和「在你关心的具体场景里不可靠」是两件完全不同的事。</mark></p>
+    <p>而且原论文自己也没有走向虚无：作者同时讨论了「现有各种幻觉缓解手段的机制与效果」——<strong>说明缓解措施在作者看来仍然有价值</strong>。它也没有排除在<strong>特定受限任务</strong>上把幻觉压到零的可能。这就是本章的态度：<strong>承认边界存在，然后在边界内认真干活。</strong></p>
+  </div>
+
+  <h3>本章的五节</h3>
+  <div class="cards">
+    <a class="card" href="./13-1-hallucination.html">
+      <div class="card-num">§ 13.1</div>
+      <h4>幻觉</h4>
+      <p>它不是在骗你，是在「合理地猜」。内在 vs 外在幻觉、OpenAI 的根因研究、为什么 RAG 只能缓解不能根除。</p>
+    </a>
+    <a class="card" href="./13-2-bias.html">
+      <div class="card-num">§ 13.2</div>
+      <h4>偏见与公平性</h4>
+      <p>Gender Shades 的 34.7% 与 0.8%、NISTIR 8280 到底测出了什么、以及「公平性不可能定理」。</p>
+    </a>
+    <a class="card" href="./13-3-privacy-copyright.html">
+      <div class="card-num">§ 13.3</div>
+      <h4>隐私与版权</h4>
+      <p>训练数据提取攻击、五起诉讼的真实状态、EU AI Act 分阶段时间表、中国两部规章。不构成法律建议。</p>
+    </a>
+    <a class="card" href="./13-4-deepfake.html">
+      <div class="card-num">§ 13.4</div>
+      <h4>深度伪造</h4>
+      <p>为什么「检测」这条路天生吃亏、C2PA 2.4 与 SynthID 的溯源思路、以及标识义务什么时候开始管你。</p>
+    </a>
+    <a class="card" href="./13-5-prompt-injection.html">
+      <div class="card-num">§ 13.5</div>
+      <h4>Prompt 注入与安全</h4>
+      <p>OWASP LLM01、间接注入原论文、Anthropic 官方承认「无法根治」的原文、250 份文档的投毒实验。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">「知道边界」是能力，不是悲观</span><span class="v">一个知道模型会在哪儿翻车的人，用 AI 的产出质量远高于一个觉得它无所不能的人。<mark class="key">本章所有内容的落点都是「所以你该怎么做」，不是「所以别用了」。</mark></span></li>
+    <li><span class="k">幻觉是机制的产物，不是道德问题</span><span class="v">模型不会「撒谎」——撒谎需要知道真相并故意说反。OpenAI 那篇 <strong>arXiv 2509.04664</strong>（<em>Why Language Models Hallucinate</em>，2025-09-04，arXiv 预印本）给的解释更朴素：<strong>训练和评测的打分方式奖励「猜」而不奖励「承认不确定」。</strong>就像一场只算对题数、不扣错题分的考试——聪明的考生一定会把所有空都填满。</span></li>
+    <li><span class="k">公平性在数学上无法同时满足所有定义</span><span class="v">这不是工程师偷懒。Kleinberg、Mullainathan 与 Raghavan（<strong>arXiv 1609.05807</strong>，ITCS 2017，<strong>同行评议</strong>）与 Chouldechova（<em>Big Data</em> 期刊 2017 年第 5 卷 153–163 页）各自证明了：<strong>除非预测完美、或者两个群体的基础比率完全相等，几个直觉上都很合理的公平定义在数学上不可能同时成立。</strong>所以「公平」必须先问「你要哪一种公平」。</span></li>
+    <li><span class="k">法律状态四个词要分清</span><span class="v"><strong>审理中 / 部分简易判决 / 上诉中 / 和解结案。</strong>特别提醒两处最常被说错的：<strong>Thomson Reuters v. Ross Intelligence</strong> 地区法院 2025-02-11 就合理使用作出了对原告有利的部分简易判决，但<mark class="key">该案目前在美国第三巡回上诉法院上诉中（案号 No. 25-2153，2026-06-11 已口头辩论，尚未判决）</mark>；<strong>Bartz v. Anthropic</strong> 是<mark class="key">和解结案</mark>（该案 2026-07-20 终止），<strong>不是判决</strong>，和解不产生判例效力。</span></li>
+    <li><span class="k">检测伪造比制造伪造更难</span><span class="v">这是结构性的不对称：造假者只要在<em>某一个</em>检测器上过关就行，检测方却要拦住<em>所有</em>造法。所以业界重心正在从「事后检测」转向「事前溯源」——给真东西盖章，而不是给假东西贴标。<strong>C2PA</strong> 规范截至 2026-08-08 是 <strong>2.4 版</strong>（注意：中文资料里常见的「最新是 2.3」已过时）。</span></li>
+    <li><span class="k">Prompt 注入至今没有根治办法</span><span class="v">这不是我们下的结论，是厂商官方文档自己写的。Anthropic 在 Computer Use 工具文档的安全考量部分写道：<em>In some circumstances, Claude will follow commands found in content even if it conflicts with the user's instructions.</em>（某些情况下 Claude 会照做内容里发现的指令，即使它与用户的指令冲突。）官方给的建议是<strong>隔离</strong>——把模型与敏感数据和敏感操作隔开，而不是承诺修好它。</span></li>
+    <li><span class="k">本章有 16 处「未取得权威来源」</span><span class="v">这些地方正文会明写留白，并尽量说明缺的是什么。<strong>典型的有</strong>：FaceForensics++ 与 DFDC 冠军方案在真实世界数据上的准确率下降幅度、SynthID 官方对水印局限的说明、Getty v. Stability AI 两地案件的最新状态、美国 TAKE IT DOWN Act 是否已生效、OWASP LLM Top 10 的最新版本号。<mark class="key">留白比编一个数字有价值得多。</mark></span></li>
+  </ul>
+
+  <h3>这一章怎么读</h3>
+  <p>五节相互独立，可以按需跳读。但如果你想按「跟自己关系大小」排优先级，建议这个顺序：</p>
+  <p><strong>只读一节的话读 §13.1。</strong>因为幻觉是你每天都会遇到的，而且它的应对方法最具体、最能立刻改变你的使用习惯。<strong>读两节的话加 §13.3。</strong>因为「我输进去的东西会不会被拿去训练」「AI 画的图我能不能商用」这两个问题，几乎每个用 AI 干活的人都会撞上——而这一节能告诉你的最有用的一件事是：<mark class="key">这个问题的答案取决于你用的是消费级产品还是 API，两者的默认策略在官方文档里是明确不同的。</mark></p>
+  <p><strong>如果你在做产品或者写代码，§13.5 是必读。</strong>Prompt 注入是这几年新出现的攻击面，而它跟传统的 SQL 注入有一个致命区别：<strong>SQL 注入可以靠「把数据和指令严格分开」来根治，而大模型的输入里数据和指令天生是同一种东西——都是文本。</strong>这个区别决定了它为什么这么难修。</p>
+  <p><strong>§13.2 建议慢读</strong>，它是全章唯一有大量数字的一节，而这些数字最容易被引错。这一节真正想教的不是记住「34.7%」，而是学会问一句：<strong>这个数字测的是误报率还是漏报率、在哪个数据集上、样本构成是什么。</strong>这一节还专门澄清了一处 NIST 自己出面纠正过的误传。</p>
+
+  <div class="pager">
+    <a class="btn prev" href="./12-5-apps.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 12.5 · 应用与工具层</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./13-1-hallucination.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 13.1 · 幻觉</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · 第 13 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-34"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-34"></script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 13.2 · 偏见与公平性 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-34">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-34">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./13-limits.html">智能篇 · 第 13 章</a>
+      <span class="sep">›</span>
+      <span>§ 13.2</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 13.2 · Section</div>
+    <h1>偏见与公平性</h1>
+    <div class="cn">数据里的老账，模型会照单全收</div>
+  </header>
+
+  <p class="lead">
+    模型没有立场，也没有恶意。但它学的是人写下来的东西，而人写下来的东西里装满了几百年积攒的成见。<mark class="key">这一节要讲清三件事：偏见是怎么在技术层面钻进去的、它在真实系统里被测出了多大、以及一个几乎所有人都没想到的坏消息——「公平」这件事在数学上被证明了无法同时满足所有定义。</mark>本节是全章数字最密集的一节，因此对引用格外苛刻：每个百分数都会写清它测的是<strong>误报率还是漏报率</strong>、在<strong>哪个数据集</strong>上、<strong>样本构成是什么</strong>。这一节还会专门澄清一处 NIST（美国国家标准与技术研究院）自己出面纠正过的流传误读——那处误读在中文互联网上至今仍被大量转述。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧑‍💼 一份「照着老档案学」的招聘经验</div>
+    <p>假设某公司想省事：把过去十年所有录用与拒绝的记录交给一个新来的助理，让他自己看出规律，以后照着筛简历。这套做法听起来非常客观——<strong>不带个人好恶，纯粹从数据里学。</strong></p>
+    <p>但你想想那十年的档案是什么样的。假如那十年里，某个部门几乎只招男性（也许因为当时的主管有偏好、也许因为行业惯例），<mark class="key">那么「男性 = 更可能被录用」这条规律就实实在在写在数据里。</mark>助理不会去追问「这是能力差异还是当年的偏好」，他只看到相关性，于是忠实地把它继承下来。</p>
+    <p>更麻烦的是，你如果明令他「不许看性别」，他也能绕过去：<strong>他会发现某几个大学的毕业生录用率高、某些爱好词组录用率高、某种简历用词录用率高</strong>——而这些特征本身跟性别高度相关。<strong>说白了就是</strong>：删掉「性别」那一栏，并不能删掉数据里关于性别的信息，它藏在其他十几栏里。</p>
+    <p>最后还有一个更隐蔽的问题：<strong>这套系统会自我强化。</strong>它筛掉的人不会进公司，于是不会产生「他其实很优秀」的新证据；它放进来的人产生新数据，进一步印证原来的规律。<strong>相当于</strong>一个只允许自己的判断被证实、不允许被推翻的闭环。</p>
+    <div class="link">→ 这个助理就是本节的主角。三个要点：偏见来自数据不是恶意、删掉敏感字段挡不住它、系统会自我强化。这三点在真实的人脸识别与语言模型里都被实测出来了。</div>
+  </div>
+
+  <h3>「偏见」这个词在技术语境里指什么</h3>
+  <p>日常说「这人有偏见」，指的是态度问题。但在机器学习里，<strong>偏见</strong>（bias）是一个描述性的词，指的是<mark class="key">系统在不同人群之间表现出可测量的、系统性的差异</mark>。注意两个限定词：<strong>可测量</strong>（必须能拿数字说话）和<strong>系统性</strong>（不是偶然波动，是稳定重复出现的）。</p>
+  <p>这个定义有一个很实用的好处：<strong>它把争论从「你是不是坏人」拉回到「这个数字是多少」。</strong><strong>相当于</strong>医院里判断有没有发烧不靠脸色，靠体温计的读数。也正因为如此，本节所有内容都建立在具体的测量结果上。</p>
+  <p>偏见钻进系统的路径大致有四条，为了后面讨论方便，先摆出来：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>路径</th><th>技术名称</th><th>大白话</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>一</strong></td><td>历史偏见（historical bias）</td><td>数据如实记录了一段本身就不公平的历史。<strong>数据没错，世界当时就那样</strong></td><td>照着旧档案学招聘——档案是真的，只是那些年的做法有问题</td></tr>
+        <tr><td><strong>二</strong></td><td>采样偏见（sampling bias）</td><td>某些人群在训练数据里占比太低，模型就没见够他们的样子</td><td><strong>厨师</strong>只练过做川菜，你让他做粤菜，不是他手艺差，是他没见过</td></tr>
+        <tr><td><strong>三</strong></td><td>标注偏见（annotation bias）</td><td>数据是人打的标签，打标签的人带着自己的判断</td><td><strong>考试</strong>阅卷：同一份作文，不同老师给的分不一样</td></tr>
+        <tr><td><strong>四</strong></td><td>部署偏见（deployment bias）</td><td>系统被用在了它没被测试过的场合上</td><td>体温计拿去测洗澡水——工具没坏，是用错了地方</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这四条里，<strong>第二条最容易被误解成第一条</strong>。很多人一看到系统对某个群体表现差，第一反应是「设计者有歧视」。但更常见的真相是<mark class="key">训练集里这个群体的样本太少</mark>——下面 Gender Shades 那份研究给出的数据集构成，恰恰把这一点摆得明明白白。</p>
+
+  <h3>Gender Shades：把「差多少」第一次量出来</h3>
+  <p>这是这个领域最重要的一份工作，也是本节数字最需要引准的地方。</p>
+  <p><strong>出处要写全：</strong>Joy Buolamwini 与 Timnit Gebru，标题 <em>Gender Shades: Intersectional Accuracy Disparities in Commercial Gender Classification</em>，发表于 <strong>PMLR 第 81 卷第 77–91 页，2018 年</strong>，会议是 Conference on Fairness, Accountability and Transparency（2018-02-23/24）。<strong>状态：同行评议会议论文。</strong></p>
+  <p>研究做的事很朴素：找几个商用的「从人脸照片判断性别」的系统，然后按<strong>肤色深浅</strong>和<strong>性别</strong>交叉分成四组，分别测错误率。<mark class="key">关键就在「交叉」这两个字</mark>——如果你只按性别分，或只按肤色分，问题会被平均掉，看不出来。</p>
+  <p>论文原文的数字是：<em>darker-skinned females are the most misclassified group (with error rates of up to 34.7%). The maximum error rate for lighter-skinned males is 0.8%.</em></p>
+  <p>翻成中文并把限定说全：<strong>深色皮肤女性是被误分类最多的一组，错误率最高达 34.7%；而浅色皮肤男性的最大错误率是 0.8%。</strong>请注意原文两处都用了「最高 / 最大」（up to、maximum），<strong>这是上限值，不是平均值</strong>——转述时把「最高达」三个字删掉，就是数字滥用。</p>
+  <p>这两个数字放在一起是什么概念？<strong>34.7% 意味着大约每三张脸就错一张；0.8% 意味着大约每一百二十五张错一张。</strong><strong>打个比方</strong>：同一台<strong>银行</strong>叫号机，对一部分客户几乎从不叫错，对另一部分客户三个人里叫错一个——你会说这台机器「准确率还不错」吗？平均下来它也许确实不错，<mark class="key">但没有人是「平均」的，每个人都属于某一组。</mark></p>
+  <p><strong>然后是最能解释成因的那组数字</strong>，也是这篇论文最容易被忽略的贡献：它去查了当时常用的人脸数据集的构成，结果是——<strong>IJB-A 数据集中浅肤色主体占 79.6%，Adience 数据集中占 86.2%。</strong></p>
+  <p><strong>换成大白话：训练和评测用的照片里，将近八成到近九成是浅肤色的人。</strong>那么系统对深肤色人群表现差，就不需要用「设计者歧视」来解释了——<strong>相当于</strong>一个<strong>厨师</strong>学徒期间九成时间在做一种菜，你让他做另一种，结果自然差。这就是前面表里的<strong>采样偏见</strong>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Gender Shades 的关键数字</th><th>准确表述</th><th>常见的错误转述</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>34.7%</strong></td><td>深色皮肤女性组<strong>最高</strong>错误率（up to）</td><td>「深肤色女性的错误率是 34.7%」——漏掉「最高」，把上限说成常态</td></tr>
+        <tr><td><strong>0.8%</strong></td><td>浅色皮肤男性组的<strong>最大</strong>错误率（maximum）</td><td>「浅肤色男性错误率仅 0.8%」——方向对，但同样漏了「最大」这个限定</td></tr>
+        <tr><td><strong>79.6% / 86.2%</strong></td><td>IJB-A / Adience 两个数据集中<strong>浅肤色主体的占比</strong></td><td>常被完全忽略。<mark class="key">但这恰恰是解释前两个数字为什么会那样的关键</mark></td></tr>
+        <tr><td><strong>测的是什么任务</strong></td><td><strong>商用性别分类</strong>（从人脸照片判断性别），不是「人脸识别身份」</td><td>混为一谈成「人脸识别错误率」——这是两个不同任务，见下一节</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一把只在温带校准过的体温计</span>
+    <p>把上面这些数字合起来，可以用一个很具体的东西来理解：<strong>一支只在温带地区校准过的体温计。</strong></p>
+    <p>厂家在一个四季温和的城市做了全部测试，读数极准，误差不到千分之一。产品上市，卖到全世界。然后在极寒地区和酷热地区，医生开始报告读数不对。<mark class="key">厂家有歧视寒带的人吗？显然没有。他们只是从来没在那些条件下测过。</mark></p>
+    <p>这个比方能把三件事一次讲清：</p>
+    <p><strong>第一，「平均准确率」会掩盖问题。</strong>如果全世界九成销量在温带，那这支体温计的「总体准确率」会非常漂亮。<strong>说白了就是</strong>：把多数人的好成绩和少数人的坏成绩一平均，坏成绩就消失了。这正是 Gender Shades 要按「肤色 × 性别」交叉分组的原因——<strong>不交叉分组，34.7% 这个数就永远不会浮出水面。</strong></p>
+    <p><strong>第二，修的办法很朴素：去缺的地方补测。</strong>不需要什么高深技术，就是把没测过的条件补上、把样本补齐。这也是为什么「数据集构成」这件看起来枯燥的事，在公平性问题上比任何算法都重要。</p>
+    <p><strong>第三，责任不因为「无意」而消失。</strong>厂家可以诚实地说「我们没想到」，但那支在寒带读错的体温计仍然会导致误诊。<strong>本质上就是</strong>：解释成因是为了知道该怎么修，不是为了免责。</p>
+  </div>
+
+  <h3>NISTIR 8280：一份被大量误引的官方报告</h3>
+  <p>接下来这一节是全节最需要仔细读的。因为这份报告的结论在中文互联网上被引用得极多，而<mark class="key">引对的比例相当低——而且 NIST 自己出面纠正过一次。</mark></p>
+  <p><strong>先把出处摆全：</strong>报告编号 <strong>NISTIR 8280</strong>，标题 <em>Face Recognition Vendor Test (FRVT) Part 3: Demographic Effects</em>（人脸识别厂商测试第三部分：人口统计学效应），发布时间 <strong>2019 年 12 月</strong>，DOI 为 <strong>10.6028/NIST.IR.8280</strong>。发布方是 <strong>NIST</strong>（National Institute of Standards and Technology，美国国家标准与技术研究院）——这是美国商务部下属的官方标准机构，不是大学实验室也不是厂商。</p>
+  <p><strong>规模值得单独说，因为它决定了这份报告的分量：</strong>测了 <strong>1827 万张图像、849 万个人</strong>，覆盖来自 <strong>99 家开发者的 189 个算法</strong>。<strong>换算成能感知的量</strong>：849 万人差不多是一座超大城市的常住人口——<strong>相当于</strong>把整座城市每个人的照片都拿去过了一遍安检机，而且是用 189 台不同厂牌的安检机各过一遍。这在同类研究里是极大的规模。</p>
+  <p><strong>现在是最关键的一步：搞清它测的是哪种错。</strong>识别系统会犯两种截然不同的错，混淆这两种错是所有误引的源头。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>错误类型</th><th>技术名</th><th>大白话</th><th>安检口类比</th><th>后果落在谁身上</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>误报</strong></td><td>false positive<br>（假阳性）</td><td>把两个<strong>不同</strong>的人判成同一个人</td><td><strong>安检</strong>把无辜的人认成通缉犯，拦下来盘问</td><td><strong>被误认的普通人。</strong>这类错的社会代价通常更严重——你会被莫名带走问话</td></tr>
+        <tr><td><strong>漏报</strong></td><td>false negative<br>（假阴性）</td><td>把<strong>同一个</strong>人判成两个人，认不出来</td><td>门禁刷脸打不开门，你得刷第二次</td><td><strong>系统的合法用户。</strong>后果通常是不方便，而不是被冤枉</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>NISTIR 8280 报告里最核心的一句结论，原文是：</strong><em>false positive differentials are much larger than those related to false negatives.</em>（误报率的群体间差异远大于漏报率的差异。）</p>
+  <p>紧接着的量化表述是：<em>false positive rates often vary by factors of 10 to beyond 100 times.</em>（误报率在群体间的差异往往达到 10 倍到 100 倍以上。）</p>
+  <p><mark class="key">请注意：10 到 100 倍这个数字，说的是「误报率」的倍数差，不是「整体错误率」，更不是「准确率」。</mark>这个区别不是学术洁癖——它决定了这份报告到底在说什么。<strong>说白了就是</strong>：报告说的是「不同群体被认错成别人的概率差很多倍」，而不是「某些群体的人脸就是识别不出来」。</p>
+  <p>报告的其他几条具体结论，同样值得逐条准确记住：</p>
+  <ul class="keylist">
+    <li><span class="k">误报率最高与最低的群体</span><span class="v">误报率在<strong>西非、东非与东亚</strong>面孔上最高，在<strong>东欧</strong>面孔上最低。</span></li>
+    <li><span class="k">一处极重要的反转 ★</span><span class="v">报告原文写道：<em>with a number of algorithms developed in China this effect is reversed.</em>（对于一批在中国开发的算法，这一效应发生了反转。）<mark class="key">也就是说，这些算法在东亚面孔上的误报率反而低。</mark><strong>这一条极少被中文报道引用，但它恰恰是最有解释力的一条</strong>——它说明问题不是「某种脸天生难识别」，而是<strong>训练数据里有谁</strong>。跟 Gender Shades 那两个数据集构成数字指向的是同一个结论。</span></li>
+    <li><span class="k">性别差异</span><span class="v">报告观察到 <em>false positives to be higher in women than men</em>（女性的误报率高于男性）。同样是<strong>误报</strong>这一项。</span></li>
+  </ul>
+  <p><strong>那处「中国算法反转」的发现，值得再用一个比方讲透。</strong><strong>相当于</strong>两个<strong>翻译</strong>：一个在英语环境长大的译员翻英文小说更顺，一个在中文环境长大的译员翻中文小说更顺。<mark class="key">你不会说「中文天生比英文难翻」，你会说「看这个译员泡在哪种语言里」。</mark>识别算法在不同面孔上的表现差异，本质上就是这么回事——<strong>反映的是训练数据的构成，不是人脸本身的性质。</strong></p>
+
+  <h3>NIST 自己出面纠正过的一处误引</h3>
+  <p>这一小节单独拎出来讲，因为它是本节最有价值的内容之一：<strong>一个官方机构主动指出「我们的研究被引用错了」。</strong></p>
+  <p>NISTIR 8280 里有这样一句话：<em>Those studies did not evaluate face recognition algorithms, yet the results have been widely cited to indict their accuracy.</em></p>
+  <p>翻成中文：<strong>「那些研究并未评估人脸识别算法，然而其结果却被广泛引用来指控人脸识别算法的准确性。」</strong></p>
+  <p>这句话在说什么？<mark class="key">有一批研究测的是「性别分类」这类任务（比如从照片判断性别），而不是「人脸识别」（判断这张脸是谁）。但它们的结论被大量转述成了对人脸识别系统准确率的指控。</mark></p>
+  <p><strong>这两件事的区别有多大？打个比方：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>任务</th><th>要回答的问题</th><th>生活类比</th><th>难度性质</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>性别分类</strong>（Gender Shades 测的）</td><td>「照片里这个人是男是女？」</td><td>门口的保安看一眼就说「这是位女士」——<strong>只做归类，不认识具体是谁</strong></td><td>把人归进两三个大类。类别少、边界模糊、还牵涉到「性别该怎么定义」这个本身有争议的问题</td></tr>
+        <tr><td><strong>人脸识别 / 比对</strong>（NISTIR 8280 测的）</td><td>「这张脸和那张脸是同一个人吗？」或「这张脸在库里是谁？」</td><td><strong>小区</strong>门禁刷脸开门；或者把一张照片跟一整个数据库比一遍</td><td>做一对一或一对多的身份匹配。类别是「库里有几个人」那么多</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>所以正确的说法应该分成两句：</p>
+  <ul class="keylist">
+    <li><span class="k">关于性别分类</span><span class="v">Gender Shades（PMLR 81:77-91, 2018，同行评议）测的是<strong>商用性别分类</strong>系统，结论是深肤色女性组错误率<strong>最高达</strong> 34.7%，浅肤色男性组<strong>最大</strong> 0.8%。</span></li>
+    <li><span class="k">关于人脸识别</span><span class="v">NISTIR 8280（NIST 官方，2019-12）测的是<strong>人脸识别</strong>，结论是<strong>误报率</strong>的群体间差异往往达 <strong>10 到 100 倍以上</strong>，而<strong>漏报率的差异要小得多</strong>；且部分中国开发的算法在东亚面孔上呈现相反的方向。</span></li>
+  </ul>
+  <p><strong>把这两句混成一句，就会得到那个流传极广的错误说法：</strong>「NIST 研究证明人脸识别对某些人群的错误率高出 100 倍」。<mark class="key">错在两处：一是「错误率」应为「误报率」，二是把两类研究的结论混在了一起——而后者正是 NIST 自己出面纠正的那件事。</mark></p>
+  <p><strong>这里有一个方法论上的收获，比记住这些数字更重要：</strong>看到任何关于「AI 系统对某群体不准」的说法，都该问三个问题——<strong>测的是哪个任务？哪种错误？在哪个数据集上？</strong>这三问能挡掉绝大多数误引。<strong>相当于</strong>去<strong>医院</strong>看到一张化验单，你得先看清这栏测的是白细胞还是红细胞、参考区间是多少，才能判断高不高。</p>
+
+  <h3>语言模型里的偏见：从词向量到问答基准</h3>
+  <p>上面讲的都是图像。文字这边同样有实测结果，而且更早。</p>
+  <p><strong>最经典的一项是 2016 年的词向量研究。</strong>出处 <strong>arXiv 1607.06520</strong>，作者 Bolukbasi 等，标题 <em>Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings</em>（男人对应程序员，那女人对应家庭主妇？——为词嵌入去偏），发布 2016-07-21，<strong>发表于 NeurIPS 2016，经同行评议</strong>。</p>
+  <p>先解释术语。<strong>词嵌入</strong>（word embedding）说白了就是<strong>把每个词变成一串数字（一个坐标），让意思相近的词坐标也相近。</strong>这在 §9.2 讲过；如果印象模糊了，可以这样想：<strong>相当于给每个词在一张巨大的地图上安排一个位置，「猫」和「狗」离得近，「猫」和「螺丝刀」离得远。</strong></p>
+  <p>这篇论文原文的表述是：<em>We show that even word embeddings trained on Google News articles exhibit female/male gender stereotypes to a disturbing extent. Geometrically, gender bias is first shown to be captured by a direction in the word embedding.</em>（我们表明，即便是在 Google 新闻文章上训练出的词嵌入，也在令人不安的程度上呈现出女性 / 男性的性别刻板印象。从几何上看，性别偏见首先被证明可以由词嵌入空间中的一个方向所捕捉。）</p>
+  <p><strong>「偏见是空间里的一个方向」这句话很值得停下来体会。</strong><strong>换成大白话</strong>：在这张词语地图上，从「他」走到「她」是一个特定的走法（一个方向加一段距离）。而研究发现，<mark class="key">如果你从「程序员」出发、按同样的走法走一遍，会走到「家庭主妇」附近。</mark>这不是研究者硬凑的，是数据里的统计规律自己长成这样。</p>
+  <p>论文的另外两句也重要：<em>Second, gender neutral words are shown to be linearly separable from gender definition words in the word embedding. Using these properties, we provide a methodology for modifying an embedding to remove gender stereotypes.</em>（其次，性别中立词在词嵌入中被证明可与性别定义词线性分离。利用这些性质，我们给出了一套修改嵌入以移除性别刻板印象的方法。）<strong>也就是说：这篇论文不只指出问题，还给了一套去偏的办法。</strong></p>
+  <p>然后是几个专门用来测大模型偏见的基准，同样要把状态标清楚：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>基准</th><th>arXiv 编号</th><th>同行评议状态</th><th>测什么</th><th>关键结论（含限定）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>BBQ</strong><br>（Bias Benchmark for QA）</td><td>2110.08193</td><td><strong>ACL 2022 Findings · 是</strong></td><td>问答场景下的社会偏见：给一段信息不足的情境，看模型会不会靠刻板印象补空</td><td>原文：<em>Models often rely on stereotypes when the context is under-informative</em>；且<strong>当正确答案与社会偏见方向一致时，准确率最多高出 3.4 个百分点</strong>；在<strong>针对性别</strong>的样例上，多数被测模型的这一差距<strong>扩大到 5 个百分点以上</strong></td></tr>
+        <tr><td><strong>WinoBias</strong></td><td>1804.06876</td><td><strong>NAACL 2018 · 是</strong></td><td>指代消解：句子里的「他 / 她」指的是哪个人</td><td>原文：一个规则式系统、一个特征式系统和一个神经系统<strong>都</strong>把带性别的代词更准确地连到「符合刻板印象」的实体上，<strong>F1 分数平均相差 21.1</strong></td></tr>
+        <tr><td><strong>StereoSet</strong></td><td>2004.09456</td><td><strong>arXiv 预印本</strong>（本文未取得其同行评议记录）</td><td>刻板印象倾向的度量</td><td>因状态为预印本，本文只列出其存在，<strong>不引用具体数字</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>BBQ 那个「3.4 个百分点」值得掰开讲</strong>，因为它的设计很巧。它给模型一段<strong>信息不足</strong>的情境（比如描述了两个人，但没说谁做了那件事），然后问一个只能靠猜的问题。<mark class="key">正确答案在这种情况下应该是「无法确定」。</mark>结果发现：<strong>当「符合刻板印象的那个答案」恰好是正确答案时，模型答对的比例更高。</strong></p>
+  <p><strong>打个比方</strong>：这就像一个学生做阅读理解，遇到没交代清楚的地方，他不写「文中未提及」，而是按自己的成见填一个。<strong>而这个成见有时候恰好蒙对了，有时候恰好蒙错了</strong>——3.4 个百分点这个差距，量的就是这个成见有多强。</p>
+  <p><strong>WinoBias 的 21.1 分（F1）差距更直观。</strong>F1 是衡量这类任务好坏的一个综合分数，满分 100。21.1 分的差距<strong>相当于</strong>同一个学生做两套难度相同的卷子，一套考 80、另一套考 59——<mark class="key">唯一的区别只是后一套里的角色安排「不符合刻板印象」。</mark>而且原文特别指出，规则式、特征式、神经网络式<strong>三种技术路线全都如此</strong>，说明这不是某一种算法的毛病。</p>
+  <h3>最反直觉的一件事：公平性在数学上无法同时满足</h3>
+  <p>到这里你可能已经有一个念头：<strong>既然能测出来，那把它调平不就完了？</strong></p>
+  <p>这个念头非常自然，但它撞上了本节最硬的一堵墙。<mark class="key">有两篇独立的工作分别证明了：几个直觉上都很合理的「公平」定义，在数学上不可能同时满足——除非满足两个极苛刻的条件。</mark>这不是「工程上难」，是「数学上不行」。</p>
+  <p><strong>第一篇：</strong>Jon Kleinberg、Sendhil Mullainathan 与 Manish Raghavan，标题 <em>Inherent Trade-Offs in the Fair Determination of Risk Scores</em>（风险评分之公平判定中的固有取舍），<strong>arXiv 1609.05807</strong>，发布 2016-09-19，<strong>发表于 ITCS 2017（Innovations in Theoretical Computer Science），经同行评议</strong>。</p>
+  <p><strong>第二篇：</strong>Alexandra Chouldechova，标题 <em>Fair Prediction with Disparate Impact: A Study of Bias in Recidivism Prediction Instruments</em>（具有差别性影响的公平预测：再犯预测工具中的偏见研究），发表于 <em>Big Data</em> 期刊 <strong>2017 年第 5 卷第 153–163 页</strong>。</p>
+  <p><strong>两篇的结论方向一致，而且是各自独立得出的</strong>——这一点很重要，独立复现是结论可靠性的重要证据。核心结论可以概括为：<strong>当两个群体的「基础比率」不同、且预测不完美时，若干种公平定义无法同时成立。</strong></p>
+  <p>先把两个术语翻译过来，不然这句话读不懂：</p>
+  <ul class="keylist">
+    <li><span class="k">基础比率（base rate）</span><span class="v"><strong>说白了就是</strong>：在这个群体里，你要预测的那件事本来发生的比例。<strong>打个比方</strong>：某种病在 A 城的发病率是千分之一，在 B 城是百分之一，这两个数就是两地的基础比率。<mark class="key">注意：基础比率的差异本身可能就是历史不公平的产物</mark>，但它是<em>数据里的客观数字</em>。</span></li>
+    <li><span class="k">预测不完美</span><span class="v">指预测会出错。<strong>这几乎是所有现实预测的前提</strong>——只有在「百分之百准确」这种理想情形下，冲突才会消失。</span></li>
+  </ul>
+  <p>那么冲突的到底是哪几个定义？下面用一个统一的场景来讲，会比抽象定义好懂得多。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>公平定义</th><th>它要求什么</th><th>换成大白话</th><th>听起来合理吗</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>统计均等</strong><br>（statistical parity）</td><td>两个群体被判为「高风险」的<em>比例</em>相同</td><td>两组人里被标红的人数占比要一样</td><td>非常合理。「凭什么你们组被标红的多」</td></tr>
+        <tr><td><strong>均等化几率</strong><br>（equalized odds）</td><td>在<em>实际结果相同</em>的人里面，两组被判错的比例相同</td><td>同样是「实际没事」的人，两组被误标红的比例要一样；同样是「实际有事」的人，两组被漏掉的比例也要一样</td><td>非常合理。「同样清白的人，凭什么我们组更容易被冤枉」</td></tr>
+        <tr><td><strong>预测均等</strong><br>（predictive parity / PPV parity）</td><td>被判为「高风险」的人里面，两组<em>真的出事</em>的比例相同</td><td>标红这个标签，在两组身上的<strong>含金量要一样</strong>——不能对一组来说标红八成会出事，对另一组只有三成</td><td>非常合理。「如果标签对不同人意思不一样，那这个标签就是骗人的」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">三条都合理，但数学上你最多只能挑其中一部分——除非预测完美，或者两组基础比率完全相等。</mark>这两个例外条件在现实中基本都不成立。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 医院分诊台的三种「公平」</span>
+    <p>把这个定理搬到<strong>医院</strong>分诊台上，会立刻变得非常好懂。</p>
+    <p>假设分诊台有一个筛查工具，给每个来的病人打一个「疑似重症」的标记，标了的立刻送急救区。现在有两个片区的居民，<strong>由于年龄结构不同，A 片区居民的重症实际发生率是 2%，B 片区是 10%</strong>——这就是「基础比率不同」。而筛查工具当然不完美，会有误标和漏标。</p>
+    <p>现在三位家属分别来提要求，<strong>而他们每一位的要求听起来都完全正当</strong>：</p>
+    <p><strong>家属甲说：</strong>「两个片区被送进急救区的比例应该一样，凭什么 B 片区送进去的人多得多？」——这是<strong>统计均等</strong>。但请注意：B 片区实际重症率本来就高五倍，硬把送进去的比例压平，等于<mark class="key">把 B 片区一部分真的重症病人拦在门外</mark>。</p>
+    <p><strong>家属乙说：</strong>「同样是最后确认没事的人，两个片区被误送急救区的比例应该一样，别让我们片区的人白挨一趟。」——这是<strong>均等化几率</strong>。合理，但它管的是「同样结果的人之间」，跟甲的要求算的不是同一件事。</p>
+    <p><strong>家属丙说：</strong>「被标记为疑似重症这件事，在两个片区应该意味着同样的事。不能在 B 片区标了八成真有事，在 A 片区标了只有两成真有事——那这个标记对 A 片区就是在制造恐慌。」——这是<strong>预测均等</strong>。也完全合理。</p>
+    <p><strong>结果是：只要两个片区的实际发生率不同，而筛查工具又不完美，你就没法让甲乙丙三个人同时满意。</strong>这不是分诊台态度不好，也不是工具做得糙。<strong>本质上就是</strong>算术上办不到——按下一头，另一头必然翘起来。</p>
+    <p><mark class="key">所以「让 AI 变公平」这句话，在技术上是一个没写完的句子。</mark>完整的句子必须是：「在这个具体场景里，我们选择优先保证哪一种公平，并且明确说出为此牺牲了哪一种。」<strong>这是一个价值判断，必须由人来做、公开地做，而不是丢给算法。</strong></p>
+  </div>
+
+  <h3>为什么「删掉敏感字段」不管用</h3>
+  <p>还有一个非常普遍的直觉解法：<strong>既然怕它歧视，那就别让它看见性别、种族、年龄不就行了？</strong></p>
+  <p>这个做法有个名字叫<strong>「无意识公平」</strong>（fairness through unawareness），<strong>说白了就是「不看就不会偏」</strong>。它在实践中基本无效，原因在开篇那个招聘助理的故事里已经埋了：<mark class="key">敏感信息并不只住在那一栏里，它散布在其他几十栏里。</mark></p>
+  <p>这类替身特征有个术语叫<strong>代理变量</strong>（proxy variable），<strong>其实就是</strong>「虽然不是那个东西本身，但跟它高度相关、可以顶替它」的特征。<strong>打个比方</strong>：</p>
+  <ul class="keylist">
+    <li><span class="k">你不写年龄，但写了毕业年份</span><span class="v">毕业年份基本可以反推年龄，误差就那么几年。<strong>相当于</strong>不告诉别人你几岁，但告诉他你是哪年上小学的。</span></li>
+    <li><span class="k">你不写地址，但写了通勤时长和常用地铁站</span><span class="v"><strong>地铁</strong>站名几乎等于居住区域，而居住区域在很多城市与收入、族群高度相关。</span></li>
+    <li><span class="k">你不写性别，但写了名字、爱好、社团经历</span><span class="v">这些特征各自都跟性别相关，合起来的预测力可能比直接给性别还强。</span></li>
+    <li><span class="k">你不写收入，但写了手机型号与购物平台</span><span class="v">这在推荐与风控系统里是老套路了。<strong>本质上就是</strong>：消费痕迹是收入的影子。</span></li>
+  </ul>
+  <p>所以正确的做法反而是反直觉的：<mark class="key">你必须收集并保留敏感属性，才有可能测出偏见有多大。</mark>因为要算「不同群体之间差多少」，你就得知道谁属于哪个群体。<strong>相当于</strong>医院要研究某种药对老年人是否有额外副作用，就必须记录患者年龄——把年龄那栏删掉，副作用不会消失，只会变成看不见。</p>
+  <p>这里当然有一个真实的张力：<strong>收集敏感属性本身有隐私风险</strong>（这点 §13.3 会专门讲）。这两件事确实互相拉扯，没有免费的解法。<strong>但至少要明白一点：「不看」不等于「公平」，它只等于「测不出来」。</strong></p>
+
+  <h3>那到底能做什么：一份务实清单</h3>
+  <p>讲了半节的坏消息，现在给能落地的部分。这些做法都不需要你是算法工程师。</p>
+  <ul class="keylist">
+    <li><span class="k">一 · 按人群分组看指标，别只看平均值</span><span class="v">这是从 Gender Shades 学到的最重要一课：<strong>只看总体准确率，会把少数群体的坏成绩平均掉。</strong>而且要像 Gender Shades 那样做<strong>交叉分组</strong>（比如肤色 × 性别），因为单维度分组同样会掩盖问题。<mark class="key">交叉这一步是那篇论文最大的方法论贡献。</mark></span></li>
+    <li><span class="k">二 · 先说清你要哪一种公平，并写下来</span><span class="v">既然三种公平不能同时满足，那就必须<strong>公开选一个</strong>，并说明为什么在这个场景里它更重要，牺牲了哪个。<strong>相当于</strong>装修时预算有限，必须公开决定「钱先花在防水还是花在柜子上」——含糊过去只会到时候扯皮。</span></li>
+    <li><span class="k">三 · 分清误报和漏报，看哪种错更伤人</span><span class="v">这是 NISTIR 8280 教的：<strong>两种错的社会代价往往极不对称。</strong>安检把无辜者当通缉犯（误报）和门禁认不出你（漏报）显然不是一个量级的事。<strong>所以先问：在我这个场景里，哪一种错更不可接受？</strong></span></li>
+    <li><span class="k">四 · 查数据集构成，这一步最朴素也最有效</span><span class="v">IJB-A 的 79.6%、Adience 的 86.2% 之所以重要，是因为它们直接指出了修的方向。<strong>说白了就是</strong>：先看看训练和测试用的样本里各类人各占多少，缺的地方补上。</span></li>
+    <li><span class="k">五 · 高风险决策一律保留人工复核与申诉通道</span><span class="v">涉及录用、贷款、医疗、司法这类<strong>会实质影响一个人生活</strong>的场景，模型的输出只能是参考项，<mark class="key">而且必须有一条让人能问「为什么」并要求重审的路。</mark>这条比任何技术手段都重要，因为它承认了一件事：系统一定会有错，所以必须给错误留出纠正的出口。</span></li>
+    <li><span class="k">六 · 别把 benchmark 分数当成「已经公平了」</span><span class="v">BBQ、WinoBias 这类基准测的是<strong>特定形式的偏见</strong>，在某个基准上分高，不代表在你的实际场景里没问题。<strong>相当于</strong>体检各项正常，不代表你身体没任何问题——只代表这些项目正常。</span></li>
+    <li><span class="k">七 · 用你自己场景的数据做一次抽样测试</span><span class="v">这一条最容易被忽略，却往往最有用：<strong>拿你实际业务里的真实样例，人工标一小批，按人群分组看结果。</strong>几百条样本就能暴露不少问题，成本远低于事后返工。</span></li>
+  </ul>
+  <p><strong>如果这七条只能记两条：记第一条和第五条。</strong>一条让你看得见问题（分组看、别看平均），一条给出错留下退路（人工复核与申诉）。</p>
+
+  <h3>「放大」不是修辞：为什么模型可能比数据更偏</h3>
+  <p>很多介绍会说「模型会放大数据里的偏见」。这句话经常被当成一句情绪化的控诉，但它有具体的机制，值得说清楚。</p>
+  <p>第一个机制来自<strong>模型的工作方式本身</strong>：它要在每一步选一个最可能的输出。<mark class="key">而「选最可能的那个」这个动作，本身就会把「多数」变成「全部」。</mark></p>
+  <p><strong>打个比方</strong>：假设某个岗位在历史数据里 70% 是男性、30% 是女性。这是一个有倾斜但仍然混合的分布。现在让模型「生成一张这个岗位的从业者照片」，它每次都倾向于挑最可能的那一类——<strong>结果生成一百张，可能九十几张都是男性</strong>。数据是七三，输出成了九一。<strong>说白了就是</strong>：把「多数票」当成「唯一答案」，多数就被四舍五入成了全体。</p>
+  <p><strong>相当于</strong>一家<strong>餐厅</strong>做菜单调研，发现 60% 的人偏好辣、40% 偏好清淡，于是把菜单改成全是辣菜——理由是「按多数人的口味」。这个决策在每一道菜上都「符合多数」，但合起来的结果是那 40% 的人完全没得选了。</p>
+  <p>第二个机制是<strong>反馈循环</strong>（feedback loop），这个在开篇那个招聘助理的故事里已经出现过：<strong>系统的输出会变成下一轮的输入。</strong></p>
+  <p>展开来说：如果一个筛选系统倾向于拒绝某类候选人，那这些人就不会进入组织，于是<mark class="key">永远不会产生「他们其实干得很好」这类反证数据</mark>；而被放进来的人产生的正面记录，会进一步加固原来的规律。<strong>本质上就是</strong>一个只收集支持自己的证据、系统性屏蔽反证的闭环。</p>
+  <p><strong>这个循环在生活里有个精确的对应：</strong>某条<strong>公交</strong>线路因为客流少而减少班次，班次一少乘客更不愿等，客流进一步下降，于是继续减班——最后线路停运。<strong>整个过程里每一步决策都「有数据支持」，但数据本身是被前一步决策塑造出来的。</strong>这是本节最需要警惕的一类问题，因为它不会在任何单次的准确率测试里暴露出来，只在长期趋势里体现。</p>
+  <p><strong>对策也是相应的：</strong>凡是会影响后续数据生成的系统，都要人为留出「探索」的口子——比如定期随机抽一部分被系统拒掉的样本做人工复核，看看有没有被冤枉的。<strong>相当于</strong>质检时不光抽检合格品，也要抽检被判为不合格的那一堆，才能知道判废的标准有没有偏。</p>
+
+  <h3>一个容易被忽略的维度：偏见有很强的语言和文化属性</h3>
+  <p>前面引的研究基本都是英文语境下做的。这里必须诚实地指出一件事：<mark class="key">本节引用的 Gender Shades、BBQ、WinoBias、词嵌入研究，全部是围绕英语与美国社会语境构建的。</mark>它们测出的偏见维度（比如种族划分方式、性别刻板印象的具体内容）不能直接搬到中文语境。</p>
+  <p><strong>为什么不能直接搬？举几个具体的差别就明白了：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">语法结构不同，测法就得不同</span><span class="v">WinoBias 测的是英文里的 he / she 指代谁。<strong>但中文口语里第三人称的「他 / 她」发音完全相同，书面上才区分</strong>，而且中文经常直接省略主语。<strong>说白了就是</strong>：同一套测题在中文里不一定测得出同一个东西，甚至可能压根不成立。</span></li>
+    <li><span class="k">敏感维度的构成不同</span><span class="v">美国语境里最受关注的分组维度和中文语境里人们实际关心的维度（比如地域、城乡、口音、学校层次）并不重合。<strong>照搬别人的分组维度，可能测了一堆不痛不痒的东西，漏掉真正要紧的。</strong></span></li>
+    <li><span class="k">同一个词的褒贬色彩不同</span><span class="v">刻板印象是通过具体词语承载的，而词语的色彩高度依赖文化。<strong>相当于</strong>翻译里的老问题：字面对得上，味道完全不同。</span></li>
+  </ul>
+  <p><strong>所以这里要给一个明确的留白声明：本文未取得针对中文语境的、经同行评议的大规模偏见测量报告。</strong>这不是说这类研究不存在，而是本次核实（2026-08-08）没有取得可靠出处，<mark class="key">因此本节不给任何关于中文模型偏见程度的数字</mark>。这也是本站的一贯做法：宁可留白，不用记忆或传闻填补。</p>
+  <p><strong>但这个留白本身有一个可操作的结论：</strong>如果你在中文场景里做产品，<strong>不要指望现成的英文基准能替你把关。</strong>前面清单里的第七条（拿自己场景的真实样例抽测一批）在这种情况下不是可选项，而是唯一可靠的办法。<strong>相当于</strong>一台仪器只在别的国家做过校准，你要用在本地，就得自己再校一次。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="根据 Kleinberg 等（arXiv 1609.05807, ITCS 2017）与 Chouldechova（Big Data, 2017）的结论，下面哪种说法最准确？"
+       data-opts="只要算法设计得足够好，可以同时在所有公平性指标上达到最优|多个直觉上合理的公平性定义在数学上不可能同时满足，除非预测完美或两组基础比率完全相等|公平性问题只存在于人脸识别，语言模型没有|删掉性别、种族等敏感字段就可以做到公平"
+       data-answer="1"
+       data-explain="这是一个数学上的不可能性定理，不是工程上的取舍难题。两篇工作各自独立证明：当两个群体的基础比率不同、且预测不完美时，统计均等、均等化几率、预测均等这几个定义无法同时成立。所以「让 AI 公平」是一个没写完的句子，完整的说法必须是「我们在这个场景里优先保证哪一种公平，为此牺牲了哪一种」——这是必须由人公开做出的价值判断。顺带排除最后一项：删掉敏感字段属于「无意识公平」，代理变量（毕业年份代年龄、地铁站代居住区）会让敏感信息照样进来，而且删了以后你连偏见有多大都测不出来。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节的收束</span>
+    <p><strong>技术语境里的「偏见」是描述性的：系统在不同人群间表现出可测量的、系统性的差异。</strong>它进入系统有四条路：历史偏见（数据如实记录了不公平的历史）、采样偏见（某群体样本太少）、标注偏见（打标签的人带着判断）、部署偏见（用在了没测过的场合）。<mark class="key">最常见的真相是第二条，不是「设计者有歧视」。</mark></p>
+    <p><strong>Gender Shades（PMLR 81:77-91, 2018，同行评议）</strong>测的是<strong>商用性别分类</strong>：深肤色女性组错误率<strong>最高达 34.7%</strong>，浅肤色男性组<strong>最大 0.8%</strong>（两处原文都是 up to / maximum，是上限不是均值）。同篇给出的数据集构成——<strong>IJB-A 浅肤色主体占 79.6%、Adience 占 86.2%</strong>——才是解释成因的钥匙。方法论贡献是<strong>交叉分组</strong>：不按「肤色 × 性别」交叉切，34.7% 永远不会浮出水面。</p>
+    <p><strong>NISTIR 8280（NIST 官方，2019-12，DOI 10.6028/NIST.IR.8280）</strong>规模是 <strong>1827 万张图像 / 849 万人 / 99 家开发者的 189 个算法</strong>。核心结论是<strong>误报率的群体间差异远大于漏报率</strong>，<strong>误报率往往差 10 倍到 100 倍以上</strong>；西非、东非、东亚面孔误报最高，东欧最低；<mark class="key">但一批中国开发的算法这一效应反转</mark>——这条证明了问题在数据构成而不在人脸本身；另观察到女性误报高于男性。</p>
+    <p><strong>NIST 自己纠正过一处误引</strong>，原文：<em>Those studies did not evaluate face recognition algorithms, yet the results have been widely cited to indict their accuracy.</em><strong>「性别分类」和「人脸识别」是两个任务，不能混引。</strong>看到任何「AI 对某群体不准」的说法，先问三句：<strong>哪个任务、哪种错误、哪个数据集。</strong></p>
+    <p><strong>文字这边同样有实测。</strong>词嵌入研究（arXiv 1607.06520，NeurIPS 2016，同行评议）发现性别偏见可以被空间里的<strong>一个方向</strong>捕捉，且给出了去偏方法。BBQ（arXiv 2110.08193，ACL 2022 Findings）——上下文信息不足时模型依赖刻板印象，答案与社会偏见一致时准确率<strong>最多高 3.4 个百分点</strong>，性别类样例上<strong>扩大到 5 个百分点以上</strong>。WinoBias（arXiv 1804.06876，NAACL 2018）——三种技术路线全都把代词更准地连到符合刻板印象的实体，<strong>F1 平均差 21.1</strong>。StereoSet（arXiv 2004.09456）为预印本，本文只列存在、不引数字。</p>
+    <p><strong>最硬的一条：公平在数学上不能全都要。</strong>Kleinberg 等（arXiv 1609.05807，ITCS 2017，同行评议）与 Chouldechova（<em>Big Data</em> 2017, 5:153-163）各自独立证明——基础比率不同 + 预测不完美时，统计均等、均等化几率、预测均等无法同时成立。<mark class="key">所以「让 AI 公平」必须补完成「优先哪一种、牺牲哪一种」，这是人要公开做的价值判断。</mark></p>
+    <p><strong>能做的事：</strong>按人群<strong>交叉</strong>分组看指标别看平均；明确写下你选哪种公平；分清误报与漏报哪个更伤人；查数据集构成并补齐；高风险决策<strong>必须</strong>保留人工复核与申诉通道；别把 benchmark 分数当成已经公平；拿自己场景的真实样例抽测一批。<strong>还有一条反直觉的：想测出偏见，就得保留敏感属性——「不看」不等于公平，只等于测不出来。</strong></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./13-1-hallucination.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 13.1 · 幻觉</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./13-3-privacy-copyright.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 13.3 · 隐私与版权</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 13.2</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-34"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-34"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-34"></script>
+</body>
+</html>

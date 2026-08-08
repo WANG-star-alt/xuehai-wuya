@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 13.4 · 深度伪造 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-34">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-34">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./13-limits.html">智能篇 · 第 13 章</a>
+      <span class="sep">›</span>
+      <span>§ 13.4</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 13.4 · Section</div>
+    <h1>深度伪造</h1>
+    <div class="cn">为什么「检测假的」这条路天生吃亏</div>
+  </header>
+
+  <p class="lead">
+    换脸的视频、拟声的电话、以假乱真的照片——这一节讲深度伪造（deepfake）。<mark class="key">但本节最想给你的不是「怎么用肉眼看出假视频」这类很快就会过时的技巧，而是一个结构性的洞察：「事后检测假的」这条路在原理上就是吃亏的，所以业界的重心正在转向「事前给真的盖章」。</mark>这个转向背后是两套具体的技术：<strong>C2PA / Content Credentials</strong>（给内容记录来龙去脉）与 <strong>SynthID</strong>（在生成物里埋不可感知的水印）。本节还会讲清一件与你直接相关的事：<strong>中国的标识办法已于 2025-09-01 生效，EU AI Act 的透明度规则已于 2026-08-02 适用</strong>——这些不是未来的规定。同时本节有多处<strong>明确留白</strong>：几个被广泛引用的「检测准确率下降多少」的数字，本文未取得原始论文中的准确值，所以一个都不给。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">💰 验钞机与钞票上的水印</div>
+    <p>想想银行是怎么对付假钞的。历史上有两条完全不同的思路，而它们的成败对比，几乎就是深度伪造这件事的全部答案。</p>
+    <p><strong>第一条思路：培训柜员认假钞。</strong>编一本《假钞特征手册》——纸张手感偏滑、油墨颜色偏暗、某个图案的线条模糊。这套办法有效，但有个致命弱点：<mark class="key">手册永远追在造假者后面跑。</mark>造假者只要改进一个特征，手册就得重印，而所有柜员都得重新培训一遍。</p>
+    <p><strong>第二条思路：在真钞上做防伪。</strong>加水印、加安全线、加光变油墨、加凹版触感。这套办法的逻辑完全反过来了——<strong>不再问「这张是不是假的」，而是问「这张有没有真钞该有的那些特征」。</strong></p>
+    <p>两条路的差别在哪？<strong>第一条路你要防住所有已知和未知的造假手法（无穷多种），第二条路你只要证明自己的那一套防伪特征难以复制（一种）。</strong><strong>说白了就是</strong>：一条是围追堵截，一条是发身份证。<mark class="key">现代货币防伪的重心，早就压在第二条上了。</mark></p>
+    <p><strong>深度伪造这件事，正在走同一条路。</strong>「检测 AI 生成」相当于第一条思路，「给真实内容记录来源与凭证」相当于第二条。这一节的核心就是讲清这个转向为什么会发生。</p>
+    <div class="link">→ 检测假的（追着造假手法跑，永远滞后）vs 给真的盖章（只需证明自己的凭证难伪造）。两条路的成本结构完全不同。</div>
+  </div>
+
+  <h3>先把「深度伪造」这个词说清楚</h3>
+  <p><strong>深度伪造</strong>（deepfake）这个词是「deep learning（深度学习）」加「fake（伪造）」拼出来的。<strong>说白了就是</strong>：<mark class="key">用深度学习技术做出的、让某人看起来说了或做了他实际没说没做的事的假内容。</mark></p>
+  <p>它不是一种技术，是一类目标。学术界最早把不同的伪造手法系统整理出来的，是一份很重要的数据集工作。</p>
+  <p><strong>出处：</strong>Rossler 等，标题 <em>FaceForensics++: Learning to Detect Manipulated Facial Images</em>（学习检测被篡改的人脸图像），<strong>arXiv 1901.08971</strong>，发布 2019-01-25。<strong>状态：已发表于 ICCV 2019，经同行评议</strong>（ICCV 是计算机视觉三大顶会之一）。</p>
+  <p>这份工作的贡献是<strong>建立了一个包含多种人脸伪造方法的数据集，并给出了基准检测结果</strong>。它收录的四种手法，恰好对应了四种不同的「造假路数」，值得逐一翻译成大白话：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>手法名</th><th>它做的是什么</th><th>大白话</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Deepfakes</strong></td><td>把 A 的脸换到 B 的身体上</td><td><strong>换头</strong>——身体和动作是别人的，脸是目标人物的</td><td>把<strong>照片</strong>里的人头剪下来贴到另一张照片上，只不过做得极其自然</td></tr>
+        <tr><td><strong>Face2Face</strong></td><td>把 A 的表情实时驱动到 B 的脸上</td><td><strong>提线木偶</strong>——脸还是原来那张，但表情听我指挥</td><td>皮影戏：影子的形状是固定的，动作由后面操作的人决定</td></tr>
+        <tr><td><strong>FaceSwap</strong></td><td>另一种换脸路线（图形学方法）</td><td>同样是换脸，但技术手段不同</td><td>同一件事有两种做法：<strong>雕刻</strong>与浇模，结果像但工艺不同</td></tr>
+        <tr><td><strong>NeuralTextures</strong></td><td>用神经网络重建面部纹理</td><td><strong>重新上皮肤</strong>——不换整张脸，只改动局部的纹理与细节</td><td>修墙面：结构没动，把表面重新刮了一层腻子</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表最重要的启示不是记住四个名字，而是<mark class="key">「伪造」是很多条互相独立的技术路线，而不是一条。</mark>这一点直接决定了下一节要讲的那个不对称。</p>
+  <p><strong>另一份被反复引用的数据集是 DFDC</strong>（Deepfake Detection Challenge，深度伪造检测挑战赛）。出处：Dolhansky 等，标题 <em>The Deepfake Detection Challenge (DFDC) Dataset</em>，<strong>arXiv 2006.07397</strong>，发布 2020-06-12。<strong>状态：arXiv 预印本，本文未取得其同行评议记录。</strong>它的贡献是建立了一个大规模的深度伪造检测数据集，并组织了公开竞赛。</p>
+
+  <h3>核心洞察：造假与检测的成本结构是不对称的</h3>
+  <p>这是本节最值得带走的一条，因为它解释了几乎所有后续的技术选择。</p>
+  <p><strong>先把这个不对称摆出来：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比项</th><th>造假的一方</th><th>检测的一方</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>成功的条件</strong></td><td><mark class="key">只要在<em>某一个</em>检测器上过关就行</mark></td><td><mark class="key">必须拦住<em>所有</em>造法，包括还没出现的那些</mark></td></tr>
+        <tr><td><strong>可以试多少次</strong></td><td><strong>无限次。</strong>造出来发现被识破，改一改再试，成本近乎为零</td><td><strong>一次就得对。</strong>放过去一个就是失败</td></tr>
+        <tr><td><strong>信息优势在谁手上</strong></td><td>造假者<strong>可以研究公开的检测器</strong>，专门针对它优化</td><td>检测方<strong>不知道下一种造法长什么样</strong></td></tr>
+        <tr><td><strong>生活类比</strong></td><td><strong>小偷只要找到一扇没锁的门</strong></td><td><strong>保安要看住所有的门窗</strong>，还包括墙上可能被打洞的地方</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这个不对称有个更严峻的版本。</strong>检测器本身通常也是机器学习模型，而它一旦公开，<mark class="key">造假者就可以拿它当「陪练」——反复生成、被拒、调整，直到能骗过它。</mark><strong>相当于</strong>考试的题库如果公开了，考生就能针对题库刷题，而不是真的掌握了知识。</p>
+  <p><strong>这里必须给一个明确的留白声明，而且这一处很关键：</strong></p>
+  <div class="callout">
+    <span class="tag">★ 本节的留白声明</span>
+    <p>中文资料里经常出现这样的说法：「某检测竞赛冠军的准确率在真实世界数据上从百分之九十几掉到百分之几十」。<mark class="key">这类断言的方向可能是对的（泛化能力下降是公认现象），但本文未取得原始论文中的准确数字，因此一个数字都不给。</mark></p>
+    <p><strong>具体未取得的有两处：</strong>① <strong>FaceForensics++</strong>（arXiv 1901.08971）冠军方案在真实世界数据上的准确率下降幅度——需要查阅原始论文的泛化实验部分；② <strong>DFDC</strong>（arXiv 2006.07397）冠军方案在真实世界条件下的下降幅度——需要查阅原始论文及后续分析报告。</p>
+    <p><strong>能站得住的表述只有定性的这一句：</strong>这两份工作的相关分析都指向<strong>「在竞赛设定的受限条件下表现较好，但在真实世界条件下泛化性能显著下降」</strong>这个方向。<strong>说白了就是</strong>：在自己家考场上考得不错，换个考场就掉下来。<strong>但「掉了多少」这个数字，请自己去查原始论文，别信任何没给出处的百分数——包括本文。</strong></p>
+  </div>
+  <p><strong>为什么会掉？原因很朴素，值得用生活类比讲一遍：</strong>检测器是在特定数据集上训练的，那些视频用的压缩方式、分辨率、光照条件、伪造工具都是<em>那一批</em>。<mark class="key">而真实世界的视频经过了社交平台的多次压缩转码、有各种奇怪的画质、用的可能是完全不同的伪造工具。</mark></p>
+  <p><strong>打个比方</strong>：一个只在自家<strong>厨房</strong>练过的厨师，突然被派到一个灶头火力不同、锅不一样、食材产地也不一样的地方——同一道菜就是做不出原来的味道。<strong>本质上就是</strong>：模型学的是「这一批数据里的伪造痕迹」，不是「伪造的本质」。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一封挂号信与一封普通信</span>
+    <p>既然「检测假的」这条路这么吃亏，那正确的路是什么？答案可以用<strong>邮局</strong>寄信讲清楚。</p>
+    <p>你收到一封信，怎么判断它真的是某个人寄来的？</p>
+    <p><strong>方案一（检测思路）：</strong>研究笔迹、看纸张、闻墨水味，判断有没有伪造痕迹。这套办法能用，但你永远无法确定自己漏掉了什么——<strong>一个高手仿的笔迹你可能压根看不出来。</strong></p>
+    <p><strong>方案二（溯源思路）：</strong>改用<strong>挂号信</strong>。寄件人在邮局窗口出示身份、盖上邮戳、留下寄件记录，你收到时凭编号就能查到「这封信 X 月 X 日由谁在哪个邮局寄出、经过哪几个中转站」。<mark class="key">你不再判断信本身像不像真的，你查的是它的来龙去脉。</mark></p>
+    <p><strong>两种方案的根本差别在于：</strong>方案一要求你<em>识破所有伪造技巧</em>（无穷多），方案二只要求邮局的记录系统难以造假（一个）。<strong>说白了就是</strong>：把「无穷多的攻击面」换成「一个需要守住的信任根」。</p>
+    <p><strong>但方案二也有它的代价，必须诚实说出来：</strong></p>
+    <p><strong>第一，它只覆盖走了挂号的那些信。</strong>一封普通信没有邮戳记录，<mark class="key">但「没有记录」不等于「是假的」</mark>——它只是「无法验证」。这是溯源方案最容易被误用的地方：<strong>看到内容没有凭证就断定它是 AI 生成的，是一个逻辑错误。</strong></p>
+    <p><strong>第二，它依赖整个链条上的人都配合。</strong>如果中转站不盖章、或者收件人手上没有查询工具，这套体系就转不起来。<strong>相当于</strong>快递单上的条码，得沿途每个网点都扫、且你手机上有能查的 App，才有意义。</p>
+    <p><strong>第三，剪一刀就可能断链。</strong>信封被撕开重新装进另一个信封，原来的邮戳就没了。这对应下面要讲的一个技术细节：<strong>内容凭证在被截图、转码、重新编码后可能丢失。</strong></p>
+  </div>
+
+  <h3>C2PA / Content Credentials：给内容配一份「履历」</h3>
+  <p>这是「溯源思路」目前最主要的一套标准，值得认真讲。</p>
+  <p><strong>先解释名字。C2PA</strong> 是 Coalition for Content Provenance and Authenticity 的缩写，中文可译作「内容来源与真实性联盟」。<strong>provenance（来源 / 出处）这个词是关键</strong>——<strong>说白了就是</strong>「这东西从哪来、中间经过了谁的手」。<mark class="key">它在艺术品和古董行业是个老概念：一幅画值多少钱，很大程度上取决于它的传承记录清不清楚。</mark></p>
+  <p><strong>组织性质：</strong>C2PA 是一个联合开发基金会（Joint Development Foundation）项目。<strong>规范版本（截至 2026-08-08）：2.4。</strong>官方规范页面是 <code>spec.c2pa.org</code>。</p>
+  <p><strong>这里要专门澄清一处广泛流传的过期信息：</strong>中文资料里常见「C2PA 最新版本是 2.3」这种说法。<mark class="key">截至 2026-08-08，最新是 2.4。</mark>各组件的版本号如下（这份清单也顺便告诉你这套标准包含哪些部分）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>组件</th><th>版本</th><th>这个组件管什么（大白话）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Content Credentials</strong></td><td><strong>2.4</strong></td><td>核心规范：一份内容凭证该包含什么、怎么绑到文件上</td></tr>
+        <tr><td><strong>Content Credentials JSON（crJSON）</strong></td><td><strong>2.4</strong></td><td>凭证的数据格式，<strong>相当于</strong>规定这张「履历表」上每一栏怎么填</td></tr>
+        <tr><td><strong>Attestations</strong></td><td><strong>1.4</strong></td><td>证明性声明——谁来为这份凭证背书</td></tr>
+        <tr><td><strong>Soft Binding API</strong></td><td><strong>2.4</strong></td><td>软绑定的接口（下面解释「软绑定」是什么）</td></tr>
+        <tr><td><strong>Human and Organizational Identity Recommendation</strong></td><td><strong>2.4</strong></td><td>人与机构身份怎么表达——<strong>说白了就是</strong>「签名的人是谁」这件事怎么写</td></tr>
+        <tr><td><strong>Security Considerations</strong></td><td><strong>2.4</strong></td><td>安全考量：这套体系已知的弱点与注意事项</td></tr>
+        <tr><td><strong>Harms Modelling</strong></td><td><strong>2.4</strong></td><td>危害建模——系统性地想清楚「这套东西可能被怎么滥用」</td></tr>
+        <tr><td><strong>Guidance for AI/ML</strong></td><td><strong>2.3</strong></td><td>针对 AI / 机器学习场景的专门指引。<strong>注意这一份还是 2.3，与其他组件版本不同步</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>技术原理讲三个点就够了：</strong></p>
+  <p><strong>第一，它用 X.509 证书信任模型。</strong>这套东西你天天在用而不知道——<mark class="key">浏览器地址栏那把小锁，背后就是 X.509 证书。</mark><strong>说白了就是</strong>：有一批被公认可信的机构（证书颁发机构）来为其他人的身份背书，形成一条信任链。<strong>相当于</strong><strong>银行</strong>开户要出示身份证，而身份证之所以可信是因为它由公安机关签发——<strong>信任是一层一层传下来的，最后落在一个大家都认的根上。</strong></p>
+  <p><strong>第二，凭证以「manifest」的形式绑定到数字资产上，记录创建与修改历史。</strong>manifest 直译是「清单」，<strong>其实就是</strong>那份履历表：这张图什么时候、由什么设备或软件生成、之后被谁用什么工具改过。<strong>相当于</strong>一辆二手车的<strong>保养记录</strong>——不只告诉你它是哪年出厂的，还告诉你中间修过几次、换过什么件。</p>
+  <p><strong>第三，它支持两种绑定方式，这一对概念很重要：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>绑定方式</th><th>技术手段</th><th>大白话</th><th>生活类比</th><th>特点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>硬绑定</strong><br>（hard binding）</td><td><strong>密码学签名</strong></td><td>用数学方法把凭证与文件内容锁死。<mark class="key">文件被改一个字节，签名就验不过</mark></td><td>合同上的<strong>骑缝章</strong>——撕开重装就对不上了</td><td><strong>严格，但也脆。</strong>文件一经重新编码（比如平台压缩），签名就失效</td></tr>
+        <tr><td><strong>软绑定</strong><br>（soft binding）</td><td><strong>感知哈希</strong>（perceptual hash）</td><td>提取内容「看起来像什么」的指纹，<strong>不要求逐字节一致</strong>，所以能挺过一定程度的压缩与裁剪</td><td>认人靠<strong>长相</strong>而不是靠身份证号——换了件衣服还认得出</td><td><strong>更耐折腾，但也更模糊</strong>，存在误匹配的可能</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>为什么要两种都有？</strong>因为它们的弱点互补，跟 §13.3 里讲的「显式标识 + 隐式标识」是同一个思路。<mark class="key">硬绑定精确但一压缩就断，软绑定耐用但不够精确。</mark><strong>本质上就是</strong>：既贴骑缝章，又记下这份合同大概长什么样——一种失效时另一种还能派上用场。</p>
+
+  <h3>SynthID：把水印埋进生成的过程里</h3>
+  <p>另一条路线是水印。代表性的是 Google DeepMind 的 <strong>SynthID</strong>（官方页面 <code>deepmind.google/science/synthid/</code>）。</p>
+  <p>它的思路和 C2PA 不同：<strong>C2PA 是在文件外面挂一份履历，SynthID 是在内容内部埋一个记号。</strong><strong>打个比方</strong>：一个是给包裹贴单据，一个是在织物的纤维里织进暗纹。</p>
+  <p><strong>最有意思的是它在文本上的做法，值得完整引一下官方说明：</strong><em>Large language models generate text one word (token) at a time. Each word is assigned a probability score... SynthID adjusts these probability scores to generate a watermark.</em>（大语言模型一次生成一个词（token）。每个词都会被赋予一个概率分数……SynthID 调整这些概率分数来生成水印。）</p>
+  <p><strong>这句话需要翻译。</strong>回想 §8.2 讲过的自回归生成：模型每写一个词，都是从一堆候选词里按概率挑一个。<mark class="key">SynthID 的做法是：在挑词的那一刻，按一套只有自己知道的规则，稍微调一下各个候选词的分数。</mark></p>
+  <p><strong>相当于</strong>这样一件事：你让一个人写一篇文章，并偷偷跟他约定「凡是能用『因此』的地方尽量用『所以』」。<strong>文章读起来完全正常，谁也看不出异样，但如果你统计全文用词的分布，会发现一个不该出现的规律性偏移</strong>——那就是水印。<strong>说白了就是</strong>：不改变内容的意思，只在无关紧要的选择上留下一串可统计的痕迹。</p>
+  <p><strong>图像、视频与音频那边，官方给的是抗干扰能力的描述：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">图像与视频</span><span class="v">官方原文：<em>designed to stand up to modifications like cropping, adding filters, changing frame rates, or lossy compression</em>（被设计为能承受裁剪、加滤镜、改帧率、有损压缩等修改）。<strong>注意用词是 designed to（被设计为），这是一句关于设计目标的表述，不是关于实测结果的保证。</strong></span></li>
+    <li><span class="k">音频</span><span class="v">官方原文：<em>can't be altered by common modifications like adding noise, MP3 compression, or changing the speed of the track</em>（不会被加噪声、MP3 压缩、改变音轨速度这类常见修改所改变）。</span></li>
+  </ul>
+  <div class="callout">
+    <span class="tag">★ 关于 SynthID 局限性的留白声明</span>
+    <p><mark class="key">Google DeepMind 的官方页面未明确说明该水印的移除难度或在什么条件下会失效。</mark>本文未取得官方对其局限性的充分披露，因此<strong>不给任何关于「能不能被去掉」的结论</strong>。</p>
+    <p><strong>但有一条通用原则可以站得住，而且很重要：</strong>任何水印技术在理论上都可能被针对性攻击移除或削弱。<strong>说白了就是</strong>：只要攻击者知道你在埋记号，他就有动机去研究怎么擦掉它。<strong>相当于</strong>衣服上的防盗磁扣——它能拦住顺手拿走的人，但拦不住带专业工具来的人。</p>
+    <p><strong>所以正确的期待是：</strong>水印是<strong>提高门槛</strong>的手段，不是<strong>绝对可靠</strong>的证明。<mark class="key">「检出水印」是较强的证据（说明这东西大概率是那个系统生成的），但「没检出水印」几乎什么都不能说明</mark>——可能是没埋、可能是被处理掉了、也可能压根不是那家的产品。</p>
+  </div>
+  <p><strong>把 C2PA 和 SynthID 放一起对照，能看出两条路线的分工：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比项</th><th>C2PA / Content Credentials</th><th>SynthID</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>思路</strong></td><td>在文件外面附一份<strong>可验证的履历</strong></td><td>在内容内部埋一个<strong>不可感知的记号</strong></td></tr>
+        <tr><td><strong>类比</strong></td><td>快递面单与物流记录</td><td>钞票纸浆里的水印</td></tr>
+        <tr><td><strong>它回答的问题</strong></td><td>「这东西的来龙去脉是什么」</td><td>「这东西是不是我们家生成的」</td></tr>
+        <tr><td><strong>谁来推动</strong></td><td>开放标准，多方参与（联合开发基金会项目）</td><td>单一厂商的技术（Google DeepMind）</td></tr>
+        <tr><td><strong>主要弱点</strong></td><td>只覆盖参与这套体系的内容；重新编码可能断链</td><td>局限性官方披露不充分（<strong>本文未取得</strong>）；跨厂商通用性受限</td></tr>
+        <tr><td><strong>共同的根本弱点</strong></td><td colspan="2"><mark class="key">两者都只能证明「有」，不能证明「没有」。「没凭证 / 没水印」不等于「是伪造的」，只等于「无法验证」。</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>最后那一行是本节最需要记住的逻辑要点</strong>，因为它是最容易被误用的地方。<strong>打个比方</strong>：一件商品有<strong>超市</strong>的价签说明它是超市在卖的；但一件商品<em>没有</em>价签，可能是掉了、可能是刚上架还没贴——<mark class="key">你不能因此断定它是偷来的。</mark></p>
+
+  <h3>法规这边：标识义务已经在生效，不是未来的事</h3>
+  <p>这一节的法律部分与 §13.3 有重叠，这里按「深度伪造」这个角度重讲一遍。<strong>再次提醒：本文不构成法律建议。以下为截至 2026-08-08 的官方文本转述。</strong></p>
+  <p><strong>中国 ·《人工智能生成合成内容标识办法》</strong></p>
+  <ul class="keylist">
+    <li><span class="k">发布与生效</span><span class="v">国家互联网信息办公室发布，文号<strong>国信办通字〔2025〕2 号</strong>，发布日 <strong>2025-03-07</strong>，<mark class="key">生效日 2025-09-01</mark>。</span></li>
+    <li><span class="k">核心要求</span><span class="v">AI 生成合成内容应当进行<strong>显式标识</strong>（文字标注、语音提示、显著标识等）与<strong>隐式标识</strong>（通过元数据等方式）。服务提供者应在生成内容的<strong>文件元数据</strong>中添加隐式标识。</span></li>
+  </ul>
+  <p><strong>欧盟 · EU AI Act 的透明度义务</strong></p>
+  <ul class="keylist">
+    <li><span class="k">法规编号</span><span class="v"><strong>Regulation (EU) 2024/1689</strong></span></li>
+    <li><span class="k">官方表述</span><span class="v">原文：<em>providers of generative AI have to ensure that AI-generated content is identifiable. On top of that, certain AI-generated content should be clearly and visibly labelled, namely deep fakes and text published with the purpose to inform the public on matters of public interest.</em>（生成式 AI 的提供者必须确保 AI 生成内容<strong>可被识别</strong>。此外，某些 AI 生成内容应当被<strong>清晰且可见地标注</strong>，具体指<strong>深度伪造</strong>以及为向公众告知公共利益事项而发布的文本。）</span></li>
+    <li><span class="k">适用日期</span><span class="v">透明度规则于 <mark class="key">2026-08-02</mark> 起适用。</span></li>
+  </ul>
+  <p><strong>注意欧盟这段原文里有一个两级结构，很容易被忽略：</strong>第一级是「可被识别」（identifiable，可以靠机器读取的方式实现），<strong>第二级</strong>是对<strong>深度伪造</strong>和<strong>涉及公共利益的告知性文本</strong>额外要求「清晰且可见地标注」（clearly and visibly labelled）。<mark class="key">也就是说，深度伪造被单独拎出来，要求的是人眼能看见的那种标注，而不只是埋在元数据里。</mark></p>
+  <p><strong>这和中国办法里「显式 + 隐式」的双重要求思路是一致的</strong>——两个辖区各自的措辞不同，但都指向同一个判断：<strong>光靠机器可读的标记不够，涉及可能误导人的内容，得让人直接看见。</strong></p>
+  <div class="callout">
+    <span class="tag">★ 关于美国 TAKE IT DOWN Act 的留白</span>
+    <p><mark class="key">本文未取得该法案是否已生效的可靠官方信息，因此不对其状态作任何描述。</mark></p>
+    <p>为什么要专门写这一条？因为在法律话题上，「某法案已通过 / 已生效」这类断言<strong>一旦说错，读者可能据此做出真实的判断</strong>。本站的做法是：<strong>宁可留白，绝不凭记忆补。</strong>如果你需要这条信息，请查该辖区的官方立法数据库。</p>
+  </div>
+
+  <h3>普通人能做什么：一份务实的应对清单</h3>
+  <p>技术和法规讲完了，落到你自己身上。<strong>先说一句最重要的：不要指望靠肉眼练成「AI 鉴别专家」。</strong>那类「看手指数量」「看眨眼频率」的技巧过期得极快，靠它们建立的信心是危险的。</p>
+  <p><mark class="key">真正稳的做法全部不依赖你的眼力，而依赖流程。</mark></p>
+  <ul class="keylist">
+    <li><span class="k">一 · 对「要求你立刻转账 / 立刻提供验证码」的音视频，一律换渠道回拨核实</span><span class="v">这是最重要的一条，因为它对应最常见的实际危害。<strong>不管声音多像、脸多像，都挂掉，然后用你原本存的号码拨回去。</strong><strong>说白了就是</strong>：不要在对方给你的渠道里验证对方——那等于让被怀疑的人自己出证明。<strong>相当于</strong>有人自称<strong>银行</strong>工作人员打电话来，你要做的是挂掉、拨卡背面的官方客服号。</span></li>
+    <li><span class="k">二 · 家庭与团队约定一个「口令」</span><span class="v">一个只有你们知道、不会出现在任何社交平台上的问题或短语。<strong>拟声技术能复刻声音，但复刻不了你们上周私下商量的那句暗号。</strong><strong>相当于</strong>取快递时对一句只有家人知道的话。</span></li>
+    <li><span class="k">三 · 判断真伪先看「来源渠道」，而不是「内容看起来像不像」</span><span class="v">一段视频的可信度，主要来自<strong>它是从哪个渠道发布的</strong>——是当事机构的官方账号，还是转了七手的群聊。<mark class="key">这是溯源思路在日常生活里的朴素版本。</mark></span></li>
+    <li><span class="k">四 · 记住「没凭证 ≠ 是假的」，也记住「有凭证 ≠ 内容为真」</span><span class="v">前半句上面讲过了。<strong>后半句同样重要：</strong>C2PA 凭证证明的是「这份文件的来龙去脉」，<strong>不是「画面里发生的事是真的」</strong>。一段真实拍摄、凭证完整的视频，照样可以通过掐头去尾的剪辑来误导人。<strong>本质上就是</strong>：<strong>邮局</strong>能证明这封信确实由谁寄出，但证明不了信里写的是实话。</span></li>
+    <li><span class="k">五 · 减少自己的声音与人脸素材在公开场合的暴露量</span><span class="v">拟声与换脸都需要素材。<strong>这不是让你不发照片，而是知道这件事存在一个量的关系</strong>——公开的清晰正脸与长段清晰语音越多，被用来做素材的门槛越低。</span></li>
+    <li><span class="k">六 · 如果你在做产品或发布内容，标识义务已经是当下的合规项</span><span class="v">中国办法 <strong>2025-09-01 已生效</strong>、EU AI Act 透明度规则 <strong>2026-08-02 已适用</strong>。<mark class="key">这不是「以后要注意」，是「现在就该核对」。</mark>具体要求请以官方文本为准，必要时咨询你所在辖区的执业律师。</span></li>
+    <li><span class="k">七 · 遇到涉及自己的伪造内容，第一步是固定证据</span><span class="v">保存原始文件（不要只截图）、记录发布链接与时间、记录传播范围。<strong>相当于</strong>发生交通事故先拍照留证再挪车——处理办法可以慢慢想，但证据一旦被删就找不回来了。</span></li>
+    <li><span class="k">八 · 别把「检测工具说是 AI 生成的」当成定论</span><span class="v">这一条经常被忽略，但危害很实际：<strong>各种「AI 内容检测器」自身的误报同样是真问题</strong>，尤其是对非母语者写的文本。<mark class="key">一个检测器的输出是一条线索，不是判决书。</mark>拿它去指控别人，是对工具能力的误用。</span></li>
+  </ul>
+  <p><strong>这八条里最该记住的是第一条和第四条。</strong>第一条防的是最常见的真实损失，第四条防的是最常见的逻辑错误。</p>
+
+  <h3>最被低估的一种：声音，而不是视频</h3>
+  <p>公众讨论深度伪造，注意力几乎全在换脸视频上。但从实际造成损失的角度看，<mark class="key">声音是更值得警惕的一条通道</mark>，原因有三个，而且每一个都很朴素。</p>
+  <p><strong>第一，做假声需要的素材远少于做假视频。</strong>视频要有多角度的面部、要有一致的光照、要处理头发和边缘——这些都是难点。而声音只需要一段清晰的说话录音。<strong>说白了就是</strong>：造一张假脸要考虑几十个细节，造一段假声音要考虑的维度少得多。</p>
+  <p><strong>第二，我们对声音的鉴别能力天生就比对图像弱。</strong>你能一眼看出照片修得过分，但很难听出一段电话录音里有合成痕迹——<mark class="key">尤其是在电话本身就有压缩、有杂音、听着本来就不清楚的情况下。</mark><strong>打个比方</strong>：一张模糊的照片你会觉得可疑，但一通听着有点闷的电话你只会觉得「信号不好」。<strong>本质上就是</strong>：电话通话的质量本来就差，这正好给合成留出了藏身的空间。</p>
+  <p><strong>第三，也是最要紧的：声音场景通常伴随着「必须马上决定」的压力。</strong>视频是你事后看的，可以暂停、可以回放、可以找人一起看。而电话是实时的——<strong>对方在催你，你在紧张，你没有时间冷静核实。</strong></p>
+  <p><strong>这就是为什么前面那份清单的第一条是「一律挂掉换渠道回拨」。</strong>它对付的不是技术，是<mark class="key">「紧迫感」这个真正的攻击面</mark>。<strong>相当于</strong>各种诈骗的共同套路都是「现在、立刻、马上」——因为一旦你有时间想，套路就破了。</p>
+  <p><strong>所以有一条极简的原则值得刻在脑子里：</strong><strong>凡是催你「马上」做不可逆的事（转账、给验证码、改密码、点某个链接），无论声音多熟悉，都先中断，再用你自己掌握的渠道核实。</strong>这条原则的好处是<mark class="key">它完全不需要你判断真假</mark>——你只需要判断「这件事急不急」，而这个判断你一定做得出来。</p>
+  <p><strong>关于拟声技术能做到什么程度，本文的态度是不给数字。</strong>因为「需要多少秒素材就能克隆一个人的声音」这类断言在营销材料里满天飞，<mark class="key">而本次核实未取得绑定具体系统与评测方法的权威数据，所以一个数字都不给。</mark>但你不需要那个数字——上面那条原则在任何技术水平下都成立。</p>
+
+  <h3>一个反向的危害：「说谎者的红利」</h3>
+  <p>深度伪造造成的危害，通常被理解为「假的被当成真的」。但还有一个方向相反、同样严重的后果，很少被提到。</p>
+  <p><mark class="key">当所有人都知道「视频可以造假」之后，真实的证据也开始失去说服力。</mark></p>
+  <p><strong>逻辑是这样的：</strong>过去有一段录像，就算是铁证。现在有了一段录像，被拍到的人可以说「这是 AI 做的」。<strong>而由于「检测」这条路本来就吃亏（前面讲过），你往往无法在短时间内证明它是真的。</strong>结果是——<strong>造假技术的存在，本身就给所有想否认的人提供了一个现成的挡箭牌。</strong></p>
+  <p><strong>打个比方</strong>：如果<strong>市场</strong>上开始流传大量假发票，那么诚实的商家拿出真发票时，也会被多问几句。<mark class="key">假货泛滥损害的不只是买家，还有真货的可信度。</mark></p>
+  <p><strong>这个后果对你意味着什么？两点很实在：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">一 · 重要的事情不要只留一种形式的证据</span><span class="v">重要约定尽量落到<strong>可交叉验证的多个痕迹</strong>上——书面确认、正式渠道的记录、多方在场。<strong>相当于</strong>装修时不光口头约定，还签合同、留付款凭证、拍施工照片。<strong>单一证据在今天更容易被质疑。</strong></span></li>
+    <li><span class="k">二 · 这恰恰是溯源体系真正的价值所在</span><span class="v">C2PA 这类体系表面看是「防假」，<mark class="key">但它更大的作用其实是「保真」——给诚实的内容一个可以自证的办法。</mark>回到那个邮局的比方：挂号信制度的意义不只是揭穿伪造，更是让守规矩的人能拿出证据。<strong>本质上就是</strong>：给真东西发身份证，比追着假东西跑更划算。</span></li>
+  </ul>
+  <p><strong>所以这一节的立场很明确：</strong>深度伪造确实是一个真实的问题，但正确的反应不是「以后什么都不能信了」这种虚无感。<strong>正确的反应是把判断的依据，从「内容看起来像不像真的」换成「它从哪来、有没有可交叉验证的痕迹」。</strong><mark class="key">前者靠眼力，会越来越不可靠；后者靠流程，会越来越可靠。</mark></p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="为什么业界在深度伪造上的重心从「检测生成内容」转向「为真实内容提供来源凭证」？"
+       data-opts="因为检测技术已经完全失效，一点用都没有|因为成本结构不对称：造假者只需在某一个检测器上过关，而检测方要拦住所有造法（含未出现的），且检测器公开后会被当成陪练针对性优化|因为溯源方案能百分之百识别所有 AI 生成内容|因为法律禁止使用检测技术"
+       data-answer="1"
+       data-explain="关键是不对称：造假者只要在某一个检测器上过关就算成功，可以无限次试错、还能拿公开的检测器当陪练针对优化；检测方却要拦住所有造法，包括还没出现的。加上检测器在特定数据集上训练，换到真实世界的压缩转码与画质条件下泛化能力会下降（本文未取得具体下降幅度的准确数字，故不给百分数）。溯源思路把「无穷多的攻击面」换成「一个需要守住的信任根」，但它也有代价——只覆盖参与了这套体系的内容，且「没有凭证」不等于「是伪造的」，只等于「无法验证」。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节的收束</span>
+    <p><strong>深度伪造不是一种技术，是一类目标。</strong>FaceForensics++（arXiv 1901.08971，<strong>ICCV 2019，同行评议</strong>）把四种不同路数的人脸伪造整理进同一个数据集：Deepfakes（换头）、Face2Face（提线木偶式表情驱动）、FaceSwap（另一种换脸路线）、NeuralTextures（重建面部纹理）。DFDC（arXiv 2006.07397，<strong>arXiv 预印本</strong>）建立了大规模检测数据集并组织了公开竞赛。<mark class="key">记住「伪造是多条独立技术路线」这一点，才能理解下面那个不对称。</mark></p>
+    <p><strong>核心洞察是成本结构的不对称：</strong>造假者<strong>只要在某一个检测器上过关</strong>，可以无限次试错，还能把公开的检测器当陪练针对性优化；检测方<strong>必须拦住所有造法，包括还没出现的那些</strong>，而且一次就得对。<strong>相当于</strong>小偷只要找到一扇没锁的门，保安却要看住所有门窗。</p>
+    <p><strong>★ 本节的关键留白：</strong>中文资料常见「检测冠军方案在真实世界数据上准确率从九十几掉到几十」这类断言。<mark class="key">本文未取得 FaceForensics++ 与 DFDC 冠军方案在真实世界数据上准确率下降幅度的准确数字，因此一个百分数都不给。</mark>能站住的只有定性方向：<strong>在竞赛设定的受限条件下表现较好，在真实世界条件下泛化性能显著下降。</strong>原因是训练数据的压缩方式、分辨率、光照、伪造工具都是那一批，换个环境就失灵。</p>
+    <p><strong>所以重心转向溯源。C2PA / Content Credentials</strong>（联合开发基金会项目，规范<strong>截至 2026-08-08 为 2.4 版</strong>；「最新是 2.3」的说法已过期；注意 <em>Guidance for AI/ML</em> 一项仍为 2.3，与其他组件不同步）。技术上：用 <strong>X.509 证书信任模型</strong>（就是浏览器地址栏那把小锁背后的东西）、以 <strong>manifest</strong> 记录创建与修改历史、支持<strong>硬绑定</strong>（密码学签名，精确但一重新编码就断）与<strong>软绑定</strong>（感知哈希，耐折腾但较模糊）——两者弱点互补。</p>
+    <p><strong>SynthID</strong>（Google DeepMind）走的是水印路线。文本上的做法很巧：官方原文说 <em>SynthID adjusts these probability scores to generate a watermark</em>——<strong>在挑词那一刻按只有自己知道的规则微调候选词分数</strong>，内容读起来正常，但用词分布里留下可统计的痕迹。图像视频官方写 <em>designed to stand up to</em> 裁剪、滤镜、改帧率、有损压缩（<strong>注意这是设计目标的表述，不是实测保证</strong>）。<mark class="key">★ 官方页面未充分披露其局限性与移除条件，本文未取得，故不给「能不能被去掉」的结论。</mark>通用原则：水印是<strong>提高门槛</strong>，不是绝对证明。</p>
+    <p><strong>两条路线共同的根本弱点，也是最容易被误用的一点：</strong><mark class="key">它们只能证明「有」，不能证明「没有」。「没凭证 / 没水印」不等于「是伪造的」，只等于「无法验证」。</mark>反过来也一样：<strong>有凭证只证明文件的来龙去脉，不证明画面里发生的事是真的</strong>——真实拍摄且凭证完整的视频，照样能靠剪辑误导人。</p>
+    <p><strong>法规已经在生效，不是未来的事。</strong>中国《人工智能生成合成内容标识办法》（国信办通字〔2025〕2 号）<strong>2025-09-01 生效</strong>，要求显式 + 隐式（元数据）双标识。EU AI Act（Regulation (EU) 2024/1689）透明度规则 <strong>2026-08-02 起适用</strong>，官方原文是两级要求：先要 <em>identifiable</em>（可被识别），再对<strong>深度伪造</strong>与涉及公共利益的告知性文本额外要求 <em>clearly and visibly labelled</em>（清晰且可见地标注）。<strong>★ 美国 TAKE IT DOWN Act 是否已生效，本文未取得可靠官方信息，故不作任何状态描述。本文不构成法律建议。</strong></p>
+    <p><strong>能做的事（全部不依赖眼力，只依赖流程）：</strong>要求转账或验证码的音视频<strong>一律挂掉换渠道回拨</strong>；和家人团队约一个不会出现在网上的口令；判断真伪先看<strong>来源渠道</strong>而不是内容像不像；牢记「没凭证 ≠ 假」「有凭证 ≠ 内容为真」；减少公开的清晰正脸与长段语音；做产品发内容的<strong>现在</strong>就核对标识义务；遇到涉及自己的伪造先<strong>固定证据</strong>（保原始文件不只截图）；<mark class="key">别把检测工具的输出当判决书，它自身的误报也是真问题</mark>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./13-3-privacy-copyright.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 13.3 · 隐私与版权</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./13-5-prompt-injection.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 13.5 · Prompt 注入与安全</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 13.4</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-34"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-34"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-34"></script>
+</body>
+</html>

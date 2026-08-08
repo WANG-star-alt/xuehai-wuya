@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 13.1 · 幻觉 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-34">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-34">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./13-limits.html">智能篇 · 第 13 章</a>
+      <span class="sep">›</span>
+      <span>§ 13.1</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 13.1 · Section</div>
+    <h1>幻觉</h1>
+    <div class="cn">它不是在骗你，它是在「合理地猜」</div>
+  </header>
+
+  <p class="lead">
+    你问模型一本书的 ISBN 号，它给了你一个格式完美、校验位都对的号码——书是真的，号码是假的。你问一个法条的条款号，它答得斩钉截铁，你去查发现那一条讲的是别的事。这类现象有个专门的名字叫<strong>幻觉</strong>（hallucination）。<mark class="key">这一节要做三件事：把「幻觉」这个词拆成两种完全不同的毛病、讲清它为什么在机制上必然发生、然后给一份能立刻用上的应对清单。</mark>本节尤其要澄清一个流传很广的误读：有一篇论文证明了「幻觉不可消除」，但那个证明有<strong>严格的形式化前提</strong>，把它读成「AI 永远不可能准确」是错的。所有论文都会给出 arXiv 编号并标明是否经过同行评议；所有数字都会绑定「哪个模型、哪个测试集」，绝不给你一个悬空的「幻觉率百分之几」。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏥 一个从不说「我不知道」的实习医生</div>
+    <p>想象医院里来了一个实习生。他书读得极多，问什么都能答，语气永远沉稳专业，从不结巴。带他的主任很快发现一个问题：<strong>这孩子从来不说「我不确定」。</strong></p>
+    <p>问他某个罕见病的诊断标准，他张口就来，条理清晰、术语准确、听起来完全像教科书。主任去翻指南，发现其中一条压根不存在——那是他把两个相似疾病的标准糅在一起，自己「顺」出来的。</p>
+    <p>关键在于：<mark class="key">这孩子不是在骗人。</mark>他没有「我知道真相但我要瞒着你」这种动机，他压根不知道那条是假的。他脑子里的机制是「按最像的样子接下去说」，而在绝大多数情况下，这个机制给出的答案是对的——所以他会一直用这个机制，包括在它出错的那些时候。</p>
+    <p>更要命的是主任后来想明白的一件事：<strong>是考试制度把他训练成这样的。</strong>医学考试是选择题，蒙一个有四分之一概率对，空着一定是零分。<strong>换成大白话：一个只算对题数、不扣错题分的评分方式，会稳定地培养出「什么都敢答」的考生。</strong>这不是品行问题，是激励问题。</p>
+    <div class="link">→ 这个实习医生就是本节的主角。「不撒谎但会说错」「语气自信与内容正确无关」「评分制度奖励瞎猜」，这三点是理解幻觉的全部钥匙。</div>
+  </div>
+
+  <h3>先给「幻觉」一个准确的定义</h3>
+  <p>「幻觉」这个词是从心理学借来的，但借得并不贴切，容易让人误以为模型「看到了不存在的东西」。所以先把学术界的准确说法摆出来。</p>
+  <p>目前中文世界引用最多、也最经得起查的一份定义，来自一篇综述：<strong>arXiv 2311.05232</strong>（Huang 等，标题 <em>A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions</em>，首版 2023-11-09，第二版 2024-11-19）。这篇的分量值得说清楚：<mark class="key">它已被 ACM Transactions on Information Systems（TOIS）接收，是经过同行评议的期刊论文</mark>，不是自己传上去就完事的预印本。</p>
+  <p>按这类文献的说法，幻觉指的是模型生成了<strong>过度自信、看起来很合理、但实际为假的陈述</strong>（原文用词是 overconfident, plausible falsehoods）。这里三个形容词每一个都不能少：</p>
+  <ul class="keylist">
+    <li><span class="k">过度自信</span><span class="v">模型不会在假话前面加「我猜」。它输出假话时的语气和输出真话时<strong>一模一样</strong>。<strong>说白了就是</strong>：你从语气上分辨不出来，这是幻觉最危险的地方。</span></li>
+    <li><span class="k">看起来很合理</span><span class="v">幻觉不是胡言乱语。它编出来的 ISBN 校验位是对的，编出来的论文标题符合该领域的命名习惯，编出来的法条编号格式正确。<strong>相当于</strong>假钞——正是因为它长得像真的，才有欺骗性。</span></li>
+    <li><span class="k">实际为假</span><span class="v">这是唯一的硬标准。判断幻觉必须靠<strong>外部核对</strong>，不能靠读起来顺不顺。</span></li>
+  </ul>
+  <p>另外这篇综述特别提醒一件事：<strong>模型的这种现象与人类的感知体验（幻觉的原义）有根本区别</strong>。人产生幻觉是感官出了问题，模型这边压根没有感官。<strong>本质上就是</strong>一个借来的比喻词，用久了就被当成实质了。</p>
+
+  <h3>幻觉不是一种病，是两种：内在与外在</h3>
+  <p>这是本节第一个真正有用的区分，而且它直接决定你该用什么办法去治。arXiv 2311.05232 里的说法是，各家分类体系普遍会把幻觉沿着这条线切开：</p>
+  <p><strong>第一种叫内在幻觉</strong>（intrinsic hallucination）。原文的界定是「与用户的提示直接矛盾」的内容。<strong>换成大白话：你在问题里已经把材料给它了，它答出来的东西跟你给的材料对不上。</strong></p>
+  <p>综述里给的例子特别好懂，也特别打脸：问它「DEEPSEEK 这个词里有几个 D」，它回答「2」或者「3」。<mark class="key">这题不需要任何外部知识——答案就摆在问题里</mark>，字母数一遍就出来了（是 1 个 D，如果只数大写首字母；这里的重点不是正确答案，而是模型给出的数字与眼前的字符串矛盾）。这类错误暴露的是模型处理字符级细节的机制缺陷，跟「知识不够」毫无关系。</p>
+  <p><strong>第二种叫外在幻觉</strong>（extrinsic hallucination）。原文的界定是「与训练数据或外部现实矛盾」。<strong>说白了就是</strong>它说了一件世界上不成立的事——编造的论文、不存在的法条、张冠李戴的生卒年。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比项</th><th>内在幻觉（intrinsic）</th><th>外在幻觉（extrinsic）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>跟什么矛盾</strong></td><td>跟你给它的提示 / 上下文矛盾</td><td>跟训练数据或真实世界矛盾</td></tr>
+        <tr><td><strong>典型例子</strong></td><td>让它总结一段你贴进去的文字，它总结出文中没有的观点；数一个词里有几个字母数错</td><td>编造一篇不存在的论文、给错一个人的任职年份</td></tr>
+        <tr><td><strong>生活类比</strong></td><td><strong>学生抄题都抄错</strong>——卷子上写的是「甲」，他答题时当成「乙」在算</td><td><strong>学生记错了课本内容</strong>——题读对了，但脑子里存的知识本身是错的</td></tr>
+        <tr><td><strong>能不能自己发现</strong></td><td><strong>能。</strong>你手上就有原文，逐句比对即可</td><td><strong>不能。</strong>必须去查外部资料</td></tr>
+        <tr><td><strong>主要治法</strong></td><td>让它引用原文原句、要求给出出处段落、把长文档拆小</td><td>检索增强（RAG）、要求给可点击的链接、人工核实</td></tr>
+        <tr><td><strong>对应的评价指标</strong></td><td><strong>faithfulness</strong>（忠实度）：输出是否忠于输入上下文</td><td><strong>factuality</strong>（事实性）：输出是否符合真实世界知识</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后那一行值得单独说，因为这两个英文词在中文资料里经常被混着译成「准确性」，一混就把问题搞糊了。<strong>faithfulness 衡量的是「有没有忠实于你给的上下文」，factuality 衡量的是「有没有符合客观事实」。</strong>这两件事可以各自独立地对或错——一段总结可以完全忠实于原文，但原文本身就是错的（faithful 但不 factual）；也可以说了一件世界上确实成立的事，却完全不是你给的那份材料里说的（factual 但不 faithful）。</p>
+  <p><strong>打个比方</strong>：你让秘书按会议录音整理纪要。<strong>faithfulness 问的是「纪要是否忠实于录音」，factuality 问的是「录音里说的话本身对不对」。</strong>秘书的职责只到第一层，第二层得开会的人自己负责。<mark class="key">很多人对 AI 的失望，其实源于把这两层职责混在一起要求。</mark></p>
+
+  <h3>它为什么会这样？OpenAI 自己给的答案很朴素</h3>
+  <p>2025 年 9 月，OpenAI 的研究者发了一篇专门讨论根因的文章：<strong>arXiv 2509.04664</strong>，标题 <em>Why Language Models Hallucinate</em>，作者是 Adam Tauman Kalai、Ofir Nachum、Santosh S. Vempala、Edwin Zhang，发布日期 2025-09-04。<strong>状态要说清楚：这是 arXiv 预印本，截至本文核实日（2026-08-08）尚未见到同行评议记录。</strong>但它的价值在于——这是造这些模型的机构自己给出的解释，而且解释得非常不玄乎。</p>
+  <p>论文的核心论断，原文是这么写的：<em>We argue that language models hallucinate because the training and evaluation procedures reward guessing over acknowledging uncertainty.</em>（我们主张，语言模型产生幻觉，是因为训练与评测流程奖励「猜」而不奖励「承认不确定」。）</p>
+  <p>还有一句更狠，直接把神秘感拆掉了：<em>Hallucinations need not be mysterious — they originate simply as errors in binary classification.</em>（幻觉不必被神秘化——它们的来源就是二分类里的错误。）以及：<em>If incorrect statements cannot be distinguished from facts, then hallucinations in pretrained language models will arise through natural statistical pressures.</em>（如果错误陈述无法与事实区分开，那么预训练语言模型中的幻觉就会因自然的统计压力而出现。）</p>
+  <p><strong>换成大白话，这段话在说：</strong>模型在学的时候，本质上是在学「什么样的句子看起来像真的」。如果一句假话和一句真话在<em>可观察的统计特征</em>上没法区分开，那模型就学不出这个区别，于是必然会把一些假话当成合格输出。<mark class="key">这不是 bug，是这套学习方式的必然产物。</mark></p>
+  <p><strong>论文的第二个论断更有实践意义</strong>，原文：<em>Hallucinations persist due to the way most evaluations are graded — language models are optimized to be good test-takers, and guessing when uncertain improves test performance.</em>（幻觉之所以持续存在，是因为大多数评测的打分方式——语言模型被优化成了「好的应试者」，而在不确定时去猜，会提高考试成绩。）</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一场不倒扣分的考试</span>
+    <p>把 OpenAI 那篇的两个论断合起来，可以还原成一个所有人都体验过的场景：<strong>一场只算对题数、答错不倒扣分的选择题考试。</strong></p>
+    <p>你是考生，剩下最后五分钟，还有八道题没做。你完全不会。<strong>请问理性的做法是什么？</strong>当然是全部随便填上——四选一，蒙对期望值是两道题；空着，期望值是零。<mark class="key">在这个规则下，「什么都不填」是一个被制度惩罚的选择。</mark></p>
+    <p>现在把角色换掉：<strong>模型是考生，各种排行榜（benchmark）是考卷，训练过程是刷题。</strong>排行榜的算分方式几乎都是「答对得分、答错不得分」——注意，答错和留空拿到的分是一样的，都是零。于是在这套规则下，<strong>「我不确定」这个答案永远劣于「随便给一个」</strong>。刷了几万轮之后，模型自然长成一个「什么都敢答」的性格。</p>
+    <p>这就解释了一个很多人纳闷的现象：<strong>为什么模型不能干脆学会说「我不知道」？</strong>因为在现行的评分体系里，说「我不知道」是要吃亏的。<strong>本质上就是</strong>：我们一边抱怨它爱瞎猜，一边用一套奖励瞎猜的尺子给它排名。</p>
+    <p>所以论文给的解决方向也不是技术性的，而是制度性的。原文用了「epidemic」（流行病）这个词：<em>This 'epidemic' of penalizing uncertain responses can only be addressed through a socio-technical mitigation: modifying the scoring of existing benchmarks that are misaligned but dominate leaderboards, rather than introducing additional hallucination evaluations.</em>（这种「惩罚不确定回答」的流行病，只能通过社会—技术层面的缓解来解决：改掉那些取向不当却主导排行榜的现有基准的打分方式，而不是再加几个幻觉评测。）<strong>翻译成人话：别再多造几把尺子，先把现有那把尺子的刻度改了。</strong></p>
+  </div>
+
+  <h3>怎么给幻觉「量体温」：四个基准与它们真实的数字</h3>
+  <p>要谈幻觉严重不严重，就得能测。但「测幻觉」这件事本身极其麻烦，因为你得先有一份公认的正确答案。下面四个是被引用最多的测量工具，<mark class="key">请特别注意每个数字后面绑的模型与测试集——离开这两个限定，这些百分数一文不值。</mark></p>
+  <p><strong>第一个：TruthfulQA。</strong>出处 <strong>arXiv 2109.07958</strong>（Lin、Hilton、Evans，首版 2021-09-08，第二版 2022-05-08），<strong>已发表于 ACL 2022 主会，经同行评议</strong>。它的构造方式很刁：原文说 <em>The benchmark comprises 817 questions that span 38 categories, including health, law, finance and politics.</em>（该基准包含 817 道题，覆盖 38 个类别，含健康、法律、金融与政治。）这些题专门挑那些<strong>人类社会里流传着错误共识</strong>的话题——也就是说，它测的不是「知不知道」，而是「会不会跟着大众一起错」。</p>
+  <p>这篇论文里有两个数字被引错的频率极高，务必记准：<em>The best model was truthful on 58% of questions, while human performance was 94%.</em>（最好的模型在 58% 的题目上作出了真实回答，而人类的表现是 94%。）<mark class="key">58% 是当时最好的模型，94% 是人类——不是某个模型达到了 94%。</mark>中文互联网上流传的「GPT-3 在 TruthfulQA 上接近人类水平 94%」是把两个数字接错了线。</p>
+  <p>而且这篇的结论里有一句更反直觉的，原文：<em>Models generated many false answers that mimic popular misconceptions. The largest models were generally the least truthful.</em>（模型生成了许多模仿流行误解的错误答案。最大的那些模型通常是最不真实的。）<strong>说白了就是</strong>：在这个特定基准上，<strong>模型越大反而越容易跟着大众的错误共识走</strong>。这很好理解——参数更多意味着把训练数据里的模式学得更像，而训练数据里就充满了流传甚广的错话。</p>
+  <p><strong>打个比方</strong>：一个把网上所有帖子都背下来的人，和一个只看过几本教科书的人，你问「饭后立刻吃水果是不是不好」，前者更可能给你一套流传很广但没有依据的说法。<strong>记性好不等于判断准。</strong></p>
+  <p><strong>第二个：HaluEval。</strong>出处 <strong>arXiv 2305.11747</strong>（Li 等，首版 2023-05-19，第三版 2023-10-23），<strong>已发表于 EMNLP 2023 主会长文，经同行评议</strong>。它给出的一个具体观测是：<em>ChatGPT is likely to generate hallucinated content in specific topics by fabricating unverifiable information (i.e., about 19.5% responses).</em>（ChatGPT 在特定主题上倾向于通过编造无法验证的信息来产生幻觉内容，约占 19.5% 的回答。）</p>
+  <p><strong>这个 19.5% 必须连着限定条件一起记：它是 2023 年的 ChatGPT、在该论文设定的特定主题上、按该论文的判定方式得出的比例。</strong>拿它去说「大模型的幻觉率是 19.5%」是典型的数字滥用——不同模型、不同题型、不同年份，这个数会大幅变动。</p>
+  <p><strong>第三个：FActScore。</strong>出处 <strong>arXiv 2305.14251</strong>（Min 等，首版 2023-05-23，第二版 2023-10-11），<strong>已发表于 EMNLP 2023 主会，经同行评议</strong>。它的思路很值得学，原文：<em>FACTSCORE, a new evaluation that breaks a generation into a series of atomic facts and computes the percentage of atomic facts supported by a reliable knowledge source.</em>（FActScore 是一种新评测，它把一段生成内容拆成一系列原子事实，再计算其中有多少比例能被可靠知识源支持。）</p>
+  <p><strong>换成大白话：不给整段打一个模糊的分，而是把段落拆成一句句最小的事实断言，逐条去查有没有依据，最后算通过率。</strong><strong>相当于</strong>财务审计不看「这份报表大体像不像」，而是<strong>一笔一笔核凭证</strong>。这个论文在人物传记生成任务上给出的数字是：<strong>ChatGPT 只拿到 58%</strong>（原文 <em>ChatGPT only achieves 58%</em>）。同样地，这是<strong>特定任务（人物传记）+ 特定模型 + 2023 年</strong>的结果。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>基准</th><th>arXiv 编号</th><th>同行评议状态</th><th>它测的是什么</th><th>论文里的关键数字（含限定）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>TruthfulQA</strong></td><td>2109.07958</td><td>ACL 2022 主会 · <strong>是</strong></td><td>817 题 / 38 类，专挑人类社会有错误共识的话题</td><td>当时最好的模型 <strong>58%</strong> 真实；<strong>人类 94%</strong>；最大的模型通常最不真实</td></tr>
+        <tr><td><strong>HaluEval</strong></td><td>2305.11747</td><td>EMNLP 2023 长文 · <strong>是</strong></td><td>模型在特定主题上编造不可验证信息的比例</td><td>2023 年的 <strong>ChatGPT，约 19.5%</strong> 的回答含编造内容</td></tr>
+        <tr><td><strong>FActScore</strong></td><td>2305.14251</td><td>EMNLP 2023 主会 · <strong>是</strong></td><td>把生成拆成原子事实，逐条核有无可靠来源支持</td><td>人物传记任务上，<strong>ChatGPT 仅 58%</strong></td></tr>
+        <tr><td><strong>综述总纲</strong></td><td>2311.05232</td><td>ACM TOIS 已接收 · <strong>是</strong></td><td>不是基准，是分类体系与研究地图</td><td>提出 intrinsic / extrinsic 与 faithfulness / factuality 两组维度</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>「幻觉不可消除」这个证明，到底证明了什么</h3>
+  <p>接下来是本节最需要小心处理的一块内容。因为它是<strong>被误传得最厉害的一条</strong>，而误传的方向恰好是让人绝望的方向。</p>
+  <p>事情本身是真的：确实有一篇论文给出了形式化论证。<strong>arXiv 2401.11817</strong>，标题 <em>Hallucination is Inevitable: An Innate Limitation of Large Language Models</em>（幻觉不可避免：大语言模型的一种固有局限），作者 Ziwei Xu、Sanjay Jain、Mohan Kankanhalli，来自<strong>新加坡国立大学</strong>，首版 2024-01-22，第二版 2025-02-13。<strong>状态必须交代：这是 arXiv 预印本，截至 2026-08-08 未见同行评议记录。</strong></p>
+  <p>论文的核心结论原文如下（这段值得逐句读，因为限定条件全在里面）：<em>We formalize the problem and show that it is impossible to eliminate hallucination in LLMs. Specifically, we define a formal world where hallucination is defined as inconsistencies between a computable LLM and a computable ground truth function. By employing results from learning theory, we show that LLMs cannot learn all the computable functions and will therefore inevitably hallucinate if used as general problem solvers.</em></p>
+  <p>翻成中文：「我们将这个问题形式化，并证明在大语言模型中消除幻觉是不可能的。具体而言，我们定义了一个<strong>形式化世界</strong>，其中幻觉被定义为<strong>一个可计算的 LLM 与一个可计算的真实函数之间的不一致</strong>。借助学习理论的结论，我们证明 LLM 无法学习所有可计算函数，因此<strong>若被用作通用问题求解器</strong>，就不可避免地会产生幻觉。」</p>
+  <p><mark class="key">现在请注意那两处加粗的限定：「形式化世界」和「若被用作通用问题求解器」。这篇论文成立的前提全在这两句上。</mark>下面把该记住的限定条件列清楚——这五条不是我们加的免责声明，是从论文自身的表述里读出来的：</p>
+  <ul class="keylist">
+    <li><span class="k">限定一 · 结论在一个「形式化世界」里成立</span><span class="v">论文自己构造了一个数学世界，在那里「幻觉」有一个精确的数学定义（可计算模型与可计算真值函数之间的不一致）。<strong>说白了就是</strong>：这是在一个规则被严格写死的棋盘上证出来的结论，不是对现实世界的实测。</span></li>
+    <li><span class="k">限定二 · 依据是计算学习理论</span><span class="v">论证的支点是「LLM 学不完所有可计算函数」。<strong>相当于</strong>证明「一本再厚的字典也收不下所有可能拼出来的词」——这个结论是关于<em>可能性空间大小</em>的，不是关于某本字典质量好坏的。</span></li>
+    <li><span class="k">限定三 · 从形式世界推到现实世界是「外推」</span><span class="v">作者写道：<em>Since the formal world is a part of the real world which is much more complicated, hallucinations are also inevitable for real world LLMs.</em>（由于形式世界是那个复杂得多的现实世界的一部分，因此现实中的 LLM 也不可避免会产生幻觉。）<mark class="key">这一步是逻辑外推，不是严格的形式化证明。</mark>这个区别很重要，也是该论文最受争议的地方。</span></li>
+    <li><span class="k">限定四 · 没有排除在受限任务上做到零幻觉</span><span class="v">证明针对的是「通用问题求解器」。它<strong>并未</strong>排除在一个范围划得足够窄的具体任务上把幻觉压到零的可能。<strong>打个比方</strong>：「没有万能钥匙」和「你家门锁配不出钥匙」是两句完全不同的话。</span></li>
+    <li><span class="k">限定五 · 论文自己认为缓解措施有价值</span><span class="v">同一篇论文还讨论了「现有各类幻觉缓解手段的可能机制与效果」。<strong>如果作者认为一切努力都白费，这一部分压根不必写。</strong></span></li>
+  </ul>
+  <p>所以，正确的转述应该是这样的：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>常见的错误转述</th><th>为什么错</th><th>可以站住的说法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「已证明 AI 永远不可能准确」</td><td>把「不能对所有问题都准确」偷换成「对任何问题都不准确」。这是<strong>全称与特称的混淆</strong></td><td>「在该论文的形式化设定下，作为通用问题求解器的 LLM 无法保证对所有问题都不出错」</td></tr>
+        <tr><td>「科学家证明幻觉治不好，所以别指望改善」</td><td>论文自己在讨论缓解手段的机制与效果，等于承认改善空间存在</td><td>「不可完全根除，但可以显著缓解；缓解手段的研究仍有意义」</td></tr>
+        <tr><td>「这是一篇权威论文证明的定论」</td><td>它是 <strong>arXiv 预印本，未见同行评议记录</strong>；且从形式世界外推到现实世界这一步有争议</td><td>「一篇提出形式化论证的预印本，其外推步骤存在学术争议」</td></tr>
+        <tr><td>「所以 RAG、联网搜索都是徒劳」</td><td>论文说的是「不能保证零错误」，不是「无法降低错误率」</td><td>「这些手段能降低错误率，但不能承诺归零」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>打个比方</strong>，也许是最贴切的一个：<strong>洗手不能消灭世界上所有细菌，这是事实；但这从来不是不洗手的理由。</strong>医院里的手部卫生规范存在的目的从来不是「无菌」，而是<mark class="key">把感染概率压到一个可接受的水平</mark>。本节后面给的所有应对方法，都是这个性质的东西。</p>
+
+  <h3>RAG 能不能消除幻觉？先分清「缓解」和「根除」</h3>
+  <p>这是实践中被问得最多的一个问题，也是营销材料里被吹得最狠的一个点。先解释术语。</p>
+  <p><strong>RAG</strong>（Retrieval-Augmented Generation，「检索增强生成」）说白了就是：<strong>回答之前先去资料库里查一遍，把查到的原文塞进提示里，再让模型基于这些材料作答。</strong><strong>相当于</strong>把一场闭卷考试改成开卷考试——允许考生翻书。</p>
+  <p>开卷考试当然比闭卷强，但你上过学就知道：<mark class="key">开卷考试照样有人答错。</mark>而且答错的方式有几种非常固定的套路，跟 RAG 的失败模式一一对应：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>开卷考试的失败方式</th><th>对应的 RAG 失败模式</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>翻错了章节，找的不是这道题的内容</td><td><strong>检索质量不行</strong></td><td>召回的资料与问题无关，或者相关的那份没被召回来。<strong>本质上就是</strong>：搜得不准，后面全白搭</td></tr>
+        <tr><td>书太厚，来不及翻完</td><td><strong>上下文窗口有限</strong></td><td>能塞进提示里的材料量有上限（这点可以回看 §8.3）。塞不进去的部分等于不存在</td></tr>
+        <tr><td>书翻到了正确那页，答题时还是按自己的印象写</td><td><strong>模型忽略检索结果</strong></td><td>这是最气人的一种：正确答案已经在上下文里了，模型仍然照着它「记得」的说。这属于前面讲的<strong>内在幻觉</strong></td></tr>
+        <tr><td>书本身印错了</td><td><strong>知识库本身有错</strong></td><td>RAG 只保证「忠于检索到的材料」，不保证材料是对的。<strong>这是 faithfulness 与 factuality 的又一次分离</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>关于这一点，两篇文献的表述可以直接引用。arXiv 2311.05232（那篇 ACM TOIS 综述）里写的是：<em>we delve into the current limitations faced by retrieval-augmented LLMs in combating hallucinations, offering insights for developing more robust IR systems.</em>（我们深入探讨了检索增强的大语言模型在对抗幻觉时面临的现有局限，为构建更稳健的信息检索系统提供思路。）<strong>注意它用的词是 limitations（局限）——一篇同行评议综述认为这里存在局限，而不是问题已解决。</strong></p>
+  <p>而 OpenAI 那篇 arXiv 2509.04664 说得更直接：其结论<em>It applies broadly, including to reasoning and search-and-retrieval language models.</em>（其适用范围很广，包括推理型模型和带搜索与检索的语言模型。）<mark class="key">也就是说，「奖励猜测的评分制度」这个根因，并不因为接上了检索就消失。</mark></p>
+  <p>所以准确的结论是：<strong>RAG 是缓解手段，不是根除手段。</strong>本节核实过程中特意找过「RAG 能把幻觉降低多少」这类量化声明，结论是：<strong>没有找到任何绑定了具体模型与具体测试集的权威量化声明</strong>——所以本文不给这个数字。你在营销材料里看到的「降低 XX% 幻觉」，请务必先问一句：哪个模型、哪个数据集、怎么判定的。</p>
+
+  <h3>为什么它对「有几个字母」这种小事都会错</h3>
+  <p>很多人第一次对大模型失去信任，不是因为它编了篇论文，而是因为它连「strawberry 里有几个 r」都能数错。这件事之所以让人震惊，是因为它太简单了——<strong>一个能写代码、能解方程的东西，怎么会数不清字母？</strong></p>
+  <p>这属于前面讲的<strong>内在幻觉</strong>，而它的成因跟「知识不够」完全无关，得回到 §8.1 讲过的分词。<strong>模型看到的不是一个个字母，而是一个个 token（词元）。</strong>如果印象模糊了：token 就像<strong>乐高</strong>积木，句子是一块块拼出来的，而每一块可能是一个字、几个字母、甚至一个完整的词。</p>
+  <p><strong>打个比方</strong>：让你数一个词有几个字母，你是逐个字母看的。但模型拿到的可能是三块积木，每块上面已经印好了一小段字母组合，<mark class="key">而它看到的是「这三块积木的名字」，不是积木上印的每一个字符。</mark>这就像让一个人隔着信封数信里有几个字——他能猜个大概，因为他知道这类信通常多长，但他没法真的数。</p>
+  <p>综述 arXiv 2311.05232 举的那个例子（问 DEEPSEEK 里有几个 D，模型答 2 或 3）就是这一类。<strong>它的诊断价值很高</strong>：这道题的全部信息都在提示里，不需要任何外部知识，所以答错只能说明<em>处理机制</em>出了问题，而不是知识库出了问题。</p>
+  <p><strong>实践上的启示很具体：</strong>凡是涉及<strong>逐字符操作</strong>的活儿——数字符数、判断回文、精确的字符串替换、严格的格式校验——都不要指望模型心算。让它写一段代码去做，或者你自己用编辑器的查找功能做。<strong>这不是模型笨，是你用错了工具</strong>，就像拿汤勺去量体温。</p>
+
+  <div class="lab" data-lab="tokenizer"></div>
+
+  <p>上面这个小工具可以让你亲手看到「模型眼中的句子」被切成了什么样子。你会发现同一句话在不同切法下块数不同，而且英文单词经常被切成好几块——<strong>那些切割点就是「数不清字母」这件事发生的地方。</strong></p>
+
+  <h3>哪些场景幻觉风险最高：一张分级表</h3>
+  <p>幻觉的发生概率不是均匀的。它在某些类型的问题上高得离谱，在另一些上低到几乎可以忽略。<mark class="key">搞清这张分布图，比记住任何一个百分数都有用</mark>——因为它直接告诉你什么时候可以放心用、什么时候必须逐字核。</p>
+  <p>规律其实一句话就能概括：<strong>越是「有唯一正确答案、且这个答案是一串精确符号、且训练数据里出现次数很少」的东西，越容易被编出来。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>风险等级</th><th>典型问题类型</th><th>为什么是这个等级</th><th>你该怎么办</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>极高</strong></td><td>具体的编号与标识：论文 DOI、书的 ISBN、法条条款号、案件案号、专利号、API 的具体参数名、软件的具体版本号</td><td>这些是<strong>高精度、低冗余</strong>的字符串。改一位就完全错，而且它们在训练数据里出现频率低，模型只能「按格式编一个」</td><td><strong>一律逐条核。</strong>把它当成「待验证的线索」，不是答案</td></tr>
+        <tr><td><strong>极高</strong></td><td>引文与出处：「某某研究表明」「某本书第几页说」</td><td>格式极容易模仿，内容极难验证。<strong>这是学术圈和法律圈已经出过真实事故的地方</strong></td><td>要求给可点击链接，然后<strong>真的点开看</strong>。点不开的一律作废</td></tr>
+        <tr><td><strong>高</strong></td><td>冷门人物的生平、小机构的历史、地方性的具体规定</td><td>训练数据里这类内容稀少，模型倾向于用同类模式「补全」</td><td>换成有官方页面的信源自己查</td></tr>
+        <tr><td><strong>高</strong></td><td>数字精确度要求高的事实：具体金额、具体日期、具体百分比</td><td>数字的「合理外观」极容易伪造，而且看起来无法从语气分辨</td><td>只信有出处的数字。<strong>这正是本站所有数字都带日期与出处的原因</strong></td></tr>
+        <tr><td><strong>中</strong></td><td>逐字符操作：数字母、判断回文、精确替换</td><td>属内在幻觉，成因是分词机制（见上一节）</td><td>让它写代码来做，或者你自己用工具做</td></tr>
+        <tr><td><strong>中</strong></td><td>长文档总结、多份材料对比</td><td>材料一多就容易串台，这是 <strong>faithfulness</strong> 类问题</td><td>要求每个结论后面附原文引句，便于你抽查</td></tr>
+        <tr><td><strong>较低</strong></td><td>改写、润色、翻译、调整语气、格式转换</td><td><strong>因为答案就在输入里</strong>，不需要它从记忆中调取事实</td><td>正常用即可，抽查语义有没有走形</td></tr>
+        <tr><td><strong>较低</strong></td><td>头脑风暴、起草提纲、给多个备选方案</td><td>这类任务<strong>压根不要求唯一正确答案</strong>，「编」在这里恰恰是优点</td><td>放心用。这是当前 AI 性价比最高的用法之一</td></tr>
+        <tr><td><strong>较低</strong></td><td>写代码骨架、写测试、解释报错信息</td><td>因为<strong>代码有编译器和测试来当裁判</strong>——错了会立刻暴露，不会静默地错下去</td><td>照常用，但别跳过运行和测试这一步</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最值得记住的是<strong>最后一行的原理</strong>，它可以推广成一条通用判断法则：<mark class="key">一个任务如果自带「快速验证机制」，那幻觉的危害就被大幅削弱了。</mark></p>
+  <p><strong>打个比方</strong>：让人帮你做菜，如果你能马上尝一口，那他手抖放多了盐你立刻知道；如果这道菜要冷冻起来一个月后端上宴席，那就危险了。<strong>代码有编译器，就是那口「马上能尝」；</strong>而一个 ISBN 号，你不去查就永远尝不出咸淡。</p>
+
+  <h3>八条能立刻用上的应对方法</h3>
+  <p>下面是本节最实用的部分。这些方法都不需要你懂技术，全部是提问方式和使用习惯上的调整。</p>
+  <ul class="keylist">
+    <li><span class="k">一 · 明确授权它说「不知道」</span><span class="v">前面讲过，模型的「什么都敢答」性格来自不倒扣分的评分制度。你可以在提示里<strong>手动改一下这个规则</strong>：「如果你不确定，请直接说不确定，不要猜；给出不确定的答案会被视为错误。」<strong>相当于</strong>考前老师说一句「这次答错要倒扣分」——考生的行为立刻就变了。这是性价比最高的一招。</span></li>
+    <li><span class="k">二 · 把「回忆」改成「阅读」</span><span class="v">别问「XX 法的第几条是什么」，而是把法条原文贴进去，然后问「根据以上材料回答」。<strong>说白了就是</strong>把闭卷改成开卷。这一招把问题从<strong>外在幻觉</strong>（难查）降级成<strong>内在幻觉</strong>（你手上有原文，能对照）。</span></li>
+    <li><span class="k">三 · 要求「先给原文引句，再给结论」</span><span class="v">规定输出格式为「引句 → 结论」，而不是「结论 →（可选的）引句」。顺序很关键：<strong>先写结论再找依据，人和模型都会为了圆结论而挑材料</strong>；先摊材料再下结论，材料就成了约束。<strong>相当于</strong>报销时要求先贴发票再填金额。</span></li>
+    <li><span class="k">四 · 所有编号、出处、链接一律当「线索」而非「答案」</span><span class="v">这条最重要。<mark class="key">模型给的 DOI、ISBN、案号、URL，请一律假定为「疑似」，去权威站点验证后才能用。</mark>真实世界已经因为这条出过事：有人把编造的引文交进正式文书里。<strong>核实成本远低于事后代价。</strong></span></li>
+    <li><span class="k">五 · 同一个问题问两遍，用不同的问法</span><span class="v">如果两次答案在关键事实上不一致，那至少有一次是错的，说明这个点不可靠。<strong>打个比方</strong>：这就是<strong>医院</strong>里的「第二诊疗意见」——不是不信第一个医生，是给自己加一道校验。注意：两次答案一致也<em>不能</em>证明它是对的（模型可能稳定地错），但不一致几乎一定意味着有问题。</span></li>
+    <li><span class="k">六 · 让它列出「我的哪些说法需要你去核实」</span><span class="v">直接追问：「上面这段回答里，哪些内容你的确定性较低、建议我另行核实？」模型往往能相当准确地标出脆弱点。<strong>相当于</strong>让施工队自己交一份「哪些地方我拿不准」的清单——问了总比不问强。</span></li>
+    <li><span class="k">七 · 高风险场景一律走「双轨」</span><span class="v">涉及医疗、法律、财务、安全的内容，把 AI 的输出当作<strong>草稿和检索线索</strong>，最终结论必须由有资质的人或官方文本确认。<strong>本质上就是</strong>：AI 负责帮你把书翻到大概那一页，翻到之后还得你自己读。</span></li>
+    <li><span class="k">八 · 用带出处的检索型工具做事实类查询</span><span class="v">对纯事实问题，优先用会给出可点击引用来源的工具，并<strong>真的点开核对引用是否支持那句话</strong>。这里有个常见陷阱：<strong>有引用不等于引用能支持结论</strong>——链接是真的，但链接里那篇文章可能压根没说这句话。</span></li>
+  </ul>
+  <p>这八条里，第一条和第四条如果只能记两条，就记这两条。<strong>一条改变模型的行为，一条改变你的行为。</strong></p>
+
+  <h3>一个需要澄清的伦理问题：它算「说谎」吗</h3>
+  <p>这个问题看着像哲学讨论，其实很实用——因为你怎么定性它，直接决定你怎么对待它的输出。</p>
+  <p><strong>说谎</strong>这件事有一个必要条件：<strong>说话的人知道真相，并且故意说了反的。</strong>缺了「知道真相」这一环，就不叫说谎，叫说错。<strong>打个比方</strong>：一个记错了路的人给你指错方向，和一个故意把你指到反方向的人，做的事一样，性质完全不同。</p>
+  <p>按 OpenAI arXiv 2509.04664 的框架，幻觉的产生机制被描述为「二分类里的错误」加上「统计压力」——这里面没有任何位置留给「意图」。<mark class="key">所以把幻觉说成「AI 在骗人」，在机制上是不成立的描述。</mark></p>
+  <p>但要小心不要走到另一个极端：<strong>「它没有恶意」不等于「后果不严重」。</strong>一个把药量说错的人，无论有没有恶意，病人受到的伤害是一样的。<strong>所以这个澄清的实际用途只有一个：让你把注意力从「AI 值不值得信任」这个空泛的道德问题，转到「在这个具体任务上它的错误率有多高、我怎么设一道验证关卡」这个可操作的工程问题。</strong></p>
+  <p>顺带说一件本节没能做到的事：<strong>本文没有取得任何厂商官方公布的「本模型幻觉率为 X%」的权威数字</strong>，因此正文里一个这类数字也没给。这不是遗漏——<mark class="key">脱离测试集的幻觉率本身就是一个没有意义的数字</mark>，给出来只会制造虚假的确定感。你在宣传材料里看到这类数字，请一律先问：在哪个基准上、什么判定标准、哪个版本的模型。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="某篇文章写道：「研究表明大模型在 TruthfulQA 上已达到 94% 的真实率，接近人类水平。」根据 arXiv 2109.07958 原文，这句话的问题在哪？"
+       data-opts="没问题，原文确实是 94%|94% 是人类表现，当时最好的模型是 58%，两个数字被接错了|原文只给了模型分数，没有测人类|TruthfulQA 不测真实率，测的是流畅度"
+       data-answer="1"
+       data-explain="原文是 The best model was truthful on 58% of questions, while human performance was 94%。94% 属于人类，58% 属于当时最好的模型，两个数字被接错了线。这是中文资料里最常见的一处引用错误。顺带记住这篇论文另一个反直觉的结论：The largest models were generally the least truthful——在这个特定基准上，模型越大反而越容易跟着流行误解走，因为它把训练数据里的错误共识也学得更像。所以「越大越诚实」也是一个站不住的说法。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节的收束</span>
+    <p><strong>幻觉是一个借来的词，指的是模型输出了「过度自信、看起来合理、但实际为假」的内容</strong>（arXiv 2311.05232，ACM TOIS 已接收，同行评议）。它分两种：<strong>内在幻觉</strong>与你给的提示矛盾，<strong>外在幻觉</strong>与真实世界矛盾。对应两个指标：<strong>faithfulness</strong>（是否忠于上下文）与 <strong>factuality</strong>（是否符合事实）。这两件事可以各自独立地对或错，混在一起谈就永远说不清。</p>
+    <p><strong>成因不神秘。</strong>OpenAI 的 arXiv 2509.04664（预印本，未见同行评议）给的解释是：训练与评测的打分方式<strong>奖励猜测、不奖励承认不确定</strong>；模型被优化成了「好的应试者」，而在一场不倒扣分的考试里，蒙一个永远优于留空。所以论文提出的方向是<strong>改基准的打分方式</strong>，而不是再多加几个幻觉评测。</p>
+    <p><strong>四个基准的数字要连限定一起记：</strong>TruthfulQA（arXiv 2109.07958，ACL 2022）——当时最好的模型 <strong>58%</strong>、<strong>人类 94%</strong>，且「最大的模型通常最不真实」；HaluEval（arXiv 2305.11747，EMNLP 2023）——2023 年的 ChatGPT 约 <strong>19.5%</strong> 回答含编造内容；FActScore（arXiv 2305.14251，EMNLP 2023）——人物传记任务上 ChatGPT 仅 <strong>58%</strong>。<mark class="key">离开「哪个模型 + 哪个测试集 + 哪一年」，这些百分数一文不值。</mark></p>
+    <p><strong>「幻觉不可消除」有严格前提。</strong>arXiv 2401.11817（预印本，未见同行评议）的结论成立于一个<strong>形式化世界</strong>，前提是把模型当作<strong>通用问题求解器</strong>；从形式世界到现实世界那一步是<strong>外推</strong>，存在争议；它<strong>没有</strong>排除在受限任务上做到零幻觉，作者自己也在讨论缓解手段的效果。<strong>把它读成「AI 永远不可能准确」是全称与特称的混淆。</strong></p>
+    <p><strong>RAG 是缓解不是根除。</strong>开卷考试仍会答错，四种失败方式：检索不准、窗口装不下、检到了却不用、知识库本身有错。综述用的词是 limitations，OpenAI 明确说其结论也适用于检索增强模型。本文<strong>未取得</strong>任何绑定模型与测试集的「RAG 降低 XX% 幻觉」权威量化声明，故不给该数字。</p>
+    <p><strong>最后落到能做的事上：</strong>明确授权它说「不知道」；把「回忆」改成「阅读」（贴原文）；要求先给引句再下结论；<mark class="key">所有编号、出处、链接一律当线索去核，不当答案用</mark>；同一问题换问法问两遍；让它自报哪些点需要核实；高风险领域走双轨；用带引用的工具并真的点开验证。<strong>洗手消灭不了所有细菌，但这从来不是不洗手的理由。</strong></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./13-limits.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">第 13 章 · 总览</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./13-2-bias.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 13.2 · 偏见与公平性</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 13.1</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-34"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-34"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-34"></script>
+</body>
+</html>

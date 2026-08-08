@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 13.3 · 隐私与版权 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-34">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-34">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./13-limits.html">智能篇 · 第 13 章</a>
+      <span class="sep">›</span>
+      <span>§ 13.3</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 13.3 · Section</div>
+    <h1>隐私与版权</h1>
+    <div class="cn">你输进去的东西去哪了，它吐出来的东西归谁</div>
+  </header>
+
+  <p class="lead">
+    这一节回答两个几乎每个用 AI 干活的人都撞过的问题：<strong>我贴进对话框的公司资料，会不会被拿去训练下一代模型？</strong>以及<strong>它生成的东西，我能不能拿去商用？</strong><mark class="key">第一个问题有明确答案，而且答案取决于你用的是消费级产品还是 API——官方文档里写得很清楚，只是绝大多数人没去看。第二个问题目前没有全球统一答案，正在各地法院里打。</mark>本节会把五起代表性诉讼的<strong>司法辖区与当前状态</strong>逐一列清，特别澄清两处流传最广的错误：一起还在上诉中的案子被说成了「已定论」，一起<strong>和解</strong>被说成了「判决」。另外会摊开 EU AI Act 的分阶段时间表和中国两部规章的生效日期。<strong>本节涉及大量法律信息，请先读下面那条声明。</strong>
+  </p>
+
+  <div class="callout">
+    <span class="tag">重要声明 · 请先读这一段</span>
+    <p><strong>本文不构成法律建议。</strong>下面所有内容都只是截至 <strong>2026 年 8 月 8 日</strong>的公开司法记录与官方法律文本的转述，目的是帮你理解<mark class="key">争议的焦点在哪里、以及案件走到了哪一步</mark>，绝不能作为任何具体行为是否合法的判断依据。</p>
+    <p><strong>三点特别提醒：</strong>第一，<strong>法律有辖区</strong>——美国某个联邦地区法院的裁定对英国、对欧盟、对中国都没有约束力。第二，<strong>案件状态随时变化</strong>——本节给的每个状态都带核实日期，读到这段时可能已经变了。第三，<strong>地区法院的裁定不等于终局判决</strong>，上诉法院可以推翻它。<strong>真要做决定，请咨询你所在辖区的执业律师。</strong></p>
+  </div>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏦 一台会记住你说过什么的复印机</div>
+    <p>想象<strong>银行</strong>大厅里有一台特别的复印机。它不只是复印，还会「学习」——每份经过它的文件，它都读一遍，用来提高自己的识字能力。厂家说这样机器越用越聪明。</p>
+    <p>你拿着一份合同去复印。这时候你会自然而然地问出两个问题，<strong>而这两个问题正好就是这一节的全部内容</strong>：</p>
+    <p><strong>问题一：我这份合同的内容，会不会被它记住？</strong>更要命的是，会不会哪天别人来复印东西，机器「顺口」把我合同里的条款吐出来一段？——<mark class="key">这就是「训练数据泄露」，而且它确实被实验证明过。</mark></p>
+    <p><strong>问题二：这台机器读了几百万份别人的文件才变得这么聪明，那些文件的主人同意了吗？它现在写出来的东西，算它的、算厂家的、还是算那些原作者的？</strong>——<strong>这就是版权争议的全部内核。</strong></p>
+    <p>还有一个容易被忽略的第三层：<strong>这台机器可能有好几个型号。</strong>大厅里给公众用的那台默认会学习，而银行内部业务柜台那台，合同上写明了不学习。<strong>说白了就是</strong>：同一个厂家、同一项技术，不同产品线的规则可能完全不同——<strong>而这正是「我的数据会不会被拿去训练」这个问题的真实答案形状。</strong></p>
+    <div class="link">→ 三个层次：会不会被记住（提取攻击）、原始素材的授权（版权诉讼）、以及不同产品线不同规则（官方政策）。这一节按这个顺序讲。</div>
+  </div>
+
+  <h3>先讲最硬的技术事实：训练数据真的能被「掏」出来</h3>
+  <p>「模型会不会记住训练数据」这个问题不需要靠猜，有实验做过，而且是很硬的实验。</p>
+  <p><strong>第一项工作：</strong>Carlini 等，标题 <em>Extracting Training Data from Large Language Models</em>（从大语言模型中提取训练数据），<strong>arXiv 2012.07805</strong>，首版 2020-12-14，第二版 2021-06-15。<strong>状态：已发表于 USENIX Security 2021，经同行评议。</strong>USENIX Security 是计算机安全领域顶级会议之一，这一点让这项结论的分量很不一样。</p>
+  <p>它证明了什么：<strong>可以从 GPT-2 这类模型中把训练数据提取出来，包括个人身份信息。</strong>机制是——<mark class="key">模型会记住那些「罕见的」或者「重复出现过多次的」序列，而这些序列可以被有效地引导出来。</mark></p>
+  <p><strong>这两个条件值得分开体会，因为它们对应两种完全不同的现实风险：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">「罕见」为什么会被记住</span><span class="v"><strong>因为独特的东西没法靠规律推出来，只能死记。</strong><strong>打个比方</strong>：你能记住「一年有十二个月」是因为它是规律，你记住某个朋友的手机号则纯靠硬记。<mark class="key">一串随机的身份证号、私钥、API 密钥，对模型来说恰恰属于「必须死记」那一类</mark>——这就是为什么把密钥误提交到公开代码仓库特别危险。</span></li>
+    <li><span class="k">「重复多次」为什么会被记住</span><span class="v"><strong>相当于</strong>一首你听过几百遍的歌，前两个字一出来后面就自动跟上了。数据里出现过很多次的段落，模型会形成非常强的接续倾向，给个开头就能把整段带出来。</span></li>
+  </ul>
+  <p><strong>第二项工作把这件事推到了生产级模型上：</strong>Nasr 等，标题 <em>Scalable Extraction of Training Data from (Production) Language Models</em>（对（生产级）语言模型的可扩展训练数据提取），<strong>arXiv 2311.17035</strong>，发布 2023-11-28。<strong>状态：arXiv 预印本，本文未取得其同行评议记录。</strong></p>
+  <p>它的贡献是把提取攻击的方法扩展到了<strong>实际部署的产品</strong>（论文中包括 ChatGPT）上，说明这不只是实验室里小模型的现象。<strong>但状态要如实标注：预印本。</strong></p>
+  <p><strong>第三个必须知道的概念是成员推断攻击</strong>（Membership Inference Attack，简称 <strong>MIA</strong>）。<strong>说白了就是</strong>：攻击者不试图把整段内容掏出来，只想判断<mark class="key">「某一条特定的数据，有没有被用来训练过这个模型」</mark>。</p>
+  <p>经典出处：Shokri 等，标题 <em>Membership Inference Attacks Against Machine Learning Models</em>，<strong>arXiv 1610.05820</strong>，首版 2016-10-18，<strong>已发表于 IEEE S&amp;P 2017（另一个安全顶会），经同行评议</strong>。</p>
+  <p><strong>为什么「只判断有没有用过」也算严重的隐私问题？</strong>因为在很多场合，<strong>「你在这份名单里」本身就是敏感信息</strong>。<strong>打个比方</strong>：某<strong>医院</strong>用某种罕见病患者的病历训练了一个模型。如果攻击者能判断出「张三的病历在训练集里」，那他实际上就推出了「张三患这个病」——<mark class="key">哪怕他一个字的病历内容都没拿到。</mark>这就是成员推断的危害所在。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>攻击类型</th><th>出处与状态</th><th>攻击者想得到什么</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>训练数据提取</strong></td><td>arXiv 2012.07805 · <strong>USENIX Security 2021，同行评议</strong></td><td><strong>原文内容本身</strong>——把训练数据里的段落、密钥、个人信息掏出来</td><td>把复印机内部残留的旧文件影像找出来看</td></tr>
+        <tr><td><strong>生产级模型提取</strong></td><td>arXiv 2311.17035 · <strong>arXiv 预印本</strong></td><td>同上，但目标是<strong>实际上线的产品</strong></td><td>不只是实验室样机，商场里那台也能被掏</td></tr>
+        <tr><td><strong>成员推断（MIA）</strong></td><td>arXiv 1610.05820 · <strong>IEEE S&amp;P 2017，同行评议</strong></td><td><strong>只要一个是非判断</strong>：这条数据在训练集里吗</td><td>不看病历内容，只确认「这个人是不是那家专科医院的病人」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>那么普通用户该记住什么？一条就够：</strong><mark class="key">凡是你不愿意被任何第三方看到的内容，就不要贴进任何默认会用于训练的产品里。</mark>这包括身份证号、密钥、未公开的合同条款、患者信息、客户名单。<strong>本质上就是</strong>：一份文件一旦进了那台会学习的复印机，你就失去了对它的完全控制——所以关键在于<strong>先搞清哪台机器会学习</strong>，这正是下一节的内容。</p>
+
+  <h3>你的输入会被拿去训练吗？看官方文档，分产品线</h3>
+  <p>这是本节最实用、也最容易被误传的一块。中文互联网上流传的说法通常是一句笼统的「AI 公司都在用你的数据训练」，<mark class="key">但官方文档里的答案是分产品线的，而且差别很大。</mark></p>
+  <p><strong>先说 OpenAI，按产品线分开列：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">消费级产品（ChatGPT Free / Plus / Team）</span><span class="v">按 OpenAI 的 ROW Terms of Use（生效日 <strong>2026-01-01</strong>），<strong>用户输入可能被用于模型训练</strong>。<strong>说白了就是</strong>：大厅里那台公用复印机，默认是会学习的。</span></li>
+    <li><span class="k">API 及企业产品（API / Business / Enterprise / Edu / Healthcare）</span><span class="v">OpenAI 的 Enterprise Privacy 页面（更新日 <strong>2026 年 1 月 8 日</strong>）明确写着：<em>We do not train our models on your data by default.</em>（我们默认不用你的数据训练模型。）<mark class="key">另外几个具体条款：API 数据自 2023-03-01 起默认不用于训练；API 数据保留最多 30 天；提供零数据保留（ZDR，Zero Data Retention）选项。</mark></span></li>
+  </ul>
+  <p><strong>再说 Anthropic，同样分两条：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">商业产品（Commercial）</span><span class="v">其隐私说明文章（编号 7996868）原文：<em>By default, we will not use your inputs or outputs from our commercial products to train our models.</em>（默认情况下，我们不会用你在我们商业产品中的输入或输出来训练模型。）</span></li>
+    <li><span class="k">消费级产品（Consumer）</span><span class="v">其隐私说明文章（编号 10023580）原文：<em>We will not use your Inputs or Outputs to train our generative models (i.e. Claude), unless you've explicitly reported the materials to us... or you've explicitly opted in to training.</em>（我们不会用你的输入或输出训练我们的生成模型即 Claude，<strong>除非</strong>你明确向我们举报了相关材料……或者你<strong>明确选择加入</strong>训练。）<strong>注意这里的两个例外条件</strong>——「你主动举报了内容」和「你主动勾选了同意」。</span></li>
+  </ul>
+  <p><strong>这两家的政策放在一起，能看出一条很清晰的产业规律：</strong><mark class="key">面向企业和开发者的产品线普遍承诺默认不训练，因为企业客户会把这一条写进采购合同；而免费或个人订阅的消费级产品，策略各家不同，必须逐个去看条款。</mark></p>
+  <p><strong>相当于</strong>去<strong>银行</strong>办业务：柜台给你签的合同里保密条款写得密密麻麻，而大厅里那台自助机的使用须知你从来没点开看过。<strong>不是银行故意骗你，是这两个场景的商业约束强度不同。</strong></p>
+  <p><strong>所以一条最实用的操作建议：</strong>在把公司或客户资料贴进任何 AI 产品之前，先去它的官方隐私页面搜三个关键词：<strong>train（训练）、retention（保留）、opt-in / opt-out（选择加入 / 退出）</strong>。这三个词能带你找到 90% 需要知道的信息。<strong>而且要注意看你用的是哪个产品线</strong>——同一家公司的答案可能完全相反。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一间会把学生作业收进教材的学校</span>
+    <p>版权这件事之所以吵得这么厉害，可以用一个校园里的场景一次讲透。</p>
+    <p>假设有一所学校要编一本作文教材。老师做了这么一件事：<strong>把过去十年所有学生的作文都读了一遍，然后写出一本《怎么写好作文》。</strong>书里没有原文照搬任何一篇学生作文，但它总结出的所有技巧、句式、结构，全都来自读那些作文的过程。</p>
+    <p>现在请你判断三个问题，<mark class="key">你会发现每一个问题都能argue出两种都不荒谬的答案</mark>——这正是版权诉讼的真实处境：</p>
+    <p><strong>问题一：老师「读」这些作文，需要事先取得授权吗？</strong>支持方说：读书学习本来就不需要授权，人类作家也是读了几百本书才会写的。反对方说：这不是「读」，这是<strong>系统性地复制了全部内容进机器</strong>，而且是为了做一个商业产品。</p>
+    <p><strong>问题二：如果这本教材出版后卖得很好，抢了原来那些学生自己出书的市场，算不算损害？</strong>这一问在法律上有个专门的位置——<strong>「合理使用」判断里通常要看「对原作品市场的影响」</strong>。如果新东西替代了原作品的市场，天平就会倾斜。</p>
+    <p><strong>问题三：如果这本教材写出来的一段话，几乎和某个学生的原文一模一样，那这段算侵权吗？</strong>——注意，<mark class="key">这一问和前两问性质完全不同。</mark>前两问吵的是「学习过程本身合不合法」，这一问吵的是「输出结果是否复制了原文」。<strong>这两条线在真实诉讼里经常被混着谈，但它们是两个独立的争点。</strong></p>
+    <p><strong>本质上就是</strong>：所有 AI 版权诉讼都在这三个问题上打转——<strong>输入端的复制</strong>、<strong>市场替代</strong>、<strong>输出端的相似度</strong>。你记住这三条线，看任何一起案件的报道都不会看晕。</p>
+  </div>
+
+  <h3>先学四个词：审理中、部分简易判决、上诉中、和解结案</h3>
+  <p>在看具体案件之前，必须先把四个状态词分清。<mark class="key">中文报道里的绝大多数错误，都出在混用这四个词上。</mark>而它们的分量差得非常远。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>状态</th><th>英文</th><th>大白话</th><th>能不能当结论用</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>审理中</strong></td><td>pending</td><td>案子还在打，没出结果</td><td><strong>完全不能。</strong>只能说「有人在争这件事」</td><td>病人刚<strong>挂号</strong>进了诊室，还没出诊断</td></tr>
+        <tr><td><strong>部分简易判决</strong></td><td>partial summary judgment</td><td>法院就<strong>某几个争点</strong>先作出裁定，不需要等完整审判。但案子整体可能还没完</td><td><strong>要极其小心。</strong>它是真实的司法裁定，但<strong>只覆盖它明确处理的那几个争点</strong></td><td>体检报告先出了几项结果，其他项还在化验</td></tr>
+        <tr><td><strong>上诉中</strong></td><td>on appeal</td><td>一方不服，把案子交给上级法院重新审。<mark class="key">上级法院可以维持、也可以推翻</mark></td><td><strong>不能当定论。</strong>下级法院的裁定在上诉期间不构成有约束力的终局先例</td><td>对第一家医院的诊断不服，去<strong>医院</strong>会诊或换院复查——结论可能被改</td></tr>
+        <tr><td><strong>和解结案</strong></td><td>settlement / settled</td><td>双方自己谈妥，法院不再作出「谁对谁错」的判断</td><td><strong>特别不能。</strong>和解<mark class="key">通常不确立法律先例</mark>，也不代表任何一方承认自己错了</td><td>两家因漏水吵起来，最后私下谈妥赔一笔钱了事——<strong>没有任何人被判定有责</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>「和解」这一行最容易被误读，值得再强调一次。</strong>很多报道会写成「某公司败诉赔了多少钱」，但<mark class="key">和解和败诉在法律上是两件截然不同的事。</mark><strong>打个比方</strong>：<strong>停车</strong>场里两台车轻微擦碰，一方为了省事直接给对方几百块修车费——这不代表他承认自己全责，更不代表以后所有类似擦碰都要这么赔。<strong>说白了就是</strong>：和解是两个当事人之间的私了，不是给全社会定规矩。</p>
+  <p><strong>「上诉中」这一行同样关键。</strong>下级法院的裁定在上诉期间是<em>存在的、真实的</em>，但它<strong>不是终局</strong>。把它当作「法律已经这么定了」来引用，是本节要澄清的最大误区之一。</p>
+
+  <h3>五起代表性诉讼的真实状态（截至 2026-08-08）</h3>
+  <p>下面逐一列。<strong>每一起都写清司法辖区、案号、当前状态。再次提醒：本文不构成法律建议。</strong></p>
+
+  <p><strong>第一起 · NYT v. OpenAI（纽约时报诉 OpenAI）</strong></p>
+  <ul class="keylist">
+    <li><span class="k">司法辖区</span><span class="v">美国<strong>纽约南区联邦地区法院</strong>（S.D.N.Y.）</span></li>
+    <li><span class="k">案件编号</span><span class="v">已合并入 <em>In re OpenAI, Inc. Copyright Infringement Litigation</em>，编号 <strong>No. 1:25-md-03143</strong></span></li>
+    <li><span class="k">当前状态</span><span class="v"><strong>审理中（pending）。</strong>该 MDL 于 <strong>2025-04-11</strong> 成立，主审法官 Sidney H. Stein，治安法官 Ona T. Wang 辅助。合并了纽约时报、Microsoft、Authors Guild、Ziff Davis、The Intercept、Raw Story、Center for Investigative Reporting 等多家原告的诉讼。</span></li>
+  </ul>
+  <p><strong>先解释一个术语：MDL</strong>（Multidistrict Litigation，「多地区诉讼合并」）<strong>说白了就是</strong>：<mark class="key">很多起原因相似的案子分散在各地法院，为了不重复劳动、不出互相矛盾的裁定，被集中到一个法院统一处理前期程序。</mark><strong>相当于</strong>医院把同一种病的病人集中到一个专科病房——不是因为病更重，是为了统一诊疗流程。<strong>所以「合并成 MDL」不等于「案情严重程度升级」，它是一种程序安排。</strong></p>
+
+  <p><strong>第二起 · Authors Guild v. OpenAI（美国作家协会诉 OpenAI）</strong></p>
+  <ul class="keylist">
+    <li><span class="k">司法辖区</span><span class="v">美国<strong>纽约南区联邦地区法院</strong>（S.D.N.Y.）</span></li>
+    <li><span class="k">当前状态</span><span class="v">已合并入上面那个 <strong>In re OpenAI MDL（1:25-md-03143）</strong>，<strong>审理中（pending）</strong>。</span></li>
+  </ul>
+
+  <p><strong>第三起 · Andersen v. Stability AI（艺术家诉 Stability AI 等）</strong></p>
+  <ul class="keylist">
+    <li><span class="k">司法辖区</span><span class="v">美国<strong>加州北区联邦地区法院</strong>（N.D. Cal.）</span></li>
+    <li><span class="k">案件编号</span><span class="v"><strong>No. 3:23-cv-00201-WHO</strong>，主审法官 William H. Orrick</span></li>
+    <li><span class="k">当前状态</span><span class="v"><strong>审理中（pending）。</strong>2026 年仍有与证据发现程序（discovery）相关的裁决（2026 WL 1257935, at *3 (N.D. Cal.)）。</span></li>
+    <li><span class="k">已作出的裁决</span><span class="v"><strong>700 F. Supp. 3d 853 (N.D. Cal. 2023)</strong>——对驳回动议（MTD）的裁定；<strong>744 F. Supp. 3d 956 (N.D. Cal. 2024)</strong>——对修改后诉状的裁定。<mark class="key">这两项都是程序性阶段的裁定，不是对「AI 训练是否构成侵权」的终局实体判决。</mark></span></li>
+  </ul>
+  <p><strong>「驳回动议」（motion to dismiss，MTD）也需要翻译一下</strong>：<strong>其实就是</strong>被告在案子刚开始时说「原告这个诉讼连立起来的资格都没有，请法院直接扔掉」。<mark class="key">法院驳回这个动议，意思只是「这个案子可以继续往下审」，绝不意味着「原告赢了」。</mark><strong>相当于</strong>去医院<strong>挂号</strong>时医生说「你这个症状确实需要检查，去做个片子」——这不等于确诊。<strong>这一点非常容易被报道成「法院支持了艺术家」，但两者完全不是一回事。</strong></p>
+
+  <p><strong>第四起 ★ Thomson Reuters v. Ross Intelligence——本节最需要小心的一起</strong></p>
+  <p>这一起被误传得最厉害。中文互联网上流传的说法是「法院已判决 AI 训练不构成合理使用，成为先例」。<mark class="key">这个说法在两个关键点上错了。</mark>先把事实摆全：</p>
+  <ul class="keylist">
+    <li><span class="k">司法辖区</span><span class="v">一审在美国<strong>特拉华联邦地区法院</strong>（D. Del.），案号 <strong>No. 1:20-cv-613-SB</strong>；现已上诉至<strong>美国第三巡回上诉法院</strong>（3rd Cir.）</span></li>
+    <li><span class="k">法官</span><span class="v">Stephanos Bibas——他本人是第三巡回上诉法院法官，被指定审理这起地区法院案件</span></li>
+    <li><span class="k">2025 年那份裁定的内容</span><span class="v"><strong>2025-02-11</strong>，Bibas 法官签署备忘录意见（Document 770），修订了他 2023 年的意见。裁定原文：<em>I now (1) grant most of Thomson Reuters's motion for partial summary judgment on direct copyright infringement and related defenses...; (2) grant Thomson Reuters's motion for partial summary judgment on fair use...; (3) deny Ross's motion for summary judgment on fair use...; and (4) deny Ross's motion for summary judgment on Thomson Reuters's copyright claims.</em>另有认定：<em>Ross infringed 2,243 headnotes.</em>（Ross 侵犯了 2243 条判例摘要。）以及 <em>Ross's innocent infringement, copyright misuse, merger, and scenes a faire defenses all fail.</em>（Ross 的善意侵权、版权滥用、合并原则与必要场景等抗辩全部不成立。）</span></li>
+    <li><span class="k">当前状态 ★★</span><span class="v"><mark class="key">上诉中（on appeal），尚未判决。</mark>第三巡回上诉法院案号 <strong>No. 25-2153</strong>，<strong>2026-06-11 已进行口头辩论，至本文核实日（2026-08-08）尚未作出判决。</strong>另外，依 §1292(b) 提出的中间上诉许可已于 <strong>2025-05-23</strong> 获批（3rd Cir. No. 25-8018）。</span></li>
+    <li><span class="k">参与规模</span><span class="v">大量「法庭之友」（amicus curiae，指非当事方向法院提交意见的第三方）参与，包括 EFF、Public Knowledge、Copyright Alliance、RIAA、MPA、Disney、Warner Bros、Sony Pictures、Paramount、Universal City Studios、News Media Alliance、AAP、Authors Alliance、Internet Archive、Public.Resource.Org 等。<strong>这个名单本身就说明了各方对结果的重视程度。</strong></span></li>
+  </ul>
+  <p><strong>那么错在哪里？两处：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>流传的说法</th><th>为什么错</th><th>准确表述</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「已判决 AI 训练不构成合理使用」</td><td><strong>状态错。</strong>那是<strong>地区法院的部分简易判决</strong>，而且该案目前在<strong>第三巡回上诉法院上诉中，尚未判决</strong>——上诉法院可以维持也可以推翻</td><td>「地区法院于 2025-02-11 就合理使用作出了对原告有利的<strong>部分简易判决</strong>；该案现<strong>在第三巡回上诉法院上诉中，2026-06-11 已口头辩论，尚未判决</strong>」</td></tr>
+        <tr><td>「已成为具有约束力的法律先例」</td><td><strong>效力错。</strong>正在上诉中的地区法院裁定不构成终局先例</td><td>「该裁定尚未成为终局判决，<strong>不构成具有约束力的法律先例</strong>」</td></tr>
+        <tr><td>「所以 AI 训练在美国是违法的」</td><td><strong>范围错。</strong>该案争的是 Ross 复制 Thomson Reuters 的<strong>判例摘要（headnotes）</strong>这一具体行为，<mark class="key">不是对所有 AI 训练行为的一般性宣告</mark></td><td>「该案涉及的是特定内容（2243 条判例摘要）与特定使用方式的争议」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>为什么这处澄清如此重要？</strong>因为它牵涉到一个关于法律的基本常识：<mark class="key">一审结果和终审结果可以完全相反。</mark><strong>打个比方</strong>：一场<strong>考试</strong>成绩公布后你申请复核，复核前那个分数当然是真实存在的，<strong>但它不是最终成绩</strong>。拿复核前的分数去印毕业证，就是搞错了阶段。</p>
+
+  <p><strong>第五起 ★ Bartz v. Anthropic——这是和解，不是判决</strong></p>
+  <ul class="keylist">
+    <li><span class="k">司法辖区</span><span class="v">美国<strong>加州北区联邦地区法院</strong>（N.D. Cal.）</span></li>
+    <li><span class="k">案件编号</span><span class="v"><strong>No. 3:24-cv-05417-AMO</strong>（原编号 No. 4:24-cv-05417）</span></li>
+    <li><span class="k">当前状态 ★</span><span class="v"><mark class="key">已结案（terminated），终止日期 2026-07-20。结案方式是「和解」，不是判决。</mark>案件于 2024-08-19 提起，最初由 William Alsup 法官主审，后转至 Araceli Martinez-Olguin 法官。</span></li>
+    <li><span class="k">和解信息</span><span class="v">官方和解网站 <code>anthropiccopyrightsettlement.com</code>，由 JND Legal Administration 管理。初步和解（preliminarily approved settlement）已获法院批准。三个关键期限<strong>均已过期</strong>：索赔截止 <strong>2026-03-30</strong>、选择退出 / 反对截止 <strong>2026-02-09</strong>、重新纳入截止 <strong>2026-03-09</strong>。</span></li>
+  </ul>
+  <p><strong>请注意「和解」这个结案方式带来的三个后果：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">一 · 法院没有对「谁对谁错」下判断</span><span class="v">和解的本质是双方自己谈妥。<strong>说白了就是</strong>：法官没有说「AI 训练侵权」，也没有说「不侵权」。<mark class="key">这个案子在实体法律问题上没有留下答案。</mark></span></li>
+    <li><span class="k">二 · 通常不确立先例</span><span class="v">和解协议约束的是当事双方，<strong>不给其他人定规矩</strong>。所以不能说「因为这起和解，以后类似情况都得这么办」。</span></li>
+    <li><span class="k">三 · 不构成任何一方的责任承认</span><span class="v">和解可以出于纯商业考虑——比如诉讼成本太高、不确定性太大、想尽快结束。<strong>相当于</strong>两家<strong>小区</strong>邻居为漏水扯了半年，最后一方说「我出钱修，咱别耗了」，这跟他承认自己有责是两件事。</span></li>
+  </ul>
+  <p><strong>所以看到「Anthropic 因版权案赔钱」这类表述时，准确的说法应该是：</strong>「该案以和解方式结案（2026-07-20 终止），法院未就实体争议作出判决，和解通常不确立法律先例。」</p>
+
+  <p><strong>另外两起：本文未取得可靠状态 ★</strong></p>
+  <ul class="keylist">
+    <li><span class="k">Getty v. Stability AI（美国）</span><span class="v">司法辖区为美国<strong>特拉华联邦地区法院</strong>（D. Del.）。<mark class="key">★ 本文未取得该案完整独立 docket（法院案卷）记录的最新状态，因此不给任何状态描述。</mark></span></li>
+    <li><span class="k">Getty v. Stability AI（英国）</span><span class="v">司法辖区为<strong>英格兰及威尔士高等法院</strong>（High Court of England and Wales）。<mark class="key">★ 本文未取得英国法院的最新状态，因此不给任何状态描述。</mark>顺带一说：<strong>这两起虽然原告与被告名字相同，但辖区不同、适用法律不同，结论不能互相搬用。</strong>英国版权法与美国版权法在「合理使用 / 合理处理」上的框架本身就不一样。</span></li>
+  </ul>
+  <p><strong>为什么要专门写「未取得」？</strong>因为在法律话题上，<mark class="key">一个凭记忆写出的案件状态，可能比不写更有害</mark>——读者会拿它当依据。<strong>本质上就是</strong>：宁可承认自己不知道，也不能给一个可能已经过期或压根错误的状态。这也是本站的一贯做法。</p>
+  <h3>EU AI Act：一张必须看时间表的法规</h3>
+  <p>欧盟那部人工智能法案（EU AI Act）在中文报道里被误传的方式非常典型：<mark class="key">「已于 2024 年 8 月全面生效」。这句话错在「全面」两个字。</mark></p>
+  <p><strong>先把基本信息列全：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">法规编号</span><span class="v"><strong>Regulation (EU) 2024/1689</strong>（出处：EUR-Lex，CELEX 号 32024R1689；以及欧盟委员会 <code>digital-strategy.ec.europa.eu</code>）</span></li>
+    <li><span class="k">通过日期</span><span class="v">2024-06-13</span></li>
+    <li><span class="k">官方公报发布</span><span class="v">2024-07-12</span></li>
+    <li><span class="k">生效日期（entered into force）</span><span class="v"><strong>2024-08-01</strong></span></li>
+    <li><span class="k">全面适用日期（became applicable）</span><span class="v"><strong>2026-08-02</strong></span></li>
+  </ul>
+  <p><strong>「生效」和「适用」这两个词的区别，是理解整件事的钥匙。</strong><strong>打个比方</strong>：一栋新<strong>小区</strong>竣工验收通过（生效），但住户是分批交房的——一期先住，二期明年，三期后年（分阶段适用）。<mark class="key">你不能因为看到「竣工验收通过」就说「所有人都已经搬进去了」。</mark></p>
+  <p><strong>完整的分阶段时间表如下</strong>（以 EUR-Lex 及欧盟委员会官方页面为准）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>日期</th><th>这一批开始适用什么</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>2025-02-02</strong></td><td>被禁止的 AI 实践（prohibited AI practices，第 1–8 项）及 AI 素养义务</td><td>先把「绝对不许干」的那几件事管起来</td></tr>
+        <tr><td><strong>2025-08-02</strong></td><td>治理规则与<strong>通用目的 AI（GPAI）模型</strong>义务</td><td>开始管那些「什么都能干」的大模型本身</td></tr>
+        <tr><td><strong>2026-08-02</strong></td><td><strong>透明度规则</strong>（含深度伪造标识义务）；AI Office 与成员国执法机构开始运作</td><td><mark class="key">这一条就在本文核实日的前几天</mark>——AI 生成内容的标识义务从这天起适用，执法机构也开始运转</td></tr>
+        <tr><td><strong>2026 年 12 月</strong></td><td>第 9 项禁止实践：生成非自愿性色情 / 亲密内容或儿童性虐待材料的 AI 系统（如所谓「脱衣」类应用）</td><td>由 <strong>AI Omnibus 修正案</strong>新增的一条</td></tr>
+        <tr><td><strong>2027-12-02</strong></td><td>高风险 AI 系统（Annex III：生物识别、关键基础设施、教育、就业、移民等敏感领域）</td><td>门槛最高的一批，给了最长的准备期</td></tr>
+        <tr><td><strong>2028-08-02</strong></td><td>嵌入受监管产品里的高风险 AI 系统（Annex I，如电梯、玩具）</td><td>需要与原有产品安全法规衔接，所以最晚</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>另外几条与版本相关的事实，值得记下来</strong>，因为它们能帮你判断你看到的资料新不新：</p>
+  <ul class="keylist">
+    <li><span class="k">AI Omnibus 修正案</span><span class="v">2025-11-19 通过，2026-05-07 达成政治协议，<strong>2026-07-27 生效</strong>（官方公报 OJ:L_202601744）。</span></li>
+    <li><span class="k">当前合并版本日期</span><span class="v">EUR-Lex 显示 <em>Current consolidated version: 27/07/2026</em>。<strong>「合并版本」（consolidated version）说白了就是</strong>把原文和后来所有修正整合成的一份现行完整文本——<strong>相当于</strong>一本教材的最新修订版，而不是初版加一堆勘误表。</span></li>
+    <li><span class="k">官方配套指南</span><span class="v">透明度义务指南于 <strong>2026-07-20</strong> 发布；AI 生成内容标识的行为准则（<strong>自愿性</strong>）与 EU 图标集也已发布。<mark class="key">注意「自愿性」这个词</mark>——行为准则和法律义务的强制力不同。</span></li>
+  </ul>
+  <p><strong>所以那个流传的说法该怎么改？</strong>准确表述是：<strong>「EU AI Act 于 2024-08-01 生效，采用分阶段适用方案：禁止性规则 2025-02-02、GPAI 规则 2025-08-02、透明度规则 2026-08-02、高风险 Annex III 延至 2027-12-02、高风险 Annex I 延至 2028-08-02。」</strong></p>
+
+  <h3>中国的两部规章：日期与要求</h3>
+  <p>中文读者最该关心的其实是这两部，因为它们直接管到你在国内用的产品。</p>
+  <p><strong>第一部 ·《生成式人工智能服务管理暂行办法》</strong></p>
+  <ul class="keylist">
+    <li><span class="k">发布机关</span><span class="v">国家互联网信息办公室等<strong>七部门</strong></span></li>
+    <li><span class="k">官方编号</span><span class="v">国家互联网信息办公室令<strong>第 15 号</strong></span></li>
+    <li><span class="k">生效日期</span><span class="v"><strong>2023-08-15</strong></span></li>
+  </ul>
+  <p><strong>第二部 ·《人工智能生成合成内容标识办法》</strong></p>
+  <ul class="keylist">
+    <li><span class="k">发布机关</span><span class="v">国家互联网信息办公室</span></li>
+    <li><span class="k">发布日期与文号</span><span class="v"><strong>2025-03-07</strong>，国信办通字〔2025〕2 号</span></li>
+    <li><span class="k">生效日期</span><span class="v"><strong>2025-09-01</strong></span></li>
+    <li><span class="k">核心要求</span><span class="v">AI 生成合成内容应当进行<strong>显式标识</strong>（如文字标注、语音提示、显著标识等）和<strong>隐式标识</strong>（通过元数据等方式）。服务提供者应在生成内容的<strong>文件元数据</strong>中添加隐式标识。</span></li>
+  </ul>
+  <p><strong>「显式标识」和「隐式标识」这对概念很值得掰开讲</strong>，因为它是理解 §13.4 深度伪造那一节的基础。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>标识类型</th><th>是什么</th><th>谁能看到</th><th>生活类比</th><th>弱点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>显式标识</strong></td><td>人眼能直接看到 / 人耳能直接听到的标记：画面角落的文字、开头的语音提示</td><td><strong>所有人</strong>，不需要任何工具</td><td>包装盒外面印的「食品」字样与生产日期</td><td><strong>容易被裁掉、遮住、抹掉。</strong>一张图截个边就没了</td></tr>
+        <tr><td><strong>隐式标识</strong></td><td>写在文件的<strong>元数据</strong>里，肉眼看不见，需要工具才能读出来</td><td>需要软件读取</td><td>快<strong>递</strong>面单背后的条码——你看不懂，但扫码枪能读</td><td><strong>转存、截图、重新编码时容易丢失。</strong>而且需要生态里的软件都支持读取</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>「元数据」（metadata）也顺手翻译一下：说白了就是「关于这个文件本身的信息」</strong>，比如拍摄时间、相机型号、软件版本——它跟着文件走，但不显示在画面上。<strong>相当于</strong>一本书的版权页：<mark class="key">内容不在那一页上，但那一页告诉你这本书是谁出的、哪一年印的。</mark></p>
+  <p><strong>这里有一个非常实际的提醒：</strong>为什么规章要求<em>同时</em>做显式和隐式两种标识？因为这两种标识的弱点刚好互补——<strong>显式标识怕被裁被遮，隐式标识怕被转存丢掉。</strong>两个都做，才有可能在其中一种失效时另一种还在。<strong>本质上就是</strong>双重保险，跟快递单既印字又贴条码是同一个道理。</p>
+
+  <h3>那么实操上该怎么办：一份可落地的清单</h3>
+  <p>法律层面的不确定不代表你什么都做不了。下面这些做法在当前不确定性之下都是稳的。<strong>（再次提醒：以下为一般性的风险降低做法，不构成法律建议。）</strong></p>
+  <ul class="keylist">
+    <li><span class="k">一 · 先分清你用的是哪条产品线</span><span class="v">这是本节最实用的一条。<strong>企业版 / API 与消费级产品的默认数据策略可能完全相反。</strong>把敏感资料贴进去之前，去官方隐私页面搜 <strong>train / retention / opt-in</strong> 三个词。<mark class="key">五分钟的功夫，能省掉一场事故。</mark></span></li>
+    <li><span class="k">二 · 建立「什么绝对不贴」的清单</span><span class="v">身份证号与护照号、银行卡与账户信息、密钥与密码、患者与客户的可识别信息、未公开的合同条款、未公开的财务数据。<strong>相当于</strong>厨房里那张「这几样东西不能进洗碗机」的清单——事先写下来，就不用每次临时判断。</span></li>
+    <li><span class="k">三 · 先脱敏再提问</span><span class="v">很多时候你需要的只是「帮我改这段合同的措辞」，不需要模型知道甲方是谁。<strong>把人名、公司名、金额换成占位符</strong>（甲方、A 公司、X 元），处理完再替换回来。<strong>说白了就是</strong>：去医院<strong>挂号</strong>问一个病症的处理办法，不必把全家人的身份证都递过去。</span></li>
+    <li><span class="k">四 · 商业用途的生成物，看清你用的那个服务的条款</span><span class="v">「AI 生成的东西能不能商用」这个问题<mark class="key">在不同产品、不同订阅档位、不同辖区下答案可能不同</mark>，而且法律层面仍在演进。<strong>唯一稳的做法是去看你实际使用的那个服务的使用条款，并保留截图与日期。</strong></span></li>
+    <li><span class="k">五 · 保留创作过程记录</span><span class="v">留下提示词、生成时间、所用服务与版本、以及你自己后续做了哪些修改。<strong>相当于</strong>装修留下施工记录和材料清单——真出纠纷时，能证明「哪部分是我做的」比事后回忆强得多。</span></li>
+    <li><span class="k">六 · 别照搬别国判例来判断自己的行为</span><span class="v">美国某地区法院的一个裁定，对你所在辖区没有约束力。而且<strong>那个裁定本身可能还在上诉中</strong>（Thomson Reuters v. Ross 就是活生生的例子）。<strong>本质上就是</strong>：隔壁小区的物业规定管不到你家。</span></li>
+    <li><span class="k">七 · 关注标识义务，因为它已经在生效</span><span class="v">中国《人工智能生成合成内容标识办法》<strong>2025-09-01 已生效</strong>，EU AI Act 的透明度规则<strong>2026-08-02 已适用</strong>。<mark class="key">这两条已经不是「未来的规定」，而是当下的义务。</mark>如果你在做产品或者发布内容，这是最需要立刻核对的一条。</span></li>
+    <li><span class="k">八 · 高价值场景请咨询执业律师</span><span class="v">如果一件事的金额或后果足够大，那么<strong>咨询你所在辖区的执业律师的成本，一定远低于判断失误的成本</strong>。这一节能给你的最大帮助是「让你知道该问什么问题」，而不是替你回答。</span></li>
+  </ul>
+
+  <h3>三条容易搞混的线：输入端、输出端、和「生成物归谁」</h3>
+  <p>看完前面这些案件，可能会有一个混乱感：<strong>大家到底在吵什么？</strong>其实所有争论都可以归到三条互相独立的线上，把它们分开就清楚了。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>争论线</th><th>问的是什么</th><th>典型代表</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>输入端</strong></td><td><strong>训练时复制他人作品，本身需不需要授权？</strong>这里争的是「学习这个动作」的合法性</td><td>NYT v. OpenAI、Andersen v. Stability AI、Thomson Reuters v. Ross</td><td>老师读了全校学生的作文才写出教材——「读」这一步要不要经过学生同意</td></tr>
+        <tr><td><strong>输出端</strong></td><td><strong>生成的东西如果跟某个原作高度相似，这一份算不算侵权？</strong>争的是结果，跟怎么训练无关</td><td>各案中都可能涉及，但它是一个独立争点</td><td>教材里有一段几乎照抄了某个学生的原文</td></tr>
+        <tr><td><strong>归属线</strong></td><td><strong>AI 生成的东西，著作权归谁？作者是人还是机器？能不能登记？</strong></td><td>这条线在各辖区的规则差异最大</td><td>那本教材的署名该写老师、写学校、还是写「参考了三千篇作文」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">这三条线在报道里经常被混着谈，于是造出很多似是而非的结论。</mark>比如「某案判了 AI 训练侵权，所以我用 AI 画的图不能商用」——<strong>这句话跨了两条线</strong>：前半句是输入端的争议（模型厂商与权利人之间的事），后半句是归属线（你和你的生成物之间的事）。<strong>说白了就是</strong>：楼上漏水的责任判定，跟你家门锁能不能换，压根是两件事。</p>
+  <p><strong>关于归属线，本文必须诚实留白：</strong><mark class="key">「AI 生成内容的著作权归属」在不同辖区规则不同、且仍在演进，本次核实未取得一份可作为跨辖区结论的权威文本，因此本节不给任何一般性答案。</mark>能给的只有可操作的做法：<strong>看你实际使用的那个服务的条款（很多服务会在条款里明确写生成物的使用权归属），并保留创作过程记录。</strong></p>
+  <p>顺带说一件有实践价值的事：<strong>「服务条款给你的使用权」和「著作权归属」也是两件不同的事。</strong><strong>打个比方</strong>：你租的房子，房东给了你使用权（可以住、可以放家具），<mark class="key">但产权证上不是你的名字。</mark>很多 AI 服务的条款给的是前者——「你可以把生成物用于商业用途」——这跟「你拥有这份内容的著作权」不是同一句话。看条款时要留意它到底说的是哪一个。</p>
+
+  <h3>一个具体的隐患：把密钥和代码贴进对话框</h3>
+  <p>这一节最后讲一个非常具体、发生频率却极高的风险，因为它把前面所有内容串起来了。</p>
+  <p>场景是这样的：程序员调试代码，随手把一整段配置文件贴进 AI 对话框问「这段哪里错了」。而那段配置里，<strong>常常带着数据库密码、云服务的访问密钥、第三方接口的令牌。</strong></p>
+  <p><strong>为什么这件事特别危险？把前面几块知识连起来看就明白了：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">第一层 · 密钥恰好属于「最容易被记住」的那一类</span><span class="v">回想 arXiv 2012.07805 的结论：<strong>模型会记住罕见的序列。</strong>而一串随机密钥恰恰是「没有任何规律、只能死记」的典型。<mark class="key">它不像一句常见的话可以靠语法推出来，它必须被硬记，所以它更可能被记住。</mark></span></li>
+    <li><span class="k">第二层 · 你可能用的正是那条会训练的产品线</span><span class="v">如果你用的是消费级订阅而不是企业版或 API，那按官方条款，你的输入<strong>可能</strong>进入训练流程。<strong>说白了就是</strong>：你以为在跟一个私人助理说话，实际上可能是在往一个公共教材里投稿。</span></li>
+    <li><span class="k">第三层 · 泄露的后果不可撤回</span><span class="v">密码可以改，但<strong>「这段密钥曾经出现在哪里」这件事没法撤回</strong>。<strong>相当于</strong>把家门<strong>钥匙</strong>的照片发到群里——你可以立刻换锁，但那张照片已经存在于别人的手机里了。</span></li>
+  </ul>
+  <p><strong>正确的做法非常简单，而且不牺牲任何便利：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">贴代码前先把密钥换成占位符</span><span class="v">改成 <code>YOUR_API_KEY</code>、<code>&lt;DB_PASSWORD&gt;</code> 这类明显的假值。<mark class="key">模型帮你排查语法和逻辑压根不需要真实的密钥值。</mark></span></li>
+    <li><span class="k">贴数据前先把可识别信息换掉</span><span class="v">真实姓名换成「用户 A」，手机号换成 <code>13800000000</code>，身份证号换成同长度的占位串。<strong>相当于</strong>医院做教学病例讨论时会把患者姓名遮掉——诊断照样能讨论，隐私保住了。</span></li>
+    <li><span class="k">团队要有明文规定，别靠个人自觉</span><span class="v">写进开发规范里：<strong>哪些内容不得贴入外部 AI 工具</strong>。<strong>本质上就是</strong>厨房贴一张「生熟分开」的告示——靠制度比靠每次都想起来可靠得多。</span></li>
+    <li><span class="k">如果确实需要处理真实敏感数据，走企业版或私有部署</span><span class="v">这就回到本节第二块内容了：<strong>不同产品线的默认策略不同。</strong>企业版通常提供「默认不训练」「限定数据保留期」「零数据保留选项」这些合同层面的保障。<mark class="key">选对产品线，比事后补救有效得多。</mark></span></li>
+  </ul>
+  <p><strong>这一小节想传达的其实是本节的整个态度：</strong>隐私风险不是通过「不用 AI」来规避的，是通过<strong>知道哪台机器会学习、以及贴进去之前先脱敏</strong>来管理的。<strong>说白了就是</strong>：菜刀不用扔，但递刀时要递刀柄。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="截至 2026-08-08，关于 Thomson Reuters v. Ross Intelligence 与 Bartz v. Anthropic 这两起案件，下面哪种表述是准确的？"
+       data-opts="两起都已终审判决，确立了 AI 训练不构成合理使用的先例|Thomson Reuters v. Ross 的地区法院已就合理使用作出部分简易判决但该案在第三巡回上诉法院上诉中尚未判决；Bartz v. Anthropic 是和解结案，法院未就实体争议下判断|两起都还在一审审理中，没有任何裁定|Bartz v. Anthropic 已判决 Anthropic 侵权，Ross 案已被驳回"
+       data-answer="1"
+       data-explain="这两起是本章最容易被说错的地方。Thomson Reuters v. Ross：地区法院（D. Del., No. 1:20-cv-613-SB）于 2025-02-11 就合理使用作出对原告有利的部分简易判决，并认定 Ross 侵犯 2243 条判例摘要；但该案现在美国第三巡回上诉法院上诉中（No. 25-2153），2026-06-11 已口头辩论、尚未判决，因此不构成有约束力的终局先例，也不是对所有 AI 训练行为的一般性宣告。Bartz v. Anthropic（N.D. Cal., No. 3:24-cv-05417-AMO）是和解结案（2026-07-20 终止），和解通常不确立先例、也不构成任何一方的责任承认。本文不构成法律建议。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节的收束</span>
+    <p><strong>再声明一次：本文不构成法律建议。</strong>以下所有状态以 <strong>2026-08-08</strong> 为准，法律有辖区、案件状态会变。</p>
+    <p><strong>技术事实先站住：训练数据真的能被掏出来。</strong>Carlini 等（arXiv 2012.07805，<strong>USENIX Security 2021，同行评议</strong>）证明可从 GPT-2 类模型提取训练数据含个人信息，机制是模型会记住<strong>罕见的</strong>或<strong>重复多次的</strong>序列；Nasr 等（arXiv 2311.17035，<strong>预印本</strong>）把这套方法推到了生产级模型；成员推断攻击（arXiv 1610.05820，<strong>IEEE S&amp;P 2017，同行评议</strong>）只需判断「这条数据在训练集里吗」，<mark class="key">而在很多场合「你在这份名单里」本身就是敏感信息。</mark></p>
+    <p><strong>「我的输入会被拿去训练吗」的答案分产品线。</strong>OpenAI：消费级（ChatGPT Free/Plus/Team，ROW Terms 生效 2026-01-01）<strong>可能</strong>被用于训练；API 与企业产品（Enterprise Privacy 页面更新 2026-01-08）写明 <em>We do not train our models on your data by default</em>，API 数据自 2023-03-01 起默认不训练、保留最多 30 天、有零数据保留选项。Anthropic：商业产品<strong>默认不训练</strong>；消费级也不训练，<strong>但有两个例外</strong>——你主动举报材料、或明确选择加入。<strong>实操：在官方隐私页面搜 train / retention / opt-in 三个词。</strong></p>
+    <p><strong>四个法律状态词必须分清：审理中 / 部分简易判决 / 上诉中 / 和解结案。</strong>五起案件的真实状态：<strong>NYT v. OpenAI</strong>（S.D.N.Y.，合并入 In re OpenAI MDL No. 1:25-md-03143，2025-04-11 成立）——<strong>审理中</strong>；<strong>Authors Guild v. OpenAI</strong>——已并入同一 MDL，<strong>审理中</strong>；<strong>Andersen v. Stability AI</strong>（N.D. Cal., No. 3:23-cv-00201-WHO）——<strong>审理中</strong>，已有的 2023 与 2024 两项裁定均属程序阶段；<mark class="key"><strong>Thomson Reuters v. Ross</strong>——地区法院 2025-02-11 部分简易判决（认定侵犯 2243 条判例摘要），但<strong>现在第三巡回上诉法院上诉中（No. 25-2153），2026-06-11 已辩论、尚未判决</strong>，不构成终局先例</mark>；<strong>Bartz v. Anthropic</strong>（N.D. Cal., No. 3:24-cv-05417-AMO）——<mark class="key"><strong>和解结案</strong>（2026-07-20 终止），不是判决，通常不确立先例</mark>。<strong>Getty v. Stability AI 的美国与英国两案，本文均未取得最新状态，故不给状态描述。</strong></p>
+    <p><strong>EU AI Act（Regulation (EU) 2024/1689）分阶段适用</strong>：2024-08-01 生效 → 禁止性规则 2025-02-02 → GPAI 规则 2025-08-02 → <strong>透明度规则（含深伪标识）2026-08-02</strong> → 第 9 项禁止实践 2026 年 12 月 → 高风险 Annex III 2027-12-02 → 高风险 Annex I 2028-08-02。AI Omnibus 修正案 2026-07-27 生效，当前合并版本日期为 2026-07-27。<strong>「已于 2024 年 8 月全面生效」是错的，错在「全面」。</strong></p>
+    <p><strong>中国两部规章：</strong>《生成式人工智能服务管理暂行办法》（七部门，网信办令第 15 号）<strong>2023-08-15 生效</strong>；《人工智能生成合成内容标识办法》（国信办通字〔2025〕2 号，2025-03-07 发布）<strong>2025-09-01 生效</strong>，要求<strong>显式标识 + 隐式标识（元数据）</strong>并行——两者弱点互补：显式怕被裁被遮，隐式怕转存丢失。</p>
+    <p><strong>能做的事：</strong>先分清产品线；写一张「绝对不贴」的清单；先脱敏再提问（人名公司名换占位符）；商用前看清你实际使用的那个服务的条款并留截图与日期；保留创作过程记录（提示词、时间、版本、你改了什么）；别照搬别国判例判断自己的行为；<mark class="key">标识义务已经在生效，不是未来的事</mark>；高价值场景咨询你所在辖区的执业律师。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./13-2-bias.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 13.2 · 偏见与公平性</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./13-4-deepfake.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 13.4 · 深度伪造</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 13.3</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-34"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-34"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-34"></script>
+</body>
+</html>
