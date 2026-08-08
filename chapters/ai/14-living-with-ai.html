@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 14 章 · 与 AI 共处 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-35">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html#vol-ai">智能篇</a>
+      <span class="sep">›</span>
+      <span>第 14 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 14</div>
+    <h1>第 14 章 · 与 AI 共处</h1>
+    <div class="cn">Living With AI · 那我到底该怎么用</div>
+  </header>
+
+  <p class="lead">
+    前面十三章讲了它是什么、怎么造出来的、能做什么、会在哪儿翻车。这一章要回答一个你可能从第一页就想问的问题：<mark class="key">「说了这么多，那我到底该怎么用？」</mark>这一章不是技术章，是<strong>方法论与态度章</strong>，也是整个智能篇的收束。<strong>说白了</strong>：前十三章是把工具箱打开给你看，这一章是教你握法。所以本章的每一节都尽量给<strong>能直接抄走的具体东西</strong>——具体话术、具体检查清单、具体判断标准，而不是「要多思考」「要保持独立」这类正确但没用的话。<strong>打个比方</strong>：一本菜谱写「火候要恰当」等于什么都没说，写「油面起细纹、丢一小片葱进去立刻浮起并冒小泡，就是七成油温」才是能用的。本章的目标是让你读完之后<strong>更会用 AI，而不是更怕 AI</strong>。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔧 一个刚配齐工具的新手</div>
+    <p>想象你刚搬进新家，家里给你配了一整套工具：电钻、角磨机、水平仪、云石机。每一件都很强。说明书你都翻过了，知道电钻能打混凝土、角磨机能切金属。</p>
+    <p>现在问题来了：<strong>你敢在墙上打一个孔挂电视吗？</strong></p>
+    <p>大多数人会犹豫。犹豫的原因不是不会按开关——按开关三秒就学会了。犹豫的是这些：<strong>这面墙是承重墙还是隔墙？墙里有没有走电线？打多深？用几号钻头？膨胀螺栓能不能吃住这个重量？如果打歪了怎么办？</strong></p>
+    <p><mark class="key">你看，真正的门槛从来不在「工具怎么开」，而在「什么时候用哪件、用到什么程度、以及哪一步必须自己判断」。</mark></p>
+    <p>AI 现在就是这套工具。前十三章相当于把每件工具的说明书讲完了——你知道了它靠预测下一个词工作（§ 8.2）、知道它会一脸认真地编出不存在的东西（§ 13.1）、知道它能自己调工具办事（§ 11.2）。<strong>这一章讲的就是「怎么打这个孔」</strong>：哪些活它干得比你好、哪些活它干得像但不能信、哪些活你必须自己上手，以及最后一件——<strong>哪些决定无论它多强都不该交给它</strong>。</p>
+    <div class="link">→ 工具越强，使用者的判断力就越值钱。这句话是本章五节共同的底色。</div>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>这一章处理的都是「读完前面之后立刻会遇到」的实际问题。它们看起来朴素，但每一个都有相当具体的答案：</p>
+  <ul class="keylist">
+    <li><span class="k">我用它学东西，怎么才不是「看起来学会了」</span><span class="v">这是 § 14.1。<strong>核心区分是一个动作差异</strong>：让它讲给你听，和让它逼你讲出来，效果差得极远。<strong>其实就是</strong>看别人游泳和自己下水的区别——前者能让你说出一整套动作要领，后者才让你不沉。这一节给出费曼式提问的完整模板、五种能立刻用的提问句式，以及一张「哪种学习动作有效 / 哪种是假努力」的对照表。</span></li>
+    <li><span class="k">我用它写东西，界线在哪</span><span class="v">这是 § 14.2。<strong>可以复用的一条原则是：让它做「搬运和整形」，不让它做「判断和取舍」。</strong>大纲、改写、找反例、挑毛病、做摘要，它都很擅长；<strong>但「这篇文章到底想说什么」「这个结论我认不认」必须你自己下。</strong>这一节还要处理一个很多人搞混的事：<strong>用 AI 查资料和用搜索引擎查资料，可靠性完全不是一回事</strong>——原因在 § 13.1 已经讲透了。</span></li>
+    <li><span class="k">我用它写代码，风险在哪</span><span class="v">这是 § 14.3。这一节会认真讲 <strong>Vibe Coding</strong>（凭感觉编程——不细读生成的代码、跑通了就往下走）的收益与代价。<mark class="key">最危险的情形不是它写出跑不起来的代码，而是它写出「跑得通、看着对、但你不理解」的代码。</mark>跑不通的代码会当场报错；看着对的代码要等到上线之后才咬人。</span></li>
+    <li><span class="k">它说得那么自信，我怎么判断真假</span><span class="v">这是 § 14.4。这一节接上 § 13.1 的幻觉原理，给出一套<strong>三步验证法</strong>——每一步做什么、说什么话、看什么信号，全部写成可执行的动作。核心认知只有一句：<mark class="key">自信的语气和内容的正确性之间，在机制上不存在任何关联。</mark></span></li>
+    <li><span class="k">哪些事我永远不该让它替我决定</span><span class="v">这是 § 14.5，也是全篇的价值落点。这一节不列禁忌清单，而是给<strong>四条判断标准</strong>：涉及责任归属的、涉及不可逆后果的、涉及价值判断的、涉及他人利益的。<strong>标准比清单有用得多</strong>——清单会过期，标准能让你自己判断新情况。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 副驾驶、导航仪，和方向盘</span>
+    <p>整章最重要的一个心智模型，用开车来讲最省力，因为几乎每个人都坐过车。</p>
+    <p><strong>第一种角色是导航仪。</strong>它比你熟路，能算出你想不到的路线，能提醒你前方有测速。你会听它的——但你不会闭着眼听。它让你在高架上左拐，你抬头看见那是护栏，你不会真的拐。<strong>换成大白话：你把「找路」这件事外包了，但没把「看路」这件事外包。</strong></p>
+    <p><strong>第二种角色是副驾驶。</strong>一个好副驾驶能干很多事：帮你看后视镜死角、提醒你限速、在你犹豫时说出两个选项的利弊、长途时陪你说话让你别困。<mark class="key">但副驾驶手边没有方向盘。</mark>他说「我觉得可以超」，超不超还是你踩油门。出了事，交警找的是驾驶员。</p>
+    <p><strong>第三种角色，也是最要小心的一种：自动驾驶辅助。</strong>它真的能替你握一会儿方向盘，而且在绝大多数路况下握得比你稳。危险恰恰来自这个「绝大多数」——<strong>因为它平时太可靠，你会慢慢把手完全松开、把眼睛移开</strong>。真正出事的那一刻往往是罕见路况，而那时你已经没有接管的准备了。这个现象在人机交互领域有个名字叫<strong>自动化偏差</strong>（automation bias），<strong>说白了就是</strong>：机器帮你做得越久越好，你就越不检查它。</p>
+    <p><strong>本章五节可以直接对应这三种角色：</strong>§ 14.1、§ 14.2、§ 14.3 是教你怎么把它用成一个好副驾驶（能干活、能提意见、但不碰方向盘）；§ 14.4 是教你怎么保持「抬头看路」的习惯，专门对付自动化偏差；<strong>§ 14.5 回答的是最后那个问题——方向盘在什么情况下绝对不能松手。</strong><mark class="key">答案不是「永远别松」，那不现实也没必要；答案是「有一类路段永远不能松」，而这一节教你识别那类路段。</mark></p>
+  </div>
+
+  <h3>本章的五节</h3>
+  <div class="cards">
+    <a class="card" href="./14-1-learning.html">
+      <div class="card-num">§ 14.1</div>
+      <h4>AI 当学习助手</h4>
+      <p>费曼式提问的完整模板、让它出题而不是给答案、以及「讲不清就是没懂」这条唯一可靠的检验。</p>
+    </a>
+    <a class="card" href="./14-2-writing.html">
+      <div class="card-num">§ 14.2</div>
+      <h4>AI 当写作与研究伙伴</h4>
+      <p>让它搬运和整形，不让它判断和取舍。附一份「让它挑毛病」的十条提问清单。</p>
+    </a>
+    <a class="card" href="./14-3-coding.html">
+      <div class="card-num">§ 14.3</div>
+      <h4>AI 当编程搭档</h4>
+      <p>Vibe Coding 的真实收益与真实代价。为什么「跑通了」是最不可靠的验收标准。</p>
+    </a>
+    <a class="card" href="./14-4-critical-thinking.html">
+      <div class="card-num">§ 14.4</div>
+      <h4>批判性思维</h4>
+      <p>三步验证法：定性 → 定源 → 定责。以及自信的语气为什么和正确性毫无关系。</p>
+    </a>
+    <a class="card" href="./14-5-human-judgment.html">
+      <div class="card-num">§ 14.5</div>
+      <h4>保留人类判断</h4>
+      <p>四条判断标准：责任归属、不可逆后果、价值判断、他人利益。全篇的价值落点。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">这一章的所有方法都建立在前十三章之上</span><span class="v">本章会大量出现「这一点在 § X.Y 讲过」这样的回指，这不是偷懒，是<strong>刻意的</strong>。因为几乎每一条实用建议背后都有一条已经讲清的原理：<strong>为什么要让它给出处？因为 § 13.1 的幻觉机制。为什么提问要给上下文？因为 § 10.1 的四要素。为什么它调工具时要限权？因为 § 13.5 的注入风险。</strong><mark class="key">方法论章的价值不在于提出新东西，而在于把前面散落的原理接成一套能用的动作。</mark></span></li>
+    <li><span class="k">不神化，也不贬低</span><span class="v">这两种态度看着相反，代价是一样的：<strong>神化的人不检查，贬低的人不用。</strong>前者会把编出来的法条当依据，后者会在别人两小时干完的活上耗两天。<strong>本质上就是</strong>对工具的两种误判——把菜刀当神器，或者因为菜刀会割手就徒手撕菜。</span></li>
+    <li><span class="k">「它说得很自信」不是证据</span><span class="v">这一条要提前打个预防针，因为它反直觉。人类社会里语气和把握程度是相关的——一个人越有把握，语气越肯定，这是长期社交经验养成的信号。<strong>但在语言模型身上这个关联被切断了</strong>：它输出假话时的语气和输出真话时一模一样（§ 13.1）。<mark class="key">所以你用了几十年的那个判断信号，在这里失效了。</mark></span></li>
+    <li><span class="k">效率提升与能力退化是两笔账</span><span class="v">用它省时间，和用它之后自己变强还是变弱，是<strong>两个独立的问题</strong>。同一个动作可以同时省时间又让你退化——<strong>相当于</strong>天天坐电梯确实省时间，但腿会变弱。§ 14.1 会给出区分办法：<strong>看这个动作是把认知负担搬走了，还是把认知负担变成了你自己的输出。</strong></span></li>
+    <li><span class="k">责任不会因为工具介入而消失</span><span class="v">这是 § 14.5 的地基。<strong>「AI 说的」不是任何场合下的免责理由</strong>——不是法律上的，也不是职业上的，甚至不是人情上的。你交出去的报告署你的名字，你签的合同写你的字，你给家人的建议由你承担后果。<strong>打个比方</strong>：厨师用了预制菜，端出去的菜出问题，客人找的还是这家店。</span></li>
+    <li><span class="k">本章不引入新的未核实事实</span><span class="v">这是方法论章的写法要求。凡本章提到的具体研究、数据、判例，<strong>一律来自前面章节已经逐条核实过的内容，并注明「见 § X.Y」</strong>。凡是需要外部证据但本站未取得权威来源的说法，一律写成经验性表述（如「实践中常见的情况是……」），<mark class="key">绝不为了让论证显得有力而编造出处。</mark></span></li>
+  </ul>
+
+  <h3>这一章怎么读</h3>
+  <p><strong>如果你只读一节，读 § 14.4。</strong>因为它是所有其他节的前提——不会验证，其他四节的方法都会变成风险放大器。你越会用它写代码、写文章、学东西，验证能力不足带来的损失就越大。</p>
+  <p><strong>如果你是学生或者在系统学新东西，§ 14.1 收益最高。</strong>那一节里有一个反直觉的结论值得先知道：<mark class="key">让 AI 把知识讲得特别清楚，可能是对学习最没用的一种用法。</mark>因为「听懂了」这个感觉本身就是学习中最靠不住的信号——它太容易获得，而且获得之后你就不再往下挖了。</p>
+  <p><strong>如果你写代码，§ 14.3 是必读，而且要读慢。</strong>那一节会拆开一个具体场景：一段生成出来的代码，跑通了、测试也过了、看着挺规整，但它在错误处理、边界条件、并发安全上留了三个坑。<strong>这三个坑的共同特征是：在开发环境里永远不会暴露。</strong></p>
+  <p><strong>§ 14.5 建议最后读，读完再回头翻一遍前十三章的 Recap。</strong>那一节不教技巧，它回答的是「人在这套工具面前的位置」。整个智能篇十四章讲到这里会收在一句话上：<strong>工具的能力决定你能做多少事，你的判断力决定这些事值不值得做。</strong></p>
+
+  <div class="pager">
+    <a class="btn prev" href="./13-5-prompt-injection.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 13.5 · Prompt 注入与安全</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./14-1-learning.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 14.1 · AI 当学习助手</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · 第 14 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-35"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-35"></script>
+</body>
+</html>

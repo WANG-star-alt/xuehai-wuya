@@ -165,14 +165,14 @@
         ], { href: 'chapters/ai/13-limits.html' }),
       createNode('ai-14', '第 14 章 · 与 AI 共处',
         '把 AI 当学习助手、写作伙伴、编程搭档——但保留人类判断。',
-        '待撰写',
+        '约 5.0 万字',
         [
-          createNode('ai-14-1', '§ 14.1 · AI 当学习助手', '费曼式提问、生成练习、讲不清就是没懂。', '待撰写', []),
-          createNode('ai-14-2', '§ 14.2 · AI 当写作与研究伙伴', '大纲、改写、找反例——但结论要自己下。', '待撰写', []),
-          createNode('ai-14-3', '§ 14.3 · AI 当编程搭档', 'Vibe Coding 与代码审查——效率与风险并存。', '待撰写', []),
-          createNode('ai-14-4', '§ 14.4 · 批判性思维', '怎么判断 AI 在胡说——三步验证法。', '待撰写', []),
-          createNode('ai-14-5', '§ 14.5 · 保留人类判断', '哪些决定永远不该外包给 AI。', '待撰写', [])
-        ])
+          createNode('ai-14-1', '§ 14.1 · AI 当学习助手', '费曼式提问、生成练习、讲不清就是没懂。', '9671 字', [], { href: 'chapters/ai/14-1-learning.html', spec: 'pass'}),
+          createNode('ai-14-2', '§ 14.2 · AI 当写作与研究伙伴', '大纲、改写、找反例——但结论要自己下。', '9651 字', [], { href: 'chapters/ai/14-2-writing.html', spec: 'pass'}),
+          createNode('ai-14-3', '§ 14.3 · AI 当编程搭档', 'Vibe Coding 与代码审查——效率与风险并存。', '9489 字', [], { href: 'chapters/ai/14-3-coding.html', spec: 'pass'}),
+          createNode('ai-14-4', '§ 14.4 · 批判性思维', '怎么判断 AI 在胡说——三步验证法。', '9270 字', [], { href: 'chapters/ai/14-4-critical-thinking.html', spec: 'pass'}),
+          createNode('ai-14-5', '§ 14.5 · 保留人类判断', '哪些决定永远不该外包给 AI。', '9314 字', [], { href: 'chapters/ai/14-5-human-judgment.html', spec: 'pass'})
+        ], { href: 'chapters/ai/14-living-with-ai.html' })
     ],
     { color: '#4a6d8c' }
   );
