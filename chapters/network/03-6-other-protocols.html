@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 3.6 · 其他常用协议 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-36">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-36">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./03-protocols.html">网络篇 · 第 3 章</a>
+      <span class="sep">›</span>
+      <span>§ 3.6</span>
+    </div>
+    <a href="./03-protocols.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 3.6 · Section</div>
+    <h1>其他常用协议</h1>
+    <div class="cn">ARP · ICMP · DHCP · SSH · FTP · SMTP</div>
+  </header>
+
+  <p class="lead">
+    前五节讲的是"主角"。这一节讲配角——<mark class="key">但你每天用到它们的次数，可能比 HTTP 还多</mark>。连上 WiFi 那一瞬间是 DHCP 在干活；ping 一下是 ICMP；同一屋里两台设备说话前必先问一句 ARP。这一节的目标不是背协议，而是<strong>让你以后 ping 不通、抓包看到一堆 ARP 的时候，知道那是什么、该往哪查</strong>。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎬 一部电影里的六个配角</div>
+    <p>一部戏的主角只有两三个，但少了配角这部戏压根拍不成。网络协议也一样：</p>
+    <p>· <strong>ARP</strong> = <strong>小区</strong>门卫。你知道"3 号楼 502"，但要真把东西送到那户人手上，得先问清"502 那家人长什么样"。<br/>
+    · <strong>ICMP</strong> = 快递的<strong>异常通知</strong>。"地址不存在"、"超时退回"、"包太大装不进车"——所有出错的消息都靠它带回来。<br/>
+    · <strong>DHCP</strong> = 新单位的<strong>人事</strong>。你第一天来报到，工位号、内线、打印机在哪，全是它一次给你配好的。<br/>
+    · <strong>SSH</strong> = 远程<strong>钥匙</strong>。让你坐在家里的椅子上，操作机房那台机器的键盘。<br/>
+    · <strong>FTP</strong> = 老式<strong>仓库</strong>搬运工。四十多年了，还在很多角落里干活。<br/>
+    · <strong>SMTP</strong> = <strong>邮局</strong>的投递系统。你发的每一封邮件，都是它一站一站送过去的。</p>
+    <p><strong>这六个协议的共同特点是：顺利时你完全感觉不到它们，出问题时全靠它们给线索。</strong></p>
+  </div>
+
+  <h3>先把这一节的术语翻译成人话</h3>
+  <p>这一节涉及的协议多，术语也杂。先<strong>翻译成人话</strong>过一遍，建立一张地图。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>协议 / 术语</th><th>换成大白话</th><th>它在哪一层干活</th><th>生活里对应的东西</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>ARP</strong>（Address Resolution Protocol，地址解析协议，RFC 826）</td><td>说白了就是"知道门牌号，问清那户人的长相"</td><td>IP 层和链路层之间</td><td><strong>小区</strong>门卫："502 那家？就是那个戴眼镜的"</td></tr>
+        <tr><td><strong>MAC 地址</strong>（网卡出厂时带的硬件地址）</td><td>说白了就是"这块网卡的身份证号，跟它在哪没关系"</td><td>链路层</td><td>一个人的<strong>身份证</strong>号：不管他住哪，号码不变</td></tr>
+        <tr><td><strong>ICMP</strong>（Internet Control Message Protocol，网际控制报文协议，RFC 792）</td><td>说白了就是"网络里的异常通知单"</td><td>和 IP 同层（靠 IP 承载）</td><td><strong>快递</strong>的退件通知："地址不存在"、"超时退回"</td></tr>
+        <tr><td><strong>ping</strong></td><td>说白了就是"喊一声，看对面应不应"</td><td>用 ICMP 实现</td><td>敲门问"有人吗"，听回音</td></tr>
+        <tr><td><strong>traceroute / tracert</strong></td><td>说白了就是"把整条路上每一站都问出来"</td><td>用 ICMP + TTL 实现</td><td>追踪<strong>包裹</strong>经过了哪些中转站</td></tr>
+        <tr><td><strong>DHCP</strong>（Dynamic Host Configuration Protocol，动态主机配置协议，RFC 2131）</td><td>说白了就是"新来的自动领一套上网配置"</td><td>应用层（走 UDP）</td><td>新单位的<strong>人事</strong>：工位号、内线、门禁卡一起发给你</td></tr>
+        <tr><td><strong>租期</strong>（Lease，这个地址借给你用多久）</td><td>说白了就是"这个工位借你用一阵，到期要续"</td><td>DHCP 的概念</td><td>租房合同：到期要么续约要么腾出来</td></tr>
+        <tr><td><strong>SSH</strong>（Secure Shell，安全外壳协议，RFC 4251 等）</td><td>说白了就是"加密的远程操作台"</td><td>应用层（走 TCP 22）</td><td>拿着<strong>钥匙</strong>远程开门，进去动那台机器</td></tr>
+        <tr><td><strong>公钥 / 私钥</strong>（一对配对的密钥，一个公开一个自己留着）</td><td>说白了就是"锁和钥匙：锁可以给任何人，钥匙只有你有"</td><td>SSH / TLS 都用</td><td>发出去很多把<strong>锁</strong>，钥匙只有你一把</td></tr>
+        <tr><td><strong>FTP</strong>（File Transfer Protocol，文件传输协议，RFC 959）</td><td>说白了就是"最老的传文件方式"</td><td>应用层（走 TCP 20 / 21）</td><td>老式<strong>仓库</strong>：一个窗口谈事，另一个窗口搬货</td></tr>
+        <tr><td><strong>SMTP</strong>（Simple Mail Transfer Protocol，简单邮件传输协议，RFC 5321）</td><td>说白了就是"把邮件从这个邮局送到那个邮局"</td><td>应用层（走 TCP）</td><td><strong>邮局</strong>之间的投递：只管送出去，不管收信人怎么取</td></tr>
+        <tr><td><strong>IMAP / POP3</strong></td><td>说白了就是"你从自家信箱把信取出来看"</td><td>应用层（走 TCP）</td><td>去<strong>邮局</strong>或信箱<strong>取</strong>信这个动作</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">这张表最值得记住的一件事是最后三行的分工：SMTP 负责"寄出去"，IMAP / POP3 负责"取回来"。这是两件事、两个协议——很多人把它们混成一个"邮件协议"，然后在排查问题时找错方向。</mark></p>
+
+  <h3>ARP：知道门牌号，还得知道那户人长什么样</h3>
+  <p>这个协议是理解"局域网内两台机器怎么说话"的钥匙，而且它解决的问题非常反直觉：<strong>光有 IP 地址，还送不出去。</strong></p>
+  <p><strong>为什么？</strong>因为在同一个局域网内，数据实际上是靠<strong>网卡的硬件地址</strong>投递的，不是靠 IP。这个硬件地址叫 <strong>MAC 地址</strong>（Media Access Control Address，介质访问控制地址——网卡出厂时就写死的一串号码，全球唯一）。</p>
+  <p><strong>换成大白话</strong>，这两个地址的关系是这样的：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>IP 地址</th><th>MAC 地址</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>说白了是什么</td><td>"你住在哪"</td><td>"你是谁"</td></tr>
+        <tr><td>生活里对应</td><td><strong>门牌</strong>地址：跟你搬到哪儿有关</td><td><strong>身份证</strong>号：跟你住哪儿完全无关</td></tr>
+        <tr><td>会不会变</td><td><strong>会</strong>——换个网络就换一个</td><td>通常不变（出厂写死的，虽然软件上可以改）</td></tr>
+        <tr><td>有效范围</td><td>全网（跨路由器有效）</td><td><strong>只在本网段有效</strong>，出了小区没意义</td></tr>
+        <tr><td>谁在用它</td><td>路由器：靠它决定往哪个方向送</td><td>交换机 / 网卡：靠它决定交给屋里哪一台</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>所以完整的投递流程是<strong>两级的</strong>：<mark class="key">先靠 IP 地址一站一站送到目标所在的那个网段（这是 §3.5 讲的路由），最后一步再靠 MAC 地址送到那个网段里具体的那一台机器。</mark></p>
+  <p><strong>而 ARP</strong>（Address Resolution Protocol，地址解析协议，规范是 <strong>RFC 826</strong>，1982 年）干的活就是：<strong>已知一个 IP 地址，问出它对应的 MAC 地址。</strong></p>
+  <div class="callout analogy">
+    <span class="tag">Analogy · 小区门卫和那声吼</span>
+    <p><strong>ARP 的工作方式非常朴素，甚至有点滑稽——它就是站在院子中间吼一嗓子。</strong></p>
+    <p>你是<strong>小区</strong>里的快递员，手上有个件要送到"3 号楼 502"。你走到 3 号楼院子里，<mark class="key">大声喊："502 是谁家？502 的人在吗？"</mark></p>
+    <p><strong>院子里所有人都听到了这一嗓子</strong>——1 楼的、2 楼的、501 的，全都听到了。但只有 502 那家人应了一声：<strong>"我是 502，我是那个戴眼镜的。"</strong>其他人听完发现不是自己，就当没听见。</p>
+    <p><strong>这就是 ARP 的全部：广播提问，只有当事人回答。</strong>请注意它的三个特征，每一个都很关键：</p>
+    <p><strong>① 提问是喊给所有人的（广播），回答是只对提问者说的（单播）。</strong><mark class="key">这是一种很聪明的不对称——问一次全院都听到，答的时候不用再吵一遍。</mark></p>
+    <p><strong>② 你会把答案记在小本子上。</strong>下次再送 502，你不用再喊一遍——本子上写着"502 = 戴眼镜的那位"。<mark class="key">这个小本子就是 ARP 缓存，你电脑上执行 <code>arp -a</code> 看到的就是它。</mark></p>
+    <p><strong>③ 本子上的记录会过期。</strong>因为 502 可能搬走了、换人了。<mark class="key">所以隔一段时间要重新喊一次确认——具体保留多久因系统而异，通常是几分钟到十几分钟的量级。</mark></p>
+    <p><strong>最关键的一条理解</strong>：<mark class="key">这一嗓子只有院子里的人能听到。你要找的人在另一个小区，喊一万遍也没用。</mark>所以当目标 IP 不在同一网段时，机器不会去问目标的 MAC，而是<strong>问网关（小区大门）的 MAC，然后把包交给门卫，让门卫去操心后面的事</strong>。这一点是理解 ARP 最容易卡住的地方，务必想清楚。</p>
+  </div>
+  <pre><code>【ARP 的完整过程】
+
+场景：192.168.1.5（你）要给 192.168.1.20 发数据
+
+① 先判断：目标在不在同一网段？
+   你的地址 192.168.1.5，掩码 /24
+   → 你的网段是 192.168.1.0/24
+   → 192.168.1.20 在这个范围内 → 是邻居，直接找
+
+② 查自己的 ARP 缓存本
+   有 192.168.1.20 的记录吗？
+   有 → 直接用，跳到第 ⑤ 步
+   没有 → 继续
+
+③ 【广播提问】发一个 ARP 请求，全网段都收到：
+   "谁是 192.168.1.20？请把你的 MAC 告诉 192.168.1.5"
+   目标 MAC 填的是全 F（ff:ff:ff:ff:ff:ff）= 广播
+
+④ 【单播回答】只有 192.168.1.20 会回：
+   "我是 192.168.1.20，我的 MAC 是 aa:bb:cc:11:22:33"
+   这个回答只发给提问者，不再广播
+
+⑤ 把答案记进 ARP 缓存，然后正式发数据
+
+──────────────────────────────────────────
+
+【如果目标不在同一网段呢？比如要发给 8.8.8.8】
+
+① 判断：8.8.8.8 在 192.168.1.0/24 里吗？→ 不在
+② 【关键】那就不问 8.8.8.8 的 MAC ——
+   问网关（192.168.1.1）的 MAC！
+③ 把包的目标 IP 写 8.8.8.8，
+   但目标 MAC 写网关的 MAC
+④ 交给网关，后面的事它负责
+
+★ 这里有个非常重要的理解：
+  IP 地址是"最终目的地"，一路不变；
+  MAC 地址是"这一跳的下一站"，每一跳都换。
+
+★ 换成大白话：
+  包裹上写的收货地址（IP）一路不变，
+  但每一站的"交给谁"（MAC）是不断变的 ——
+  广州分拣员交给司机，司机交给北京分拣员，
+  北京分拣员交给快递小哥，小哥交给你。
+  收货地址从头到尾就那一个。</code></pre>
+  <p>那最后一句话是这一节最有价值的一个洞察，值得再念一遍：<mark class="key">IP 地址回答"最终去哪"，MAC 地址回答"这一步交给谁"。前者全程不变，后者每一跳都换。</mark></p>
+  <p>ARP 还有几个实际会遇到的现象值得知道：</p>
+  <ul class="keylist">
+    <li><span class="k">免费 ARP（Gratuitous ARP）</span><span class="v">机器开机或换了地址时，会<strong>主动</strong>广播一句"我是某某 IP，我的 MAC 是某某"，没人问它也说。<strong>作用有两个</strong>：一是让别人更新缓存，二是<mark class="key">如果有人回话说"这个 IP 是我的"，就说明地址冲突了。</mark><strong>好比</strong>新搬来的人在<strong>小区</strong>群里报一声"我是 502 新住户"——顺便也就知道 502 有没有人已经住着了。</span></li>
+    <li><span class="k">ARP 欺骗（ARP Spoofing）</span><span class="v">因为 ARP 完全没有身份验证，<strong>任何人都可以谎称"我是网关"</strong>。于是同网段里的机器会把发往外网的数据交给这个骗子。<mark class="key">相当于有人冒充小区门卫，于是全楼寄出去的信都先经他手。</mark>这是局域网内最经典的一类攻击，防御手段通常是在交换机上做绑定、或者启用相关的防护功能（具体做法因设备而异）。</span></li>
+    <li><span class="k">IPv6 里没有 ARP</span><span class="v">这个活儿被<strong>邻居发现协议（NDP，Neighbor Discovery Protocol）</strong>接管了，它跑在 ICMPv6 上。<strong>功能一样，但整合进了 ICMP 体系，并且用多播代替广播</strong>——只吵该吵的那几台，不打扰全网段。</span></li>
+  </ul>
+
+  <h3>ICMP：网络里的那张"异常通知单"</h3>
+  <p>§3.5 里讲过，IP 只承诺"尽力送"，送不到不通知。<strong>但如果真的一句话都不说，网络就成了黑箱——你压根不知道是地址错了、路断了、还是包太大。</strong></p>
+  <p><strong>ICMP</strong>（Internet Control Message Protocol，网际控制报文协议，规范是 <strong>RFC 792</strong>，1981 年）就是来补这个缺的。它的定位很特别：<mark class="key">它不传数据，只传"关于数据的消息"——尤其是出错的消息。</mark></p>
+  <p><strong>换成大白话</strong>：<mark class="key">ICMP 是快递系统里那张退件通知单。它本身不装货，它装的是"你那个件出了什么事"。</mark>"地址不存在"、"中转超时退回"、"包裹超尺寸装不上车"——这些消息全靠它带回来。</p>
+  <p>要注意 ICMP 的一个身份上的怪异之处：<strong>它靠 IP 承载（在 IP 头里协议号是 1），但它又是 IP 的一部分而不是"上层协议"。</strong>规范要求每一个实现 IP 的设备都必须实现 ICMP。<strong>好比</strong>快递公司的<strong>异常通知</strong>业务：<mark class="key">它自己也要靠货车送，但它不是一项独立业务，而是整套投递流程里必备的一环。</mark></p>
+  <p>ICMP 的消息类型不少，但你实际会遇到的就那几种。这张表建议记住，它几乎是网络排障的全部信息来源：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>消息</th><th>什么时候出现</th><th>说白了就是</th><th>你在命令行会看到</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>回显请求 / 回应</strong>（Echo Request / Reply）</td><td>你主动探测对方是否可达</td><td>"有人吗？"——"在。"</td><td><code>ping</code> 的一问一答</td></tr>
+        <tr><td><strong>目标不可达 · 网络不可达</strong></td><td>路由器压根不知道去那片网络怎么走</td><td>"这个地方我不认识路"</td><td>Destination net unreachable</td></tr>
+        <tr><td><strong>目标不可达 · 主机不可达</strong></td><td>到了那个网段，但那台机器没应</td><td>"片区找到了，这户人没在"</td><td>Destination host unreachable</td></tr>
+        <tr><td><strong>目标不可达 · 端口不可达</strong></td><td>机器在，但那个端口没有程序在听</td><td>"人在家，但你要找的那个部门不存在"</td><td>UDP 发到无人监听的端口时出现</td></tr>
+        <tr><td><strong>目标不可达 · 需要分片但禁止分片</strong></td><td>包太大，而且发送方标了"不许切"</td><td>"这个箱子超尺寸，而你说了不许拆"</td><td>路径 MTU 发现就靠这条消息</td></tr>
+        <tr><td><strong>超时</strong>（Time Exceeded）</td><td>TTL 减到 0 了</td><td>"中转次数用完了，就地销毁并通知你"</td><td><code>traceroute</code> 全靠它工作</td></tr>
+        <tr><td><strong>重定向</strong>（Redirect）</td><td>路由器发现有更好的下一跳</td><td>"你走错门了，下次走那边更近"</td><td>较少见，且很多环境会禁用它</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>其中"需要分片但禁止分片"那一条特别值得留意</strong>，因为它是很多疑难问题的根源。<mark class="key">路径 MTU 发现（§3.5 讲过）完全依赖这条消息才能工作。而有些网络管理员为了"安全"把所有 ICMP 一律拦掉——结果发送方永远收不到"包太大"的通知，只知道包发出去了但没回音。</mark></p>
+  <p>这个故障的表现极其典型，一旦见过就忘不了：<strong>小请求完全正常，大文件传输一到某个点就卡死不动</strong>。<strong>好比</strong>你往一个<strong>仓库</strong>送货，<mark class="key">小件都顺利，大件送到某个隧道口被拦下了——而拦你的人被规定"不许说话"，于是你在门外等到天黑也不知道发生了什么。</mark></p>
+  <p>所以有一条实践建议值得记住：<strong>拦 ICMP 要有分寸，"需要分片"和"目标不可达"这两类消息拦掉的代价往往大于收益。</strong></p>
+
+  <h3>ping：网络排障的第一个动作</h3>
+  <p><code>ping</code> 是全世界最常用的网络命令，它做的事简单到不可思议：<strong>发一个 ICMP 回显请求，等对方回一个回显应答，记录用了多久。</strong></p>
+  <p><strong>换成大白话</strong>：<mark class="key">敲一下门，听有没有回音，顺便记一下回音来得快不快。</mark>就这样。</p>
+  <pre><code>$ ping example.com
+
+PING example.com (93.184.216.34): 56 data bytes
+64 bytes from 93.184.216.34: icmp_seq=0 ttl=54 time=12.3 ms
+64 bytes from 93.184.216.34: icmp_seq=1 ttl=54 time=11.8 ms
+64 bytes from 93.184.216.34: icmp_seq=2 ttl=54 time=12.1 ms
+64 bytes from 93.184.216.34: icmp_seq=3 ttl=54 time=45.6 ms
+                              ↑          ↑        ↑
+                              │          │        └─ 往返一趟花了多久
+                              │          └─ 剩余 TTL，能推出中间过了几跳
+                              └─ 第几个包，用来发现丢包
+
+--- example.com ping statistics ---
+4 packets transmitted, 4 packets received, 0.0% packet loss
+round-trip min/avg/max/stddev = 11.8/20.4/45.6/14.5 ms
+                                  ↑           ↑     ↑
+                            最快  平均   最慢   波动大小
+
+【★ 这四行输出里能读出的信息比你想象的多】
+
+① packet loss（丢包率）
+   0%      = 正常
+   1~2%    = 略有异常，游戏和通话可能有感觉
+   持续 5% 以上 = 链路确有问题
+
+② time 的稳定性比它的绝对值更重要！
+   上例里 min=11.8 max=45.6，波动很大
+   → 这叫抖动（jitter），比"平均延迟高"更影响体验
+   → 换成大白话：公交车平均每 10 分钟一辆你能接受，
+     但"有时 2 分钟来两辆、有时 25 分钟不来"就受不了了
+   → 打游戏、开视频会议卡顿，往往是抖动而不是延迟
+
+③ ttl=54 能推出中间过了几跳
+   常见的初始 TTL 值是 64、128、255（因系统而异）
+   如果对方初始值是 64，那 64 - 54 = 10 跳
+   ★ 这只是推测，因为你不确定对方的初始值
+
+④ 完全没有回应 ≠ 对方不在！
+   见下方"ping 不通不代表挂了"</code></pre>
+  <p><strong>那句"ping 不通不代表机器挂了"必须单独强调，因为它是最常见的误判。</strong></p>
+  <p>原因很简单：<mark class="key">很多服务器和防火墙出于安全考虑，专门配置了"不回应 ping"。</mark>它照样好好地在提供网页服务，只是不理你敲门这一下。</p>
+  <p><strong>好比</strong>你去一家公司找人，<mark class="key">敲门没人应——可能人不在，也可能公司规定"不接待没预约的敲门，请走正门登记"。你不能因为敲门没人应就断定这家公司倒闭了。</mark></p>
+  <p>所以正确的判断顺序应该是这样，这套顺序值得记住：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>步骤</th><th>做什么</th><th>能排除什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>① ping 本机回环 <code>127.0.0.1</code></td><td>试自己</td><td>通了说明本机的网络软件是好的</td></tr>
+        <tr><td>② ping 自己的 IP 地址</td><td>试自己的网卡</td><td>通了说明网卡配置没问题</td></tr>
+        <tr><td>③ ping 网关（<code>192.168.1.1</code> 之类）</td><td>试小区大门</td><td>不通说明本地网络有问题（网线、WiFi、掩码）</td></tr>
+        <tr><td>④ ping 一个公网 IP（如 <code>223.5.5.5</code>）</td><td>试出门那条路</td><td>不通说明出口有问题；通了说明网络层完全没问题</td></tr>
+        <tr><td>⑤ ping 一个域名</td><td>试 DNS</td><td><mark class="key">第 ④ 步通、第 ⑤ 步不通 = 铁定是 DNS 问题</mark>（见 §3.4）</td></tr>
+        <tr><td>⑥ 用别的方式试目标端口</td><td>试具体服务</td><td>ping 不通但网页能开，说明对方只是不回 ping</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">这套"由内向外一层层试"的顺序，本身就是网络排障最核心的方法论：先确认离自己最近的那一环是好的，再往外推一层。</mark><strong>好比</strong>家里没水，你先看厨房水龙头、再看总阀、再看楼里的管道、最后才问物业是不是全区停水——<strong>而不是一上来就打电话骂水厂。</strong></p>
+
+  <h3>traceroute：把整条路上的每一站问出来</h3>
+  <p>这个命令用了一个非常巧妙的技巧，理解它能让你彻底掌握 TTL 的意义。</p>
+  <p><strong>问题是</strong>：数据包从你家到目标服务器经过了十几台路由器，可包上压根没记录"我经过了谁"。<strong>那怎么把这条路查出来？</strong></p>
+  <p><strong>答案在 §3.5 讲的那个 TTL 字段上</strong>：包每经过一台路由器，TTL 减 1；减到 0 就被丢掉，<mark class="key">而且丢它的那台路由器会回一个 ICMP 超时消息——这个消息的源地址，就是那台路由器自己的地址！</mark></p>
+  <div class="callout analogy">
+    <span class="tag">Analogy · 用"故意寄不到"的包裹画出整条路线</span>
+    <p><strong>traceroute 的思路堪称狡猾，用快递来讲就一目了然。</strong></p>
+    <p>你想知道从广州寄到北京的<strong>包裹</strong>都经过了哪些中转站，可快递单上不写这个。于是你想了个招：</p>
+    <p><strong>第一次，你寄一个包裹，在单子上写"最多中转 1 次"。</strong><mark class="key">第一个中转站一收到，一看"额度用完了"，只能退回来，并在退件单上盖了自己的章——于是你知道了第一站是谁。</mark></p>
+    <p><strong>第二次，你寄一个包裹，写"最多中转 2 次"。</strong>第一站顺利放行，第二站退回来并盖章——<mark class="key">于是你知道了第二站是谁。</mark></p>
+    <p><strong>第三次写 3 次、第四次写 4 次……</strong>一次一次往外探，<strong>每次都比上次多走一站，每次都拿回一个盖了章的退件单。</strong><mark class="key">最后当包裹真的送到北京时，你手上已经攒了一叠退件单，按顺序排开——整条路线的每一站清清楚楚。</mark></p>
+    <p><strong>这就是 traceroute 的全部。</strong>它不是查询任何"路线数据库"，<mark class="key">它是靠"故意让包送不到"，把每一站逼出来自己报名。</mark></p>
+    <p><strong>为什么每一跳会显示三个时间？</strong>因为它对每一跳<strong>探三次</strong>——三次的结果放在一起，你才看得出这一跳是不是稳定。<strong>好比</strong>问路要问三个人，一个人的回答可能不准。</p>
+    <p><strong>为什么有的行显示星号？</strong>因为那台路由器被配置成"不回话"（很多设备为了安全或减负都这样）。<mark class="key">重要的是：星号不代表那一跳断了——如果后面的跳数还在正常显示，说明包顺利通过了它，它只是不肯签名而已。</mark><strong>好比</strong>某个中转站的规定是"不给退件单"，但货照样往下传。</p>
+  </div>
+  <pre><code>$ traceroute example.com
+
+ 1  192.168.1.1        1.2 ms   1.1 ms   1.3 ms   ← 你家路由器
+ 2  100.64.0.1        8.5 ms   8.2 ms   8.9 ms   ← ★ 运营商级 NAT（§3.5）
+ 3  * * *                                        ← 这一跳不回话
+ 4  202.96.x.x        15.2 ms  14.8 ms  15.5 ms  ← 运营商骨干
+ 5  219.158.x.x       28.4 ms  28.1 ms  29.0 ms  ← 省际链路
+ 6  * * *
+ 7  93.184.216.34     45.2 ms  44.8 ms  45.9 ms  ← 到达目标
+
+【怎么读这个输出】
+
+★ 看时间的"跳变"来定位问题：
+  第 4 跳 15 ms，第 5 跳 28 ms → 正常增长
+  如果某一跳突然从 30 ms 跳到 300 ms
+  并且后面所有跳都在 300 ms 以上
+  → 问题大概率出在那一跳
+
+★ ★ 但要小心一个常见误判：
+  某一跳时间很长，后面的跳却又恢复正常
+  → 这通常不是问题！
+  → 因为路由器"回复 ICMP 通知"这件事
+    优先级很低，它忙的时候会拖着不回，
+    但"转发数据"这个主业它一点没耽误。
+  → 换成大白话：中转站的人忙着搬货，
+    你要的那张退件单他随手一放，晚了两小时才给你 ——
+    可货一点没耽误。★ 别拿签收速度当运货速度。
+
+★ 只有"从某一跳开始，之后全部变慢或全部星号"
+  才真正说明问题在那里。
+
+【Windows 上的写法】
+&gt; tracert example.com
+
+【一个更实用的工具：mtr（Linux / macOS）】
+$ mtr example.com
+  它把 ping 和 traceroute 合起来，
+  持续对每一跳做探测并统计丢包率 ——
+  排查"间歇性卡顿"时比 traceroute 有用得多，
+  因为一次性的 traceroute 抓不到偶发问题。</code></pre>
+  <p>那个"某一跳慢但后面正常"的误判非常常见，值得再念一遍：<mark class="key">路由器回 ICMP 通知的优先级远低于转发数据。它回得慢，不代表它转发得慢。</mark>只有当"从某一跳开始，后面所有跳都变差"时，才能怀疑那一跳。</p>
+
+  <h3>DHCP：连上 WiFi 那一秒发生了什么</h3>
+  <p>你在咖啡馆连上 WiFi，两秒钟后就能上网了。<strong>这两秒里，你的手机拿到了四样东西</strong>，一样不少：</p>
+  <ul class="keylist">
+    <li><span class="k">一个 IP 地址</span><span class="v">你在这个网络里的门牌号。</span></li>
+    <li><span class="k">子网掩码</span><span class="v">那把划线尺，告诉你"这个小区的范围到哪"（§3.5）。</span></li>
+    <li><span class="k">网关地址</span><span class="v">小区大门在哪，出门的东西交给谁。</span></li>
+    <li><span class="k">DNS 服务器地址</span><span class="v">查号台的号码，不然你连域名都解析不了（§3.4）。</span></li>
+  </ul>
+  <p><strong>这四样东西是谁给你的？DHCP。</strong>（Dynamic Host Configuration Protocol，动态主机配置协议，规范是 <strong>RFC 2131</strong>，1997 年。IPv6 的版本是 DHCPv6，规范不同。）</p>
+  <div class="callout analogy">
+    <span class="tag">Analogy · 新单位报到的第一个小时</span>
+    <p><strong>DHCP 就是新单位的人事部门，这个类比几乎能一对一映射。</strong></p>
+    <p>你第一天到新公司上班，什么都不知道。你会去哪儿？<strong>人事。</strong>然后人事一次性给你配齐：</p>
+    <p><strong>工位号</strong>（IP 地址）· <strong>你的部门范围</strong>（子网掩码）· <strong>出门找谁登记</strong>（网关）· <strong>内部查号台的号码</strong>（DNS 服务器）。</p>
+    <p><strong>关键在于这四样是一次性配齐的</strong>，而不是让你自己一个个去问。<mark class="key">因为只给工位号没用——你还得知道打印机在哪、外线怎么拨、内部查号找谁。缺任何一样，你都干不了活。</mark></p>
+    <p><strong>而这里最妙的是一个鸡生蛋的问题，DHCP 用一个很朴素的办法解决了。</strong></p>
+    <p>你刚来的时候<strong>还没有工位号</strong>。那你怎么找到人事？<strong>你不知道人事在哪个房间，也没有内线可以打。</strong></p>
+    <p><mark class="key">办法是：站在大厅里喊一嗓子——"有人管新人报到吗？"</mark>这就是<strong>广播</strong>。你没有地址，所以你用"全体收听"的方式喊，让听到的人自己判断该不该应答。<strong>而这也解释了为什么 DHCP 必须走 UDP 而不能走 TCP</strong>——<mark class="key">TCP 要先建连接，建连接需要知道对方地址，可你此刻既没有自己的地址也不知道对方的地址。TCP 在这里物理上就用不了。</mark>（§3.3 讲 UDP 时提过这一点。）</p>
+    <p><strong>还有一个概念叫"租期"，也是照着现实来的</strong>：<mark class="key">工位不是永久给你的，是借你用一段时间。到期前你得去续，不续就收回给别人。</mark><strong>为什么这么设计？</strong>因为咖啡馆里的客人来了又走，<strong>要是每个来过的人都永久占一个地址，很快就分完了</strong>。租期让走掉的人自动腾出位置。</p>
+  </div>
+  <pre><code>【DHCP 的四步握手：DORA】
+
+这四步的首字母连起来是 DORA，很多人靠这个记。
+
+① DISCOVER（发现）—— 客户端广播："有 DHCP 服务器吗？"
+   源地址：0.0.0.0        ← 因为我还没有地址！
+   目标地址：255.255.255.255  ← 全网段广播
+   包里带上自己的 MAC 地址（这是我唯一能自证身份的东西）
+
+② OFFER（提供）—— 服务器回："我这有一个 192.168.1.100，你要吗？"
+   同时告知掩码、网关、DNS、租期
+   ★ 如果网络里有多台 DHCP 服务器，你会收到多个 OFFER
+
+③ REQUEST（请求）—— 客户端广播："我要 192.168.1.100 这个！"
+   ★ 为什么还要广播？因为要让"没被选中"的
+     其他 DHCP 服务器知道："这个客人我不要了，你们可以收回"
+   ★ 换成大白话：你在大厅里公开说
+     "我选人事二号窗口给的那个工位"，
+     好让一号窗口把他留的位子放开。
+
+④ ACK（确认）—— 服务器确认："成交，这个地址归你，租期 X 秒"
+   到这一步，你的上网配置就齐了
+
+──────────────────────────────────────────
+
+【租期到了怎么办？】
+  通常在租期过了一半左右时，客户端就会主动去续租
+  （具体比例和行为因实现而异）。
+  续租只需要两步（REQUEST + ACK），不用重来四步。
+
+  ★ 好比租房：合同还没到期你就去续签，
+    不用重新看房、重新签全套。
+
+【一台机器换网络时会发生什么】
+  你的笔记本从公司带回家：
+    在公司拿的是 10.1.2.30
+    回家插上网线 → 重新走一遍 DORA
+    → 拿到 192.168.1.15
+  ★ 所以同一台机器在不同网络里 IP 完全不同，
+    但它的 MAC 地址始终不变 ——
+    这就是 §3.5 说的"IP 是住哪，MAC 是你是谁"。</code></pre>
+  <p><strong>DHCP 出问题时的表现极有辨识度，这是本节最实用的一条知识：</strong></p>
+  <p><mark class="key">如果你的电脑地址是 <code>169.254.</code> 开头，那基本就是 DHCP 失败了。</mark>（§3.5 讲过这个地址段。）机器等不到任何 OFFER，只好按规范自己随便挑一个地址凑合用——<strong>能挑，但没人知道你在哪，谁也找不到你</strong>。</p>
+  <p><strong>这时候该往哪查？</strong>照这个顺序：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>可能原因</th><th>说白了就是</th><th>怎么验证</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>路由器的 DHCP 服务被关了</td><td>人事下班了，没人管新人</td><td>登录路由器管理页面看 DHCP 是否开启</td></tr>
+        <tr><td>地址池分完了</td><td>工位全占满了，没位子给你</td><td>看路由器上"已连接设备"数量；缩短租期或扩大地址池</td></tr>
+        <tr><td>物理链路不通</td><td>你压根没走进这栋楼，喊也没人听见</td><td>换网线、换端口；WiFi 看是否真的关联上了</td></tr>
+        <tr><td>WiFi 认证没过</td><td>大门口的门禁没刷开</td><td>重连、重输密码</td></tr>
+        <tr><td>本机手工配了静态地址</td><td>你自己找了张桌子坐下，压根没去人事</td><td>看网络设置里是不是关掉了"自动获取"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>另外有一个安全上的问题值得知道：<strong>DHCP 和 ARP 一样，完全没有身份验证。</strong><mark class="key">任何人都能在网络里假装自己是 DHCP 服务器，抢先回一个 OFFER，把网关和 DNS 都指向自己——于是这台机器所有的流量都先经过骗子的手。</mark></p>
+  <p><strong>好比</strong>有人在<strong>办公室</strong>大厅里冒充人事，<mark class="key">给新来的人发了一套假配置："外线拨号请找我转接、查号台就是我。"于是这个新人所有的对外通信都被这个假人事看在眼里。</mark>这类问题在正经的企业网络里靠交换机上的专门防护功能来拦（各家设备叫法不同），家用环境基本靠"网络里没有坏人"这个假设撑着。</p>
+
+  <h3>SSH：让你坐在家里操作机房那台机器</h3>
+  <p><strong>SSH</strong>（Secure Shell，安全外壳协议，架构规范是 <strong>RFC 4251</strong>，同批还有 RFC 4252 到 4254 分别定义认证、传输和连接层）解决的是一个非常具体的需求：<strong>远程操作另一台机器的命令行。</strong></p>
+  <p><strong>换成大白话</strong>：<mark class="key">你人在家里，屏幕上敲的每一个字符实际上跑到了几千公里外那台机器的键盘上，那台机器的输出又跑回来显示在你屏幕上。就好像你搬了把椅子坐在机房里。</mark></p>
+  <p>它取代的是一个叫 Telnet 的老协议。<strong>两者干的活一样，区别只有一个字：加密。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>Telnet（老，已淘汰）</th><th>SSH（现在的标准）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>端口</td><td>23</td><td><strong>22</strong></td></tr>
+        <tr><td>加密</td><td><strong>完全没有，全程明文</strong></td><td>全程加密</td></tr>
+        <tr><td>你输的密码</td><td><mark class="key">在网络上是明文的，路上任何人都能看到</mark></td><td>加密，看不到</td></tr>
+        <tr><td>说白了就是</td><td>在大街上喊出你的密码</td><td>装在密封信里递过去</td></tr>
+        <tr><td>还该不该用</td><td><strong>不该</strong>，除了实验环境和某些设备的本地调试口</td><td>该，这是唯一正确选择</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>SSH 最值得学的地方是它的<strong>两种登录方式</strong>，因为第二种方式体现了一个极其重要的安全思想。</p>
+  <div class="callout analogy">
+    <span class="tag">Analogy · 密码 vs 钥匙：为什么钥匙更安全</span>
+    <p><strong>方式一：密码登录。</strong>你输入密码，服务器核对。<mark class="key">简单，但有个根本问题：密码这个东西必须"被送到对方那里核对"。</mark>虽然 SSH 全程加密了，可密码本身还是一个"人能记住、因此不会太长"的字符串，能被猜、能被撞库、能被暴力试。</p>
+    <p><strong>方式二：密钥登录。</strong>这个思路完全不同，而且妙得多。</p>
+    <p>你手上有一对配对的东西：<strong>一把钥匙（私钥）和一把锁（公钥）</strong>。<mark class="key">锁可以随便发给任何人——发给一百台服务器都没关系。钥匙只有你有，而且它从来不离开你的电脑。</mark></p>
+    <p><strong>登录时发生的事是这样的</strong>：服务器拿出你之前给它的那把锁，锁上一个盒子扔给你，说"你能打开就说明你是本人"。<mark class="key">你用自己的钥匙打开它，把里面的东西给它看——证明成立。而在整个过程里，你的钥匙一次都没有离开你的电脑。</mark></p>
+    <p><strong>这个区别有多大？换成大白话</strong>：<mark class="key">密码登录相当于把你家钥匙的形状描述给门卫听，让他核对；密钥登录相当于你直接用钥匙开锁——门卫压根不需要知道你钥匙长什么样。</mark></p>
+    <p><strong>所以密钥登录的三个好处很实在</strong>：<br/>
+    <strong>①</strong> 你的秘密（私钥）从不在网络上传输，压根没有被截获的机会。<br/>
+    <strong>②</strong> 私钥可以做得极长极复杂，因为你不需要记住它——<mark class="key">这一条最关键：密码的长度上限是"人的记忆力"，而钥匙没有这个限制。</mark><br/>
+    <strong>③</strong> 一把钥匙可以配一百台服务器的锁，管理起来反而更简单。而且要撤销某台机器的访问，只需要在那台机器上删掉那把锁。</p>
+    <p><strong>还有一个细节值得知道</strong>：你第一次连一台新服务器时，SSH 会问你"这台机器的指纹是某某，确认继续吗？"<mark class="key">这一步是在防"你连的是不是冒充的那台"。确认之后它会把这个指纹记下来，以后指纹变了就会大声警告。</mark><strong>好比</strong>第一次见一个人你记住他的长相，下次来的人长相不对，你就知道换人了。</p>
+  </div>
+  <p>SSH 除了远程登录，还有几个用途在实际工作里非常常见，值得知道它们的存在：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>用途</th><th>说白了就是</th><th>典型场景</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>远程登录</strong></td><td>操作那台机器的命令行</td><td>最常见的用法</td></tr>
+        <tr><td><strong>文件传输</strong>（SCP / SFTP）</td><td>借着这条加密通道传文件</td><td>把文件传到服务器上，比 FTP 安全得多</td></tr>
+        <tr><td><strong>端口转发 / 隧道</strong></td><td><mark class="key">"借道"——把本地某个端口的流量从这条加密通道送到远端</mark></td><td>访问只在服务器内网可见的数据库</td></tr>
+        <tr><td><strong>免密执行命令</strong></td><td>脚本里直接跑远程命令，不用人工输密码</td><td>自动化部署、批量运维</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>那个"端口转发"值得多解释一句，因为它非常有用而且常被误解。</strong>假设有个数据库只允许服务器本机访问，你在自己电脑上连不了。<mark class="key">端口转发让你在本机开一个端口，凡是连这个端口的流量，都通过 SSH 那条加密通道送到服务器上，再由服务器转给数据库。</mark></p>
+  <p><strong>换成大白话</strong>：<mark class="key">好比公司有个内部资料室只准员工进。你人在外面，但你有个同事在里面——你通过一条专线跟他说"帮我取第三排第二本"，他取了从专线递给你。对资料室来说，来取书的一直是那个员工。</mark></p>
+
+  <div class="lab" data-lab="cmd-break"></div>
+
+  <h3>FTP：一个老到值得被理解的协议</h3>
+  <p><strong>FTP</strong>（File Transfer Protocol，文件传输协议，规范是 <strong>RFC 959</strong>，1985 年）是互联网上最古老的应用协议之一——<mark class="key">它比万维网（Web）还早好几年。</mark>今天它已经很大程度上被更现代的方式取代了，但它值得学，因为它有一个非常独特的设计，理解这个设计能帮你看懂很多网络问题。</p>
+  <p><strong>FTP 最特殊的地方是：它用两条连接。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>连接</th><th>端口</th><th>干什么</th><th>说白了就是</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>控制连接</strong></td><td>21</td><td>发命令、收状态码</td><td>"谈事的那个窗口"——说要什么、听回复</td></tr>
+        <tr><td><strong>数据连接</strong></td><td>20（主动模式）或临时端口（被动模式）</td><td>真正传文件内容</td><td>"搬货的那个门"——东西从这走</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>换成大白话</strong>：<mark class="key">FTP 好比一个老式仓库，有两个口。一个是办公窗口，你在那儿说"我要 3 号货架第 5 箱"；另一个是货运门，货真正从那儿搬出来。谈事和搬货走两条路，各不干扰。</mark></p>
+  <p><strong>这个设计当年是有道理的</strong>：控制连接可以一直保持着，你连着发好几条命令；<mark class="key">而搬货这件事可能要很久，让它独占一条路，不会把谈事那条路堵住。</mark>（这和 §3.1 讲 HTTP 时的思路对比很有意思——HTTP 是所有东西都走同一条路。）</p>
+  <p><strong>但"两条连接"带来了 FTP 最有名的麻烦：主动模式和被动模式。</strong>这两个概念是理解防火墙问题的经典案例。</p>
+  <pre><code>【主动模式（Active Mode）：服务器主动来连你】
+
+① 客户端连服务器的 21 端口，说："我要下载文件"
+② 客户端在自己这边开一个端口，告诉服务器：
+   "数据请连我的某某端口"
+③ ★ 服务器主动向客户端发起数据连接
+
+【问题在哪？】
+  客户端通常在 NAT 后面（§3.5 讲过），
+  外面无法主动连进来！
+  → 于是服务器那条数据连接被挡在门外
+  → 命令能发出去，但文件传不过来
+
+★ 换成大白话：
+  你打电话给仓库说"东西给我送来"，
+  留了自己家地址。可你家小区规定
+  "不接受未登记的上门送货" ——
+  于是货车到了门口进不来。
+
+──────────────────────────────────────────
+
+【被动模式（Passive Mode）：客户端两条都主动连】
+
+① 客户端连服务器的 21 端口，说："我要下载，用被动模式"
+② 服务器回："好，你连我的某某端口来取"
+③ ★ 客户端主动向服务器发起数据连接
+
+【为什么这样就行了？】
+  两条连接都是"从内往外"发起的，
+  NAT 完全不挡（§3.5 讲过：出去过的连接回包才能进来）。
+
+★ 换成大白话：
+  改成"我自己开车去仓库取" ——
+  你出小区门谁也不拦，
+  取完开回来门卫也认得你的车。
+
+★ 这就是为什么今天几乎所有 FTP 客户端
+  都默认用被动模式。</code></pre>
+  <p><strong>这一段的价值不只在 FTP 本身。</strong>它教了你一个能反复用到的判断：<mark class="key">凡是需要"外面主动连进来"的协议，在 NAT 环境下都会出问题。</mark>这和 §3.3 讲的 UDP 打洞、§3.5 讲的端口映射是同一个问题的三个侧面。</p>
+  <p><strong>FTP 今天为什么不推荐用了？</strong>主要有三个原因，都很实在：</p>
+  <ul class="keylist">
+    <li><span class="k">默认不加密</span><span class="v"><mark class="key">用户名和密码是明文传的</mark>——和 Telnet 一个毛病。有加密的变体（FTPS、以及基于 SSH 的 SFTP），但原始 FTP 本身是裸的。</span></li>
+    <li><span class="k">两条连接让防火墙和 NAT 头疼</span><span class="v">上面讲的主动/被动就是这个麻烦的产物。<strong>而且被动模式下服务器用的是临时端口，防火墙很难精确放行</strong>——只能开一大段端口，这本身就是安全隐患。</span></li>
+    <li><span class="k">有更好的替代品</span><span class="v"><strong>SFTP</strong>（走 SSH，一条加密连接搞定所有事）、<strong>HTTPS 上传下载</strong>、各种对象存储服务。<mark class="key">这些方案共同的优点是"只用一条连接、天生加密、对 NAT 友好"。</mark></span></li>
+  </ul>
+  <p><strong>但 FTP 至今没有完全消失</strong>，你在这些地方还会遇到它：一些老旧的企业系统、某些嵌入式设备的固件升级、部分学术资源镜像站。<mark class="key">遇到它的时候，请优先看看有没有 SFTP 或 HTTPS 的入口；如果只能用 FTP，至少别用它传敏感数据。</mark></p>
+
+  <h3>SMTP：邮件是怎么一站一站送到的</h3>
+  <p>最后一个协议。<strong>SMTP</strong>（Simple Mail Transfer Protocol，简单邮件传输协议，当前规范是 <strong>RFC 5321</strong>，它更新了早先的 RFC 2821 和 RFC 821）负责一件事：<strong>把邮件从一个地方送到另一个地方。</strong></p>
+  <p><strong>但这里有一个必须先分清的分工，否则你永远搞不懂邮件配置：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>动作</th><th>用什么协议</th><th>说白了就是</th><th>生活里对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>把邮件寄出去</strong></td><td><strong>SMTP</strong></td><td>"送信"</td><td>把信投进<strong>邮局</strong>，邮局往对方邮局送</td></tr>
+        <tr><td><strong>把邮件取回来看</strong></td><td><strong>IMAP</strong> 或 <strong>POP3</strong></td><td>"取信"</td><td>去自家信箱把信拿出来</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">SMTP 只管送，不管取。你在邮件客户端里要填两套服务器地址（发件服务器和收件服务器），原因就在这里——那是两个完全不同的协议、往往是两台不同的服务器。</mark></p>
+  <p><strong>而 IMAP 和 POP3 的区别也值得一句话说清</strong>，因为选错了会很难受：</p>
+  <ul class="keylist">
+    <li><span class="k">POP3</span><span class="v"><strong>把信下载到本机，服务器上通常就删了。</strong><mark class="key">相当于去邮局把信取回家——邮局那儿就没有了。</mark>所以你在手机上看过的信，电脑上可能就看不到了。</span></li>
+    <li><span class="k">IMAP</span><span class="v"><strong>信一直放在服务器上，各个设备只是"看"它。</strong><mark class="key">相当于信一直存在邮局的柜子里，你在哪个窗口都能看到同样的内容、同样的已读状态。</mark>这是今天的主流选择，因为大家都有好几台设备。</span></li>
+  </ul>
+  <p>现在讲 SMTP 本身。<strong>它最有意思的地方是"接力投递"这个模型：</strong></p>
+  <pre><code>【一封邮件的旅程】
+
+你（小明）→ 用邮件客户端把信交给自己的邮件服务器
+                    ↓ ★ 这一步用 SMTP
+        你的邮件服务器（比如 mail.a-company.com）
+                    ↓
+        ① 查 DNS：收件人是 xiaohong@b-company.com
+           → 查 b-company.com 的 MX 记录（§3.4 讲过）
+           → 得到"这家的邮件送到 mail.b-company.com"
+                    ↓ ★ 这一步也用 SMTP
+        对方的邮件服务器（mail.b-company.com）
+                    ↓
+        ② 存进小红的信箱
+                    ↓ ★ 这一步用 IMAP 或 POP3
+        小红打开客户端，把信取出来看
+
+★ 关键理解：SMTP 是"服务器之间"和
+  "客户端到自己服务器"这两段用的，
+  收件人取信那一段压根不用 SMTP。
+
+★ 换成大白话：
+  邮局系统负责把信从这个城市送到那个城市，
+  但"收件人什么时候去信箱拿信"
+  完全是另一回事、另一套流程。
+
+──────────────────────────────────────────
+
+【SMTP 的对话长什么样】
+它是一个"人类可读"的文本协议，对话像这样：
+
+  服务器: 220 mail.b-company.com ESMTP ready
+  客户端: EHLO mail.a-company.com
+  服务器: 250 Hello
+  客户端: MAIL FROM:&lt;xiaoming@a-company.com&gt;
+  服务器: 250 OK
+  客户端: RCPT TO:&lt;xiaohong@b-company.com&gt;
+  服务器: 250 OK
+  客户端: DATA
+  服务器: 354 Start mail input
+  客户端: （信的内容……最后用单独一行的一个点表示结束）
+  服务器: 250 Message accepted
+  客户端: QUIT
+
+★ 那些三位数字就是状态码，和 HTTP 的思路一样
+  （§3.1 讲过）：2 开头成功、4 开头临时失败、
+  5 开头永久失败。
+
+★ ★ 这里有一个极其重要的观察：
+  MAIL FROM 里写的发件人地址，
+  是客户端自己填的，服务器无法验证真假！
+  → 这就是邮件伪造（伪装发件人）的技术根源。
+  → 换成大白话：信封上的寄件人是寄信的人
+    自己写的，邮局压根不核对。</code></pre>
+  <p><strong>那句"发件人是自己填的"是整个邮件安全问题的总根源，值得展开一句。</strong></p>
+  <p>SMTP 设计于 1980 年代，当时的假设是"网络上的人都是善意的"（和 §3.4 讲 DNS 时是同一个时代背景）。<mark class="key">所以它压根没有验证发件人身份的机制——任何人都可以声称自己是任何人。</mark></p>
+  <p>为了补这个坑，后来发明了三套机制，<strong>而它们都写在 DNS 的 TXT 记录里</strong>（§3.4 讲 TXT 时提过它承载了大量后来才发明的用途）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>机制</th><th>解决什么</th><th>说白了就是</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>SPF</strong>（Sender Policy Framework）</td><td>声明"只有这几台服务器有资格代表我这个域发信"</td><td><mark class="key">"我家的信只从这几个邮局寄出，别处寄的都是假的"</mark></td></tr>
+        <tr><td><strong>DKIM</strong>（DomainKeys Identified Mail）</td><td>给邮件加数字签名，收信方能验它有没有被改过</td><td>"信上盖了我的<strong>印章</strong>，改过就验不过"</td></tr>
+        <tr><td><strong>DMARC</strong></td><td>声明"前两项验不过的信，你该怎么处理"</td><td>"验不过的信，请直接退回 / 扔垃圾箱，并告诉我一声"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">这三样合起来，才让"这封信真是那家公司发的"这件事变得可验证。</mark>它们和 §3.4 讲的 DNSSEC 是同一个思路——<strong>在一个当初没考虑安全的协议外面，加一层可验证的签名。</strong></p>
+  <p>另外还有一个 §3.4 讲过的机制在这里派上用场：<strong>反向解析（PTR 记录）</strong>。<mark class="key">很多收信方会检查"发信这个 IP 反查出来的名字，和它自称的域名对不对得上"。</mark>这也是为什么自己搭邮件服务器特别难——除了协议要配对，你还得让 IP 的反向记录配好，而那通常得找云服务商去改。</p>
+
+  <h3>端口号速查：谁在哪个门口</h3>
+  <p>把这一章涉及的协议按端口整理一遍。<strong>端口号（Port）的作用是"同一台机器上区分不同的服务"</strong>——<mark class="key">好比同一栋楼里的不同房间号：IP 决定送到哪栋楼，端口决定送到哪个房间。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>端口</th><th>协议</th><th>走 TCP 还是 UDP</th><th>说白了在干什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>20 / 21</strong></td><td>FTP</td><td>TCP</td><td>21 谈事、20 搬货（主动模式）</td></tr>
+        <tr><td><strong>22</strong></td><td>SSH / SFTP / SCP</td><td>TCP</td><td>加密的远程操作台</td></tr>
+        <tr><td>23</td><td>Telnet</td><td>TCP</td><td>明文远程操作台（<strong>已淘汰</strong>）</td></tr>
+        <tr><td><strong>25</strong></td><td>SMTP</td><td>TCP</td><td>邮件服务器之间投递</td></tr>
+        <tr><td><strong>53</strong></td><td>DNS</td><td><strong>UDP 为主，也用 TCP</strong></td><td>查号台（§3.4）</td></tr>
+        <tr><td><strong>67 / 68</strong></td><td>DHCP</td><td>UDP</td><td>发上网配置（67 服务器、68 客户端）</td></tr>
+        <tr><td><strong>80</strong></td><td>HTTP</td><td>TCP</td><td>网页（§3.1）</td></tr>
+        <tr><td>110</td><td>POP3</td><td>TCP</td><td>取信（取完服务器上删）</td></tr>
+        <tr><td>123</td><td>NTP</td><td>UDP</td><td>对时（§3.3 提过）</td></tr>
+        <tr><td>143</td><td>IMAP</td><td>TCP</td><td>取信（信留在服务器上）</td></tr>
+        <tr><td><strong>443</strong></td><td>HTTPS / HTTP/3</td><td>TCP，HTTP/3 走 UDP</td><td>加密网页（§3.1）</td></tr>
+        <tr><td>465 / 587</td><td>SMTP（加密提交）</td><td>TCP</td><td>客户端把信交给自己服务器时常用</td></tr>
+        <tr><td>853</td><td>DoT</td><td>TCP</td><td>加密 DNS（§3.4）</td></tr>
+        <tr><td>993 / 995</td><td>IMAPS / POP3S</td><td>TCP</td><td>加密版的取信</td></tr>
+        <tr><td>—</td><td>ICMP</td><td><strong>都不是</strong>，它直接由 IP 承载</td><td><mark class="key">ICMP 压根没有端口号这个概念</mark></td></tr>
+        <tr><td>—</td><td>ARP</td><td><strong>都不是</strong>，它比 IP 还低一层</td><td><mark class="key">ARP 连 IP 都不用，它直接在链路层跑</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>最后两行值得特别注意，它们是这张表里最容易搞混的。</strong></p>
+  <p><mark class="key">ICMP 没有端口号</mark>——因为端口是传输层（TCP / UDP）的概念，而 ICMP 不是传输层协议，它和 IP 同层。<strong>所以"ping 某个端口"这个说法是不成立的</strong>，你只能 ping 一台机器。</p>
+  <p><mark class="key">ARP 连 IP 都不用</mark>——它在 IP 之下的那一层跑，因为它要解决的正是"IP 地址怎么变成硬件地址"这个问题。<strong>好比</strong>它是<strong>小区</strong>门卫和住户之间的对话，<mark class="key">压根不涉及邮政系统。</mark></p>
+
+  <h3>把六个配角串起来：一次"WiFi 连上但打不开网页"的完整排查</h3>
+  <p>这一节的所有协议，在一次真实排障里会依次出场。走一遍你就明白它们各自负责哪一环了。</p>
+  <pre><code>【场景】咖啡馆 WiFi 显示已连接，但网页打不开。
+
+──── 第 1 步：看自己的地址 ────
+&gt; ipconfig            （Windows）
+$ ip addr             （Linux / macOS）
+
+情况 A：地址是 169.254.x.x
+  → ★ DHCP 失败了！压根没拿到配置。
+  → 责任协议：DHCP
+  → 往下查：重连 WiFi、看有没有过认证页面、
+    问店家路由器是不是满了
+
+情况 B：地址正常（比如 192.168.1.50），继续往下
+
+──── 第 2 步：ping 网关 ────
+$ ping 192.168.1.1
+
+不通 → 本地这一段就有问题
+  → 涉及协议：ARP（连邻居的 MAC 都问不到？）
+  → 查：$ arp -a  看有没有网关的记录
+    没有记录 → ARP 都没通，物理链路或掩码有问题
+  → ★ 另一个常见原因：掩码配错，
+    你的机器"认为"网关不在本网段（§3.5 讲过）
+
+通了 → 本地网络是好的，继续
+
+──── 第 3 步：ping 一个公网 IP ────
+$ ping 223.5.5.5
+
+不通 → 出门那条路有问题
+  → 涉及协议：ICMP（回音回不来）
+  → 但注意：★ 也可能是那台机器不回 ping！
+    换一个地址再试，别只试一个
+  → 用 traceroute 看断在哪一跳：
+    $ traceroute 223.5.5.5
+    → 卡在第 1 跳 = 路由器出口有问题
+    → 卡在第 2、3 跳 = 运营商侧
+    → 涉及协议：ICMP + TTL 机制
+
+通了 → 网络层完全没问题，继续
+
+──── 第 4 步：ping 一个域名 ────
+$ ping example.com
+
+不通，而第 3 步是通的
+  → ★ ★ 铁定是 DNS 问题（§3.4）
+  → 涉及协议：DNS
+  → 验证：$ dig @8.8.8.8 example.com
+    换个解析器能查出来 → 本地配的那个解析器有问题
+  → 常见原因：DHCP 给的 DNS 地址无效、
+    咖啡馆的认证系统在拦 DNS
+
+通了 → 解析也正常，继续
+
+──── 第 5 步：试具体服务 ────
+浏览器还是打不开？
+  → 可能是认证页面没弹出来（很多公共 WiFi 要先登录）
+  → 试着访问一个纯 http 的地址，让认证页面弹出来
+  → ★ 因为 https 会因为证书问题被拦住，
+    不会跳到认证页（§3.1 讲过证书校验）
+
+──────────────────────────────────────────
+
+★ 这套流程的方法论比具体命令更重要：
+  从最靠近自己的一层开始，一层层往外确认。
+  换成大白话：家里没水，先看水龙头、
+  再看总阀、再看楼里管道、最后才问物业 ——
+  ★ 而不是一上来就打电话骂水厂。
+
+★ 每一层用到的协议：
+  地址配置 → DHCP
+  找到邻居 → ARP
+  往外送包 → IP + 路由
+  探测与报错 → ICMP（ping / traceroute）
+  名字换地址 → DNS
+  真正的业务 → HTTP / HTTPS</code></pre>
+  <p><strong>这套流程值得背下来</strong>，因为它对绝大多数网络问题都有效。<mark class="key">它的核心不是"记住命令"，而是"每一步只验证一件事，验证通过就往外推一层"。</mark></p>
+  <p><strong>为什么这么做有效？</strong>因为网络是分层的（§3.2 讲过分层模型），<mark class="key">下面那一层坏了，上面所有层都会表现出症状——但反过来不成立。</mark>所以从底层往上排，能避免"在应用层折腾半天，结果是网线没插好"这种最尴尬的情况。</p>
+
+  <h3>还有哪些配角值得知道名字</h3>
+  <p>这一节讲的六个是最常见的。还有一批协议你可能在配置界面或抓包工具里见过，这里给一句话的定位，遇到时不至于陌生。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>协议</th><th>干什么</th><th>说白了就是</th><th>你什么时候会碰到</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>NTP</strong>（RFC 5905）</td><td>让所有机器的时钟对齐</td><td>"全楼统一校对<strong>钟表</strong>"</td><td>时间不对会导致证书校验失败、登录不上；服务器必配</td></tr>
+        <tr><td><strong>mDNS</strong> / Bonjour</td><td>局域网内不靠 DNS 服务器互相发现</td><td>"在<strong>小区</strong>里喊一声『打印机在吗』"</td><td>投屏、局域网打印机、<code>xxx.local</code> 这类名字</td></tr>
+        <tr><td><strong>NDP</strong>（IPv6 邻居发现）</td><td>IPv6 里代替 ARP 的那一套</td><td>"IPv6 版的小区门卫"</td><td>用 IPv6 时；跑在 ICMPv6 上</td></tr>
+        <tr><td><strong>SNMP</strong></td><td>网管系统采集设备状态</td><td>"给全楼设备做<strong>体检</strong>并汇总报表"</td><td>企业网络监控（§3.3 提过它用 UDP）</td></tr>
+        <tr><td><strong>WebSocket</strong></td><td>在 HTTP 之上开一条双向长连接</td><td>"从『你问我答』改成『两边都能随时说话』"</td><td>网页里的实时聊天、股票行情推送</td></tr>
+        <tr><td><strong>Telnet</strong></td><td>明文远程终端</td><td>"在大街上喊密码"</td><td><strong>已淘汰</strong>，但常被当成"测试某个端口通不通"的临时工具</td></tr>
+        <tr><td><strong>TFTP</strong></td><td>极简版文件传输，走 UDP</td><td>"精简到不能再精简的搬运工"</td><td>网络设备启动时下载固件、无盘启动</td></tr>
+        <tr><td><strong>LLDP</strong></td><td>相邻设备互相自我介绍</td><td>"隔壁设备自我报名：我是几号交换机的几号口"</td><td>机房布线排查，弄清这根线插在哪</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>那个 NTP 值得多说一句，因为它引起的故障非常隐蔽。</strong><mark class="key">机器时间不对，会直接导致 HTTPS 证书校验失败</mark>——因为证书有有效期，机器以为现在是 2019 年，那么 2024 年才签发的证书在它看来"还没生效"。</p>
+  <p><strong>好比</strong>你拿着一张 2026 年的<strong>考试</strong>准考证去<strong>窗口</strong>验证，<mark class="key">而窗口那位工作人员的日历还停在 2019 年——他会说"这张证是假的，日期都是未来的"。问题不在证上，在日历上。</mark>所以遇到"所有网站都提示证书错误"这类怪事，第一件该查的是系统时间。</p>
+
+  <h3>常见误解澄清</h3>
+  <ul class="keylist">
+    <li><span class="k">误解一："ping 不通说明对方机器挂了"</span><span class="v"><strong>不一定。</strong>很多机器专门配置了不回应 ping。<mark class="key">ping 不通只能说明"它不回你这一声"，不能说明它没在提供服务。</mark>该用别的方式试目标端口。</span></li>
+    <li><span class="k">误解二："ping 可以 ping 某个端口"</span><span class="v"><strong>不能。</strong>ping 用的是 ICMP，<mark class="key">而 ICMP 压根没有端口号这个概念</mark>——端口是传输层的东西。测端口通不通要用别的工具。</span></li>
+    <li><span class="k">误解三："traceroute 里出现星号就是断在那儿了"</span><span class="v"><strong>不是。</strong>星号只说明那台路由器不回 ICMP 通知。<mark class="key">如果它后面的跳数还在正常显示，说明包顺利通过了它。</mark></span></li>
+    <li><span class="k">误解四："traceroute 某一跳延迟很高就是那一跳有问题"</span><span class="v"><strong>不一定。</strong>路由器回 ICMP 通知的优先级远低于转发数据。<mark class="key">只有"从那一跳开始，后面所有跳都变差"才真正说明问题在那里。</mark></span></li>
+    <li><span class="k">误解五："MAC 地址能追踪到一台设备在哪"</span><span class="v"><strong>范围极其有限。</strong><mark class="key">MAC 地址只在本网段有效，出了本网段的路由器就被替换掉了</mark>——远端服务器压根看不到你的 MAC。而且现代手机在扫描 WiFi 时通常会用随机 MAC。</span></li>
+    <li><span class="k">误解六："SMTP 能保证发件人是真的"</span><span class="v"><strong>完全不能。</strong>发件人地址是客户端自己填的。<mark class="key">要验真伪得靠后来加的 SPF / DKIM / DMARC 三件套，而它们都写在 DNS 的 TXT 记录里。</mark></span></li>
+    <li><span class="k">误解七："FTP 和 SFTP 是同一个协议的两个版本"</span><span class="v"><strong>不是。</strong><mark class="key">SFTP 压根不是 FTP 加密版，它是跑在 SSH 上的一套完全不同的东西</mark>（用 22 端口，一条连接）。名字像，血缘毫无关系。倒是 FTPS 才是"FTP 加了加密层"。</span></li>
+    <li><span class="k">误解八："DHCP 给我的地址永远是这个"</span><span class="v"><strong>不一定。</strong>它有租期，而且重新连接时可能拿到不同的地址（很多实现会尽量给你上次那个，但这不是保证）。<strong>要固定就得配静态地址，或者在路由器上按 MAC 做绑定。</strong></span></li>
+  </ul>
+  <p>最后把这一章整体收一下。<mark class="key">六个主角（HTTP、TCP、UDP、DNS、IP，加上这一节的配角合集）已经覆盖了你每一次上网都会用到的全部核心协议。</mark>第 4 章会换一个讲法：<strong>不再按协议分节，而是按时间顺序把"输入网址到网页显示"这条完整流程走一遍</strong>——届时你会看到这六个协议是怎么在两秒钟之内依次登场、各干一件事的。</p>
+
+  <div class="lab" data-lab="quiz" data-q="你在一台机器上执行 <code>ping 223.5.5.5</code> 能通，但 <code>ping example.com</code> 不通。最可能是哪一环出了问题？" data-opts="网线没插好|路由器坏了|DNS 解析出了问题|ICMP 被防火墙拦了" data-answer="2" data-explain="能 ping 通一个公网 IP，说明从本机到网关、从网关出门、以及 ICMP 回音这几环全部正常 —— 也就是网络层完全没问题。而 ping 一个域名要先把名字换成 IP，这一步靠 DNS（§3.4）。所以问题必然落在「名字换地址」这个环节：可能是 DHCP 给的 DNS 服务器地址无效、解析器本身故障，或者查询被拦。验证办法是换一个解析器再查一次（比如 dig @8.8.8.8），能查出来就说明本地配的那个有问题。「IP 能通、域名不通」几乎就是 DNS 故障的诊断标准。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p><strong>一句话总结</strong>：这六个协议<mark class="key">顺利时你完全感觉不到，出问题时全靠它们给线索</mark>。</p>
+    <p><strong>六个配角各管一件事</strong>：<br/>
+    · <strong>ARP</strong>（RFC 826）—— 知道门牌号，广播问出"那户人长什么样"。<mark class="key">IP 地址回答"最终去哪"、全程不变；MAC 地址回答"这一步交给谁"、每一跳都换。</mark><br/>
+    · <strong>ICMP</strong>（RFC 792）—— 网络里的异常通知单，不传数据只传"出了什么事"。<mark class="key">ping 和 traceroute 全靠它；而 traceroute 的原理是故意让包送不到，逼每一站自己报名。</mark><br/>
+    · <strong>DHCP</strong>（RFC 2131）—— 新单位的人事，一次配齐地址、掩码、网关、DNS 四样。<mark class="key">看到 169.254 开头的地址，就是它失败了。</mark><br/>
+    · <strong>SSH</strong>（RFC 4251 等）—— 加密的远程操作台，22 端口。<mark class="key">密钥登录比密码更安全的根本原因是：私钥从不离开你的电脑，而且它的长度不受人的记忆力限制。</mark><br/>
+    · <strong>FTP</strong>（RFC 959）—— 两条连接（谈事 21、搬货 20），这个设计正是主动 / 被动模式麻烦的来源。<mark class="key">凡是需要"外面主动连进来"的协议，在 NAT 环境下都会出问题。</mark><br/>
+    · <strong>SMTP</strong>（RFC 5321）—— 只管寄不管取（取信靠 IMAP / POP3）。<mark class="key">发件人地址是自己填的，服务器不核对——这是邮件伪造的技术根源，靠 SPF / DKIM / DMARC 来补。</mark></p>
+    <p><strong>最该带走的是那套排障方法论</strong>：<mark class="key">从最靠近自己的一层开始，一层层往外确认——本机、网卡、网关、公网 IP、域名、具体服务。每一步只验证一件事。</mark>因为下层坏了上层全都有症状，反过来不成立。</p>
+    <p><strong>第 3 章到此结束。</strong>下一章换讲法：不再按协议分节，而是<strong>按时间顺序把"敲下回车到网页显示"这条完整流程走一遍</strong>，看这六个协议怎么在两秒内依次登场。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-5-ip.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 3.5 · IP</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-journey.html">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 4 章 · 一次访问的旅程</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 3.6 · 其他常用协议</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-36"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-36"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-36"></script>
+</body>
+</html>

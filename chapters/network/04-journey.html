@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 4 章 · 一次访问的旅程 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-36">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./03-protocols.html">网络篇 · 第 3 章</a>
+      <span class="sep">›</span>
+      <span>第 4 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Network · Chapter 04</div>
+    <h1>第 4 章 · 一次访问的旅程</h1>
+    <div class="cn">The Journey of One Visit · From URL to Pixels</div>
+  </header>
+
+  <p class="lead">
+    前三章你学了一堆零件：HTTP 怎么说话、TCP 怎么握手、IP 怎么认路、分层怎么分工。<mark class="key">这一章不添新零件，只做一件事——把它们装成一台能跑的机器</mark>。你按下回车那一瞬间，这些东西会依次登场、各干一段活儿，最后在屏幕上拼出一个页面。这一章就带你从头到尾走一遍。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📦 你在手机上点开一个商品页</div>
+    <p>你正躺在沙发上刷手机，朋友发来一个链接：<code>https://shop.example.com/item/8848</code>。<br/>
+    你点了一下。屏幕白了小半秒，然后商品图、价格、评价一块块冒出来。<strong>你的感觉是"点一下就开了"。</strong><br/><br/>
+    但在这小半秒里，你的手机干了七件截然不同的事：<strong>看懂这串字 → 查这个名字对应哪台机器 → 跟那台机器接上线 → 互相验明身份并商定密语 → 把要求说出去 → 收下回话 → 把收到的文字画成画面</strong>。<br/>
+    七件事，七套完全不同的规矩，涉及至少四层协议和三四台你从没听说过的中间设备。<br/><br/>
+    这一章要做的，就是<strong>把这半秒钟拉长成一部慢动作电影</strong>，让你看清每一帧里谁在动。</p>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>说白了，这一章要回答的只有一个问题：<strong>"点一下就开了"这句话，中间被省略掉的是什么？</strong>拆开来是六个小问题，正好对应六节：</p>
+  <ul class="keylist">
+    <li><strong>浏览器怎么看懂那串网址？</strong>——一个 URL 有七个零件，浏览器要先把它拆成零件，还要处理你打错的、少写的、写成中文的情况。</li>
+    <li><strong>它怎么知道 <code>shop.example.com</code> 是哪台机器？</strong>——查缓存、查 hosts、问运营商的 DNS、一路问到根，最后拿回一个 IP 地址。</li>
+    <li><strong>拿到 IP 之后怎么"接上线"？</strong>——三次握手在真实访问里的位置，以及你手机上那个临时端口号是谁分配的。</li>
+    <li><strong>那把小锁是怎么锁上的？</strong>——TLS 握手：验证证书链、商定一把只有你俩知道的钥匙，而且 TLS 1.3 只要一个来回。</li>
+    <li><strong>请求发出去，服务器那头发生了什么？</strong>——请求行与请求头的每一个字段都在干活儿，服务器则要经过网关、应用、数据库好几道手。</li>
+    <li><strong>收到一堆文字，怎么变成画面？</strong>——解析 HTML 和 CSS、算位置、上颜色、合图层，以及为什么改一个字有时候很卡有时候不卡。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <strong>把这一次访问想成"一次跨城取货"</strong><br/>
+    你在便利店门口的自提柜前，想取一件从外地寄来的东西。<br/><br/>
+    <strong>第一步，你得看懂取件码</strong>——那串字符里哪几位是柜子编号、哪几位是格口号、哪几位是校验位。看错一位就开错柜门。这是 <strong>§ 4.1 URL 解析</strong>。<br/><br/>
+    <strong>第二步，你手上只有店名没有地址</strong>——"城东那家老李杂货店"在哪条路几号？你得先查一下。这是 <strong>§ 4.2 DNS 查询</strong>：你只记名字，它帮你查门牌号。<br/><br/>
+    <strong>第三步，你得先跟对方接上头</strong>——打个电话："在吗？""在。""行，我到了。"三句话确认双方都听得见，才好办事。这是 <strong>§ 4.3 TCP 三次握手</strong>。<br/><br/>
+    <strong>第四步，如果这是贵重物品</strong>，双方还要互相验证身份：对方出示营业执照（还得是有公章的、公章还得能被工商局认），然后你俩当面约定一句只有彼此知道的暗语，后面说话全用暗语说。这是 <strong>§ 4.4 TLS 握手</strong>。<br/><br/>
+    <strong>第五步，你终于可以开口了</strong>："我要取 8848 号那件，我是老客户，能不能给我发轻一点的包装。"对方回："给你，这是货，另外提醒你这货三天后降价。"这是 <strong>§ 4.5 请求与响应</strong>。<br/><br/>
+    <strong>第六步，货到手了但还没能用</strong>——它是散件加一本说明书，你得照着图纸拼起来才成为一个能看的东西。这是 <strong>§ 4.6 浏览器渲染</strong>。<br/><br/>
+    <mark class="key">最要紧的一点：这六步是严格串行的——前一步没拿到结果，后一步压根开不了工。</mark>所以网页慢的原因往往不是"网速不够"，而是这条链子上某一环卡住了。学会这一章，你就能指着说"卡在第几环"。
+  </div>
+
+  <h3>七个阶段的全流程地图</h3>
+  <p>先看地图，再走路。下面这张表把从按下回车到画面出现的整个过程列成七个阶段。<strong>耗时那一栏只给量级不给精确数字</strong>——因为它严重依赖你的网络环境、离服务器多远、有没有缓存，任何"平均 X 毫秒"的说法都不可靠。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>阶段</th><th>这一步在干什么</th><th>耗时量级</th><th>讲在哪</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0</td><td>浏览器自己的准备</td><td>判断你输的是网址还是搜索词、补全协议、查自己的各级缓存、检查是否强制 HTTPS</td><td>微秒到毫秒级（本机操作）</td><td>§ 4.1</td></tr>
+        <tr><td>1</td><td>URL 解析</td><td>把一整串字拆成协议、主机、端口、路径、查询、片段等七个零件</td><td>微秒级（纯字符串处理）</td><td>§ 4.1</td></tr>
+        <tr><td>2</td><td>DNS 查询</td><td>把域名换成 IP。命中缓存几乎不耗时；要往外问就是一到几个来回</td><td>命中缓存约等于零；未命中通常几十毫秒级，跨国或递归多跳会更久</td><td>§ 4.2</td></tr>
+        <tr><td>3</td><td>TCP 三次握手</td><td>跟服务器建立一条可靠通道，双方各自记下连接状态</td><td>约一个 RTT（往返时间）；同城常在十毫秒级，跨洲可达百毫秒级</td><td>§ 4.3</td></tr>
+        <tr><td>4</td><td>TLS 握手</td><td>验证服务器证书、协商加密套件与会话密钥</td><td>TLS 1.3 约一个 RTT，TLS 1.2 约两个 RTT；会话复用可更短</td><td>§ 4.4</td></tr>
+        <tr><td>5</td><td>发请求 + 等响应</td><td>发出请求报文，服务器处理后返回状态码与 HTML</td><td>一个 RTT 的往返 + 服务器处理时间（快的毫秒级，慢的可到秒级）</td><td>§ 4.5</td></tr>
+        <tr><td>6</td><td>浏览器渲染</td><td>解析 HTML/CSS → 构建 DOM/CSSOM → 渲染树 → 布局 → 绘制 → 合成</td><td>简单页面毫秒级；复杂页面加上脚本执行可到数百毫秒甚至更久</td><td>§ 4.6</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最值得先记住的一句话是：<mark class="key">前六个阶段几乎全在"等来回"，最后一个阶段几乎全在"算"。</mark>换成大白话——<strong>网络阶段慢是因为路远，渲染阶段慢是因为活多</strong>。这两种慢的治法完全不同：路远要靠把服务器搬近（CDN），活多要靠少干活儿（精简页面）。整章会反复回到这个区分上。</p>
+
+  <h3>本章的六节</h3>
+  <div class="cards">
+    <a class="card" href="./04-1-url.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.1</div>
+      <h4>输入网址与 URL 解析</h4>
+      <p>URL 的七个部分、浏览器在联网之前先干的那几件事、以及中文域名与百分号编码。</p>
+    </a>
+    <a class="card" href="./04-2-dns-lookup.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.2</div>
+      <h4>DNS 查询</h4>
+      <p>浏览器缓存 → 系统缓存 → hosts 文件 → 递归解析器 → 根 → 顶级域 → 权威，一路问到 IP。</p>
+    </a>
+    <a class="card" href="./04-3-tcp-connect.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.3</div>
+      <h4>建立 TCP 连接</h4>
+      <p>三次握手在真实访问里的位置、源端口是怎么分配的、连接复用为什么这么重要。</p>
+    </a>
+    <a class="card" href="./04-4-tls.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.4</div>
+      <h4>TLS 握手</h4>
+      <p>证书链怎么验、密钥怎么在明面上商定、TLS 1.3 为什么比 1.2 少一个来回。</p>
+    </a>
+    <a class="card" href="./04-5-request-response.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.5</div>
+      <h4>发送请求与服务器响应</h4>
+      <p>请求行与请求头的每个字段在干什么、服务器那头经过几道手、响应头怎么影响后面的一切。</p>
+    </a>
+    <a class="card" href="./04-6-rendering.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.6</div>
+      <h4>浏览器渲染</h4>
+      <p>DOM 与 CSSOM、渲染树、布局与绘制、合成，以及重排与重绘到底差在哪。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <p>这一章的性质和前三章不一样。前三章是<strong>"认识零件"</strong>，这一章是<strong>"看装配线"</strong>。所以读法也不同：不要求你记住新术语，只要求你记住<strong>顺序</strong>与<strong>依赖关系</strong>。<strong>说白了，前三章告诉你螺丝刀和扳手长什么样，这一章告诉你它们按什么次序上场。</strong>下面五条是全章的骨架，先记住它们，读起来会轻松很多。</p>
+  <ul class="keylist">
+    <li><strong>顺序是被依赖关系逼出来的，不是人为规定的。</strong>没有 IP 就没法建连接，没有连接就没法握手加密，没握完手就不能发请求——<strong>每一步都在等上一步的产物</strong>。相当于做饭：不买菜就没法洗，不洗就没法切，不切就下不了锅。</li>
+    <li><strong>每一步都有"抄近路"的机制。</strong>DNS 有缓存、TCP 有连接复用、TLS 有会话恢复、HTTP 有本地缓存。<strong>真实世界里绝大多数访问都不走完整流程</strong>，这一点比流程本身更实用。<strong>本质上就是</strong>：整套设计的功夫都花在"让你几乎永远不用走完全程"上。</li>
+    <li><strong>协议原理在前三章，本章讲的是"它在流程里的位置"。</strong>三次握手的原理在 § 3.2 讲过；HTTP 报文格式在 § 3.1 讲过；分层怎么套头部在 § 2.3 讲过；地址与端口在 § 1.3 讲过。本章不重复，只回指。</li>
+    <li><strong>时间都花在"来回"上。</strong>一个来回叫一个 RTT（Round-Trip Time，往返时间——喊一声到听见回音的间隔，§ 1.6 讲过）。<strong>打个比方</strong>：这就像跟外地的人电话对表，一来一回的时间只由距离决定，跟你嗓门多大毫无关系。所以优化网页速度的本质是<strong>减少来回次数</strong>与<strong>缩短每个来回的距离</strong>。</li>
+    <li><strong>最后一步跟前六步是两个世界。</strong>前六步是"网络"（在等），最后一步是"图形"（在算）。<strong>相当于</strong>前六步是把散件从外地运回家，最后一步是在家里照着说明书把它拼起来——运货慢和拼装慢，是两种完全不同的慢。渲染部分和界面篇有交集，更深入的图形管线见界面篇 § 2.2。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一章是网络篇的<mark class="key">"合流点"</mark>——前三章的零散知识在这里汇成一条完整的数据流。<br/>
+    七个阶段：<strong>准备 → 解析网址 → 查 IP → 建连接 → 加密握手 → 请求响应 → 渲染</strong>。严格串行，前一步的产物就是后一步的输入。<br/>
+    读完这一章，你应该能做到一件很实用的事：<strong>页面打不开或者很慢时，你能把问题定位到七步中的哪一步</strong>——是域名解析不了、是连不上、是证书有问题、是服务器返回慢，还是页面自己画得慢。这五种毛病的排查方法完全不同，而绝大多数人只会说一句"网卡了"。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-protocols.html">
+      <span class="dir">← 上一章</span>
+      <span class="title">第 3 章 · 关键协议</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-1-url.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 4.1 · 输入网址与 URL 解析</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · Chapter 04</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-36"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-36"></script>
+</body>
+</html>

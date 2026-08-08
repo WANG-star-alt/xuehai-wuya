@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 4.2 · DNS 查询 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-36">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-36">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./04-journey.html">网络篇 · 第 4 章</a>
+      <span class="sep">›</span>
+      <span>§ 4.2</span>
+    </div>
+    <a href="./04-journey.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.2 · Section</div>
+    <h1>DNS 查询</h1>
+    <div class="cn">Name Resolution in Action · RFC 1035</div>
+  </header>
+
+  <p class="lead">
+    上一步浏览器拆出了主机名 <code>shop.example.com</code>。但这只是个<strong>名字</strong>，网络世界压根不认名字——它只认门牌号。<mark class="key">这一节要干的活儿只有一件：把名字换成 IP 地址。</mark>看着简单，实际是一场从你手机内存出发、可能一路问到全球十三组根服务器的接力查询。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📞 你只记得"老李的手机号"这件事本身</div>
+    <p>朋友说："你打给老李问问。"<br/>
+    你脑子里根本没有那串数字，只有"老李"三个字。于是你依次做了这么几件事：<br/><br/>
+    <strong>① 先想想</strong>——刚才是不是打过？（脑子里的短期记忆）<br/>
+    <strong>② 翻手机通讯录</strong>——存过没有？（本机存的通讯录）<br/>
+    <strong>③ 都没有，问一个"什么都知道的人"</strong>——你给公司前台打电话："帮我查一下技术部老李的号。"<br/>
+    <strong>④ 前台自己也不一定知道</strong>——她可能去查总部的员工名录，总部再问技术部的分管秘书，一层层问下来。<br/>
+    <strong>⑤ 号码拿到了，你顺手记进通讯录</strong>——下次不用再麻烦前台。<br/><br/>
+    <mark class="key">DNS 干的活儿一模一样：你只记名字，它帮你查号码，而且查一次记很久。</mark>这一节要讲清的就是这五步在网络里分别对应什么，以及为什么"层层问下去"这个笨办法，反而是全世界最靠谱的设计。</p>
+  </div>
+
+  <h3>上一步刚完成了什么，这一步要干什么</h3>
+  <p>接力棒交到这一节手上时，浏览器手里有的东西是：<strong>协议 https、主机名 <code>shop.example.com</code>、端口 443、路径 <code>/item/8848</code></strong>。四样东西里有三样已经是"能直接用"的确定值，唯独主机名不是——它只是个人类可读的标签。</p>
+  <p><strong>为什么名字不能直接用？</strong>因为数据包在网络里传输时，头部里写的目标地址只有 IP 那一个字段（§ 1.5 讲过数据包的头部结构，§ 3.5 会详讲 IP 协议）。<strong>路由器认路完全靠 IP，它压根不知道也不关心域名这回事。</strong>换成大白话：<strong>分拣中心的传送带只看邮政编码，"城东老李杂货店"这几个字对它毫无意义。</strong></p>
+  <p>所以这一节要干的事，一句话就能说完：<mark class="key">拿一个主机名，换回一个或几个 IP 地址。</mark>干完之后交给下一节的东西是：</p>
+  <ul class="keylist">
+    <li><span class="k">一个或多个 IP</span><span class="v">大站往往返回好几个，浏览器可以挑一个连、连不上换下一个</span></li>
+    <li><span class="k">IP 的版本</span><span class="v">可能是 IPv4（如 <code>93.184.216.34</code>）也可能是 IPv6（一长串十六进制）</span></li>
+    <li><span class="k">这条记录能存多久</span><span class="v">叫 TTL，决定了下次访问还要不要重新查</span></li>
+  </ul>
+  <p>本节讲的是<strong>"这次查询在真实访问流程里怎么走"</strong>。至于 DNS 协议本身的报文格式、记录类型全集、污染与加密方案，那是协议层面的话题，<strong>见 § 3.4</strong>。这一节不重复，只讲它在旅程里的位置和实战表现。</p>
+
+  <h3>先把这一节的术语翻译成人话</h3>
+  <p>DNS 这一块的术语有个特点：<strong>名字都很像，但角色完全不同</strong>——"解析器""服务器""权威""根"混在一起，最容易糊。先用一张表把每个角色对齐到"查电话号码"这件事上。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活里对应的角色</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>DNS</strong>（Domain Name System，域名系统，读作"D-N-S"）</td><td>说白了就是"全互联网共用的一本通讯录"</td><td>一本谁都能查、随时在更新的<strong>通讯录</strong></td></tr>
+        <tr><td><strong>域名</strong>（Domain Name，如 <code>shop.example.com</code>）</td><td>说白了就是给机器起的一个人能记住的名字</td><td>"城东老李杂货店"这个店名</td></tr>
+        <tr><td><strong>解析</strong>（Resolution，把域名换成 IP 的过程）</td><td>说白了就是"查号"这个动作</td><td>拿着店名去查它在哪条路几号</td></tr>
+        <tr><td><strong>Stub Resolver</strong>（存根解析器——你设备上那个负责发起查询的小模块）</td><td>说白了就是"你自己动手翻本子的那只手"</td><td>你本人：先想想、再翻自己的通讯录</td></tr>
+        <tr><td><strong>递归解析器</strong>（Recursive Resolver，帮你一路问到底的那台服务器）</td><td>说白了就是"你雇的那个跑腿的"——你只问一次，它跑好几趟</td><td><strong>前台</strong>：你说一句"帮我查老李的号"，她替你问遍所有该问的人</td></tr>
+        <tr><td><strong>根服务器</strong>（Root Server）</td><td>说白了就是"总目录"——它不知道具体号码，只知道该找谁</td><td><strong>图书馆</strong>大厅那块总索引牌：不告诉你书在哪一格，只告诉你去几楼</td></tr>
+        <tr><td><strong>TLD 服务器</strong>（Top-Level Domain，顶级域服务器，管 <code>.com</code> <code>.cn</code> 这一级）</td><td>说白了就是"分类目录"</td><td>三楼的分区索引：告诉你这类书在 B 区</td></tr>
+        <tr><td><strong>权威服务器</strong>（Authoritative Name Server）</td><td>说白了就是"这条记录的正主"——它说的算，别人都是转述</td><td>技术部的<strong>秘书</strong>：老李的号码就是她登记的，她说的是原始版本</td></tr>
+        <tr><td><strong>A 记录 / AAAA 记录</strong>（域名对应的 IPv4 / IPv6 地址）</td><td>说白了就是"名字 → 号码"那一行</td><td>通讯录里"老李 138xxxx"这一条</td></tr>
+        <tr><td><strong>CNAME</strong>（Canonical Name，别名记录）</td><td>说白了就是"这人改用另一个名字了，去查那个"</td><td>通讯录里写着"老李 → 见'李建国'"</td></tr>
+        <tr><td><strong>TTL</strong>（Time To Live，生存时间——这条记录能缓存多久）</td><td>说白了就是"这个号码的保质期"</td><td><strong>冰箱</strong>里牛奶上的保质期：过期就得重新买，没过期就直接喝</td></tr>
+        <tr><td><strong>hosts 文件</strong>（本机一张手写的域名对照表）</td><td>说白了就是"你自己贴在墙上的小纸条，优先级比通讯录还高"</td><td>贴在电话机旁的<strong>便签</strong>：写着"老李已换号，打这个"</td></tr>
+        <tr><td><strong>缓存</strong>（Cache，把查过的结果先存起来）</td><td>说白了就是"查过一次就记下来，别老麻烦人家"</td><td>把前台给的号码顺手存进通讯录</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最需要区分清的是<strong>"递归解析器"和"权威服务器"</strong>这两个。<mark class="key">前者是替你跑腿的，它自己不掌握任何答案；后者是掌握答案的，但它从不替别人跑腿。</mark><strong>相当于</strong>前台和秘书的分工：前台负责"帮你问遍所有人"，秘书负责"我这儿的登记就是原始记录"。这两个角色搞混，后面所有内容都会乱。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一次 DNS 查询就是一次"层层转问"</span>
+    <p>你在一栋巨大的写字楼里，要找"某公司技术部老李"的内线号。<strong>打个比方</strong>，整个 DNS 就是这栋楼的问询体系：</p>
+    <p><strong>你先问自己</strong>——刚才是不是记过？（浏览器缓存）<br/>
+    <strong>再翻自己的小本子</strong>——本子上写过没有？（操作系统缓存 + hosts 文件）<br/>
+    <strong>都没有，你去大厅前台</strong>："帮我查一下某公司技术部老李的内线。"（递归解析器，通常是运营商或公共 DNS 提供的）<br/><br/>
+    此时你就不管了，坐在沙发上等。<strong>但前台那边可忙了</strong>：<br/>
+    <strong>她先看大厅的楼层总索引</strong>——"某公司在哪层？"总索引只写着"公司类租户在 8 到 20 层，8 层有租户名录"（这就是<strong>根服务器</strong>：它不知道任何具体号码，只知道该往哪一级问）。<br/>
+    <strong>她打给 8 层的租户名录台</strong>——"某公司在哪间？"对方答："2003 室，他们自己有前台。"（这就是 <strong>TLD 服务器</strong>：管一整类，但不管具体）。<br/>
+    <strong>她打给 2003 室的公司前台</strong>——"技术部老李内线是多少？"对方答："8848。"（这就是<strong>权威服务器</strong>：这条记录的正主）。<br/><br/>
+    <strong>前台把 8848 告诉你，同时自己也记在便签上</strong>——因为她知道今天还会有别人来问同一个人。（<strong>递归解析器的缓存</strong>，这是整个 DNS 系统能撑住全球流量的关键）<br/><br/>
+    <mark class="key">整套设计的精髓在这一句：没有任何一个人知道全部答案，但每个人都准确知道"下一步该问谁"。</mark>正因如此，这套 1980 年代的设计能一直服务到今天几十亿台设备的规模——它从不需要有谁掌握全局。</p>
+  </div>
+
+  <h3>第一站：浏览器自己的 DNS 缓存</h3>
+  <p>查询的第一站不在网络上，而<strong>在浏览器进程的内存里</strong>。浏览器自己维护一份很小的 DNS 记录表，存着最近解析过的域名。命中的话，这一整节的后面全部跳过，耗时几乎为零（微秒级）。</p>
+  <p>为什么浏览器要单独存一份，操作系统不是已经存了吗？两个原因：<strong>一是快</strong>——不用跨进程去问操作系统，省掉系统调用的开销；<strong>二是它有自己的策略</strong>，比如浏览器会做"预解析"（Prefetch）——你还没点链接，它就悄悄把页面里出现的域名先解析了。</p>
+  <p>这个预解析机制值得单独说，因为它是网页优化里性价比极高的一招。原理是：网页里可能引用了十几个不同域名的资源（图片在一个域、脚本在另一个域、统计在第三个域）。<strong>浏览器一边解析 HTML，一边把看到的域名丢给 DNS 去查，等真的要下载那些资源时，IP 早就查好了。</strong></p>
+  <p><strong>打个比方，这相当于餐厅厨师看菜单的方式：</strong>他不是等客人点完一道菜才去取一样食材，而是一眼扫过整张单，先把要用的东西全从<strong>冰箱</strong>里拿出来摊在<strong>案板</strong>上。<strong>取食材这件事跟炒菜可以同时进行</strong>——这就是"并行"省下来的时间。DNS 预解析省的就是这种时间。</p>
+  <p>网页作者可以主动提示浏览器去预解析某个域名，写法是一行标签：</p>
+  <pre><code>&lt;link rel="dns-prefetch" href="//cdn.example.com"&gt;
+
+意思是："我等下会用到 cdn.example.com，你现在先去查着。"
+
+更进一步的还有：
+&lt;link rel="preconnect" href="https://cdn.example.com"&gt;
+它不光查 DNS，还顺手把 TCP 连接和 TLS 握手都提前做了
+（也就是把 § 4.3 和 § 4.4 一起提前，省得更多）</code></pre>
+  <p>这里能看出本章一条贯穿的思路：<mark class="key">既然七个阶段是串行的，那能提前做的就提前做，能并行的就并行。</mark>所谓的"网页优化"，很大一部分就是在这条串行链条上想办法插队与并行。</p>
+
+  <h3>第二站：操作系统缓存与 hosts 文件</h3>
+  <p>浏览器缓存没命中，就问操作系统。<strong>操作系统里有一个专门负责域名解析的模块，叫存根解析器</strong>（Stub Resolver，"stub"是"存根、短桩"的意思——它只做最简单的转发，不自己去一路问）。</p>
+  <p>这个模块要查两个地方，而且<strong>顺序很重要</strong>：</p>
+  <ol>
+    <li><strong>先查 hosts 文件</strong>——一个纯文本文件，里面手写着"IP 域名"的对应关系。</li>
+    <li><strong>再查系统 DNS 缓存</strong>——操作系统存的解析结果，带保质期。</li>
+  </ol>
+  <p>hosts 文件的优先级<strong>高于一切网络查询</strong>，这个特性既好用也危险。它长这样：</p>
+  <pre><code>Windows: C:\Windows\System32\drivers\etc\hosts
+Linux / macOS: /etc/hosts
+
+文件内容示例：
+127.0.0.1       localhost
+::1             localhost
+192.168.1.100   shop.example.com      ← 手工指定：这个域名走内网那台机器
+0.0.0.0         ads.example.com       ← 把广告域名指到空地址，等于屏蔽</code></pre>
+  <p><strong>hosts 文件相当于贴在电话机旁边的一张便签</strong>：上面写着"老李已换号，一律打这个"。你每次打电话前先瞄一眼便签，便签上有就照便签打，压根不去翻通讯录。<mark class="key">便签的权力大到能覆盖整本通讯录——这是它最有用的地方，也是它最危险的地方。</mark></p>
+  <p>它的三个典型用途：</p>
+  <ul class="keylist">
+    <li><strong>本地开发调试。</strong>把 <code>shop.example.com</code> 指到自己电脑上的 <code>127.0.0.1</code>，就能用真实域名测试本地代码。这是开发者天天用的招。</li>
+    <li><strong>屏蔽域名。</strong>把广告或统计域名指到 <code>0.0.0.0</code>，请求发不出去，等于屏蔽。</li>
+    <li><strong>临时绕过 DNS 问题。</strong>某个域名解析不了但你知道它的 IP，写进 hosts 就能访问。</li>
+  </ul>
+  <p>而危险在于：<strong>恶意程序改你的 hosts 文件，是最古老也最有效的劫持手法之一。</strong>把网银域名指到攻击者的服务器，你在地址栏看到的域名完全正确、一个字都没错，连的却是假站。<strong>换成大白话：有人偷偷改了你电话机旁那张便签，你以为在打给银行，其实打给了骗子——而你完全没有察觉的机会，因为你确实拨的是"银行"这个名字。</strong></p>
+  <p>值得庆幸的是，这一招在 HTTPS 时代威力大减：<strong>就算 IP 被指错了，攻击者也拿不出该域名的合法证书</strong>，浏览器会立刻报证书错误（这正是 § 4.4 TLS 要解决的核心问题）。所以你会看到一条很重要的分工：<mark class="key">DNS 负责"找到机器"，TLS 负责"确认这台机器真的是它自称的那个"。前者可以被骗，后者很难被骗。</mark></p>
+
+  <h3>第三站：递归解析器——你雇的那个跑腿的</h3>
+  <p>本机两级都没命中，就得往外走了。这时候本机会把查询发给一台<strong>递归解析器</strong>（Recursive Resolver）。这台机器的地址是哪来的？两种情况：</p>
+  <ul class="keylist">
+    <li><strong>自动获取（绝大多数人）。</strong>你连上 WiFi 时，路由器通过 DHCP 协议顺手告诉了你的设备"DNS 用这个"，通常指向运营商的解析器（§ 1.1 讲过设备入网的四步，其中一步就是"记住 DNS"）。</li>
+    <li><strong>手工指定。</strong>你也可以自己填一个公共 DNS 服务的地址。常见的公共服务有 Google 的 <code>8.8.8.8</code>、Cloudflare 的 <code>1.1.1.1</code>、Quad9 的 <code>9.9.9.9</code>——这几个地址之所以好记，正是它们刻意申请的。</li>
+  </ul>
+  <p>"递归"这个词是整节最容易被卡住的术语，值得单独拆开讲。<strong>递归（Recursive）在这里的意思很朴素：你只问一次，剩下的事我全包，办完把最终答案给你。</strong>与它相对的是<strong>迭代（Iterative）</strong>：你问一次，我只告诉你"下一步该问谁"，剩下的你自己跑。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>递归查询（Recursive）</th><th>迭代查询（Iterative）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>发生在哪一段</td><td>你的设备 → 递归解析器</td><td>递归解析器 → 根 / TLD / 权威</td></tr>
+        <tr><td>提问方的负担</td><td>极轻——问一次就等结果</td><td>重——要自己一站站跑</td></tr>
+        <tr><td>回答方的义务</td><td>必须给最终答案</td><td>只需给"下一跳的线索"</td></tr>
+        <tr><td>生活里对应</td><td>你让<strong>前台</strong>："帮我查到为止"</td><td>前台一站站打电话问过去</td></tr>
+        <tr><td>为什么这样分</td><td>终端设备性能弱、网络差，不该干重活</td><td>根与 TLD 服务器要服务全球，绝不能替每个人跑全程</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么根服务器不肯做递归？<strong>因为它服务的是全世界。</strong>如果每个查询它都要负责跑到底，那全球每天几万亿次查询的工作量全压在它身上，一天都撑不住。<strong>说白了，这相当于图书馆大厅的总索引牌</strong>——它只负责告诉你"文学类在三楼"，绝不可能陪每个读者走到书架前把书抽出来。<mark class="key">一个必须服务所有人的角色，只能做最轻的那件事。</mark>这是分布式系统里一条极通用的设计原则。</p>
+
+  <h3>第四站：根 → 顶级域 → 权威，三级接力问下去</h3>
+  <p>现在镜头切到递归解析器那一侧。假设它的缓存也是空的（真实世界里几乎不可能，但我们要看完整流程），它要做的是<strong>从右往左，一段一段地问</strong>。</p>
+  <p>注意这个"从右往左"。域名的层级结构是<strong>右边最大、左边最小</strong>，跟地址的写法正好相反：</p>
+  <pre><code>       shop  .  example  .  com  .
+       └─┬─┘     └──┬──┘    └┬─┘  └ 这个点通常省略，它就是"根"
+      三级域名    二级域名   顶级域
+
+读法要从右往左：先定根 → 再定 com → 再定 example → 最后才是 shop
+
+对比一下地址的写法（中文地址是从大到小，正好相反）：
+    中国 · 北京市 · 朝阳区 · 幸福路 88 号
+    最大 ────────────────────→ 最小
+
+域名是：  最小 ←──────────────── 最大
+         shop . example . com .</code></pre>
+  <p>这个"倒着写"是很多人第一次接触域名时的困惑点。<strong>本质上就是</strong>：域名的排列顺序是给人读方便（<code>shop</code> 这种最具体的信息放在最前面，一眼就看到重点），而<strong>解析顺序必须从最大的一级开始</strong>——因为你得先知道去哪个国家，才能问哪个省。</p>
+  <p>完整的三级接力过程是这样：</p>
+  <pre><code>递归解析器（缓存全空的极端情况）：
+
+第 1 问 → 根服务器（13 组，全球用任播技术部署了很多镜像）
+   问："shop.example.com 的 A 记录是多少？"
+   答："我不知道。但 .com 这一级由这几台服务器管，你去问它们。"
+        （这类回答叫「转介」Referral —— 只给线索不给答案）
+
+第 2 问 → .com 顶级域服务器
+   问："shop.example.com 的 A 记录是多少？"
+   答："我也不知道具体地址。但 example.com 这个域的权威服务器
+        是 ns1.example.com 和 ns2.example.com，你去问它们。"
+
+第 3 问 → example.com 的权威服务器
+   问："shop.example.com 的 A 记录是多少？"
+   答："93.184.216.34。TTL 300 秒。"
+        （这次是「权威答复」Authoritative Answer —— 正主说的）
+
+递归解析器：
+   ① 把答案返回给你的设备
+   ② 自己把这条记录连同 TTL 存进缓存
+   ③ 顺便把「.com 该问谁」「example.com 该问谁」这两条线索也缓存了
+      —— 所以下次查 pay.example.com 时，前两问都能省掉</code></pre>
+  <p>第 ③ 条最容易被忽略，但它是 DNS 效率的关键。<mark class="key">缓存缓存的不只是"最终答案"，还包括"路上问到的每一条线索"。</mark><strong>相当于</strong>前台不光记下了老李的号，还记住了"这家公司在 2003 室、他们前台的号是多少"——下次要找这家公司的任何人，她都能直接打 2003 室，前面两级全省了。</p>
+
+  <h3>那 13 组根服务器：一个常见的误解</h3>
+  <p>你常会读到"全球只有 13 台根服务器"这个说法。<strong>这句话严格说是错的，正确说法是"有 13 个根服务器的标识"</strong>（从 A 到 M 共 13 个字母标号）。每一个标识背后是<strong>一大批分布在世界各地的物理机器</strong>，它们共用同一个 IP 地址。</p>
+  <p>怎么做到"很多机器共用一个 IP"？靠一种叫<strong>任播</strong>（Anycast）的技术。它的原理说白了很简单：<strong>让路由系统把发往这个 IP 的包，自动送到"网络距离上最近的那一台"。</strong></p>
+  <p><strong>打个比方，这相当于连锁店的统一服务热线。</strong>全国的顾客都拨同一个号码，但接电话的其实是离你最近的那家门店的座机。<mark class="key">号码只有一个，接线的人却有成百上千个——你永远接通的是最近的那个。</mark>这样既让号码好记，又让服务离每个人都很近。</p>
+  <p>为什么根服务器的标识数量卡在 13 这个数？这是历史上的技术约束：早期 DNS 用 UDP 传输，而一个 UDP 响应包要求能塞进 512 字节（这是 RFC 1035 定下的规矩），把 13 个服务器的名字和 IPv4 地址塞进去正好装满。<strong>说白了就是"一个信封最多装 13 张名片"</strong>。今天协议已经支持更大的响应了，但 13 这个数字作为历史惯例保留下来。</p>
+  <p>另外要澄清一个更常见的误解：<strong>"根服务器全在美国，所以别人可以随时关掉某个国家的互联网"</strong>——这个说法不准确。得益于任播，根服务器的镜像遍布全球（中国境内也有多个镜像节点）；而且更重要的是，<strong>递归解析器的缓存意味着日常访问压根不需要问根</strong>。<strong>相当于</strong>就算总索引牌被拆了，前台便签上还记着大量常用号码，短期内业务照转。这不是说没有风险，而是说风险的形状跟传言里的不一样。</p>
+
+  <h3>TTL：那个决定"多久要重新问一次"的保质期</h3>
+  <p>每条 DNS 记录都带一个 <strong>TTL</strong>（Time To Live，生存时间），单位是秒。它的意思是："这条记录你可以放心用这么久，过了就得重新来问。"</p>
+  <p><strong>TTL 相当于冰箱里牛奶盒上的保质期。</strong>在保质期内你直接喝，不用打电话问超市；过期了就得重新买。而这个保质期是谁定的？<mark class="key">是域名的所有者定的——也就是权威服务器那边的配置。</mark>他可以定 60 秒，也可以定 86400 秒（一天）。</p>
+  <p>TTL 设长设短是一个典型的取舍，两边的代价很清楚：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>TTL 设得长（如一天）</th><th>TTL 设得短（如 60 秒）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>好处</td><td>缓存命中率高，用户访问快，权威服务器压力小</td><td>改地址后全网很快跟上，切换灵活</td></tr>
+        <tr><td>坏处</td><td><strong>改地址后要等很久才全网生效</strong>——这是最难受的一点</td><td>查询量暴增，权威服务器压力大，用户偶尔要多等一个来回</td></tr>
+        <tr><td>适合什么</td><td>地址几乎不变的站点</td><td>要做故障切换、灰度发布、按地域调度的站点</td></tr>
+        <tr><td>生活里对应</td><td>你家的固定电话号——十年不变，写在名片上没问题</td><td>值班手机号——每周轮换，所以不能印在名片上</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里有一个运维界人人踩过的坑，值得写清楚：<strong>换服务器前必须先把 TTL 调短，而且要提前调。</strong>假设你的 TTL 是一天，今天下午三点你要把网站迁到新服务器。如果你今天上午才把 TTL 从一天改成 60 秒，<strong>那些昨天就查过的解析器，手上那份记录的 TTL 还是"一天"</strong>——它们要等到明天才会来问，压根不知道你把 TTL 改短了。</p>
+  <p><strong>换成大白话：你今天把牛奶的保质期标签从"七天"改成"一天"，可对于昨天已经买走牛奶的人来说，他手上那盒还印着七天。</strong>正确做法是至少提前"一个旧 TTL 的时长"去调短它——旧 TTL 是一天，那就提前至少一天调。这个细节是运维交接时最常漏掉的一条。</p>
+  <p>另外要知道：<strong>TTL 只是"建议"，不是"强制"。</strong>某些递归解析器为了减轻压力，会把很短的 TTL 强制拉长（比如你写 60 秒它按 300 秒算）；也有的会把很长的 TTL 截短。所以<mark class="key">"改了 DNS 什么时候全网生效"这个问题没有精确答案，只能说"通常在 TTL 量级的时间内，但不保证"。</mark>这也是为什么正规的迁移方案都会让新旧两套服务器<strong>同时提供服务一段时间</strong>，而不是掐着表切换。</p>
+
+  <h3>返回的不一定只有一个 IP：DNS 也是一种负载均衡</h3>
+  <p>你可能以为一个域名对应一个 IP。真实情况是<strong>大站往往返回好几个</strong>，而且每次查询返回的顺序还可能不一样。这不是 bug，是刻意设计的。</p>
+  <p>它带来两个效果：</p>
+  <ul class="keylist">
+    <li><strong>分摊流量。</strong>解析器把多个 IP 轮流放在第一位返回，客户端一般会优先连第一个——于是访问量就被分到了不同的服务器上。这招叫<strong>轮询 DNS</strong>（Round-Robin DNS）。</li>
+    <li><strong>容错。</strong>浏览器拿到多个 IP 后，如果连第一个失败，会自动试第二个。这就是为什么某台服务器宕机时，很多用户其实毫无感觉。</li>
+  </ul>
+  <p><strong>打个比方，这相当于一家有多个营业厅的银行。</strong>你打统一客服问"你们在哪"，客服报了三个网点，而且报的顺序每次不同。<strong>你自然会去报在最前面那个，于是三个网点的客流就被分开了。</strong>某个网点今天停业，你走到门口发现关着，转头去第二个——业务照办。</p>
+  <p>更进一步的是<strong>按地域返回不同结果</strong>。同一个域名，北京的用户查到北京机房的 IP，广州的用户查到广州机房的 IP。这就是 CDN（内容分发网络，§ 1.4 与 § 1.6 讲过它的原理）的核心机制之一——<mark class="key">CDN 加速的很大一部分魔法，其实就发生在 DNS 这一步：它在解析阶段就把你导向了离你最近的那台机器。</mark></p>
+  <p>这也解释了一个日常现象：<strong>你和朋友同时访问同一个网站，用命令查出来的 IP 却不一样。</strong>这不是谁的网络有问题，是 DNS 按你们各自的位置给了不同答案。<strong>相当于</strong>你在北京打连锁店客服问地址，报的是北京的店；朋友在广州打同一个号码，报的是广州的店——号码一样，答案不同，两边都没错。</p>
+
+  <h3>IPv4 还是 IPv6：两条腿同时迈的"快乐眼球"</h3>
+  <p>现代域名往往同时有 A 记录（IPv4 地址）和 AAAA 记录（IPv6 地址）。浏览器该用哪个？这里有个很聪明的机制，名字也很有意思，叫<strong>Happy Eyeballs</strong>（快乐眼球）。</p>
+  <p>它解决的问题是：<strong>IPv6 理论上更好，但现实中有些网络的 IPv6 是"配了但不通"的。</strong>如果浏览器死等 IPv6，用户就要干等到超时才能退回 IPv4，体验极差。</p>
+  <p>Happy Eyeballs 的做法很朴素：<mark class="key">两个都试，谁先连上用谁。</mark>具体是先发起 IPv6 的连接尝试，稍等一小会儿（很短的一个延迟）如果还没成，就同时发起 IPv4 的尝试，两边赛跑。</p>
+  <p><strong>换成大白话：这相当于你去办事，听说新开了一条快速通道但不确定今天开不开。聪明的做法不是站在快速通道前死等，而是让一个人去快速通道排、你自己在普通窗口排，谁先排到就走谁那边。</strong>虽然多花了一点人力，但绝不会因为"赌错了通道"而白等半小时。</p>
+  <p>这个机制解释了一个排查现象：<strong>有些网站在某些网络下打开特别慢，换个网络就快了。</strong>常见原因就是那个网络的 IPv6 配置有问题——虽然 Happy Eyeballs 会兜底，但那一小会儿的等待仍然存在，而且如果 IPv6 是"能连上但不通数据"这种半死状态，兜底机制就更难判断。<strong>这也是网络故障里最难查的一类：不是坏，是半死不活。</strong></p>
+
+  <h3>DNS 走的是 UDP 还是 TCP</h3>
+  <p>这是常见面试题，也是很多人记混的地方。准确说法是：<mark class="key">以 UDP 为主，必要时用 TCP。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>情况</th><th>用哪个</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>普通查询（绝大多数）</td><td>UDP 53 端口</td><td>一问一答就完事，用不着建连接那套开销</td></tr>
+        <tr><td>响应太大装不下</td><td>切到 TCP 53</td><td>UDP 单包容量有限，装不下就得换能分段传的通道</td></tr>
+        <tr><td>区域传送（服务器之间同步整个域的数据）</td><td>TCP 53</td><td>数据量大且必须完整无误，需要可靠传输</td></tr>
+        <tr><td>加密 DNS（DoT / DoH）</td><td>TCP（外面套 TLS 或 HTTPS）</td><td>加密本身建立在可靠连接上</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么普通查询选 UDP？回顾 § 3.3 讲 UDP 时的核心逻辑就明白了：<strong>DNS 查询是"一个包问、一个包答"的短交互，而建立一条 TCP 连接光握手就要一个来回（§ 3.2 讲过三次握手）。</strong>用 TCP 的话，为了传一句话先花一个来回打招呼，开销比内容本身还大。</p>
+  <p><strong>打个比方：问路这件事，你会走过去喊一句"请问银行怎么走"然后听答案（UDP），而不会先递名片、握手、确认双方都听得清、再开口问路（TCP）。</strong>而如果对方要给你的是一整张详细的施工路线图（响应太大），那就得坐下来慢慢交接了，这时候正式一点反而更省事。</p>
+  <p>那 UDP 不可靠怎么办？<strong>答案很朴素：丢了就重问一次。</strong>DNS 客户端会设一个超时，没等到回答就再发一次或者换一台解析器问。<strong>说白了，问路没听清就再问一遍，这件事的成本低到不值得为它建立一套可靠机制。</strong>这正是 § 3.3 里那条判断准则的实例：<strong>重发成本低于建连接成本的场景，就该用 UDP。</strong></p>
+
+  <h3>CNAME：为什么很多域名要"转一手"</h3>
+  <p>查询过程中你可能拿到的不是 IP，而是另一个域名。这种记录叫 <strong>CNAME</strong>（Canonical Name，规范名 / 别名记录）。它的意思是："我这个名字只是个绰号，真正的名字是那个，你去查那个。"</p>
+  <pre><code>你查：  www.shop.example.com
+拿到：  CNAME → shop.example.com.cdn-provider.net
+再查：  shop.example.com.cdn-provider.net
+拿到：  A → 93.184.216.34
+
+于是完整链条是：
+  www.shop.example.com  →（别名）→  ...cdn-provider.net  →（地址）→  93.184.216.34
+                                                              ↑
+                                        这一跳才是真正能连的东西</code></pre>
+  <p><strong>CNAME 相当于通讯录里写着"老李 → 见'李建国'"这一条。</strong>你查"老李"没查到号码，只查到一句"这人正式登记名叫李建国"，于是你再去查"李建国"，这次才拿到号码。<strong>多绕了一手，但好处是：李建国换号时只要改一处，所有写着"→ 见李建国"的绰号条目全都自动跟着变。</strong></p>
+  <p>这个"改一处、全跟上"的性质，是 CNAME 存在的全部理由。真实用途主要三种：</p>
+  <ul class="keylist">
+    <li><strong>接入 CDN。</strong>你把自己的域名 CNAME 到 CDN 厂商给的域名上，此后 CDN 想怎么调度（换机房、加节点、按地域返回不同 IP）全是它内部的事，你一行配置都不用动。<mark class="key">这是 CNAME 最主要的用途，也是你能在无数网站的 DNS 记录里看到它的原因。</mark></li>
+    <li><strong>多个名字指同一个服务。</strong><code>www.a.com</code>、<code>web.a.com</code>、<code>m.a.com</code> 全部 CNAME 到同一个目标，以后换服务器只改那一个目标。</li>
+    <li><strong>第三方服务验证。</strong>用某个云服务时，它常要求你加一条 CNAME 记录来证明"这个域名确实是你的"——因为只有域名所有者才能改 DNS。</li>
+  </ul>
+  <p>但 CNAME 有代价，而且是实打实的性能代价：<strong>每多一层 CNAME，就可能多一次查询往返。</strong>如果链条是"域名 A → CNAME B → CNAME C → A 记录"，那就要查三次。<strong>说白了，绰号套绰号，每翻一次通讯录就多花一趟时间。</strong>所以性能敏感的场景会刻意压平 CNAME 层数。</p>
+  <p>还有一个规范上的硬限制值得知道：<strong>根域名（也叫裸域，如 <code>example.com</code> 不带任何前缀）不能配 CNAME。</strong>原因是根域上必须存在一些其他类型的记录（比如邮件服务器记录），而 CNAME 的规则是"这个名字下不能再有别的记录"，两者冲突。<strong>相当于</strong>通讯录里某个条目要么写"这人的号码是 XXX"，要么写"这人请见另一条"，<strong>不能既写号码又写"请见另一条"</strong>——那样查的人不知道该信哪个。各家 DNS 服务商为此提供了各种变通方案，但底层限制依然存在。</p>
+
+  <h3>动手实验：三条命令看清整个查询过程</h3>
+  <p>这一节的所有内容都能在你自己的电脑上验证。下面三条命令，随便找个终端（Windows 用 PowerShell 或命令提示符）敲进去就行。</p>
+  <p><strong>第一条：最基础的查询。</strong></p>
+  <pre><code>nslookup example.com
+
+输出大致长这样（各系统略有差异）：
+  Server:   192.168.1.1          ← 是谁替你查的（你的递归解析器）
+  Address:  192.168.1.1#53       ← 它的地址和端口（53 就是 DNS 的端口）
+
+  Non-authoritative answer:      ← 关键！这句话的意思是「这是缓存里的，不是正主说的」
+  Name:     example.com
+  Address:  93.184.216.34
+
+★ 最值得注意的是 "Non-authoritative answer" 这一句。
+  它明确告诉你：这个答案来自缓存转述，不是权威服务器直接回的。
+  换成大白话就是：「这号码是前台便签上抄的，不是秘书刚说的。」</code></pre>
+  <p><strong>第二条：指定用某个解析器查，用来对比结果。</strong></p>
+  <pre><code>nslookup example.com 8.8.8.8
+
+意思是「别用默认那个，改问 8.8.8.8 这台」。
+
+这一条在排查时极其有用：
+  · 默认解析器查不到，换一台能查到 → 问题在你的解析器（或它被污染了）
+  · 两台查出来的 IP 不一样      → 可能是地域调度，也可能是被劫持
+  · 两台都查不到                → 大概率是这个域名本身有问题</code></pre>
+  <p><strong>第三条：清空本机 DNS 缓存，让下次查询走完整流程。</strong></p>
+  <pre><code>Windows:        ipconfig /flushdns
+macOS:          sudo dscacheutil -flushcache
+Linux（视发行版与所用服务而定，命令不统一）
+
+清完之后再访问网站，你就能观察到「第一次慢一点、第二次快」的差别。
+在浏览器开发者工具的 Network 面板里，把某条请求点开看 Timing（时序），
+里面有一行专门的 DNS Lookup —— 那就是这一节讲的全部内容所花的时间。
+清缓存后第一次访问，这一行会有明显数值；第二次访问，它通常接近 0。</code></pre>
+  <p><strong>这个"第二次接近 0"的观察，是这一节最值得亲眼看一次的东西。</strong>它把"缓存"这个抽象词变成了一个具体数字的消失。<strong>相当于</strong>你亲眼看到第一次去储物间取了一趟，第二次伸手就从<strong>调料</strong>罐里拿到了。</p>
+
+  <h3>这一步会出什么问题：五种典型故障</h3>
+  <p>DNS 是整段旅程里"最容易出问题但最不容易被怀疑"的一环。因为它坏掉时的表现常常长得像别的毛病——用户会说"网站打不开"，而真正的原因是名字换不出号码。下面五种最常见：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>症状</th><th>大概是什么问题</th><th>怎么确认</th><th>怎么处理</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>浏览器提示"找不到服务器"，其他网站都正常</td><td>该域名解析失败（拼错、过期、权威服务器故障）</td><td><code>nslookup 域名</code> 直接报错</td><td>换解析器再试；确认域名拼写；查域名是否到期</td></tr>
+        <tr><td>所有网站都打不开，但 IP 直连能通</td><td>你的解析器挂了或配错了</td><td><code>nslookup example.com 8.8.8.8</code> 能查到，用默认的查不到</td><td>手工换一个公共 DNS</td></tr>
+        <tr><td>解析出来的 IP 明显不对（连上是别的网站或广告页）</td><td>DNS 被劫持或污染（§ 3.4 详讲）</td><td>与多个不同解析器的结果对比</td><td>改用加密 DNS（DoH/DoT）；HTTPS 会挡住大部分危害</td></tr>
+        <tr><td>刚换了服务器，一部分人访问新的、一部分人还在旧的</td><td>TTL 还没到期，缓存新旧混杂</td><td>正常现象，不是故障</td><td>耐心等 TTL 过完；下次迁移前提早调短 TTL</td></tr>
+        <tr><td>只有某个网站慢，且慢在最开始那一下</td><td>该域名的解析链条太长（多层 CNAME）或权威服务器远</td><td>看开发者工具 Timing 里的 DNS Lookup 数值</td><td>网站方压平 CNAME 层数；用户侧可试换解析器</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中第四行那个"一部分人新、一部分人旧"的现象，值得多说一句。它经常被误报成 bug："为什么我看到的是新版，同事看到的还是旧版？"<strong>真相是两人的解析器缓存状态不同。</strong><strong>相当于</strong>公司搬了新址，通知发出去了，但有的人手上还拿着上个月印的<strong>名片</strong>，照着旧地址跑了一趟。<mark class="key">这不是谁错了，是"信息传播需要时间"这件事的必然结果——而 TTL 就是这个时间的上限设定。</mark></p>
+  <p>另外记一条排查口诀：<strong>先用 IP 直连试一次。</strong>如果 IP 能连通而域名不行，问题百分之九十在 DNS；如果 IP 也连不上，那就跟 DNS 无关了，该往下一节（TCP 连接）去查。<strong>说白了，这一招是在给整条链子做"二分定位"——先确定问题在"查号"还是在"拨号"。</strong></p>
+
+  <h3>为什么这套"层层转问"的笨办法能撑住全世界</h3>
+  <p>看完流程你可能会觉得：这么绕，为什么不干脆做一个巨大的中央数据库，全世界的域名都放在里面，谁要查就来查？<strong>这个想法在 DNS 诞生之前，就是当时的做法——而且它是真的撑不住才被淘汰的。</strong></p>
+  <p>早期的互联网（那时还叫 ARPANET）确实用一份集中的文本文件记录所有主机名，各机构定期去下载最新版。<strong>相当于</strong>全国只印一本<strong>通讯录</strong>，每家每户定期去邮局领新版。规模小的时候没问题，一旦联网机构变多，三个问题立刻致命：</p>
+  <ul class="keylist">
+    <li><strong>更新不过来。</strong>任何一台机器改名字，全世界都得重新下载一遍文件。</li>
+    <li><strong>取不过来。</strong>所有机构同时去一个地方下载，那个地方必然被压死。</li>
+    <li><strong>命名会撞车。</strong>全世界共用一个平坦的名字空间，两家机构想用同一个名字就得有人让步。</li>
+  </ul>
+  <p>DNS 用<strong>分层授权</strong>一次解决了三个问题，思路极其朴素：<mark class="key">把命名权和管理权一层一层往下发，每一层只管自己那一格，谁的名字谁自己维护。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>问题</th><th>集中式的做法</th><th>DNS 的做法</th><th>生活里的对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>谁来更新</td><td>改一处要全网重新下载</td><td>各域名的所有者自己改自己的，改完立刻生效（受 TTL 影响）</td><td><strong>小区</strong>各家的门牌自己挂，不用去市政厅登记全城名录</td></tr>
+        <tr><td>压力怎么分</td><td>全压在一处</td><td>压力沿层级分散，且缓存吃掉绝大部分请求</td><td>每层楼有自己的<strong>前台</strong>，不是全楼都去大厅问</td></tr>
+        <tr><td>名字会不会撞</td><td>会，需要人工协调</td><td>不会——<code>shop.a.com</code> 和 <code>shop.b.com</code> 天然不冲突</td><td>两栋楼都能有"301 室"，因为前缀不同</td></tr>
+        <tr><td>某处坏了怎样</td><td>全网瘫</td><td>只影响那一格；且缓存能撑一段时间</td><td>一层的前台请假，其他层照常办事</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这套设计有一个非常漂亮的性质：<strong>你注册了 <code>example.com</code> 之后，想在下面开多少子域名、怎么命名、指到哪，全是你自己的事，不需要向任何人报备。</strong>你今天加一个 <code>test.example.com</code>，全世界立刻就能解析到它，中间不经过任何审批。<mark class="key">这种"授权到边缘"的设计，是互联网能自发长大的根本原因之一——它把决策权交给了最了解情况的人。</mark></p>
+  <p><strong>换成大白话：市政厅只管到"哪条路属于哪个区"，你家院子里怎么分房间、每间叫什么，市政厅完全不管也不需要知道。</strong>正因为不管，所以你随时能加盖一间屋子而不用等审批；也正因为不管，市政厅的工作量才不随房间数量增长。</p>
+
+  <h3>整节小结：一次完整查询的时间线</h3>
+  <p>把这一节的全部内容按真实顺序串成一条线，就是下面这张图。它接在 § 4.1 的第 ⑩ 步之后。</p>
+  <pre><code>接过主机名 shop.example.com
+  │
+  ├─① 浏览器自己的 DNS 缓存    命中 → 拿到 IP，结束（微秒级）★最常走
+  │
+  ├─② 操作系统：先看 hosts 文件  命中 → 拿到 IP，结束（优先级最高）
+  │        再看系统 DNS 缓存    命中 → 拿到 IP，结束
+  │
+  ├─③ 发 UDP 查询给递归解析器（地址通常由 DHCP 自动给的）
+  │      │
+  │      ├─ 它的缓存命中 → 直接回答（标注 Non-authoritative）★次常走
+  │      │
+  │      └─ 缓存没有，它开始迭代地问：
+  │            ├─ 问根服务器      → 答："去问 .com 那几台"（转介）
+  │            ├─ 问 .com 服务器  → 答："去问 example.com 的权威服务器"
+  │            └─ 问权威服务器    → 答："93.184.216.34，TTL 300"（权威答复）
+  │
+  ├─④ 递归解析器把答案返回给你，同时缓存答案与路上的每条线索
+  │
+  ├─⑤ 你的系统与浏览器也各自缓存一份（按 TTL 计时）
+  │
+  └─⑥ 交出 IP 地址 → 进入建立 TCP 连接 → 这就是 § 4.3 的起点
+
+耗时量级：
+  命中本机缓存      ≈ 0（微秒级，感觉不到）
+  命中解析器缓存    通常几毫秒到几十毫秒级，取决于你到解析器的距离
+  走完整迭代流程    通常几十到上百毫秒级，跨国或多层 CNAME 会更久
+  （以上都是量级，实际值严重依赖网络环境，不存在通用的"平均值"）</code></pre>
+  <p>最后强调一遍这张图里最实用的一点：<mark class="key">那两个 ★ 号覆盖了你日常上网的绝大多数情况。</mark>完整走一遍迭代查询，通常只在你第一次访问某个陌生域名、或缓存刚好过期时才发生。<strong>本质上就是</strong>：这套系统看起来层级很深、路径很长，但<strong>设计的全部功夫都花在"让你几乎永远不用走完全程"上</strong>。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="递归解析器在缓存全空的情况下查 <code>shop.example.com</code>，它从根服务器那里能得到什么？"
+       data-opts="直接得到 shop.example.com 的 IP 地址|得到「.com 这一级该问哪些服务器」的线索|得到 example.com 权威服务器的 IP|根服务器会替它一路问到底再返回答案"
+       data-answer="1"
+       data-explain="根服务器只做「转介」（Referral）——它不知道任何具体域名的地址，只告诉你下一级该问谁。这是刻意的设计：一个必须服务全世界的角色只能做最轻的那件事，否则撑不住全球流量。所以「替它一路问到底」（递归）是递归解析器的职责，不是根服务器的。而 example.com 权威服务器的线索要再往下一级、从 .com 顶级域服务器那里才能拿到。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一节干的活儿只有一件：<mark class="key">把名字换成号码。</mark>但为了这一件事，网络搭了一套四级缓存加三级接力的体系。<br/>
+    <strong>查询顺序（由近到远，任何一站命中就结束）：</strong>浏览器 DNS 缓存 → 操作系统缓存（先看 hosts 文件）→ 递归解析器的缓存 → 根服务器 → 顶级域服务器 → 权威服务器。<mark class="key">真实世界里绝大多数查询在前三站就结束了</mark>，走完全程是极少数情况。<br/>
+    <strong>两个最该分清的角色：</strong>递归解析器是"替你跑腿的"（它自己没有答案），权威服务器是"掌握答案的"（它从不替别人跑腿）。根与顶级域服务器只做<strong>转介</strong>——只给线索不给答案，因为它们要服务全世界，只能做最轻的活儿。<br/>
+    <strong>三个实战要点：</strong>① <strong>hosts 文件优先级高于一切网络查询</strong>，既是开发利器也是劫持入口，但 HTTPS 时代它骗不过证书校验；② <strong>TTL 是保质期，改服务器前要提前一个旧 TTL 的时长去调短它</strong>，而且 TTL 只是建议、解析器可能自行拉长或截短；③ <strong>一个域名常返回多个 IP、还会按地域给不同答案</strong>——CDN 加速的很大一部分魔法就发生在这一步。<br/>
+    <strong>协议细节</strong>（报文格式、记录类型全集、DNS 污染与 DoH/DoT 加密方案）<strong>见 § 3.4</strong>，本节只讲它在旅程中的位置。查询以 UDP 53 为主，响应过大或需要可靠传输时切 TCP——理由就是 § 3.3 那条准则：重发成本低于建连接成本时用 UDP。<br/>
+    <strong>下一步交出什么：</strong>一个能直接用的 IP 地址（可能好几个）。<strong>但注意——拿到 IP 只等于"知道了对方的门牌号"，还没跟对方说上一句话。</strong>接下来要做的是真正接上线，这就是 § 4.3 三次握手要干的事。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-1-url.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 4.1 · 输入网址与 URL 解析</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-3-tcp-connect.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 4.3 · 建立 TCP 连接</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 4.2 · DNS 查询</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-36"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-36"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-36"></script>
+</body>
+</html>

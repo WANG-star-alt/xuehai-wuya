@@ -209,28 +209,30 @@
       ),
       createNode('net-03', '第 3 章 · 关键协议',
         'HTTP、TCP、UDP、DNS、IP——你天天在用的六个协议。',
-        '约 4.3 万字',
+        '约 8.8 万字',
         [
           createNode('net-03-1', '§ 3.1 · HTTP / HTTPS', '浏览网页的协议——请求响应、状态码、Cookie、加密。', '14158 字', [], { href: 'chapters/network/03-1-http.html', spec: 'pass'}),
           createNode('net-03-2', '§ 3.2 · TCP', '可靠传输——三次握手、四次挥手、流量控制。', '15764 字', [], { href: 'chapters/network/03-2-tcp.html', spec: 'pass'}),
           createNode('net-03-3', '§ 3.3 · UDP', '快速但不保证——视频、直播、游戏为什么用它。', '12883 字', [], { href: 'chapters/network/03-3-udp.html', spec: 'pass'}),
-          createNode('net-03-4', '§ 3.4 · DNS', '域名翻译成 IP——递归查询、缓存、DNS 污染与 DoH。', '待撰写', []),
-          createNode('net-03-5', '§ 3.5 · IP', 'IPv4 / IPv6、公网私网、子网划分与 CIDR、NAT。', '待撰写', []),
-          createNode('net-03-6', '§ 3.6 · 其他常用协议', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '待撰写', [])
+          createNode('net-03-4', '§ 3.4 · DNS', '域名翻译成 IP——递归查询、缓存、DNS 污染与 DoH。', '15863 字', [], { href: 'chapters/network/03-4-dns.html', spec: 'pass'}),
+          createNode('net-03-5', '§ 3.5 · IP', 'IPv4 / IPv6、公网私网、子网划分与 CIDR、NAT。', '14916 字', [], { href: 'chapters/network/03-5-ip.html', spec: 'pass'}),
+          createNode('net-03-6', '§ 3.6 · 其他常用协议', 'ARP、ICMP、DHCP、SSH、FTP、SMTP——各就各位。', '12986 字', [], { href: 'chapters/network/03-6-other-protocols.html', spec: 'pass'})
         ],
         { href: 'chapters/network/03-protocols.html' }
       ),
       createNode('net-04', '第 4 章 · 一次访问的旅程',
         '输入网址到网页显示——完整数据流走一遍。',
-        '待撰写',
+        '约 6.5 万字',
         [
-          createNode('net-04-1', '§ 4.1 · 输入网址与 URL 解析', 'URL 的七个部分 + 浏览器先干了什么。', '待撰写', []),
-          createNode('net-04-2', '§ 4.2 · DNS 查询', '本地缓存 → hosts → 递归解析 → 拿到 IP。', '待撰写', []),
-          createNode('net-04-3', '§ 4.3 · 建立 TCP 连接', '三次握手 + 端口分配——通道打通的瞬间。', '待撰写', []),
-          createNode('net-04-4', '§ 4.4 · TLS 握手', '证书验证、密钥协商——HTTPS 加密怎么建立。', '待撰写', []),
-          createNode('net-04-5', '§ 4.5 · 发送请求与服务器响应', '请求行、请求头、服务器处理、返回 HTML。', '待撰写', []),
-          createNode('net-04-6', '§ 4.6 · 浏览器渲染', '解析 HTML/CSS → 构建 DOM/CSSOM → 布局 → 绘制。', '待撰写', [])
-        ]),
+          createNode('net-04-1', '§ 4.1 · 输入网址与 URL 解析', 'URL 的七个部分 + 浏览器先干了什么。', '10981 字', [], { href: 'chapters/network/04-1-url.html', spec: 'pass'}),
+          createNode('net-04-2', '§ 4.2 · DNS 查询', '本地缓存 → hosts → 递归解析 → 拿到 IP。', '10465 字', [], { href: 'chapters/network/04-2-dns-lookup.html', spec: 'pass'}),
+          createNode('net-04-3', '§ 4.3 · 建立 TCP 连接', '三次握手 + 端口分配——通道打通的瞬间。', '10225 字', [], { href: 'chapters/network/04-3-tcp-connect.html', spec: 'pass'}),
+          createNode('net-04-4', '§ 4.4 · TLS 握手', '证书验证、密钥协商——HTTPS 加密怎么建立。', '10542 字', [], { href: 'chapters/network/04-4-tls.html', spec: 'pass'}),
+          createNode('net-04-5', '§ 4.5 · 发送请求与服务器响应', '请求行、请求头、服务器处理、返回 HTML。', '10162 字', [], { href: 'chapters/network/04-5-request-response.html', spec: 'pass'}),
+          createNode('net-04-6', '§ 4.6 · 浏览器渲染', '解析 HTML/CSS → 构建 DOM/CSSOM → 布局 → 绘制。', '10658 字', [], { href: 'chapters/network/04-6-rendering.html', spec: 'pass'})
+        ],
+        { href: 'chapters/network/04-journey.html' }
+      ),
       createNode('net-05', '第 5 章 · 网络设备',
         '路由器、交换机、网关、防火墙、光猫——机房里的角色。',
         '待撰写',

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 4.6 · 浏览器渲染 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-36">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-36">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./04-journey.html">网络篇 · 第 4 章</a>
+      <span class="sep">›</span>
+      <span>§ 4.6</span>
+    </div>
+    <a href="./04-journey.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.6 · Section</div>
+    <h1>浏览器渲染</h1>
+    <div class="cn">The Critical Rendering Path</div>
+  </header>
+
+  <p class="lead">
+    上一步服务器送回了一份 HTML 文本。但那还只是一堆字符——<mark class="key">屏幕上此刻仍然什么都没有</mark>。这一节讲最后一段路：浏览器怎么把这堆字符变成你看得见的画面。前五节都在"等来回"，这一节完全不同——<strong>它一个网络包都不发，纯粹在算</strong>。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔨 你收到的是一箱散件加一本说明书</div>
+    <p>你网购了一个书柜，快递终于送到门口。<strong>但你现在还不能用它</strong>——箱子里是几十块板材、一袋螺丝，和一本装配说明书。<br/><br/>
+    你要做的事有明确的顺序，一步都不能跳：<br/>
+    <strong>① 拆箱清点</strong>——把所有板材摊开，看清有几块、每块是干什么的（<strong>解析 HTML，建 DOM</strong>）<br/>
+    <strong>② 读说明书</strong>——搞清哪块拼哪块、间距多少、朝哪个方向（<strong>解析 CSS，建 CSSOM</strong>）<br/>
+    <strong>③ 把两者对上</strong>——手上这块板，说明书上说它该怎么装（<strong>合成渲染树</strong>）<br/>
+    <strong>④ 量位置</strong>——在这块墙面上，每块板的具体坐标和尺寸是多少（<strong>布局 Layout</strong>）<br/>
+    <strong>⑤ 真的装上去</strong>——上螺丝、贴饰面，让它有颜色有质感（<strong>绘制 Paint</strong>）<br/>
+    <strong>⑥ 摆到房间里</strong>——和已有的家具一起构成你看到的整个房间（<strong>合成 Composite</strong>）<br/><br/>
+    <mark class="key">这一节最重要的知识点就藏在第 ④ 和第 ⑤ 步的区别里：换个板子的颜色（重绘），和挪动一块板导致后面所有板都要重新量位置（重排）——后者的代价大得多。</mark>这个区别是网页性能优化的核心，本节会反复讲。</p>
+  </div>
+
+  <h3>上一步刚完成了什么，这一步要干什么</h3>
+  <p>接力棒交到这一节时，手里有的是<strong>一份 HTML 文本</strong>（§ 4.5 的产物）加上响应头里说明的类型与编码。除此之外什么都没有——<strong>屏幕上还是空白</strong>。</p>
+  <p>这一节要干的事：<strong>把这份文本变成屏幕上一个个具体的像素。</strong>它和前五节有三个根本不同，理解这三点，你就理解了这一节的性质：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>前五节（网络阶段）</th><th>这一节（渲染阶段）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>时间花在哪</td><td><strong>等来回</strong>——绝大部分是干等</td><td><strong>算</strong>——CPU 和 GPU 在真的忙</td></tr>
+        <tr><td>快慢由什么决定</td><td>物理距离（改不了）与对方架构</td><td><strong>你的设备性能</strong>与页面本身的复杂度</td></tr>
+        <tr><td>怎么优化</td><td>减少来回次数、缩短距离（CDN）</td><td><strong>少干活儿</strong>——减少元素、减少重排、少写复杂样式</td></tr>
+        <tr><td>发生在哪</td><td>横跨半个地球</td><td>完全在你手里这台设备上</td></tr>
+        <tr><td>失败会怎样</td><td>打不开、报错</td><td><strong>能打开但卡</strong>——这是最难查的一类问题</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>干完之后交出的东西就是<strong>你眼前的画面</strong>——整段旅程到此结束。</p>
+  <p>另外要说清本节的边界：<strong>这一节讲的是"浏览器怎么组织内容并算出位置和颜色"，也就是渲染管线的上半段。</strong>至于"算出来的颜色值怎么变成屏幕上真正发光的像素点"——那属于图形与显示的范畴，<mark class="key">更深入的渲染管线见界面篇 § 2.2</mark>，那里讲了位图与矢量、像素与分辨率这些更底层的东西。两处内容衔接在一起才是完整的画面生成过程。</p>
+
+  <h3>先把这一节的术语翻译成人话</h3>
+  <p>这一节的术语有个特点：<strong>缩写多、而且长得像</strong>（DOM、CSSOM、CSS、CRP）。先用一张表把它们分清：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活里对应的东西</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>HTML</strong>（HyperText Markup Language，超文本标记语言）</td><td>说白了就是"用标签把内容标出结构的一份文本"</td><td>一份带层级编号的<strong>笔记</strong>：一级标题、二级标题、正文、附图</td></tr>
+        <tr><td><strong>DOM</strong>（Document Object Model，文档对象模型，读作"道姆"）</td><td>说白了就是"把那份文本变成一棵可以被程序操作的树"</td><td>把散装的板材<strong>货架</strong>式摆好，每块贴上编号，随手就能取</td></tr>
+        <tr><td><strong>CSS</strong>（Cascading Style Sheets，层叠样式表）</td><td>说白了就是"一份规定每样东西长什么样的说明书"</td><td>装修的施工图：哪面墙什么颜色、瓷砖多大、留多少缝</td></tr>
+        <tr><td><strong>CSSOM</strong>（CSS Object Model，CSS 对象模型）</td><td>说白了就是"把那份说明书也变成一棵树，方便查"</td><td>把施工图整理成一本索引清晰的手册</td></tr>
+        <tr><td><strong>渲染树</strong>（Render Tree）</td><td>说白了就是"内容和样式对上号之后的那份最终清单"</td><td>每块板旁边都贴好了对应的施工要求</td></tr>
+        <tr><td><strong>布局</strong>（Layout，也叫 Reflow 回流）</td><td>说白了就是"算每样东西的位置和大小"</td><td>拿尺在墙上量：这块板放在离地 80 公分、宽 1 米 2</td></tr>
+        <tr><td><strong>绘制</strong>（Paint）</td><td>说白了就是"填颜色、画边框、上阴影"</td><td>刷漆、贴饰面板</td></tr>
+        <tr><td><strong>合成</strong>（Composite）</td><td>说白了就是"把分开画的几层叠在一起成为最终画面"</td><td><strong>照片</strong>后期把几张透明胶片叠起来看</td></tr>
+        <tr><td><strong>重排</strong>（Reflow / Relayout）</td><td>说白了就是"位置得重新算一遍"</td><td>挪动一块板，后面所有板的位置全得重量</td></tr>
+        <tr><td><strong>重绘</strong>（Repaint）</td><td>说白了就是"位置没变，只是颜色变了"</td><td>把一块板重新刷个颜色，尺寸位置一点没动</td></tr>
+        <tr><td><strong>关键渲染路径</strong>（Critical Rendering Path，CRP）</td><td>说白了就是"从收到文本到画出第一屏，必须走完的那几步"</td><td>从收货到"书柜能站起来"这条最短装配流程</td></tr>
+        <tr><td><strong>阻塞渲染</strong>（Render-Blocking）</td><td>说白了就是"这东西没到位，我什么都不敢画"</td><td>施工图还没送到，工人不敢乱砌墙——砌错了得砸</td></tr>
+        <tr><td><strong>视口</strong>（Viewport）</td><td>说白了就是"屏幕上那块能看见内容的区域"</td><td>透过<strong>电梯</strong>门缝看外面：世界很大，你只看到那一条</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最要紧的是<strong>把"重排"和"重绘"分清</strong>。<mark class="key">重排要重新量位置，而且一处改动可能牵连一大片；重绘只是换颜色，位置完全不动。</mark>前者贵、后者便宜，而这个差价决定了一个网页是流畅还是卡顿。这一节后面会专门用一整段讲它。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 渲染管线就是一条装修流水线</span>
+    <p><strong>打个比方</strong>，把整条渲染管线放到装修一间屋子这件事上，每一步都严丝合缝地对应：</p>
+    <p><strong>① 清点材料 = 解析 HTML 建 DOM。</strong>货车把材料卸在门口，你得先把它们分门别类摊开：这堆是地板、这堆是踢脚线、这几块是柜门。<strong>摊清楚了才知道手上有什么。</strong></p>
+    <p><strong>② 读施工图 = 解析 CSS 建 CSSOM。</strong>施工图告诉你每样材料该怎么用：地板铺哪个房间、缝留 2 毫米、墙漆用哪个色号。<strong>注意——图纸和材料是两份独立的东西，可以同时送到、同时处理。</strong></p>
+    <p><strong>③ 对号入座 = 合成渲染树。</strong>你把图纸上的要求标注到每样材料上。这一步会做一个重要的筛选：<mark class="key">图纸上写着"备用间暂不施工"的部分，对应材料就直接搬走不管了</mark>——这就是为什么设了 <code>display: none</code> 的元素<strong>压根不进渲染树</strong>。</p>
+    <p><strong>④ 放线量尺 = 布局。</strong>拿激光水平仪在真实墙面上标出每一块的确切位置和尺寸。<strong>这一步是纯计算，最耗时，而且有强连锁性</strong>——第一块地板的起始位置挪 1 厘米，后面整个房间所有地板的位置全变。</p>
+    <p><strong>⑤ 施工 = 绘制。</strong>真的刷漆、真的贴板。这时候才产生"看得见的东西"。</p>
+    <p><strong>⑥ 家具入场 = 合成。</strong>各个工种分头做完的成果（墙、地、家具、灯）最终叠成你走进去看到的那个房间。<strong>现代浏览器会把某些元素单独放在一个"图层"上处理，好让它移动时不必惊动其他所有东西</strong>——相当于把那台带轮子的推车单独看待，推它的时候不用重新铺地板。</p>
+    <p><mark class="key">整条流水线最重要的性质是：越靠后的步骤越便宜，越靠前的步骤越贵。</mark>改一下家具位置（合成）几乎免费；重新量整个房间的尺寸（布局）代价很大；而如果发现材料清点错了（DOM 变化），那可能整条线都要重走。<strong>所以性能优化的第一原则就是：让改动尽量发生在流水线的末端。</strong></p>
+  </div>
+
+  <h3>第一步：解析 HTML，建起 DOM 树</h3>
+  <p>浏览器拿到那份 HTML 文本，第一件事是<strong>把它读成一棵树</strong>。为什么必须是树？因为 HTML 本身就是嵌套结构——标签套标签，天然有层级关系。</p>
+  <pre><code>这份 HTML：
+
+&lt;html&gt;
+  &lt;head&gt;&lt;title&gt;某款商品&lt;/title&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;商品名称&lt;/h1&gt;
+    &lt;div class="price"&gt;￥199&lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+
+会被读成这棵树（这就是 DOM）：
+
+html
+├── head
+│    └── title
+│         └── "某款商品"（文本节点）
+└── body
+     ├── h1
+     │    └── "商品名称"
+     └── div.price
+          └── "￥199"</code></pre>
+  <p><strong>为什么要转成树，而不是直接照着文本画？</strong>因为程序需要能<strong>随机访问和修改</strong>其中任何一部分。文本是线性的，你要找"第三个 div"就得从头数；而树结构可以直接跳到任意节点，还能问它"你的父节点是谁""你有几个子节点"。</p>
+  <p><strong>换成大白话：这相当于把散装堆在地上的板材，改成上了编号、分门别类摆在货架上。</strong>堆在地上你也知道东西都在，但要取"第 7 块侧板"得翻一遍；上了架，伸手就拿。<mark class="key">DOM 就是这个货架——它是"让内容可被程序操作"的形式。</mark></p>
+  <p>解析这一步有三个值得知道的细节：</p>
+  <ul class="keylist">
+    <li><strong>它是流式的，边收边解析。</strong>浏览器不等 HTML 全部下载完才开始，而是收到一块就解析一块（这正是 § 4.5 讲的分块传输能提升感知速度的原因）。所以你能看到页面内容"从上往下逐渐出现"。</li>
+    <li><strong>它极其宽容。</strong>标签没闭合、嵌套错了、属性写错，浏览器都会想办法猜出你的意思继续往下走。<strong>这和 § 3.1 讲的 HTTP 报文解析形成鲜明对比</strong>——那里少一个空行就报 400。<strong>相当于</strong>快递面单填错一栏就退件，但装修图纸上写得潦草，师傅会连猜带问地干下去。</li>
+    <li><strong>遇到脚本会停下来。</strong>因为脚本可能往 DOM 里增删节点，浏览器不敢边改边解析，只能先停住等脚本跑完（§ 4.5 那张表提过）。</li>
+  </ul>
+  <p>第二条那个"宽容"是 HTML 一个很有意思的历史性质。<mark class="key">它宽容是因为它面对的是人手写的、几十年积累下来的、几十亿个页面——严格一点就会有大批老网页打不开。</mark><strong>说白了：一个必须兼容全世界既有内容的格式，只能选择宽容。</strong>这个取舍带来的代价是解析规则复杂无比，好处是几乎没有网页会因为写错标签而完全打不开。</p>
+
+  <h3>第二步：解析 CSS，建起 CSSOM 树</h3>
+  <p>与解析 HTML 并行的另一条线，是<strong>解析 CSS 建 CSSOM</strong>。它的结构也是树，因为样式有继承关系——父元素的字体、颜色会往下传给子元素。</p>
+  <pre><code>这份 CSS：
+
+body      { font-size: 16px; color: #333; }
+.price    { color: red; font-weight: bold; }
+h1        { font-size: 24px; }
+
+会被组织成（CSSOM，简化示意）：
+
+body（字号 16、颜色 #333）
+├── h1     （字号 24 ← 自己声明的；颜色 #333 ← 从 body 继承）
+└── .price （颜色 red ← 自己声明的；字号 16 ← 继承）</code></pre>
+  <p>注意这里的<strong>继承</strong>：<code>h1</code> 自己没写颜色，它就用了从 <code>body</code> 那儿继承来的 <code>#333</code>。<strong>相当于</strong>装修图纸上写着"全屋统一用暖白墙漆"，然后单独注明"儿童房用天蓝"——<mark class="key">没被单独注明的房间，就沿用全屋的规定。这样图纸不用为每个房间重复写一遍。</mark></p>
+  <p>这里有一个极重要的性质：<strong>CSS 会阻塞渲染。</strong>意思是——<mark class="key">CSSOM 没建好之前，浏览器一个像素都不敢画。</mark></p>
+  <p>为什么这么保守？因为如果先按默认样式画出来，等 CSS 到了再重画一遍，用户会看到页面"闪一下"、字体大小和颜色突变。<strong>那种体验比多等一会儿更糟。</strong></p>
+  <p><strong>换成大白话：这相当于工人拿到了材料但施工图还在路上。</strong>他有两个选择：<strong>凭感觉先砌</strong>（图纸到了发现错了，砸掉重砌，还得让业主看着难受），或者<strong>先等图纸</strong>（多等一会儿，但一次做对）。<strong>浏览器选择等。</strong></p>
+  <p>这就推出了一条非常实际的优化原则：<mark class="key">CSS 要尽早发出、尽量小、放在文档头部。</mark>因为它在关键路径上——它慢一秒，用户就多看一秒白屏。这也是为什么很多网站会把"第一屏必需的少量样式"直接内嵌在 HTML 里，剩下的样式表异步加载：<strong>把关键路径上的东西压到最小。</strong></p>
+
+  <h3>第三步：两棵树合成渲染树</h3>
+  <p>DOM 有了、CSSOM 有了，浏览器把它们对上号，生成<strong>渲染树</strong>（Render Tree）。这一步做的事很简单，但有一个筛选动作值得注意。</p>
+  <pre><code>DOM（我有什么）  +  CSSOM（每样该长什么样）  =  渲染树（要画什么、怎么画）
+
+★ 筛选规则：
+  · 不可见的东西不进渲染树
+      · &lt;head&gt; 里的内容（它本来就不显示）
+      · 设了 display: none 的元素 —— 完全不进
+  · 但设了 visibility: hidden 的元素「进」渲染树
+      —— 因为它虽然看不见，却仍然占着位置！
+
+这个区别很实际：
+  display: none      = 这块板搬走了，后面的板会往前挪补上空位
+  visibility: hidden = 这块板还在原位，只是变透明了，位置照占</code></pre>
+  <p>这个区分是前端最常考也最容易记混的一点，用装修的说法就一目了然：<mark class="key"><code>display: none</code> 是"把柜子搬走"，<code>visibility: hidden</code> 是"用一块透明布把柜子罩住"。</mark>后者你看不见柜子，但你也放不了别的东西进那个位置。</p>
+  <p>还有第三种情况值得一起记：<strong><code>opacity: 0</code>（完全透明）</strong>。它比 <code>visibility: hidden</code> 更"轻"——元素不仅占位，而且仍然能被点击。<strong>相当于</strong>那块透明布不但罩着柜子，还是可以透过去开柜门的。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>看得见吗</th><th>占位置吗</th><th>能点击吗</th><th>装修里对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>display: none</code></td><td>不</td><td><strong>不</strong></td><td>不</td><td>柜子搬走了，后面的东西往前补位</td></tr>
+        <tr><td><code>visibility: hidden</code></td><td>不</td><td><strong>占</strong></td><td>不</td><td>柜子罩了不透明布，位置照占</td></tr>
+        <tr><td><code>opacity: 0</code></td><td>不</td><td><strong>占</strong></td><td><strong>能</strong></td><td>柜子罩了透明布，还能伸手开门</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>为什么要花篇幅讲这三个？因为<mark class="key">它们的性能代价差别很大：改 <code>display</code> 会触发重排（位置全变），改 <code>opacity</code> 往往只需要重新合成（最便宜）。</mark>这一点马上就要讲到。</p>
+
+  <h3>第四步：布局——算出每样东西的确切位置</h3>
+  <p>渲染树告诉浏览器"要画什么、每样长什么样"，但还缺最要紧的一件事：<strong>每样东西到底在屏幕上的哪个位置、多宽多高。</strong>算这件事的过程叫<strong>布局</strong>（Layout，在部分文档里也叫 Reflow 回流）。</p>
+  <p>这一步为什么难？因为<strong>网页的尺寸是相对的、互相依赖的</strong>。你写 <code>width: 50%</code>，那 50% 到底是多少像素？取决于父元素多宽。父元素又写了 <code>width: auto</code>，那它多宽？取决于它父元素，以及它自己里面装了多少内容。<mark class="key">这是一张互相牵连的计算网络，不是一次简单的赋值。</mark></p>
+  <pre><code>一个具体的连锁例子：
+
+屏幕宽 390px
+  └─ body（宽度 auto → 390px）
+       └─ .container（padding 16px → 内容区 358px）
+            └─ .card（width 50% → 179px）
+                 └─ 一段文字（要换行吗？取决于 179px 装得下几个字）
+                      → 换了 3 行 → .card 高度 = 3 × 行高 + 内边距
+                           → .container 高度也跟着变
+                                → 它后面所有元素的位置全部下移
+
+★ 注意最后那三行的连锁：一段文字多换了一行，
+  可能导致这个元素之后的全部内容位置改变。
+  这就是布局的「连锁性」——也是它昂贵的根本原因。</code></pre>
+  <p><strong>换成大白话：这相当于在墙上贴一排瓷砖。</strong>第一块的位置定了，第二块跟着它、第三块跟着第二块……<mark class="key">你把第一块往左挪一厘米，后面几十块的位置全部要重新量。</mark>而如果你只是把第五块换个颜色，其他块一动不动。</p>
+  <p>这个区别就是本节最重要的知识点，下面单独讲。但先记住布局这一步的两个特点：</p>
+  <ul class="keylist">
+    <li><strong>它是纯计算，不产生任何可见结果。</strong>算完之后浏览器手上是一份"每个元素的坐标与尺寸"清单——屏幕上还是什么都没有。<strong>相当于</strong>放线员在墙上打完了所有标记线，但一块砖都还没贴。</li>
+    <li><strong>它的代价随元素数量增长，而且不是线性的。</strong>因为元素之间的依赖关系会放大计算量。<mark class="key">这就是为什么"页面上元素太多"本身就是一种性能问题</mark>——不是因为它们占内存，而是因为算位置的活儿变多了。</li>
+  </ul>
+
+  <h3>第五步与第六步：绘制与合成</h3>
+  <p>位置算好了，终于可以画。<strong>绘制</strong>（Paint）这一步做的是：<strong>按照渲染树上的样式，把每个元素的颜色、边框、背景、阴影、文字真的画出来。</strong></p>
+  <p>但现代浏览器不是"在一张画布上从头画到尾"，而是<strong>分层画</strong>，然后再叠起来。这最后一步叫<strong>合成</strong>（Composite）。</p>
+  <pre><code>为什么要分层？看这个场景：
+
+页面上有一个固定在顶部的导航栏，用户在滑动下面的内容。
+
+不分层的做法：
+  用户每滑动一点，整个页面重新画一遍
+  （导航栏明明没变，也要重画）
+
+分层的做法：
+  图层 1：导航栏      ← 完全不动，画一次就够
+  图层 2：主内容      ← 只需要改变它的位置偏移
+  图层 3：一个动画元素 ← 单独动，不影响其他层
+
+  滑动时只需要重新「叠」这几层，
+  而不需要重新「画」任何一层。
+
+★ 而"叠图层"这件事可以交给 GPU 做，它极其擅长这个。
+  这就是为什么某些动画特别流畅——它们只触发合成，不触发绘制和布局。</code></pre>
+  <p><strong>打个比方，这相当于旧时代的动画制作方式。</strong>画一个人在固定背景前走路，不需要每一帧都把背景重画一遍——<strong>背景画一张固定的，人物画在透明胶片上，每帧只换胶片，叠起来拍。</strong><mark class="key">一百帧动画，背景只画了一次。</mark></p>
+  <p>了解这一层有个非常实际的用处：<strong>做动画时，用某些属性会比用另一些属性流畅得多。</strong>原因就是它们触发的管线阶段不同：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你改动什么</th><th>会触发哪些阶段</th><th>代价</th><th>装修里对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>宽高、边距、字号、增删元素</td><td><strong>布局 → 绘制 → 合成</strong>（全走一遍）</td><td><strong>最贵</strong></td><td>挪动一块板，后面全部重新量尺、重贴、重摆</td></tr>
+        <tr><td>颜色、背景色、阴影、边框色</td><td><strong>绘制 → 合成</strong>（跳过布局）</td><td>中等</td><td>位置不动，只重新刷一遍漆</td></tr>
+        <tr><td><code>transform</code>（位移/缩放/旋转）、<code>opacity</code></td><td><strong>只合成</strong></td><td><strong>最便宜</strong></td><td>那块板本来就在带轮子的架子上，直接推一下</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">这张表是"网页动画为什么有的流畅有的卡"的完整答案：能用 <code>transform</code> 实现的位移，就不要用改 <code>left</code> 来实现。</mark>两者视觉效果一样，但一个只需重新叠层、一个要重新量整个房间。</p>
+  <p><strong>说白了：同样是把柜子挪到墙角，一种做法是推一下带轮子的柜子，另一种做法是把整间屋子的地砖重铺一遍好让柜子落在新位置上。</strong>视觉结果相同，工作量差了几个数量级。</p>
+
+  <h3>重排与重绘：本节最该记住的一个区别</h3>
+  <p>现在正式讲这一节的核心。<strong>页面不是画一次就完了</strong>——用户滚动、点击、输入，脚本增删元素、改样式，都会让浏览器重新走一遍管线的一部分。走多少，取决于你动了什么。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>重排（Reflow / Relayout）</th><th>重绘（Repaint）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>中文含义</td><td>重新算位置和尺寸</td><td>重新上颜色</td></tr>
+        <tr><td>触发什么</td><td>改宽高、边距、字号、位置、增删元素、改 <code>display</code>、读某些尺寸属性</td><td>改颜色、背景、边框颜色、阴影、<code>visibility</code></td></tr>
+        <tr><td>要走管线的哪几步</td><td><strong>布局 → 绘制 → 合成</strong></td><td><strong>绘制 → 合成</strong>（跳过布局）</td></tr>
+        <tr><td>影响范围</td><td><strong>可能牵连一大片</strong>——甚至整个页面</td><td>通常只影响改动的那一块</td></tr>
+        <tr><td>代价</td><td><strong>贵</strong></td><td>相对便宜</td></tr>
+        <tr><td>关系</td><td><strong>重排必然引起重绘</strong>（位置变了当然要重画）</td><td>重绘<strong>不一定</strong>引起重排（换个颜色不影响位置）</td></tr>
+        <tr><td>装修里对应</td><td>挪动一块地板 → 后面所有地板重新放线、重铺</td><td>把一面墙重新刷个色 → 尺寸位置一点没动</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第六行那个单向关系值得抄下来记住：<mark class="key">重排必然带来重绘，重绘不一定带来重排。</mark>所以如果你只能记住一句话，就记：<strong>能只改颜色就别改尺寸，能只推图层就别改颜色。</strong></p>
+  <p>而在这个基础上，还有一个更隐蔽、也更容易写出来的性能陷阱，叫<strong>强制同步布局</strong>（也常被叫作"布局抖动"）。它的成因是：<mark class="key">浏览器本来会把多次改动攒在一起，一次性算完；但如果你在改动之后立刻去"读"某个尺寸，它就被迫马上算一遍给你。</mark></p>
+  <pre><code>糟糕的写法（伪代码示意）：
+
+  for (每个元素) {
+      元素.宽度 = 元素.当前宽度 + 10     ← 改一下
+      读取 元素.当前高度                  ← 立刻又读！
+  }
+
+  ★ 每一轮"改完立刻读"，都强迫浏览器重新算一次布局。
+    一百个元素 = 一百次完整布局计算。
+
+好的写法：
+
+  for (每个元素) { 读取所有需要的尺寸，先存起来 }   ← 先全部读完
+  for (每个元素) { 用存下来的值统一改 }             ← 再全部改完
+
+  ★ 读写分开，浏览器只需算一次。</code></pre>
+  <p><strong>换成大白话：这相当于装修时的两种做法。</strong>糟糕的做法是"挪一块板 → 立刻拿尺量整个房间 → 再挪一块 → 再量一遍整个房间"，量了一百次。<strong>好的做法是先把一百块板全部挪到位，最后量一次。</strong><mark class="key">量房这个动作本身很贵，所以要攒着一起做，而不是每动一下就量一遍。</mark></p>
+  <p>这类问题在实践中极其常见，而且难查——因为代码看起来完全正常，功能也完全正确，<strong>只是慢</strong>。而"慢"这个症状不会报错、不会崩溃，只会让用户觉得"这网站不太行"。</p>
+
+  <h3>关键渲染路径：从收到文本到看见第一屏</h3>
+  <p>把前面六步串起来，就得到<strong>关键渲染路径</strong>（Critical Rendering Path）——<mark class="key">"从拿到 HTML 到画出第一屏，必须走完的最短流程"</mark>。理解它有个很实际的用处：<strong>你能判断出一个网页白屏时间长的原因，到底卡在哪一环。</strong></p>
+  <pre><code>关键渲染路径（必须依次完成，不能跳）：
+
+ 收到 HTML
+   │
+   ├─ 解析 HTML ────────────┐
+   │     （遇到脚本会暂停）    │
+   │                         ├→ 两条线并行进行
+   ├─ 下载并解析 CSS ────────┘
+   │     ★ 这一步会阻塞渲染：CSSOM 没好，什么都不画
+   │
+   ├─ DOM + CSSOM → 渲染树
+   │     （display:none 的元素在这一步被剔除）
+   │
+   ├─ 布局：算出每个元素的坐标与尺寸
+   │     ★ 纯计算，最耗时，有连锁性
+   │
+   ├─ 绘制：真的填颜色、画边框、渲文字
+   │
+   └─ 合成：把各图层叠成最终画面 → 用户终于看见了
+
+★ 优化关键渲染路径，就三件事：
+  ① 减少这条路上必须的资源数量（少几个阻塞的 CSS 和脚本）
+  ② 减少它们的体积（压缩、只留首屏必需的样式）
+  ③ 减少要算的元素数量（DOM 别太深太大）</code></pre>
+  <p>这三条优化里，<strong>第一条效果最直接</strong>。因为关键路径上的资源是<strong>串行</strong>的：少一个阻塞资源，就少等一份下载时间。<strong>相当于</strong>装修队开工前要等三份图纸，你把其中两份改成"可以后补"，工期立刻缩短。</p>
+  <p>这里也能看出本章前后的呼应：<mark class="key">§ 4.5 讲的"CSS 和同步脚本会阻塞渲染"，在这里得到了完整解释——它们阻塞的正是这条关键路径。</mark>而 § 4.2 讲的 <code>preconnect</code>、§ 4.3 讲的连接复用，作用都是让这条路上的资源更早到达。<strong>说白了，六节讲的所有优化手段，最终服务的都是同一件事：让用户早一点看到第一屏。</strong></p>
+
+  <h3>为什么"看到内容"和"能操作"是两件事</h3>
+  <p>有一个体验你一定遇到过：<strong>页面明明已经显示出来了，你点按钮却毫无反应，过了一两秒才突然能点。</strong>这不是错觉，也不是网络问题，是渲染与脚本执行的分工造成的。</p>
+  <p>原因在于：<strong>浏览器只有一个主线程在同时负责"画页面"和"跑脚本"</strong>。这两件事抢同一个人的时间。</p>
+  <pre><code>时间轴：
+
+[画出第一屏]  用户看到内容了 → 他开始尝试点击
+     │
+[跑一大段脚本]  主线程被占满，忙着执行 JS
+     │           ★ 用户的点击被排进队列，但没人处理
+     │
+[脚本跑完]    主线程终于空了 → 才开始处理刚才那些点击
+     │
+[响应用户]    按钮终于有反应了
+
+★ 用户的感受：「卡了一下」「点了没反应」
+  真实情况：主线程在忙别的，你的点击一直在排队等着</code></pre>
+  <p><strong>换成大白话：这相当于一家只有一个店员的店。</strong>他既要摆货又要收银。<mark class="key">货摆好了（页面画出来了），顾客拿着东西来结账，但店员正在后面搬箱子——顾客站在收银台前干等，还以为店没人。</mark></p>
+  <p>这个机制解释了两个常见现象：</p>
+  <ul class="keylist">
+    <li><strong>页面显示很快但"假死"。</strong>说明首屏渲染优化做得好，但脚本太重。这类页面的评测分数可能不错，实际体验却很差。</li>
+    <li><strong>做动画时突然掉帧。</strong>因为主线程被一段耗时的脚本占住了，没时间画下一帧。<strong>相当于</strong>放电影的人被叫去搬东西，胶片就停在那一格。</li>
+  </ul>
+  <p>而这也解释了前面讲的"只触发合成的动画更流畅"为什么这么有价值：<mark class="key">因为合成这件事可以交给 GPU，不占主线程</mark>——所以即使主线程在忙，那个动画照样能流畅地动。<strong>相当于</strong>推那台带轮子的车不需要店员动手，顾客自己就推走了。</p>
+
+  <h3>五种真实的"能打开但慢"，以及各自的病根</h3>
+  <p>这一节的排查价值集中在这里。<strong>渲染阶段的问题和网络阶段完全不同：它不报错、不打不开，只是慢或卡。</strong>下面五种最常见，症状各不相同：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>症状</th><th>病根在哪一步</th><th>怎么确认</th><th>怎么治</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>白屏一两秒，然后整页突然出来</td><td>关键渲染路径上有阻塞资源</td><td>开发者工具里看有几个阻塞渲染的 CSS/脚本</td><td>首屏样式内联，其余异步；脚本加 <code>defer</code></td></tr>
+        <tr><td>内容出来了但排版跳动几次</td><td>布局被反复重算（常因图片没写尺寸、字体后到）</td><td>录一段加载过程逐帧看</td><td><strong>给图片写明宽高</strong>，给容器留好位置</td></tr>
+        <tr><td>看得见但点不动</td><td>主线程被长时间的脚本占住</td><td>Performance 面板里看有没有很长的一段任务</td><td>把大任务切小、挪到空闲时做</td></tr>
+        <tr><td>滚动或动画一卡一卡</td><td>动画触发了布局或绘制，不只是合成</td><td>Performance 面板看每帧有没有 Layout/Paint</td><td>改用 <code>transform</code> 与 <code>opacity</code> 做动画</td></tr>
+        <tr><td>页面越用越卡</td><td>元素越来越多，或者反复触发强制同步布局</td><td>看 DOM 节点数是否持续增长</td><td>及时清理不用的节点；读写分离</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第二行那个"排版跳动"值得多说一句，因为它是最影响体验、也最容易修的一种。<strong>成因是图片没有声明尺寸：</strong>浏览器不知道这张图多大，只能先当它不占地方，等图下载完知道尺寸了，才把它下面的内容全部往下推。</p>
+  <p><mark class="key">这就是为什么你正要点一个按钮，页面突然一跳，你点到了别的东西。</mark><strong>相当于</strong>装修师傅不知道那台冰箱多宽，先把橱柜都排好了，等冰箱送到发现放不下，只能把整排橱柜往旁边挪——<strong>而如果一开始图纸上就写明"此处预留 60 公分"，什么都不用挪。</strong></p>
+  <p>修法极其简单：<strong>给每张图写明宽高</strong>。这样浏览器一开始就能按比例留出正确的空位，图片到了直接填进去，一点都不用挪。<strong>说白了：提前留位置，比事后挪东西便宜得多。</strong></p>
+
+  <h3>渲染阶段与网络阶段：两种"慢"的完整对照</h3>
+  <p>这一章走到这里，可以把两类性能问题彻底摆在一起对比了。<mark class="key">"网站慢"这三个字底下藏着两种完全不同的病，而绝大多数人分不清。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>网络阶段慢（§ 4.1–4.5）</th><th>渲染阶段慢（本节）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>本质原因</td><td><strong>路太远、来回太多</strong></td><td><strong>活太多、算不完</strong></td></tr>
+        <tr><td>换个更好的网络有用吗</td><td>有用（尤其换到离服务器近的网络）</td><td><strong>完全没用</strong></td></tr>
+        <tr><td>换个更快的手机有用吗</td><td><strong>几乎没用</strong></td><td>有用</td></tr>
+        <tr><td>典型症状</td><td>白屏干等，什么都不出</td><td>内容出来了但卡、跳、点不动</td></tr>
+        <tr><td>怎么看出来</td><td>开发者工具 Timing 里的 DNS/连接/TLS/TTFB 数字大</td><td>Timing 数字都很小，但 Performance 面板里主线程很忙</td></tr>
+        <tr><td>网站方怎么治</td><td>用 CDN、减少来回、启用新协议版本</td><td>精简页面、减少阻塞资源、少触发重排</td></tr>
+        <tr><td>用户侧能做什么</td><td>换网络、换 DNS</td><td>几乎无能为力（只能换设备）</td></tr>
+        <tr><td>生活里对应</td><td>去很远的店买东西，路上花了两小时</td><td>店就在楼下，但店员一个人要摆一百箱货</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第二行和第三行的对照是这张表最有用的部分：<mark class="key">网络阶段慢，换手机没有任何帮助；渲染阶段慢，换网络没有任何帮助。</mark>而人们抱怨"网站慢"时，第一反应几乎总是重启路由器——那只对其中一种病有效。</p>
+  <p><strong>换成大白话：一个是"路远"，一个是"活多"。修路解决不了人手不够，加人也缩不短路程。</strong>诊断的第一步永远是先分清这两个。</p>
+
+  <h3>动手实验：亲眼看完整条管线</h3>
+  <p>这一节讲的每一步在浏览器里都能看到，而且看得非常清楚。三个实验，做完你对整章的理解会完全落地。</p>
+  <p><strong>第一件：看渲染管线的每一步。</strong></p>
+  <pre><code>F12 → Performance（性能）面板 → 点录制 → 刷新页面 → 停止录制
+
+你会看到一条时间轴，上面用不同颜色标着：
+  紫色 / Layout    ← 布局（本节第四步）
+  绿色 / Paint     ← 绘制（第五步）
+  绿色 / Composite ← 合成（第六步）
+  黄色 / Scripting ← 脚本执行（抢主线程的那个）
+
+★ 值得留意的三件事：
+  ① 找出最长的那一条黄色块 —— 那就是让页面"点不动"的元凶
+  ② 看有没有大量重复出现的紫色块 —— 那是反复触发布局（布局抖动）
+  ③ 对比一个简单网页和一个复杂网页 —— 差距会非常直观</code></pre>
+  <p><strong>第二件：亲手制造一次重排与一次重绘，看代价差别。</strong></p>
+  <pre><code>在 Console（控制台）里试这两段（在任意网页上都能跑）：
+
+// 只触发重绘 —— 改颜色，位置不变
+document.body.style.backgroundColor = '#f0f0f0';
+
+// 触发重排 —— 改字号，整页文字位置全变
+document.body.style.fontSize = '20px';
+
+★ 在 Performance 面板录制时分别执行这两句，
+  你会看到第二句多出了一大块 Layout 时间。
+  这就是"重排比重绘贵"这句话的具体形状。</code></pre>
+  <p><strong>第三件：看 DOM 到底长什么样。</strong>在 Console 里执行 <code>document.body.children</code>，浏览器会把 DOM 树展开给你看，可以一层层点进去。<mark class="key">这一下能把"DOM 是一棵树"这句抽象的话变成一个你亲手翻过的结构。</mark></p>
+  <p>另外还可以试 <code>document.querySelectorAll('*').length</code>——它告诉你这个页面一共有多少个元素。<strong>拿几个网站对比一下你会很有感触：</strong>简洁的页面可能只有几百个，而一些复杂的商业页面能到几千甚至上万个。<strong>相当于</strong>一个房间摆五件家具和摆五百件家具，量房这件事的工作量根本不是一个量级。</p>
+
+  <h3>全章收官：把七个阶段串成一句话</h3>
+  <p>这是本章最后一节，值得把整条链子完整地过一遍。<strong>你按下回车之后发生的全部事情，压缩成一张图：</strong></p>
+  <pre><code>你点了 https://shop.example.com/item/8848
+  │
+① 本机准备（§ 4.1）
+  判断意图 → 补全协议 → 查 HSTS → 拆成七段 → 查各级缓存
+  ★ 缓存命中就直接跳到 ⑦，一个包都不发
+  │
+② 查号（§ 4.2）
+  浏览器缓存 → 系统缓存/hosts → 递归解析器 → 根 → 顶级域 → 权威
+  产出：一个 IP 地址
+  │
+③ 接线（§ 4.3）
+  分配临时源端口 → 三次握手（一个 RTT）→ 双方各记一笔
+  产出：一条可靠通道 + 一个四元组
+  │
+④ 验身份与上锁（§ 4.4）
+  ClientHello → 证书链 → 验四项 → 各自算出同一把会话密钥
+  产出：一条已验明身份的加密通道（TLS 1.3 一个 RTT）
+  │
+⑤ 说正事（§ 4.5）
+  请求行 + 十来条头 → 服务器过 CDN/负载均衡/网关/应用/数据库
+  产出：状态码 + 响应头 + 一份 HTML
+  │
+⑥ 画出来（§ 4.6）
+  解析 HTML→DOM ┐
+                 ├→ 渲染树 → 布局 → 绘制 → 合成 → 像素
+  解析 CSS→CSSOM ┘
+  │
+⑦ 你看见了页面
+
+时间去了哪：
+  ①、⑥ 是「算」—— 由你的设备决定
+  ②、③、④、⑤ 是「等来回」—— 由物理距离决定
+  ★ 所以优化只有两条路：少等几个来回，或者少算一些活。</code></pre>
+  <p>如果整章只让你带走一句话，那就是最后那两行：<mark class="key">网络阶段的时间花在"等"，渲染阶段的时间花在"算"。前者靠减少来回和缩短距离来治，后者靠少干活儿来治。</mark></p>
+  <p>而如果让你带走第二句，那就是这个：<strong>这七个阶段严格串行，前一步的产物就是后一步的输入。</strong>正因如此，任何一环出问题都表现为"网站打不开"——<strong>但每一环的病症、查法、治法完全不同。</strong>本章六节各自末尾的那张故障表，合起来就是一份完整的排查手册。</p>
+  <p>最后回到本章开头那个问题：<strong>"点一下就开了"这句话，中间被省略掉的是什么？</strong>现在你知道了——<mark class="key">被省略掉的是七个阶段、四层协议、至少三个来回、一次证书链验证、几十个并行请求，以及一条从字符到像素的完整流水线。</mark>而它们全都发生在你察觉不到的半秒钟里。</p>
+
+  <h3>为什么要分成 DOM 和 CSSOM 两棵树</h3>
+  <p>有个很自然的疑问：<strong>既然最后要合成一棵渲染树，为什么中间要先建两棵？直接一边读 HTML 一边套样式不行吗？</strong></p>
+  <p>不行，而且理由很实在。<strong>因为一个元素最终长什么样，可能被后面才出现的规则改掉。</strong></p>
+  <pre><code>假设浏览器读到一半就急着上样式：
+
+  读到 &lt;div class="price"&gt;￥199&lt;/div&gt;
+  此刻已知的规则只有：.price { color: red }
+  → 于是它按红色画了
+
+  再往下读，样式表后半段还有：
+  body .price { color: green }   ← 这条更具体，应该赢
+
+  ★ 结果：刚画的红色白画了，还得改成绿色。
+    用户会看到颜色闪一下。</code></pre>
+  <p>CSS 的名字里那个"层叠"（Cascading）就是在说这件事：<mark class="key">同一个元素可能被好几条规则同时命中，最终按"谁更具体、谁更靠后"来决胜。</mark>而"谁更具体"这个判断，<strong>必须等所有规则都读完才能下结论</strong>。</p>
+  <p><strong>换成大白话：这相当于装修图纸有好几页，后面几页会修正前面的说法。</strong>第 3 页写"全屋刷白"，第 17 页写"客厅那面墙改成灰"。<mark class="key">如果工人看到第 3 页就动手刷白，那第 17 页一到就得重刷——所以正确做法是把整本图纸看完，汇总出一份最终结论，再开工。</mark></p>
+  <p>这解释了三件事，串起来看很清楚：</p>
+  <ul class="keylist">
+    <li><strong>为什么 CSS 要单独建一棵树。</strong>因为它是一份需要"整体汇总"才能得出结论的规则集，不能边读边用。</li>
+    <li><strong>为什么 CSS 阻塞渲染。</strong>因为汇总没完成之前，任何绘制都可能是错的。<strong>宁愿多等，不愿画错再改。</strong></li>
+    <li><strong>为什么样式表该放在文档头部。</strong>让它尽早开始下载，好让"汇总"这件事尽早完成。<strong>相当于</strong>装修队进场前就把整本图纸交齐，而不是干到一半才补送后面几页。</li>
+  </ul>
+  <p>而 HTML 恰恰相反——<strong>它可以边读边建，因为内容的结构不会被后面的内容改掉</strong>（前面写的那个 <code>div</code> 就是那个 <code>div</code>，不会因为后面出现别的标签而变性质）。<mark class="key">一个可以增量处理，一个必须整体汇总——这就是它们被分成两棵树的根本原因。</mark></p>
+
+  <h3>渲染是"一直在发生"的，不是画完就结束</h3>
+  <p>最后要纠正一个容易形成的错觉：<strong>看完前面六步，你可能以为渲染是"一次性完成的开机动作"。</strong>其实不是。<mark class="key">只要页面还开着，这条管线就一直在反复运转。</mark></p>
+  <pre><code>页面打开后，仍会持续触发管线的原因：
+
+  · 你滚动页面           → 至少要重新合成
+  · 你把鼠标放在按钮上   → 样式变了 → 重绘
+  · 你在输入框里打字     → 内容变了 → 可能重排
+  · 页面上有个动画在跑   → 每秒要走管线几十次
+  · 脚本定时更新某个数字 → 每次更新都触发一小段管线
+  · 图片陆续加载完成     → 每张图到位都可能引起重排
+  · 你旋转手机           → 视口变了 → 整页重新布局
+
+★ 所以"页面卡不卡"考的不是那一次首屏渲染，
+  而是它在你使用过程中反复走管线时够不够省。</code></pre>
+  <p>这个视角很重要，因为它解释了为什么<strong>有些页面"打开很快但用起来很难受"</strong>：首屏优化做得好，但每次交互都触发大范围重排。<strong>相当于</strong>一家店开门特别快，但你每买一件东西，店员都要把整个<strong>仓库</strong>重新盘一遍点。</p>
+  <p>为了让这件事不失控，浏览器有个重要机制：<mark class="key">它把管线的运转对齐到屏幕的刷新节奏上——屏幕多久刷一次，它就最多算多少次。</mark></p>
+  <p><strong>换成大白话：屏幕就像一台每秒拍几十张的相机，只在快门开的那一瞬间取画面。</strong>浏览器算得再快也没意义——快门没开，画出来也没人看到。<strong>所以它索引把工作节奏和快门对齐，不做无用功。</strong></p>
+  <p>这也带出一个很实际的判断标准：<strong>每一帧留给浏览器干活的时间是有硬上限的。</strong>如果某一帧里的活儿没干完，那一帧就"丢了"——用户看到的就是卡顿。<mark class="key">所以性能优化的目标从来不是"越快越好"，而是"每一帧都能在配额内干完"。</mark></p>
+  <p><strong>相当于</strong>一条按固定节拍前进的<strong>流水线</strong>：<strong>你不需要比节拍更快，你只需要每一拍都别掉队。</strong>某一个工位偶尔慢半拍，整条线上的产品就少一件——这正是"掉帧"的形状。</p>
+
+  <div class="lab" data-lab="latency"></div>
+
+  <div class="lab" data-lab="quiz"
+       data-q="下面哪一个改动的代价<strong>最小</strong>（只触发合成，不触发布局与绘制）？"
+       data-opts="改元素的宽度|改元素的背景颜色|用 transform 让元素位移|增加一个新元素"
+       data-answer="2"
+       data-explain="改宽度和增加元素都会触发布局（要重新算位置，而且有连锁性——一个元素变了可能牵连它之后的全部内容），代价最大；改背景颜色跳过布局但仍要重绘；而 transform 与 opacity 通常只需要重新「叠图层」，这件事可以交给 GPU 做，连主线程都不占。所以做动画时能用 transform 实现位移就不要用改 left 实现——两者视觉效果一样，但一个是推带轮子的柜子，另一个是把整间屋子的地砖重铺一遍。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一节是全章唯一<mark class="key">不发一个网络包、纯粹在算</mark>的阶段。它的快慢由你的设备与页面复杂度决定，和网速毫无关系。<br/>
+    <strong>关键渲染路径六步：</strong>解析 HTML 建 <strong>DOM</strong> → 解析 CSS 建 <strong>CSSOM</strong>（这两条并行）→ 合成<strong>渲染树</strong>（<code>display:none</code> 的元素在这一步被剔除）→ <strong>布局</strong>（算位置，纯计算，有连锁性，最耗时）→ <strong>绘制</strong>（填颜色，才第一次产生可见结果）→ <strong>合成</strong>（把各图层叠成画面，可交给 GPU）。<br/>
+    <strong>本节最该记住的区别 · 重排与重绘：</strong>重排是重新算位置（走布局→绘制→合成，<strong>可能牵连一大片</strong>），重绘只是换颜色（跳过布局）。<mark class="key">重排必然引起重绘，重绘不一定引起重排。</mark>三档代价从贵到便宜：<strong>改宽高/增删元素（全走一遍）→ 改颜色（跳过布局）→ 改 <code>transform</code>/<code>opacity</code>（只合成，最便宜）</mark>。所以做动画一律优先用 <code>transform</code>。<br/>
+    <strong>两个隐蔽的陷阱：</strong>① <strong>强制同步布局</strong>——改完立刻读尺寸，会强迫浏览器马上重算一遍，正确做法是<strong>读写分离</strong>（先全部读、再全部改）；② <strong>图片不写尺寸导致排版跳动</strong>——浏览器不知道图多大只能先不留位，图到了再把下面内容全推走，修法就是给图写明宽高。<br/>
+    <strong>"看得见"不等于"能操作"：</strong>主线程同时负责画页面和跑脚本，脚本太重时页面已经显示但点击一直在排队——相当于一个店员既要摆货又要收银。<br/>
+    <strong>本节的边界：</strong>这里讲的是"怎么组织内容并算出位置与颜色"。<strong>更深入的渲染管线（颜色值怎么变成屏幕上发光的像素、位图与矢量、分辨率与像素密度）见界面篇 § 2.2。</strong><br/>
+    <strong>全章收束：</strong>七个阶段严格串行——<strong>本机准备 → 查号（DNS）→ 接线（TCP）→ 验身份上锁（TLS）→ 说正事（HTTP）→ 画出来（渲染）→ 你看见了</strong>。<mark class="key">前面几步的时间花在"等来回"（由距离决定），最后一步花在"算"（由设备决定）——所以优化只有两条路：少等几个来回，或者少算一些活。</mark>而"点一下就开了"这句话被省略掉的，正是这七个阶段、四层协议、至少三个来回、一次证书链验证、几十个并行请求，和一条从字符到像素的完整流水线。<br/>
+    <strong>下一步：</strong>这一章走的是"数据在两端之间怎么流"。而路上那些替它转发、分流、挡住坏人的设备——路由器、交换机、网关、防火墙、负载均衡——是第 5 章的内容。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-5-request-response.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 4.5 · 发送请求与服务器响应</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 5 章 · 网络设备（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 4.6 · 浏览器渲染</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-36"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-36"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-36"></script>
+</body>
+</html>

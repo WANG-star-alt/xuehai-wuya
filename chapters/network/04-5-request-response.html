@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 4.5 · 发送请求与服务器响应 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-36">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-36">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./04-journey.html">网络篇 · 第 4 章</a>
+      <span class="sep">›</span>
+      <span>§ 4.5</span>
+    </div>
+    <a href="./04-journey.html">← 返回本章</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.5 · Section</div>
+    <h1>发送请求与服务器响应</h1>
+    <div class="cn">Request &amp; Response in Action · RFC 9110-9112</div>
+  </header>
+
+  <p class="lead">
+    前面三节全是准备工作：找到地址、接上线、验明身份加上锁。<mark class="key">这一节终于开口说正事了</mark>——浏览器把要求说出去，服务器那头经过好几道手把东西找出来，再把结果送回。这是整段旅程里唯一真正"传输内容"的一步，也是服务器唯一有机会出错的一步。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏪 你终于站到了柜台前，开口说了第一句话</div>
+    <p>号码查到了、电话拨通了、身份也互相验明了。<strong>现在你说：</strong><br/><br/>
+    "我要取 <strong>8848 号</strong>那件货。<strong>我是老客户</strong>，卡号在这儿。麻烦给我<strong>压缩包装</strong>，我拿不了太大的箱子。另外<strong>如果这货和上次那批一样，就不用重新给我了</strong>。"<br/><br/>
+    <strong>柜员听完，转身去后面办：</strong>先看你卡号有效不有效（<strong>网关鉴权</strong>）→ 到货架区找 8848（<strong>应用处理</strong>）→ 发现要查库存记录（<strong>数据库查询</strong>）→ 按你要求打压缩包（<strong>压缩响应</strong>）→ 递给你并说一句"这是货，另外提醒你三天后有活动"（<strong>响应头</strong>）。<br/><br/>
+    <mark class="key">注意你那句话里的信息密度：一个动作（取）、一个目标（8848）、三个附加条件（我是谁、怎么包装、什么情况下不用给）。</mark>HTTP 请求的结构和这句话一模一样——一个方法、一个目标、一堆头部字段。<br/>
+    HTTP 的报文格式在 § 3.1 已经详细讲过。这一节要看的是：<strong>它在一次真实访问里怎么发、发出去之后服务器那头到底经过了几道手、以及回来的响应头怎么反过来影响你下一次访问。</strong></p>
+  </div>
+
+  <h3>上一步刚完成了什么，这一步要干什么</h3>
+  <p>接力棒交到这一节时，手里有的是<strong>一条已验明身份的加密通道</strong>（§ 4.4 的产物），再加上 § 4.1 解析出来的那几样东西：方法（GET）、路径（<code>/item/8848</code>）、主机名。</p>
+  <p>这一节要干的事：<strong>把这些信息组装成一份规范的请求报文发出去，然后接住服务器的回复。</strong>听着简单，但这一步是整段旅程里唯一"服务器有机会犯错"的一步——前面四步全是通信层面的，出错只有"连不上"这一种；这一步开始涉及业务逻辑，出错方式一下丰富起来（404、500、403、超时、返回了错的内容）。</p>
+  <p>干完之后交给下一节的东西是：</p>
+  <ul class="keylist">
+    <li><span class="k">一个状态码</span><span class="v">三位数字，说明这次办得怎么样（200 成功、404 找不到、500 服务器炸了）</span></li>
+    <li><span class="k">一堆响应头</span><span class="v">告诉浏览器"这是什么类型、多大、能缓存多久、要不要设 Cookie"</span></li>
+    <li><span class="k">响应体</span><span class="v">真正的内容——通常是一份 HTML 文本，这就是 § 4.6 渲染的原料</span></li>
+  </ul>
+  <p><mark class="key">这一节的时间成本有两部分，性质完全不同：一个来回的网络时间（由距离决定，你改不了）+ 服务器处理时间（由服务器性能与业务复杂度决定）。</mark>把这两部分分开看，是排查"网站慢"的第一步。</p>
+
+  <h3>先把这一节的术语翻译成人话</h3>
+  <p>HTTP 术语在 § 3.1 已经过了一遍，这里补的是"实战流程视角"才会碰到的那些：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活里对应的东西</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>请求行</strong>（Request Line）</td><td>说白了就是"你开口那句话的主干：干什么 + 对什么"</td><td>在<strong>窗口</strong>说的"我要取 8848 号"</td></tr>
+        <tr><td><strong>请求头</strong>（Request Headers）</td><td>说白了就是"一堆附加说明，一行一条"</td><td><strong>快递</strong>面单上那些栏目：易碎、代收、指定时间</td></tr>
+        <tr><td><strong>TTFB</strong>（Time To First Byte，首字节时间）</td><td>说白了就是"从你说完话到对方吐出第一个字的间隔"</td><td>你问完话，对方"嗯……"了一下才开始答的那段沉默</td></tr>
+        <tr><td><strong>反向代理</strong>（Reverse Proxy）</td><td>说白了就是"你以为在跟店家说话，其实先经过了一个前台"</td><td><strong>医院</strong>的分诊台：所有人先到它这儿，它再分到各科室</td></tr>
+        <tr><td><strong>网关</strong>（Gateway / API Gateway）</td><td>说白了就是"进门第一道关卡，管查票和限流"</td><td>景区大门的<strong>安检</strong>与验票口</td></tr>
+        <tr><td><strong>负载均衡</strong>（Load Balancer）</td><td>说白了就是"把客人分到几个窗口去，别都挤一个"</td><td>银行大堂经理引导<strong>排队</strong>的人去不同窗口</td></tr>
+        <tr><td><strong>状态码</strong>（Status Code）</td><td>说白了就是"这次办得怎么样的一个三位数编号"</td><td><strong>挂号</strong>机吐出的小票：成功、已满、该科室不存在</td></tr>
+        <tr><td><strong>重定向</strong>（Redirect，3xx）</td><td>说白了就是"这事不在我这儿办，你去那个窗口"</td><td>"社保业务不在 3 号窗，请到 7 号窗"</td></tr>
+        <tr><td><strong>协商缓存</strong>（304 Not Modified）</td><td>说白了就是"你手上那份还能用，我不重新给你了"</td><td>"你上次拿的那份表格没改版，接着用"</td></tr>
+        <tr><td><strong>内容编码</strong>（Content-Encoding，压缩）</td><td>说白了就是"我把东西压扁了寄，你收到自己撑开"</td><td><strong>洗衣</strong>店的真空压缩袋：体积小一大半，用时拆开就恢复</td></tr>
+        <tr><td><strong>分块传输</strong>（Chunked Transfer）</td><td>说白了就是"我边做边给你，不等全做完才一起端上来"</td><td><strong>餐厅</strong>先上凉菜，热菜陆续端，而不是全做好一起上</td></tr>
+        <tr><td><strong>Cookie</strong></td><td>说白了就是"人家发给你的一个小凭据，下次来要带着"</td><td>寄存柜给的<strong>便签</strong>牌号——服务方不记你是谁，靠你把牌子带来</td></tr>
+        <tr><td><strong>幂等</strong>（Idempotent）</td><td>说白了就是"这动作做一次和做十次结果一样"</td><td>按<strong>电梯</strong>上行键：按十次也还是上一趟</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最值得先记住的是 <strong>TTFB</strong>，因为它是排查"网站慢"最关键的一个指标。<mark class="key">TTFB 把"网络慢"和"服务器慢"分开了：TTFB 长而下载快 → 服务器处理慢；TTFB 短而下载慢 → 带宽或内容太大。</mark>这两种病的治法完全不同。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一次请求响应就是"在窗口办一件事"</span>
+    <p><strong>打个比方</strong>，把整个请求响应过程放到<strong>银行窗口</strong>上，每一部分都有精确的对应：</p>
+    <p><strong>你的那句话</strong> = 请求报文。<br/>
+    · <strong>"我要取"</strong> = 方法（GET / POST / PUT / DELETE，动作类型）<br/>
+    · <strong>"8848 号那件"</strong> = 请求目标（路径）<br/>
+    · <strong>"我是老客户，卡号在这儿"</strong> = <code>Cookie</code> 头（身份凭据）<br/>
+    · <strong>"给我压缩包装"</strong> = <code>Accept-Encoding</code> 头（我能接受压缩过的内容）<br/>
+    · <strong>"如果和上次那批一样就不用给了"</strong> = <code>If-None-Match</code> 头（协商缓存）</p>
+    <p><strong>柜员转身去办的那段时间</strong> = 服务器处理时间。这段时间里你什么都看不到，只能干等——<strong>这就是 TTFB 那段沉默。</strong></p>
+    <p><strong>柜员回来递给你的东西</strong> = 响应报文。<br/>
+    · <strong>"给你"（或"该货已下架"）</strong> = 状态码（200 或 404）<br/>
+    · <strong>"这是压缩包装的，一共 3 公斤"</strong> = <code>Content-Encoding</code> 与 <code>Content-Length</code> 头<br/>
+    · <strong>"这批货的批次号是 ABC，下次报这个号我就知道你要哪批"</strong> = <code>ETag</code> 头<br/>
+    · <strong>"这货一周内不会变，你先放着用"</strong> = <code>Cache-Control</code> 头<br/>
+    · <strong>货本身</strong> = 响应体（那份 HTML）</p>
+    <p><mark class="key">整个 HTTP 的设计，本质上就是把"人到窗口办一件事"这个过程写成了机器能严格执行的格式。</mark>而它最聪明的地方在于：<strong>这些附加条件（头部）是可选的、可扩展的</strong>——今天多加一个"请给我英文版"的说明，明天多加一个"我支持新的压缩格式"，老服务器看不懂就当没说，照样能办事。<strong>相当于</strong>面单上多填了一栏备注，快递员不认识那栏就跳过，不影响整件事成立。</p>
+  </div>
+
+  <h3>浏览器实际发出去的那份请求</h3>
+  <p>现在看真东西。你在手机上点开那个商品页，浏览器通过加密通道发出的报文，解密之后大致是这样（<strong>为了看清结构，这里按 HTTP/1.1 的文本格式呈现</strong>；HTTP/2 与 HTTP/3 会把它压成二进制，但字段的含义完全一样）：</p>
+  <pre><code>GET /item/8848 HTTP/1.1
+Host: shop.example.com
+User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ...
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+Accept-Encoding: gzip, deflate, br
+Referer: https://m.weixin.example/chat
+Cookie: session_id=a1b2c3d4e5; uid=88192
+If-None-Match: "v3-8848-20260806"
+Connection: keep-alive
+                        ← 空行，头部到此结束
+                        ← GET 请求通常没有请求体</code></pre>
+  <p>这份报文的语法规则（请求行、头部、空行、请求体这四段结构，以及为什么换行必须是 CRLF）<strong>在 § 3.1 已经详细讲过</strong>。这里我们换个角度看：<mark class="key">每一行都在替你争取一件事。</mark>逐行拆一遍：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>这一行</th><th>它在替你争取什么</th><th>不写会怎样</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>GET /item/8848</code></td><td>说清动作和目标——我要"取"，取的是这个</td><td>没有这行就不成立，这是请求的主干</td></tr>
+        <tr><td><code>Host</code></td><td>告诉服务器"我找的是哪个网站"（一个 IP 上常有几十个站）</td><td>HTTP/1.1 里<strong>不写是违规的</strong>，服务器会返回 400</td></tr>
+        <tr><td><code>User-Agent</code></td><td>报出你的设备与浏览器，服务器可能据此给移动版页面</td><td>可能收到桌面版页面，在手机上难看</td></tr>
+        <tr><td><code>Accept</code></td><td>"我能接受这些格式的内容"，还带优先级（<code>q</code> 值）</td><td>服务器只能猜，可能给你一个你处理不了的格式</td></tr>
+        <tr><td><code>Accept-Language</code></td><td>"我优先要中文"——多语言网站靠它决定给哪种语言</td><td>可能收到英文页面</td></tr>
+        <tr><td><code>Accept-Encoding</code></td><td>"我能解开压缩的内容"</td><td><strong>服务器不敢压缩，传输量可能大好几倍</strong></td></tr>
+        <tr><td><code>Referer</code></td><td>"我是从哪个页面点过来的"（这个词的拼写是历史上的笔误，规范里就这么写）</td><td>网站统计不到来源；某些防盗链功能会失效</td></tr>
+        <tr><td><code>Cookie</code></td><td>"这是我的凭据"——服务器靠它认出你是谁</td><td><strong>会被当成陌生人</strong>，登录状态丢失</td></tr>
+        <tr><td><code>If-None-Match</code></td><td>"我手上有版本 v3 那份，如果没变就别重发了"</td><td>服务器只能把内容完整重发一遍，浪费流量与时间</td></tr>
+        <tr><td><code>Connection: keep-alive</code></td><td>"这条线别断，我等下还有请求"</td><td>连接被关，下一个资源要重新握手（§ 4.3 讲过这笔开销）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看完这张表，你应该能体会到一件事：<mark class="key">HTTP 请求头是一场"预先谈判"。</mark>浏览器在开口的同一句话里，就把"我是谁、我能接受什么、我已经有什么、我希望怎么处理"全说清了，好让服务器一次就给出最合适的回复。</p>
+  <p><strong>换成大白话：这相当于一个会办事的人到窗口的说话方式。</strong>不会办事的人只说"我要取货"，然后被反复追问"卡号呢""要什么包装""你上次那份还在不在"，来回问三遍。<strong>会办事的人一口气把该说的全说完，柜员一次就办妥了。</strong>而每一次"追问"在网络上就是一个来回——所以把信息一次说全，本身就是性能优化。</p>
+
+  <h3><code>Host</code> 头：一个字段撑起了整个虚拟主机时代</h3>
+  <p>上面那些头部里，<strong><code>Host</code></strong> 最不起眼但历史意义最大。它是 HTTP/1.1 相对 1.0 最重要的强制新增项。</p>
+  <p>为什么必须有它？因为 <strong>IP 地址稀缺，而域名不稀缺</strong>（§ 1.3 讲过 IPv4 地址枯竭的问题）。如果一个 IP 只能放一个网站，那全世界能有的网站数量就被 IP 数量卡死了。</p>
+  <pre><code>没有 Host 头时（HTTP/1.0 早期）：
+  请求只写：GET /item/8848 HTTP/1.0
+  服务器收到后一脸茫然：我这台机器上跑着 30 个网站，
+  你这个 /item/8848 是要哪个网站的？
+
+有了 Host 头之后：
+  GET /item/8848 HTTP/1.1
+  Host: shop.example.com     ← 这一行解决了全部问题
+
+于是一台服务器、一个 IP，可以承载成千上万个网站。
+这种做法叫「虚拟主机」（Virtual Host）。</code></pre>
+  <p><strong>换成大白话：这相当于一栋写字楼共用一个门牌号。</strong>快递员送到楼下，光有门牌号不够，他还得知道"送几层几室"。<mark class="key"><code>Host</code> 头就是那个"几层几室"——它让一个物理地址能容纳无数个逻辑地址。</mark></p>
+  <p>你可能注意到这和 § 4.4 讲的 <strong>SNI</strong> 干的是同一件事。<strong>没错，它们的作用完全平行，只是发生在不同层、解决不同阶段的同一个问题：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>SNI</th><th><code>Host</code> 头</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>发生在什么时候</td><td>TLS 握手时（§ 4.4）</td><td>发 HTTP 请求时（本节）</td></tr>
+        <tr><td>解决什么问题</td><td>服务器该出示哪份证书</td><td>服务器该返回哪个网站的内容</td></tr>
+        <tr><td>是否加密</td><td>明文</td><td><strong>在 HTTPS 下是加密的</strong></td></tr>
+        <tr><td>为什么不能只留一个</td><td>证书要在加密建立之前发，所以必须有一个握手期的字段</td><td>请求是加密之后才发的，用它更安全也更规范</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>相当于</strong>你进写字楼大门时跟保安说了一次"找 20 楼某公司"（SNI，大门口，公开听得见），进电梯上去后又跟那家公司前台说了一次"我找技术部老李"（Host，屋里说的，外面听不见）。<strong>两次都必须说，因为听的人不同、目的不同。</strong></p>
+
+  <h3>请求发出去之后：服务器那头的好几道手</h3>
+  <p>请求离开你的设备后，通常<strong>不会直接抵达那个"跑业务代码的程序"</strong>。现代网站的架构里，一个请求往往要过好几道手。这就是 TTFB 那段沉默里发生的事。</p>
+  <pre><code>你的请求到达机房，典型路径：
+
+  ①  CDN 边缘节点（如果网站用了 CDN）
+      · 这份内容我缓存里有吗？有 → 直接返回，压根不去源站 ★
+      · 没有 → 往后转发
+
+  ②  负载均衡器
+      · 后面有 20 台服务器，这个请求分给谁？
+      · 顺便检查各台是否健康，挂了的不分给它
+
+  ③  反向代理 / 网关
+      · 解 TLS（很多架构在这一层解密，后面走内网明文）
+      · 查鉴权：这个 Cookie 有效吗？
+      · 限流：这个 IP 一分钟内请求太多了吗？
+      · 路由：/item/... 这类路径该交给哪个后端服务？
+
+  ④  应用服务器（真正跑业务代码的地方）
+      · 解析路径，取出商品 ID 8848
+      · 查缓存（如 Redis）：这个商品的数据我内存里有吗？
+      · 没有 → 查数据库
+
+  ⑤  数据库
+      · 执行查询，返回商品信息
+      · ★ 这一层往往是整条链路最慢的一环
+
+  ⑥  应用服务器把数据套进模板，生成 HTML
+
+  ⑦  一路返回：应用 → 网关 → 负载均衡 → CDN → 你
+
+★ 你在开发者工具里看到的那个 TTFB 数字，
+  是上面①到⑦全部时间 + 一个网络来回的总和。</code></pre>
+  <p>这张图解释了一个很常被问的问题：<strong>为什么有的网站快、有的慢，明明我的网速一样？</strong>因为<mark class="key">TTFB 里"服务器处理"那一部分跟你的网络毫无关系，它取决于对方的架构、缓存命中情况、数据库有多忙。</mark></p>
+  <p><strong>相当于</strong>你在两家<strong>餐厅</strong>点同一道菜。一家后厨提前备好了料、五分钟上菜；另一家现杀现洗、四十分钟。<strong>而你从家到两家餐厅的路程是一样的。</strong>路程是网络，备料是服务器架构——<strong>抱怨路太远是解决不了后厨慢的。</strong></p>
+  <p>注意第 ① 步那个 ★ 号。<mark class="key">CDN 命中的话，你的请求压根到不了真正的服务器</mark>——它在离你几十公里的边缘节点就被应答了。这就是为什么 CDN 能同时降低两笔成本：<strong>缩短了网络距离，还省掉了服务器处理时间。</strong>它是本章讲的所有优化手段里效果最直接的一个。</p>
+
+  <h3>服务器返回的那份响应</h3>
+  <p>处理完了，服务器把结果发回来。响应报文的结构和请求是对称的：<strong>状态行 + 响应头 + 空行 + 响应体</strong>。真实的样子大致如下：</p>
+  <pre><code>HTTP/1.1 200 OK
+Date: Sat, 08 Aug 2026 06:12:44 GMT
+Content-Type: text/html; charset=UTF-8
+Content-Encoding: br
+Content-Length: 14203
+Cache-Control: max-age=300, public
+ETag: "v3-8848-20260808"
+Vary: Accept-Encoding, Accept-Language
+Set-Cookie: last_view=8848; Path=/; HttpOnly; Secure; SameSite=Lax
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Server: nginx
+                        ← 空行
+&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;&lt;title&gt;某款商品 - 商城&lt;/title&gt;
+  &lt;link rel="stylesheet" href="/css/main.css"&gt;
+  ...
+                        ← 这一大段就是 § 4.6 渲染的原料</code></pre>
+  <p>逐条看这些响应头分别在干什么——<mark class="key">它们的共同特点是：每一条都在指挥浏览器接下来该怎么做。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>响应头</th><th>它在告诉浏览器什么</th><th>换成大白话</th><th>不给会怎样</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Content-Type</code></td><td>这份内容是什么类型、什么字符编码</td><td>"这是一份 HTML，用 UTF-8 编码读"</td><td><strong>可能出现乱码</strong>，或者浏览器把网页当纯文本显示</td></tr>
+        <tr><td><code>Content-Encoding</code></td><td>内容被哪种方式压缩过</td><td>"我压扁了寄，你收到自己撑开"</td><td>浏览器不知道要解压，看到一堆乱码</td></tr>
+        <tr><td><code>Content-Length</code></td><td>正文一共多少字节</td><td>"这箱货净重 14203 克"</td><td>浏览器不知道什么时候读完（§ 3.1 讲过这个字段写错的严重后果）</td></tr>
+        <tr><td><code>Cache-Control</code></td><td>这份内容能缓存多久、谁能缓存</td><td>"五分钟内你直接用，别再来问我"</td><td>浏览器只能保守处理，下次可能又白跑一趟</td></tr>
+        <tr><td><code>ETag</code></td><td>这份内容的"版本指纹"</td><td>"这批货的批次号是 v3"</td><td>没法做协商缓存，只能整份重传</td></tr>
+        <tr><td><code>Vary</code></td><td>缓存时要区分哪些请求头</td><td>"中文版和英文版是两批货，别混着存"</td><td><strong>可能给中文用户返回缓存里的英文页面</strong></td></tr>
+        <tr><td><code>Set-Cookie</code></td><td>给你一个凭据，下次来带着</td><td>"这是寄存牌，下次凭它认你"</td><td>没法维持登录状态</td></tr>
+        <tr><td><code>Strict-Transport-Security</code></td><td>以后只准用 HTTPS 找我（§ 4.1 讲的 HSTS 就是这条头设的）</td><td>"以后只走监控走廊"</td><td>留下明文请求的缝隙</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中 <strong><code>Vary</code></strong> 最容易被忽略，但它造成的 bug 最诡异，值得单独说。它的意思是"<strong>这份缓存的有效性依赖于请求里的某几个头</strong>"。</p>
+  <p><strong>打个比方：一家店按顾客口味做了两种版本的货——微辣版和特辣版。</strong>如果<strong>仓库</strong>不区分地把它们堆在同一个格子里，那下一个说"我要微辣"的人可能拿到特辣。<mark class="key"><code>Vary: Accept-Language</code> 就是在告诉所有缓存："按语言分格存放，别混。"</mark></p>
+  <p>真实世界里，忘写 <code>Vary</code> 导致的经典故障是：<strong>某个用户访问了英文版，页面被 CDN 缓存下来；后面所有中文用户都收到了那份英文页面。</strong>这类 bug 极难排查，因为它只在特定顺序下出现，而且开发者本地永远复现不出来。</p>
+
+  <h3>状态码：三位数字里的分诊逻辑</h3>
+  <p>状态码的完整清单在 § 3.1 讲过（那里也有一个可点击查询的组件）。这一节只讲一件事：<mark class="key">在真实的访问流程里，不同状态码会把你导向完全不同的后续路径。</mark></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>状态码</th><th>浏览器接下来会怎么做</th><th>对整段旅程的影响</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>200 OK</strong></td><td>接收内容，交给渲染引擎</td><td>正常路径，直接进 § 4.6</td></tr>
+        <tr><td><strong>301 / 308 永久重定向</strong></td><td>换个地址<strong>重新走一遍</strong>，并且记住这个跳转</td><td><strong>多花一个完整来回</strong>；下次访问会直接去新地址</td></tr>
+        <tr><td><strong>302 / 307 临时重定向</strong></td><td>换个地址重新走一遍，<strong>但不记住</strong></td><td>每次访问都要多花一个来回</td></tr>
+        <tr><td><strong>304 Not Modified</strong></td><td>用本地缓存那份</td><td><strong>省掉了传内容，但那个来回还是花了</strong></td></tr>
+        <tr><td><strong>403 Forbidden</strong></td><td>显示错误页</td><td>你身份不够——凭据可能过期了</td></tr>
+        <tr><td><strong>404 Not Found</strong></td><td>显示错误页</td><td>路径写错了，或者内容已删（回到 § 4.1 的路径排查）</td></tr>
+        <tr><td><strong>500 服务器内部错误</strong></td><td>显示错误页</td><td><strong>服务器代码炸了</strong>——跟你的网络毫无关系</td></tr>
+        <tr><td><strong>502 / 504 网关错误</strong></td><td>显示错误页</td><td>前面那道网关连不上后端、或等后端超时了</td></tr>
+        <tr><td><strong>503 服务不可用</strong></td><td>显示错误页</td><td>服务器过载或在维护</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这里有一个非常实用的区分，几乎没人一开始就搞清：<strong>4xx 和 5xx 的锅在不同的人身上。</strong></p>
+  <ul class="keylist">
+    <li><strong>4xx 是"你的问题"</strong>——请求本身有毛病：地址错了、没权限、格式不对。<strong>相当于</strong>你在<strong>窗口</strong>递错了表格或者证件不全。</li>
+    <li><strong>5xx 是"服务器的问题"</strong>——你的请求完全合规，是对方办不了。<strong>相当于</strong>你的材料齐全，但柜员后台系统崩了。</li>
+  </ul>
+  <p><mark class="key">这个区分的实际价值：看到 4xx 你该检查自己的操作，看到 5xx 你重试或联系对方就行，检查自己纯属白费功夫。</mark></p>
+  <p>还要特别说一下 <strong>502 和 504</strong> 这一对，因为它们透露了服务器的内部结构：</p>
+  <pre><code>502 Bad Gateway   ← 网关说："我联系不上后面那台服务器"
+504 Gateway Timeout ← 网关说："我联系上了，但它半天不回话，我等不下去了"
+
+★ 这两个状态码本身就证明了「服务器不是一台机器」。
+  能报出"网关"错误，说明前面确实站着一个分诊台，
+  而真正干活的在它后面。
+
+相当于医院分诊台告诉你：
+  502 = "那个科室的电话打不通"（可能整个科室没人了）
+  504 = "电话通了但一直没人接完这通"（人在但忙得顾不上）</code></pre>
+  <p>这也解释了为什么<strong>你偶尔会看到"网站挂了但错误页很漂亮"</strong>——因为报错的是网关（它还活得很好），挂掉的是它后面的应用服务器。<strong>说白了，前台好得很，是后厨没人了。</strong></p>
+
+  <h3>重定向：那个你察觉不到的额外来回</h3>
+  <p>重定向（3xx）是本节最值得从"流程视角"重新理解的一项。因为<mark class="key">每一次重定向，都意味着整段旅程要从某一步重新走一遍。</mark></p>
+  <pre><code>你输入：example.com
+
+实际可能发生的连锁：
+
+  第 1 趟  http://example.com
+           → 301 跳到 https://example.com
+           （多花：一个完整来回）
+
+  第 2 趟  https://example.com
+           → 301 跳到 https://www.example.com
+           （多花：一次 DNS 查询 + 建连接 + TLS 握手 + 一个来回）
+           ★ 因为域名变了，前面几节全部要重做
+
+  第 3 趟  https://www.example.com
+           → 200 终于拿到内容
+
+一共三趟。而用户的感受只是"这网站有点慢"。</code></pre>
+  <p><strong>换成大白话：这相当于你去办事，第一个窗口说"这业务搬到二楼了"，二楼窗口说"哦我们又搬到隔壁楼了"。</strong>三趟跑下来事情办成了，但时间花了三倍。<mark class="key">而如果第一个窗口一开始就贴张纸写清"本业务在隔壁楼三层"，你只需要跑一趟。</mark></p>
+  <p>这就是网站优化里"<strong>减少重定向链</strong>"这一条的全部道理。而 § 4.1 讲的 <strong>HSTS 预加载</strong>正是为了消掉上面那第 1 趟——<strong>让浏览器不必先去问一次就知道该用 HTTPS。</strong></p>
+  <p>顺便区分 301 和 302，这一对在实践中差别很大：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>301 永久重定向</th><th>302 临时重定向</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>含义</td><td>"这地址永久换了，以后直接去新的"</td><td>"这次先去那边，但下次还来问我"</td></tr>
+        <tr><td>浏览器会不会记住</td><td><strong>会</strong>（可能长期缓存这条跳转）</td><td>不会（每次都要问一遍）</td></tr>
+        <tr><td>性能</td><td>好——只有第一次多花一个来回</td><td>差——每次都多花一个来回</td></tr>
+        <tr><td>风险</td><td><strong>配错了很难挽回</strong>——用户浏览器已经记住了，改回来他也不去问了</td><td>配错了影响小，改了立刻生效</td></tr>
+        <tr><td>生活里对应</td><td>门上贴"本店已永久迁至新址"——熟客从此直接去新店</td><td>门上贴"今日装修，临时在隔壁营业"——明天还得来看一眼</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后那一行的风险值得记住：<strong>301 是会被浏览器长期记住的，所以它是一个"不太容易反悔"的动作。</strong><strong>相当于</strong>你在<strong>通讯录</strong>里把某人的号码永久改了，之后就算原号又启用了，你也不会再去打原号。<strong>说白了：不确定要不要永久搬家时，先用 302。</strong></p>
+
+  <h3>压缩与分块传输：让内容更快到眼前的两招</h3>
+  <p>响应体真正开始传的时候，有两个机制在悄悄提速。它们的思路完全不同，但都很朴素。</p>
+  <p><strong>第一招：压缩。</strong>HTML、CSS、JS 都是纯文本，而文本的压缩率极高——大量重复的标签名、属性名、空格，压完常常只剩几分之一。</p>
+  <p>它是怎么谈成的？<strong>就是靠前面那对头部：</strong></p>
+  <pre><code>你说：   Accept-Encoding: gzip, deflate, br
+         （"我能解开这三种压缩格式"）
+
+它回：   Content-Encoding: br
+         （"那我用 br 这种压缩，你自己解开"）
+
+★ 这是一次典型的"能力协商"：
+  客户端报出自己支持什么，服务器从中挑一个。
+  老客户端不支持新格式？那它就不写在清单里，服务器自然不用。
+  —— 新旧共存，谁都不用被迫升级。</code></pre>
+  <p><strong>相当于洗衣店的真空压缩袋：</strong>同样一床被子，压完体积只剩三分之一，运起来轻松得多，你收到自己一撑就恢复。<mark class="key">代价是两头都要花一点力气（服务器压、你解），但省下的传输时间远远超过这点计算成本。</mark></p>
+  <p>不过有一类内容<strong>不该再压</strong>：图片（JPEG、PNG、WebP）、视频、已经打包好的压缩文件。因为它们内部已经压过了，再压一遍<strong>不但省不下几个字节，还白费两头的算力</strong>。<strong>说白了，真空袋对已经抽过真空的东西没用。</strong></p>
+  <p><strong>第二招：分块传输</strong>（Chunked Transfer Encoding）。它解决的是另一个问题：<strong>如果服务器要生成的内容很大、或者要边算边给，它压根不知道 <code>Content-Length</code> 该填多少。</strong></p>
+  <pre><code>普通方式：
+  服务器必须先把整份内容生成完，数清字节数，
+  填好 Content-Length，然后才开始发。
+  → 用户在这段时间里什么都看不到
+
+分块方式：
+  服务器每生成一块就发一块，每块前面标上"这块多少字节"，
+  最后发一个长度为 0 的块表示"完了"。
+  → 用户能很早看到内容的开头部分
+
+相当于餐厅上菜：
+  普通方式 = 所有菜做完一起端上来（干等）
+  分块方式 = 凉菜先上，热菜陆续端（边等边吃）</code></pre>
+  <p>这个机制对<strong>用户感知的速度</strong>影响极大，而且值得注意的是：<mark class="key">它并没有让总时间变短，只是让"开始看到东西"这个时刻提前了。</mark></p>
+  <p><strong>本质上就是</strong>：同一顿饭吃完的时间可能一样，但"从坐下到第一口"这段等待，决定了你觉得这家店快还是慢。<strong>网页也一样——用户感知的快慢，主要取决于第一屏什么时候出现，而不是最后一个字节什么时候到。</strong>这一点在 § 4.6 讲渲染时会进一步展开。</p>
+
+  <h3>Cookie：无状态协议怎么记住你是谁</h3>
+  <p>HTTP 有个根本特性叫<strong>无状态</strong>（Stateless，§ 3.1 与 § 1.2 都讲过）——<strong>服务器默认不记得你上次来过</strong>。每一个请求在它眼里都是全新的陌生人。</p>
+  <p>那登录状态是怎么维持的？靠 <strong>Cookie</strong>：<mark class="key">服务器不记，让你自己记，每次来的时候带着。</mark></p>
+  <pre><code>第一次访问（登录成功）：
+  服务器 → 你：Set-Cookie: session_id=a1b2c3d4e5; HttpOnly; Secure
+
+之后每一次请求：
+  你 → 服务器：Cookie: session_id=a1b2c3d4e5
+  服务器一看这个编号，去自己的记录里查："哦，这是 88192 号用户"
+
+★ 关键点：服务器不需要"记住你"，
+  它只需要能"认出你手上那个编号"。</code></pre>
+  <p><strong>相当于超市门口的寄存柜。</strong>柜台不会记住你长什么样、存了什么，它只给你一个<strong>便签</strong>牌号；你回来把牌子递上去，它按号开柜。<mark class="key">记忆的负担从服务方转移到了客户手上——这正是 HTTP 能在云上无限扩容的根本原因。</mark></p>
+  <p>为什么这个转移这么重要？因为如果服务器必须"记住每个用户"，那<strong>同一个用户的每次请求都必须落到同一台服务器上</strong>（否则另一台不认识他）。而把记忆交给客户端之后，<strong>任何一台服务器都能服务任何一个用户</strong>——加机器就能扛更多流量。</p>
+  <p><strong>换成大白话：如果每个柜员只认自己接待过的客人，那客人就得永远找同一个柜员，柜员一休假业务就断。</strong>而凭牌号办事的话，任何柜员都能接任何客人，人多了就多开窗口。</p>
+  <p>那几个 Cookie 属性各自在干什么，值得记一下——它们全是安全属性：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>属性</th><th>作用</th><th>换成大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>HttpOnly</code></td><td>禁止网页脚本读取这个 Cookie</td><td>"这个牌号只能交给柜台，不许给店里其他人看"——防止脚本偷走凭据</td></tr>
+        <tr><td><code>Secure</code></td><td>只在 HTTPS 连接上发送</td><td>"只在加密通道里出示，明文场合一律不掏出来"</td></tr>
+        <tr><td><code>SameSite</code></td><td>限制跨站请求时是否携带</td><td>"别人家的网页替我发的请求，别把我的牌号带上"——防跨站伪造</td></tr>
+        <tr><td><code>Path</code> / <code>Domain</code></td><td>限定这个 Cookie 在哪些路径与域名下有效</td><td>"这张牌只在这一层楼、这几个柜台有效"</td></tr>
+        <tr><td><code>Max-Age</code> / <code>Expires</code></td><td>多久后失效</td><td>"这张牌当天有效，过期作废"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>顺便提醒一件实际后果：<strong>Cookie 会随每一个请求发出去，包括那些图片、CSS、JS 请求。</strong>所以 Cookie 存太多东西会让每个请求都变胖。<mark class="key">这也是为什么很多网站把静态资源放在一个单独的域名下——那个域名下没有 Cookie，请求头能小一大截。</mark><strong>相当于</strong>你去取一瓶水也要把整个证件夹掏出来，不如把"要出示证件的柜台"和"随便拿的货架"分开设置。</p>
+
+  <h3>整节小结：一次请求响应的完整时间线</h3>
+  <p>把本节内容按真实顺序串起来，接在 § 4.4 的第 ⑦ 步之后：</p>
+  <pre><code>接过一条已验明身份的加密通道
+  │
+  ├─① 组装请求报文：请求行 + 十来条头部
+  │      （每一条头都在替你争取一件事：身份、语言、压缩、缓存）
+  │
+  ├─② 通过加密通道发出去（体积通常只有几百到几千字节）
+  │
+  ├─③ ═══ 等待期 · 这就是 TTFB 那段沉默 ═══
+  │      服务器侧依次经过：
+  │        CDN 边缘节点 → 命中就直接返回 ★
+  │        负载均衡器   → 分给哪台
+  │        网关         → 解 TLS、鉴权、限流、路由
+  │        应用服务器   → 跑业务代码、查缓存
+  │        数据库       → 往往是最慢的一环
+  │        套模板生成 HTML → 压缩 → 返回
+  │
+  ├─④ 收到状态行：看这三位数字决定下一步
+  │      200 → 继续收内容
+  │      3xx → 换地址重走一遍（可能要从 § 4.2 重新开始）
+  │      304 → 用本地缓存那份
+  │      4xx → 你的请求有问题
+  │      5xx → 对方办不了，跟你的网络无关
+  │
+  ├─⑤ 收响应头：这些头会指挥浏览器接下来的行为
+  │      Content-Type   → 按什么类型和编码解读
+  │      Content-Encoding → 要不要解压
+  │      Cache-Control / ETag → 这份要不要存、存多久
+  │      Set-Cookie     → 记下这个凭据
+  │      Vary           → 缓存时要按哪些维度分格
+  │
+  ├─⑥ 收响应体（可能是分块陆续到达的）
+  │
+  └─⑦ 交出一份 HTML 文本 → 进入渲染 → 这就是 § 4.6 的起点
+
+耗时量级：
+  网络往返            由距离决定（同城十毫秒级，跨洲百毫秒级）
+  服务器处理          从毫秒级到秒级，完全取决于对方架构与负载
+  下载内容            由体积与带宽决定
+  （TTFB = 网络往返 + 服务器处理；把这两者分开是排查的第一步）</code></pre>
+  <p>这张图里最实用的一条是<strong>第 ④ 步那个状态码分支</strong>。<mark class="key">看清状态码，你就知道该找谁：4xx 找自己、5xx 找对方、3xx 是白跑了一趟、304 说明缓存机制在起作用。</mark></p>
+
+  <h3>一个页面不止一个请求：几十个请求的调度</h3>
+  <p>前面讲的都是"那一个请求"——拿 HTML 的那个。<strong>但现实里，一个页面的加载是几十甚至上百个请求的合奏。</strong>这一点常被忽略，却是理解网页性能的关键。</p>
+  <pre><code>请求 1：GET /item/8848        → 拿到 HTML
+   ↓  浏览器开始解析这份 HTML，边解析边发现引用了别的东西
+请求 2：GET /css/main.css      ← 从 &lt;link&gt; 标签发现的
+请求 3：GET /js/app.js         ← 从 &lt;script&gt; 标签发现的
+请求 4：GET /img/8848-1.jpg    ← 从 &lt;img&gt; 标签发现的
+请求 5~40：更多图片、字体、图标、统计脚本……
+
+★ 关键：这些请求不是等第一个完全处理完才发的。
+  浏览器一边读 HTML 一边就把发现的资源排进队列，尽量并行去取。
+  这个"边读边预先取"的机制叫预加载扫描（Preload Scanner）。</code></pre>
+  <p><strong>相当于装修工头拿到图纸的做法：</strong>他不会看完整本图纸才开始订料，而是<strong>翻到哪一页就把那页要的材料先订出去</strong>——瓷砖、水泥、电线各家供货商同时在备货。<mark class="key">如果非要一样一样顺着来，工期要长好几倍。</mark></p>
+  <p>但这里有个很重要的约束：<strong>不是所有资源都能并行取，因为有些有依赖关系，还有些会挡住后面的活儿。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>资源类型</th><th>会不会挡住渲染</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>CSS 样式表</td><td><strong>会</strong></td><td>样式没到位就画，用户会看到"没穿衣服"的页面，所以浏览器宁愿等（§ 4.6 详讲）</td></tr>
+        <tr><td>普通的同步脚本</td><td><strong>会，而且挡得最狠</strong></td><td>脚本可能修改页面结构，所以解析必须停下来等它下载并执行完</td></tr>
+        <tr><td>标了 <code>async</code> / <code>defer</code> 的脚本</td><td>不会</td><td>明确告诉浏览器"我不急，你先干别的"</td></tr>
+        <tr><td>图片</td><td>不会</td><td>图没到就先留个空位，来了再填</td></tr>
+        <tr><td>字体</td><td>可能造成文字闪烁</td><td>字体没到时用备用字体，到了再换，于是文字会跳一下</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表解释了一个非常常见的现象：<strong>为什么有些网页会先白屏一两秒，然后突然整页出来。</strong>因为它顶部有一个挡住渲染的脚本或样式表，浏览器在<strong>排队</strong>等它，什么都不敢画。<mark class="key">而如果把这些不急的东西标成异步，页面就能先把能画的画出来，用户的感受会好得多。</mark></p>
+  <p><strong>换成大白话：一支流水线上，某个工位不管三七二十一非要等某个零件到齐才肯往下传，后面所有工位全部干等。</strong>而其实那个零件只影响最后一道装饰工序——它压根不该卡住整条线。</p>
+
+  <h3>HTTP/1.1、2、3：同一句话的三种说法</h3>
+  <p>前面展示的请求报文是 HTTP/1.1 的文本格式。真实世界里你的浏览器可能在用 2 或 3。<strong>要强调的是：换版本换的是"怎么把这句话装进网络包"，不是"这句话说什么"。</strong>方法、路径、头部字段的含义完全一样。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>HTTP/1.1</th><th>HTTP/2</th><th>HTTP/3</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>报文形式</td><td>纯文本，人能直接读</td><td>二进制帧</td><td>二进制帧</td></tr>
+        <tr><td>底层用什么</td><td>TCP</td><td>TCP</td><td><strong>QUIC（跑在 UDP 上）</strong></td></tr>
+        <tr><td>一条连接上能同时跑几个请求</td><td>一个（要排队）</td><td><strong>很多个（多路复用）</strong></td><td>很多个</td></tr>
+        <tr><td>头部压缩</td><td>没有——每个请求都把那十几行头重发一遍</td><td>有</td><td>有</td></tr>
+        <tr><td>一个包丢了会怎样</td><td>那条连接上后面的都得等</td><td><strong>仍会等</strong>（因为底层 TCP 要求按序交付）</td><td>只影响那一个请求</td></tr>
+        <tr><td>生活里对应</td><td>一条队伍，前面办完才轮到后面</td><td>一个窗口能同时受理多人，<strong>但如果某人的材料掉了，所有人一起等</strong></td><td>各人的材料互不影响</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第五行那个"仍会等"是 HTTP/2 最著名的遗留问题，业内叫<strong>队头阻塞</strong>（Head-of-Line Blocking）。<strong>HTTP/2 在应用层解决了排队问题，但它底下的 TCP 仍然要求"按顺序交付"</strong>——所以某个包在路上丢了，TCP 就把后面所有已经到达的数据全扣着不给上层，直到那个包补上。</p>
+  <p><strong>换成大白话：这相当于一条传送带。</strong>HTTP/1.1 是"一件一件放"，HTTP/2 改成了"多件并排放"，效率大增。<strong>但传送带的规矩是"必须按放上去的顺序取下来"</strong>——所以中间某一件掉了，后面那些明明已经运到的，也只能停在带子上等。<mark class="key">HTTP/3 换掉 TCP 的根本理由就是这个：它要摆脱"必须按序"这条规矩。</mark></p>
+  <p>这里能看出一个很值得记住的模式：<mark class="key">当你在某一层做足了优化，瓶颈就会掉到下一层去。</mark>HTTP/2 把应用层榨干了，问题就露在传输层；于是 HTTP/3 干脆连传输层一起换。<strong>说白了，优化就是不断把瓶颈往下推，直到推到物理定律那儿推不动为止</strong>——而那个推不动的东西，就是 § 1.6 讲的光速带来的传播时延。</p>
+
+  <h3>请求方法：为什么必须区分 GET 和 POST</h3>
+  <p>最后补一块本节流程视角下很实用的内容。<strong>请求行里那个动词（方法）不只是形式，它决定了浏览器和路上所有缓存怎么对待这个请求。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方法</th><th>意思</th><th>安全吗（不改变数据）</th><th>幂等吗（做多次结果一样）</th><th>能被缓存吗</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GET</strong></td><td>取一份东西</td><td>是</td><td>是</td><td><strong>能</strong></td></tr>
+        <tr><td><strong>HEAD</strong></td><td>只要头部，不要内容</td><td>是</td><td>是</td><td>能</td></tr>
+        <tr><td><strong>POST</strong></td><td>提交一份东西</td><td><strong>不是</strong></td><td><strong>不是</strong></td><td>通常不能</td></tr>
+        <tr><td><strong>PUT</strong></td><td>把某个东西整体替换成这份</td><td>不是</td><td><strong>是</strong>（替换十次和一次结果相同）</td><td>不能</td></tr>
+        <tr><td><strong>DELETE</strong></td><td>删掉某个东西</td><td>不是</td><td><strong>是</strong>（删十次和一次结果相同）</td><td>不能</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>"安全"和"幂等"这两个词值得单独说清，因为它们很容易被误解。</strong></p>
+  <ul class="keylist">
+    <li><strong>安全（Safe）不是指"加密"或"没有漏洞"</strong>，而是指<strong>"这个动作不改变服务器上的数据"</strong>。<strong>相当于</strong>去<strong>图书馆</strong>查一本书在不在架上——查一百次，馆藏一本没少。</li>
+    <li><strong>幂等（Idempotent）指"做一次和做多次结果相同"</strong>。<strong>相当于</strong>按<strong>电梯</strong>上行键，按十下也还是上一趟；而"从账户取五百块"不幂等，做十次就少了五千。</li>
+  </ul>
+  <p>这两个性质有非常实际的后果，而且都跟"重试"有关：<mark class="key">浏览器和中间设备可以放心重试幂等请求，绝不敢随便重试非幂等请求。</mark></p>
+  <p>这就解释了你一定遇到过的一个现象：<strong>刷新一个提交过表单的页面时，浏览器会弹窗问"确认要重新提交吗"。</strong>而刷新一个普通页面它从不问。</p>
+  <p><strong>换成大白话：重新看一遍某份材料，没人需要征求你同意；但"要不要再交一遍申请表"，柜员一定会先问你一句</strong>——因为交两遍可能真的办出两笔业务来。<strong>说白了：能重来的动作可以悄悄重来，不能重来的动作必须先问。</strong></p>
+  <p>这也回头解释了 § 4.4 讲的 <strong>0-RTT 只能用于幂等请求</strong>那条限制：因为 0-RTT 的数据可能被重放，<mark class="key">而"重放"和"重试"在服务器看来是同一件事——所以只有那些"多做几次也无害"的请求才敢用它。</mark></p>
+  <p>最后提一个实践中的常见错误：<strong>把"改数据"的操作写成 GET。</strong>比如 <code>GET /delete?id=8848</code>。这看着能用，但危险得很——因为整个网络世界都假定 GET 是安全的：浏览器会预取它、代理会缓存它、爬虫会随手访问它。<strong>相当于</strong>你把"销户"这个业务放在了"查询"窗口，还写着"随便看"——<strong>结果谁路过瞄一眼，账户就被销了。</strong></p>
+  <p>顺便说清另一个常见混淆：<strong>"GET 不能带请求体""POST 更安全"这两句话都不严谨。</strong>准确的说法是——<strong>GET 在规范上不禁止带请求体，但实践中带了往往没人处理，所以不要带</strong>；至于安不安全，<mark class="key">POST 只是把数据从地址栏移到了请求体里，明文传输时它一样被路上的人看得见——真正提供保密的是 § 4.4 的 TLS，不是方法名。</mark></p>
+  <p><strong>换成大白话：把密码从写在信封外面改成写在信纸上，确实不会被随手瞄到，也不会被抄进快递记录（这是 POST 相对 GET 的真实好处）；但只要信封不封口，拆开一看照样清清楚楚。</strong>封口这件事只有加密能做。</p>
+
+  <div class="lab" data-lab="status-code"></div>
+
+  <div class="lab" data-lab="quiz"
+       data-q="你打开一个网页，浏览器显示「502 Bad Gateway」。这说明什么？"
+       data-opts="你的网络断了|你请求的地址不存在|你的请求已经到达对方机房，但前面那道网关联系不上它后面的应用服务器|你的证书验证失败了"
+       data-answer="2"
+       data-explain="能收到 502 这个状态码，本身就证明请求成功走完了 DNS、TCP、TLS 全部流程并抵达了对方——所以绝不是你的网络问题。5xx 一律是服务器侧的问题：502 是「网关联系不上后端」，504 是「联系上了但等超时了」。这两个状态码还顺便透露了一个事实：服务器不是一台机器，前面站着分诊台，真正干活的在它后面。所以看到 5xx，检查自己纯属白费功夫，重试或联系对方就行。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一节是整段旅程里<mark class="key">唯一真正传输内容的一步</mark>，也是唯一"对方有机会犯错"的一步——前四步出错只有"连不上"一种，这一步开始有 404、500、403、超时好几种。<br/>
+    <strong>报文格式见 § 3.1</strong>（四段结构、CRLF、Content-Length 写错的后果、状态码全表）。本节换成流程视角看三件事：<br/>
+    <strong>一 · 请求头是一场"预先谈判"。</strong>浏览器在开口的同一句话里就说清了"我是谁（Cookie）、我能接受什么（Accept 系列）、我已经有什么（If-None-Match）、这条线别断（Connection）"。<mark class="key">把信息一次说全本身就是性能优化——因为每一次追问就是一个来回。</mark>其中 <code>Host</code> 头撑起了整个虚拟主机时代，它和 § 4.4 的 SNI 作用平行但发生在不同层。<br/>
+    <strong>二 · 服务器不是一台机器。</strong>一个请求要过 CDN → 负载均衡 → 网关 → 应用 → 数据库好几道手，<strong>TTFB 就是这几道手加一个网络来回的总和</strong>。<mark class="key">TTFB 长而下载快说明服务器慢，TTFB 短而下载慢说明内容太大或带宽不足——这两种病的治法完全不同。</mark>而 CDN 命中的话请求压根到不了源站，它同时省掉了距离与处理时间。<br/>
+    <strong>三 · 响应头在指挥浏览器接下来做什么。</strong><code>Content-Type</code> 决定怎么解读、<code>Content-Encoding</code> 决定要不要解压、<code>Cache-Control</code> 与 <code>ETag</code> 决定下次还要不要来问、<code>Set-Cookie</code> 给你凭据、<code>Vary</code> 决定缓存怎么分格（<strong>漏掉它会导致中文用户拿到缓存里的英文页</strong>）。<br/>
+    <strong>三条最实用的判断：</strong>① <strong>4xx 找自己、5xx 找对方</strong>；② <strong>每次重定向都是白跑一个来回</strong>，301 会被浏览器长期记住所以不易反悔，不确定就先用 302；③ <strong>Cookie 的意义是把记忆负担从服务器转移给客户端</strong>，这正是 HTTP 能无限加机器扩容的根本原因。<br/>
+    <strong>下一步交出什么：</strong>一份 HTML 文本。<strong>但它现在还只是一堆字符，屏幕上什么都没有。</strong>把这堆字符变成你看得见的画面，是最后一节的事——而那一节的性质跟前五节完全不同：<strong>它不再等来回，它开始拼命地算。</strong></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-4-tls.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 4.4 · TLS 握手</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-6-rendering.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 4.6 · 浏览器渲染</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 4.5 · 发送请求与服务器响应</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-36"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-36"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-36"></script>
+</body>
+</html>
