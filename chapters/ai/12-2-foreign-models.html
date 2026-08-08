@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 12.2 · 海外基础模型 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-33">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-33">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./12-landscape.html">智能篇 · 第 12 章</a>
+      <span class="sep">›</span>
+      <span>§ 12.2</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 12.2 · Section</div>
+    <h1>海外基础模型</h1>
+    <div class="cn">OpenAI、Anthropic、Google、Meta · 以及官方文档自相矛盾时怎么办</div>
+  </header>
+
+  <p class="lead">
+    这一节讲海外四家造基础大模型的公司。但它的写法和你在别处看到的「格局分析」都不一样：<mark class="key">这里不排名、不评谁最强，只做一件事——把各家官方文档在 2026 年 8 月 8 日这一天写了什么，原封不动地摆给你看。</mark>为什么这么写？因为排名是记者的活儿，而<strong>核对官方原文是读者自己能学会的手艺</strong>。而且这一节会撞上一件极有教学价值的事：<strong>OpenAI 的三个官方页面，在「我们的旗舰模型是哪个」这个问题上给出了不一致的答案。</strong>这不是我们抓错了，双边原文都在下面。遇到这种情况该怎么处理，是本节比任何型号名都更值得你带走的东西。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍽️ 一家餐厅的三份菜单</div>
+    <p>你走进一家连锁餐厅，想知道他们家的招牌菜是什么。你手边有三个信息来源。</p>
+    <p><strong>第一个：桌上摆的那本纸质菜单。</strong>翻开第一页写着「主厨推荐：红烧狮子头」。</p>
+    <p><strong>第二个：门口那块电子屏。</strong>上面滚动播放「本店招牌：蟹粉豆腐」。</p>
+    <p><strong>第三个：收银台旁边的价目表。</strong>你仔细找了两遍——<mark class="key">上面压根没有「蟹粉豆腐」这一项，只有狮子头的价格。</mark></p>
+    <p>你该信哪个？这时候有三种反应。<strong>最糟的反应</strong>是随便挑一个自己觉得靠谱的，回去告诉朋友「他家招牌是蟹粉豆腐」——你替所有人做了一个自己没资格做的判断。<strong>次糟的反应</strong>是认定这家店在骗人。<strong>正确的反应</strong>是：<em>三份都记下来，注明各自出自哪里、哪天看到的，然后意识到一件更有用的事——这家店大概正在换菜单，纸质菜单和价目表还没跟上电子屏。</em></p>
+    <p><strong>说白了</strong>，大公司的官方文档就是这三份菜单：不同团队维护、更新节奏不一样、改动传导有延迟。<mark class="key">矛盾本身不是丑闻，而是一条信息——它告诉你「这里正在发生变化」。</mark></p>
+    <div class="link">→ 本节遇到的正是这个场景，而且是真事：OpenAI 的 platform 域文档、developers 域文档、官方定价页，三处口径不一致。下面全部照抄原文。</div>
+  </div>
+
+  <h3>先把「基础模型」这个词说清楚</h3>
+  <p><strong>基础模型</strong>（foundation model）这个词听着抽象，<strong>其实就是</strong>：一个用海量通用数据从零训出来的大模型，它不专门为某一件事服务，而是像一块料子，谁都能拿去裁成自己想要的衣服。</p>
+  <p><strong>用面粉厂打比方最贴切。</strong>面粉厂不做包子、不做面条、不做蛋糕，它只做一件事——把麦子磨成面粉。但正因为它做的是「通用原料」，所以包子铺、面馆、蛋糕店全都得来找它买。<mark class="key">造基础模型的公司就是这样的面粉厂：它自己不一定做出你天天用的那个产品，但你用的产品背后大概率有它的面粉。</mark></p>
+  <p>这一层生意有三个特点，值得先记住，因为它们决定了这个行业为什么就那么几家：</p>
+  <ul class="keylist">
+    <li><span class="k">投入极大</span><span class="v">训练一个前沿模型要动用 §12.1 讲的那种整机柜集群，跑几周到几个月。<strong>相当于</strong>建一座面粉厂——不是买台磨粉机就能开工的。</span></li>
+    <li><span class="k">一次性成本，长期摊销</span><span class="v">模型训好之后，边际成本转到推理那一侧。<strong>说白了：</strong>厂子建起来了，之后每卖一袋面粉的成本就低多了。</span></li>
+    <li><span class="k">迭代极快，命名混乱</span><span class="v">这是本节最实际的困扰。几个月出一代，型号名一堆代号后缀。<mark class="key">所以本节所有型号名都必须带日期，否则半年后就是错的。</mark></span></li>
+  </ul>
+  <p>下面开始逐家看，<strong>所有内容的查询日期统一为 2026 年 8 月 8 日</strong>，出处逐条列明。</p>
+
+  <h3>OpenAI：三个官方页面，三种口径</h3>
+  <p>这是本章第一处「官方内部不一致」，也是最干净的一处——因为双边原文都是同一天抓下来的，语法结构几乎一模一样，只有型号名不同。<strong>先看第一份。</strong></p>
+  <p><strong>出处一：<code>platform.openai.com/docs/models</code></strong>，官方原文：</p>
+  <pre><code>"If you're not sure where to start, use gpt-5.5, our flagship
+model for complex reasoning and coding. If you're optimizing for
+latency and cost, choose a smaller variant like gpt-5.4-mini or
+gpt-5.4-nano."</code></pre>
+  <p>翻译：<em>「如果你不确定从哪开始，就用 gpt-5.5，我们面向复杂推理与编码的旗舰模型。如果你更在意延迟和成本，可以选 gpt-5.4-mini 或 gpt-5.4-nano 这类更小的变体。」</em></p>
+  <p>该页的 Frontier models（前沿模型）卡片列出：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>输入价（每百万 token）</th><th>输出价</th><th>上下文</th><th>最大输出</th><th>知识截止</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GPT-5.5</strong></td><td>$5</td><td>$30</td><td>1M</td><td>128K</td><td>2025 年 12 月 1 日</td></tr>
+        <tr><td><strong>GPT-5.4</strong></td><td>$2.50</td><td>$15</td><td>1M</td><td>—</td><td>2025 年 8 月 31 日</td></tr>
+        <tr><td><strong>GPT-5.4 mini</strong></td><td>$0.75</td><td>$4.50</td><td>400K</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>现在看第二份。出处二：<code>developers.openai.com/api/docs/models</code></strong>，同一天，官方原文：</p>
+  <pre><code>"If you're not sure where to start, use GPT-5.6 Sol, our flagship
+model for complex reasoning and coding. Choose GPT-5.6 Terra to
+balance intelligence and cost, or GPT-5.6 Luna for cost-sensitive,
+high-volume workloads."</code></pre>
+  <p>翻译：<em>「如果你不确定从哪开始，就用 GPT-5.6 Sol，我们面向复杂推理与编码的旗舰模型。想平衡智能与成本可选 GPT-5.6 Terra，对成本敏感、量大的场景可选 GPT-5.6 Luna。」</em></p>
+  <p><mark class="key">请把两段原文并排读一遍。句式完全相同，「our flagship model for complex reasoning and coding」这个短语一字不差，唯一的差别是主角从 gpt-5.5 换成了 GPT-5.6 Sol。</mark>这几乎可以肯定是同一份文案模板在两个域名下的不同版本。</p>
+  <p>developers 域的 Frontier models 列出：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>模型 ID</th><th>别名</th><th>输入价</th><th>输出价</th><th>上下文</th><th>最大输出</th><th>知识截止</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GPT-5.6 Sol</strong></td><td><code>gpt-5.6-sol</code></td><td><code>gpt-5.6</code></td><td>$5</td><td>$30</td><td>1.05M</td><td>128K</td><td>2026 年 2 月 16 日</td></tr>
+        <tr><td><strong>GPT-5.6 Terra</strong></td><td><code>gpt-5.6-terra</code></td><td>—</td><td>$2</td><td>$12</td><td>1.05M</td><td>—</td><td>—</td></tr>
+        <tr><td><strong>GPT-5.6 Luna</strong></td><td><code>gpt-5.6-luna</code></td><td>—</td><td>$0.20</td><td>$1.20</td><td>1.05M</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>还有第三份。出处三：<code>openai.com/api/pricing/</code></strong>，官方定价页。它列的价格是：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>输入</th><th>缓存输入</th><th>输出</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GPT-5.5</strong></td><td>$5.00</td><td>$0.50</td><td>$30.00</td></tr>
+        <tr><td><strong>GPT-5.4</strong></td><td>$2.50</td><td>$0.25</td><td>$15.00</td></tr>
+        <tr><td><strong>GPT-5.4 mini</strong></td><td>$0.75</td><td>$0.075</td><td>$4.50</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>该页还有一条注释：<strong>「上述价格反映了 270K 以下上下文长度的标准处理费率」</strong>。这条注释本身就是个知识点——<mark class="key">同一个模型，上下文超过某个长度之后可能换一档价格。</mark>后面讲 Google Gemini 时会看到更明显的例子。</p>
+  <p><strong>而这份定价页当天最关键的一件事是：它完全没有列 GPT-5.6 系列的价格。</strong></p>
+
+  <h3>把这三份口径摆到一张表里</h3>
+  <p>三个官方页面，三种说法，摊开看最清楚（全部截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>官方入口</th><th>它说的 flagship 是</th><th>列了 5.6 系列吗</th><th>这个入口的性质</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>platform.openai.com/docs/models</code></td><td><strong>gpt-5.5</strong></td><td>否，Frontier 卡片里没有</td><td>老的开发者平台文档</td></tr>
+        <tr><td><code>developers.openai.com/api/docs/models</code></td><td><strong>GPT-5.6 Sol</strong></td><td>是，且给了完整 ID 与价格</td><td>新的开发者站文档</td></tr>
+        <tr><td><code>openai.com/api/pricing/</code></td><td>未表述 flagship</td><td><mark class="key">否，完全没有 5.6 的价格</mark></td><td>面向所有人的定价页</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>从这张表能读出一个相当可信的推断：<strong>OpenAI 正在把开发者文档从 platform 域迁到 developers 域，而 5.6 系列是在这次迁移期间发布的</strong>——新站已经更新，老站和定价页还没跟上。这就是本节开头「三份菜单」那个场景的真实版本。</p>
+  <p><strong>但请注意「推断」和「事实」的界限：</strong>「两个域名口径不同」是事实，双边原文可查；「这是因为文档正在迁移」是推断，OpenAI 官方没有这么说过。<mark class="key">写作时必须把这两类东西分开标注，否则读者会把你的猜测当成官方结论。</mark></p>
+  <p><strong>那实践中该怎么办？</strong>给你一套可操作的做法：</p>
+  <ul class="keylist">
+    <li><span class="k">要写文章、做汇报</span><span class="v"><strong>两边都写，都标出处和日期。</strong>不要挑一个。你的读者有权知道这里存在不确定性。</span></li>
+    <li><span class="k">要真的写代码调 API</span><span class="v">以<strong>你实际能调通的那个模型 ID 为准</strong>。文档写什么都不如一次真实请求的返回值管用。<strong>相当于</strong>菜单上写着有这道菜，但你得问一句服务员今天到没到货。</span></li>
+    <li><span class="k">要做预算</span><span class="v">以<strong>定价页</strong>为准，因为那是要开发票的那一页。<mark class="key">文档里的价格是参考，账单里的价格是事实。</mark></span></li>
+    <li><span class="k">要判断新旧</span><span class="v">看<strong>知识截止日期</strong>这一列。GPT-5.5 是 2025 年 12 月 1 日，GPT-5.6 Sol 是 2026 年 2 月 16 日——<strong>后者晚了两个半月</strong>，这是一条独立于宣传口径的客观线索。</span></li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 装修报价单上的三个数</span>
+    <p>官方文档自相矛盾这件事，如果你装修过就完全不陌生。</p>
+    <p>你找了一家装修公司。<strong>销售给你的宣传册</strong>上写「全包 1288 元一平米」。<strong>设计师发你的报价表</strong>里，同样的项目算出来是 1450。<strong>而你去他们门店看到的公示价目牌</strong>，上面某几项压根没列。三个都是这家公司的官方材料。</p>
+    <p><mark class="key">这时候一个有经验的人不会问「你们到底哪个是真的」，他会问「这三份材料各自是谁编的、什么时候编的」。</mark>宣传册是市场部半年前印的；报价表是设计师昨天按你家实际面积算的；价目牌是前台三个月没换过。<strong>搞清了这个，三份材料的矛盾就从「疑点」变成了「线索」。</strong></p>
+    <p>OpenAI 那三个页面完全同理：<strong>platform 域是老平台文档，developers 域是新站文档，定价页是面向公众的商务页面</strong>——三者由不同团队按不同节奏维护。<strong>本质上就是</strong>：任何足够大的组织，它的对外说法都不可能瞬时同步。</p>
+    <p>所以这一节真正想教你的手艺是：<strong>看一份资料时，先问它是谁写的、什么时候写的、写给谁看的。</strong>这三个问题回答清楚了，矛盾自己就解开了；回答不清楚，你手上再权威的资料也只是一句话。</p>
+  </div>
+
+  <h3>Anthropic：官方是怎么措辞的，值得逐字看</h3>
+  <p>Anthropic 是 Claude 系列模型的公司。它官方模型总览页（<code>docs.claude.com/en/docs/about-claude/models/overview</code>，截至 2026 年 8 月 8 日）的表述，是一个措辞极其克制的范本。原文：</p>
+  <pre><code>"If you're unsure which model to use, consider starting with
+Claude Opus 4.7 for the most complex tasks. It is our most capable
+generally available model, with a step-change improvement in
+agentic coding over Claude Opus 4.6."</code></pre>
+  <p>翻译：<em>「如果不确定用哪个模型，最复杂的任务可以考虑从 Claude Opus 4.7 开始。它是我们<strong>可普遍获取的</strong>能力最强的模型，在智能体编码方面相比 Claude Opus 4.6 有阶跃式提升。」</em></p>
+  <p><strong>请特别注意「generally available」（可普遍获取的）这个限定词。</strong>它不是废话，而是一个有法律和商务分量的措辞。<mark class="key">它的意思是：我们可能还有更强的东西，但那些还没开放给所有人，所以不在这句话的比较范围里。</mark></p>
+  <p>这个限定词不是空穴来风，同一页里就有对应的证据：</p>
+  <pre><code>"Claude Mythos Preview is offered separately as a research preview
+model for defensive cybersecurity workflows as part of Project
+Glasswing. Access is invitation-only and there is no self-serve
+sign-up."</code></pre>
+  <p>翻译：<em>「Claude Mythos Preview 作为 Project Glasswing 的一部分，以研究预览模型的形式单独提供，面向防御性网络安全工作流。仅限受邀访问，没有自助注册入口。」</em></p>
+  <p><strong>所以「可普遍获取的最强」和「最强」是两句不同的话。</strong><strong>打个比方：</strong><strong>餐厅</strong>菜单上写「本店最贵的菜是佛跳墙 888 元」，这句话完全为真——但后厨可能有一道只给熟客做、菜单上压根不写的菜。<mark class="key">「菜单上最贵」不等于「店里最贵」。</mark>这种措辞方式在这个行业里非常普遍，学会识别它，你就不会被「最强」这两个字牵着走。</p>
+  <p>官方模型表（截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>API 调用 ID</th><th>价格（每百万 token，输入 / 输出）</th><th>上下文</th><th>最大输出</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Claude Opus 4.7</strong></td><td><code>claude-opus-4-7</code></td><td>$5 / $25</td><td>1M</td><td>128k</td></tr>
+        <tr><td><strong>Claude Sonnet 4.6</strong></td><td><code>claude-sonnet-4-6</code></td><td>$3 / $15</td><td>1M</td><td>64k</td></tr>
+        <tr><td><strong>Claude Haiku 4.5</strong></td><td><code>claude-haiku-4-5-20251001</code></td><td>$1 / $5</td><td>200k</td><td>64k</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表有三个细节值得说：</p>
+  <p><strong>第一，命名分三档，而且是拉丁语诗歌体裁的名字。</strong>Opus（长篇作品）、Sonnet（十四行诗）、Haiku（俳句）——<mark class="key">从长到短，正好对应从大到小、从贵到便宜。</mark><strong>相当于</strong>咖啡店的大杯、中杯、小杯，只是名字起得文雅些。这套命名逻辑一旦记住，你看到一个新型号名就能立刻猜出它在哪一档。</p>
+  <p><strong>第二，Haiku 的 ID 带日期后缀，另外两个不带。</strong><code>claude-haiku-4-5-20251001</code> 里的 20251001 就是 2025 年 10 月 1 日。<strong>说白了</strong>这是版本快照——<em>指名要这一天发布的这个版本，以后官方更新了也不影响你</em>。<strong>相当于</strong>你在<strong>照相馆</strong>洗照片时说「就按上次那个底片洗，别调色」。生产环境往往需要这种确定性。</p>
+  <p><strong>第三，价格和上下文不是线性关系。</strong>Opus 4.7 比 Sonnet 4.6 贵不到一倍（$5 vs $3），但上下文一样是 1M；而 Haiku 便宜到 $1，上下文却掉到 200k。<mark class="key">所以选模型不是「预算多就买贵的」，得看你的活儿到底卡在哪一项上。</mark></p>
+
+  <h3>Google Gemini：一张表教你看懂「Stable」和「Preview」</h3>
+  <p>Google 的官方模型列表页（<code>ai.google.dev/gemini-api/docs/models</code>）有一个很值得学习的做法：<strong>它明确把模型分成 Stable（稳定）和 Preview（预览）两栏。</strong>该页面自带的更新标记是 <strong>Last updated 2026-08-05 UTC</strong>，我们的查询日期是 2026 年 8 月 8 日。</p>
+  <p>先把这两个词翻译清楚，因为它们决定了你敢不敢把它用在正经项目里：</p>
+  <ul class="keylist">
+    <li><span class="k">Stable（稳定版）</span><span class="v"><strong>说白了就是</strong>「你可以放心用，我们不会突然改它的行为，也不会随手关掉它」。<strong>相当于</strong>餐厅菜单上的常驻菜品——你下周来还有。</span></li>
+    <li><span class="k">Preview（预览版）</span><span class="v"><strong>说白了就是</strong>「你可以试，但别当饭吃」。行为可能改、价格可能调、随时可能下线。<strong>相当于</strong>餐厅的<em>试新菜</em>，桌卡上写着「限时供应，反馈良好才会进正式菜单」。<mark class="key">把 Preview 模型接进生产系统，等于把自己的业务押在别人的试菜上。</mark></span></li>
+  </ul>
+  <p>官方当天的分栏情况（截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>状态</th><th>官方列出的模型</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Stable</strong></td><td>Gemini 3.6 Flash、Gemini 3.5 Flash、Gemini 3.5 Flash-Lite、Gemini 3.1 Flash-Lite、Nano Banana 2、Nano Banana 2 Lite、Nano Banana Pro</td></tr>
+        <tr><td><strong>Preview</strong></td><td>Gemini 3.1 Pro、Gemini 3 Flash、Gemini 3.5 Live Translate、Gemini 3.1 Flash Live、Gemini 3.1 Flash TTS、Omni Flash</td></tr>
+        <tr><td><strong>已关停</strong></td><td>Gemini 3 Pro Preview —— <mark class="key">官方页面上直接标着 (Shut down)</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这张表里有两件事特别值得注意。</strong></p>
+  <p><strong>第一件：Pro 系列当天全在 Preview 栏，Flash 系列才在 Stable 栏。</strong>这跟很多人的直觉相反——大家会以为「Pro 是高端货，肯定更稳」。<strong>实际上恰恰相反</strong>：能力最强的那些往往刚发布不久，还在预览期；而稳定可用的是已经跑了一段时间的中量级型号。<strong>打个比方：</strong><strong>菜市场</strong>里最新到货的稀罕食材摊在最显眼的位置，但真正天天有货、你随时能买到的是常规菜。</p>
+  <p><strong>第二件：Gemini 3 Pro Preview 页面上明明白白标着「(Shut down)」（已关停）。</strong>这是一个极其有用的信号，<mark class="key">它说明 Preview 状态的东西真的会被关掉，不是理论风险。</mark>如果你半年前把它接进了产品，现在就得改代码了。</p>
+  <p>官方对两个主力型号的描述原文，措辞差别也很讲究：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>官方原文描述</th><th>翻译与解读</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Gemini 3.6 Flash</strong></td><td>「Our latest model that balances speed with intelligence to deliver strong performance in agentic and multimodal tasks.」</td><td>我们最新的模型，平衡速度与智能，在智能体与多模态任务上表现强劲。<strong>关键词是 latest（最新）和 balances（平衡）</strong>——它没说自己最强</td></tr>
+        <tr><td><strong>Gemini 3.5 Flash</strong></td><td>「Most intelligent model for sustained frontier performance on agentic and coding tasks.」</td><td>在智能体与编码任务上持续保持前沿表现的最智能模型。<mark class="key">注意这个「Most intelligent」给的是 3.5 而不是 3.6</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这一处细节非常值得琢磨：版本号更高的 3.6 被描述为「最新且平衡」，版本号更低的 3.5 才被描述为「最智能」。</strong>换成大白话——<em>3.6 不是 3.5 的全面升级版，而是一条不同取向的产品线。</em><mark class="key">所以「版本号大就一定更强」这个直觉，在这里直接失效了。</mark><strong>相当于</strong>手机的 Pro 和 Plus——数字大的那个不一定各项都更好，可能只是屏幕大了、电池大了，芯片反而一样。</p>
+  <p>官方定价（Paid Tier 付费档，每百万 token，Standard 标准处理，截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>输入</th><th>输出</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Gemini 3.6 Flash</strong></td><td>$1.50</td><td>$7.50</td><td>输出是输入的 5 倍价</td></tr>
+        <tr><td><strong>Gemini 3.5 Flash</strong></td><td>$1.50</td><td>$9.00</td><td>输入同价，<strong>输出比 3.6 更贵</strong></td></tr>
+        <tr><td><strong>Gemini 3.5 Flash-Lite</strong></td><td>$0.30</td><td>$2.50</td><td>Lite 档，便宜五倍</td></tr>
+        <tr><td><strong>Gemini 3.1 Flash-Lite</strong></td><td>$0.25（文本/图像/视频）<br>$0.50（音频）</td><td>$1.50</td><td><mark class="key">音频输入是文本的两倍价</mark>——不同模态不同价</td></tr>
+        <tr><td><strong>Gemini 3.1 Pro Preview</strong></td><td>$2.00（≤200k 上下文）<br>$4.00（&gt;200k 上下文）</td><td>$12.00（≤200k）<br>$18.00（&gt;200k）</td><td><strong>阶梯定价</strong>：上下文一过 20 万 token，输入输出双双涨价</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张定价表里藏着三个非常实用的规律：</p>
+  <p><strong>规律一：输出永远比输入贵，而且贵好几倍。</strong>为什么？因为输入是一次性读进去的（可以并行、可以批量），输出是一个字一个字生成的（必须串行）。<strong>相当于</strong><strong>快递</strong>公司收你的件是一车拉走，派件却要挨家挨户按门铃。<mark class="key">这条规律有个直接的实用推论：让模型「少说话、说重点」是真的能省钱的，省的还是最贵的那部分。</mark></p>
+  <p><strong>规律二：不同模态不同价。</strong>Gemini 3.1 Flash-Lite 的音频输入是文本的两倍价（$0.50 vs $0.25）。<strong>说白了：</strong>处理声音比处理文字费劲，所以收得更贵。做语音类产品要特别注意这一行。</p>
+  <p><strong>规律三：上下文越长，单价越高。</strong>Gemini 3.1 Pro Preview 在 20 万 token 这个门槛上翻倍。前面 OpenAI 定价页那条「270K 以下上下文长度的标准处理费率」是同一个意思。<strong>用停车场打比方：</strong>前两小时五块钱一小时，超过两小时后每小时十块。<mark class="key">所以「把所有资料一股脑塞进上下文」这个做法，除了 §11.4 讲过的效果问题，还有一笔账要算。</mark></p>
+  <div class="callout">
+    <span class="tag">诚实声明 · 上下文窗口数字未取得</span>
+    <p>你可能注意到上面 Google 的表里<strong>没有给上下文窗口大小</strong>，而 OpenAI 和 Anthropic 的表里都给了。这不是遗漏。</p>
+    <p><mark class="key">Google 官方模型列表页当天没有在同一张表里列出各型号的上下文窗口</mark>，而我们没有逐个型号点进详情页取证。所以本节<strong>不给任何 Gemini 型号的上下文窗口数字</strong>。</p>
+    <p>网上流传着「Gemini 某型号支持 200 万 token 上下文」这类说法，本节<strong>不采用</strong>——不是说它一定错，而是我们没有从官方页面核实到。<strong>如果你需要这个数字，请自己去 <code>ai.google.dev/gemini-api/docs/models</code> 点开具体型号的卡片查看。</strong></p>
+  </div>
+
+  <h3>Meta Llama：走了完全不同的一条路</h3>
+  <p>前面三家的模式是一样的：模型放在自己的服务器上，你通过 API 调用，按 token 付费。<strong>Meta 走的是第四条路：把模型权重直接下载给你，让你自己跑。</strong></p>
+  <p>这个差别有多大？<strong>用面粉厂的比方来说：</strong>前三家是「你把订单发过来，我磨好面粉给你发货，按斤收钱」；<mark class="key">Meta 是「磨粉机的图纸和调好的参数我都给你，你自己回家磨」。</mark></p>
+  <p>这条路的吸引力显而易见——不用付按次的钱、数据不出自己的门、想怎么改就怎么改。<strong>但它有一个大多数人不会去读的前提条件：许可协议。</strong>这一小节就把这份协议里最要紧的几条摊开来看。</p>
+  <p><strong>先说清版本：</strong>截至 2026 年 8 月 8 日，<code>llama.com/llama4/license/</code> 上现行公开的许可是 <strong>Llama 4 Community License Agreement</strong>，<strong>Version Effective Date: April 5, 2025</strong>（生效日 2025 年 4 月 5 日）。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · 不宣称 Llama 4 是「最新版本」</span>
+    <p>我们尝试核实是否存在比 Llama 4 更新的版本，但 <code>llama-downloads</code> 页面是由 JavaScript 动态渲染的，静态抓取拿不到正文内容。<mark class="key">所以本节不宣称「Llama 4 是最新版本」，只说它是 llama.com 上现行公开的那份许可所对应的版本。</mark></p>
+    <p>这个区别不是咬文嚼字。<strong>「我查到的是这个」和「这就是最新的」，中间隔着一整轮穷尽检索。</strong>前者我做到了，后者我没做到，所以只写前者。</p>
+  </div>
+  <p><strong>现在看协议里最关键的那一条。</strong>Section 2 Additional Commercial Terms（附加商业条款）原文：</p>
+  <pre><code>"If, on the Llama 4 version release date, the monthly active users
+of the products or services made available by or for Licensee, or
+Licensee's affiliates, is greater than 700 million monthly active
+users in the preceding calendar month, you must request a license
+from Meta, which Meta may grant to you in its sole discretion, and
+you are not authorized to exercise any of the rights under this
+Agreement unless or until Meta otherwise expressly grants you such
+rights."</code></pre>
+  <p>翻译：<em>「如果在 Llama 4 版本发布日，你（或你的关联方）提供的产品或服务，在前一个日历月的月活跃用户数超过 7 亿，你必须向 Meta 申请一份许可；Meta <strong>可自行酌情决定</strong>是否给你。在 Meta 明确授予之前，你无权行使本协议下的任何权利。」</em></p>
+  <p><strong>这一条要拆成四层来理解，每一层都有实际后果：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>条款要素</th><th>原文关键词</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>门槛</strong></td><td>greater than 700 million monthly active users</td><td>月活超过 <strong>7 亿</strong>。这个数字换算成能感知的量：<mark class="key">大约是全球人口的十二分之一</mark>，全世界能跨过这条线的公司数得出来</td></tr>
+        <tr><td><strong>时间点</strong></td><td>on the Llama 4 version release date</td><td>按<strong>版本发布那一天</strong>的规模算。<strong>说白了：</strong>发布时你还小，后来长大了，也不受这一条约束</td></tr>
+        <tr><td><strong>算法范围</strong></td><td>by or for Licensee, or Licensee's affiliates</td><td>包括<strong>关联方</strong>。子公司、母公司的用户数可能要合并计算，不是只算你自己这个 App</td></tr>
+        <tr><td><strong>决定权</strong></td><td>Meta may grant in its <strong>sole discretion</strong></td><td><mark class="key">Meta 完全自主决定给不给，没有任何客观标准，也不承诺一定给。</mark>这是本条最重的四个字</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这条款是针对谁写的，其实不难猜。</strong>全球月活超过 7 亿的公司只有几家，而它们恰好是 Meta 最直接的竞争者。<strong>说白了就是</strong>：这份许可对所有人开放，唯独把最大的几个同行挡在门外。</p>
+  <p><strong>用小区的比方讲这件事最直观：</strong>小区门口贴了张告示——「本小区花园免费向公众开放，欢迎大家来玩。但如果你是隔壁三家大房产商的员工，得先来物业申请，批不批我们说了算。」<mark class="key">告示确实写着「免费开放」，但它显然不是对所有人一样开放。</mark></p>
+  <p><strong>除了这条门槛，协议还有两项持续性义务。</strong>Section 1.b.i 原文：</p>
+  <pre><code>"you shall (A) provide a copy of this Agreement with any such Llama
+Materials; and (B) prominently display 'Built with Llama' on a
+related website, user interface, blogpost, about page, or product
+documentation. If you use the Llama Materials or any outputs or
+results of the Llama Materials to create, train, fine tune, or
+otherwise improve an AI model, which is distributed or made
+available, you shall also include 'Llama' at the beginning of any
+such AI model name."</code></pre>
+  <p>翻译成三条能执行的要求：</p>
+  <ul class="keylist">
+    <li><span class="k">义务一 · 随件附协议</span><span class="v">你分发 Llama 相关材料时，必须<strong>把这份协议副本一起给出去</strong>。<strong>相当于</strong>转卖一台家电时必须把保修卡和说明书一起交给下一个人。</span></li>
+    <li><span class="k">义务二 · 显著标注 Built with Llama</span><span class="v">必须在网站、界面、博客、关于页或产品文档上<strong>显著显示「Built with Llama」</strong>（用 Llama 构建）。注意是 prominently（显著地），不是塞在页脚小字里。<strong>相当于</strong>加盟店门头上必须挂总部的招牌。</span></li>
+    <li><span class="k">义务三 · 派生模型的命名</span><span class="v">如果你用它的材料或输出去训练、微调、改进出另一个模型并对外发布，<mark class="key">那个模型的名字开头必须带「Llama」。</mark><strong>相当于</strong>你用别人的秘方改良出一道新菜，菜名前面必须挂上人家的招牌名。</span></li>
+  </ul>
+  <p>还有一条归属声明的固定格式：<strong>「Llama 4 is licensed under the Llama 4 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved.」</strong></p>
+  <p><strong>所以整份协议的性质是什么？</strong>官方给它的名字是 <em>Community License</em>（社区许可），这是 Meta 自定义的一份协议，<mark class="key">不是 Apache 2.0、不是 MIT，也不是任何 OSI 认可的开源许可。</mark>它包含月活门槛、命名义务、署名义务，并适用加州法律。</p>
+  <p>「这算不算开源」这个问题，我们留到 §12.4 用 OSI 的正式定义来回答——那一节会告诉你，<strong>连「只发布权重」这件事本身，按 OSI 的标准都不构成开源</strong>，跟许可条款宽不宽松还是两回事。</p>
+
+  <h3>四家横向对照：不比强弱，只比路数</h3>
+  <p>把四家放在一起，最有价值的对比维度不是「谁分高」，而是<strong>「你要用它，得付出什么、承担什么」</strong>。下面这张表就按这个思路排（全部截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>OpenAI</th><th>Anthropic</th><th>Google</th><th>Meta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>怎么给你用</strong></td><td>云端 API</td><td>云端 API</td><td>云端 API</td><td><mark class="key">下载权重自己跑</mark></td></tr>
+        <tr><td><strong>官方首推的那个</strong></td><td><strong>两种口径</strong>：platform 说 gpt-5.5，developers 说 GPT-5.6 Sol</td><td>Claude Opus 4.7（限定为「可普遍获取的最强」）</td><td>未用「flagship」措辞，分 Stable / Preview 两栏</td><td>许可页对应 Llama 4</td></tr>
+        <tr><td><strong>命名规律</strong></td><td>数字版本 + 代号（Sol/Terra/Luna）</td><td>诗歌体裁分档（Opus/Sonnet/Haiku）</td><td>数字版本 + 档位（Pro/Flash/Flash-Lite）</td><td>版本号 + 参数规模</td></tr>
+        <tr><td><strong>最贵档输入价</strong></td><td>$5（5.5 与 5.6 Sol 同价）</td><td>$5（Opus 4.7）</td><td>$2.00 / $4.00 阶梯（3.1 Pro Preview）</td><td>不按 token 收，改为你自付算力</td></tr>
+        <tr><td><strong>最便宜档输入价</strong></td><td>$0.20（5.6 Luna）</td><td>$1（Haiku 4.5）</td><td>$0.25（3.1 Flash-Lite 文本）</td><td>同上</td></tr>
+        <tr><td><strong>成本长什么样</strong></td><td>用多少付多少，<strong>可变成本</strong></td><td>同左</td><td>同左</td><td><mark class="key">买卡或租机器，固定成本 + 运维人力</mark></td></tr>
+        <tr><td><strong>你要承担的风险</strong></td><td>厂商改型号、涨价、下线</td><td>同左</td><td>Preview 会被 (Shut down)，官方已有实例</td><td><strong>许可合规风险</strong>：7 亿月活门槛、署名与命名义务</td></tr>
+        <tr><td><strong>数据去哪</strong></td><td>发到厂商服务器</td><td>同左</td><td>同左</td><td><strong>可以完全不出你的机房</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表读下来，你会发现<strong>前三家和 Meta 根本不在一个赛道上比赛</strong>——前三家在比「谁的面粉又好又便宜」，Meta 在比「谁的磨粉机图纸更容易上手」。</p>
+  <p><strong>用外卖和买菜的比方来收这一段：</strong>点外卖（云端 API）的好处是你不用管厨房，坏处是每顿都要付钱、菜单由店家定、店家关门你就没饭吃。自己买菜做饭（本地部署）的好处是想吃什么吃什么、成本可控、饭菜不出自己家门，坏处是<mark class="key">你得自己有厨房、有厨具、有时间，还得看得懂那本厚厚的「使用须知」（也就是许可协议）。</mark></p>
+  <p><strong>本质上就是</strong>：这不是一个「哪个更好」的问题，是一个「你的约束条件是什么」的问题。有些行业（医疗、金融、政务）数据不能出境不能外传，那再便宜的 API 也用不了；有些小团队一共三个人，那再自由的权重也养不起运维。</p>
+
+  <h3>模型命名这件事，为什么全行业都这么乱</h3>
+  <p>看完上面四家，你大概已经被型号名搞晕了：GPT-5.5、GPT-5.6 Sol/Terra/Luna、Claude Opus/Sonnet/Haiku 4.5-4.7、Gemini 3.1/3.5/3.6 Pro/Flash/Flash-Lite、Nano Banana 2 Pro……<mark class="key">这不是你的问题，这是整个行业的问题。</mark>但乱中有序，把规律说清楚能省你很多困惑。</p>
+  <p><strong>规律一：几乎每家都有「大中小」三档。</strong>这是最稳定的一条规律，因为它对应的是真实的成本结构。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>档位</th><th>OpenAI 的叫法</th><th>Anthropic 的叫法</th><th>Google 的叫法</th><th>咖啡店类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>大 · 最强最贵</strong></td><td>旗舰主型号（如 5.6 Sol）</td><td>Opus</td><td>Pro</td><td>大杯特调</td></tr>
+        <tr><td><strong>中 · 平衡</strong></td><td>Terra / 无后缀次级</td><td>Sonnet</td><td>Flash</td><td>中杯常规</td></tr>
+        <tr><td><strong>小 · 便宜量大</strong></td><td>mini / nano / Luna</td><td>Haiku</td><td>Flash-Lite</td><td>小杯美式</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>记住这三档，你看到任何新型号名都能立刻定位它在哪一层。</strong>比如你看到「Luna」这个名字不知道是什么，但看到它输入价 $0.20（同门 Sol 是 $5，差 25 倍），就知道它是最小最便宜那一档。<strong>说白了：价格是最诚实的档位标签。</strong></p>
+  <p><strong>规律二：小数点后的版本号不一定代表全面更强。</strong>前面 Gemini 3.6 与 3.5 那个例子已经证明了这一点：官方把「Most intelligent」给了 3.5，把「latest」给了 3.6。<mark class="key">所以看到版本号更高就以为全面更好，是这一节最该纠正的直觉。</mark></p>
+  <p><strong>规律三：带日期后缀的 ID 是「快照」，不带的是「会变的」。</strong>Anthropic 的 <code>claude-haiku-4-5-20251001</code> 就是快照写法。<strong>相当于</strong>你在<strong>银行</strong>办事拿到的号码——指定就是这一号，别人再插队也不影响。生产环境优先用快照 ID，做实验用别名（如 <code>gpt-5.6</code>）更方便。</p>
+  <p><strong>规律四：代号越花，越可能是新一代产品线的重命名。</strong>Sol、Terra、Luna 是拉丁语的「日、地、月」；Nano Banana 这种名字更是完全跳出数字体系。<strong>为什么厂商爱这么干？</strong>因为纯数字版本号有个尴尬：版本号只能往上走，一旦走到 GPT-6、7、8，读者会自动期待「每一代都是巨大飞跃」，而实际迭代往往是渐进的。<strong>换成大白话：</strong>换个代号，就把「必须比上一代强多少」这个隐含承诺给绕开了。</p>
+  <p><strong>规律五：这些名字半年后大概率就不对了。</strong>所以本节的所有型号名都绑着「截至 2026 年 8 月 8 日」这个日期。<mark class="key">正确的用法是：把本节当成一份「看官方文档的方法说明」，而不是一份「型号对照表」。</mark>型号表你自己去官网查，方法是能带走的。</p>
+
+  <h3>怎么读一份模型文档：一套可复用的六步法</h3>
+  <p>这一节到这里已经翻过了四家官方文档。把这个过程抽象出来，是一套你以后查任何模型都能用的顺序。<strong>它的核心思路和 §12.1 看规格表的清单一样：先确定这份资料的身份，再读它的内容。</strong></p>
+  <ul class="keylist">
+    <li><span class="k">第一步 · 确认页面身份和日期</span><span class="v">这是<em>文档</em>、<em>定价页</em>还是<em>博客公告</em>？页面上有 Last updated 吗（Google 那页就有：2026-08-05 UTC）？<mark class="key">没有更新日期的技术页面，可信度天然打折。</mark></span></li>
+    <li><span class="k">第二步 · 先看它有没有分状态栏</span><span class="v">有 Stable / Preview / Deprecated / Shut down 之类的分区吗？<strong>这一步比看型号名重要得多</strong>——一个 Preview 型号再强，接进生产系统也是给自己埋雷。Google 那页把 Gemini 3 Pro Preview 直接标 (Shut down)，就是活教材。</span></li>
+    <li><span class="k">第三步 · 抄下模型 ID 而不是产品名</span><span class="v">产品名是给人看的（「GPT-5.6 Sol」），模型 ID 是给代码用的（<code>gpt-5.6-sol</code>）。<strong>相当于</strong>你记住的是朋友的名字，但发消息要用的是他的账号。写代码时只有 ID 有用。</span></li>
+    <li><span class="k">第四步 · 读价格时分清输入、输出、缓存三种</span><span class="v">OpenAI 定价页把「缓存输入」单列（GPT-5.5 的缓存输入 $0.50，只有正常输入 $5 的十分之一）。<mark class="key">这一列往往被忽略，但它对反复读同一批资料的应用来说能省一大截。</mark></span></li>
+    <li><span class="k">第五步 · 找上下文的阶梯门槛</span><span class="v">OpenAI 那条「270K 以下上下文的标准费率」、Google 那个 200k 门槛，都是同一类信息。<strong>说白了：</strong>这决定了你的账单会不会在某天突然翻倍。</span></li>
+    <li><span class="k">第六步 · 最后才看能力描述</span><span class="v">「最智能」「表现强劲」这类描述放在最后看，因为它们是厂商自述、不可横向比较，而且措辞里往往埋着限定词（generally available、latest、balances）。<strong>把限定词读进去，这句话的信息量往往比看起来小得多。</strong></span></li>
+  </ul>
+  <p><strong>这套六步法的价值在于它把「读文档」从一件感觉活变成了一件流程活。</strong>就像<strong>挂号</strong>看病有固定流程——先分诊、再挂号、再候诊、再就诊，你不会跳着来。读技术文档同理，<mark class="key">顺序错了会让你在一堆宣传形容词里绕半天，却漏掉真正决定成败的那两行小字。</mark></p>
+
+  <h3>常见误解澄清</h3>
+  <p><strong>误解一：「排行榜上分最高的就是最好的，选它就对了。」</strong></p>
+  <p>这句话有两个问题。第一，本节<strong>没有取到任何官方或权威第三方的 2026 年横向评测数据</strong>，所以本书不给排名，任何自称「2026 最强模型排行」的内容你都该先问它的数据来自哪里。第二，即便有可信榜单，<mark class="key">榜单测的任务和你的任务大概率不是一回事。</mark><strong>相当于</strong>看<strong>考试</strong>排名选家教——数学第一名的老师不一定适合辅导你孩子的作文。</p>
+  <p><strong>误解二：「贵的模型一定比便宜的强，所以有预算就一直用最贵的。」</strong></p>
+  <p>价格反映的是厂商的成本与定位，不是你任务上的效果。而且这笔账很容易算错：<strong>Gemini 3.1 Flash-Lite 的输入价 $0.25，Claude Opus 4.7 是 $5，差 20 倍。</strong>如果你的活儿是「把一万条用户评论分成好评差评」，用最贵的那个纯属烧钱。<strong>说白了：</strong>杀鸡不用牛刀，而且这里的牛刀是按次收费的。</p>
+  <p><strong>误解三：「Meta 的模型免费，所以自己部署一定更便宜。」</strong></p>
+  <p>权重免费，算力不免费，人力更不免费。你要自备 §12.1 讲过的那些显存和带宽，还要有人维护。<strong>用买菜做饭打比方：</strong>菜是比外卖便宜，但你得算上厨房的租金、水电、你自己的时间。<mark class="key">对小规模用量来说，自己部署往往比调 API 更贵；只有量大到某个规模，账才翻过来。</mark>另外别忘了那份许可里的合规义务——Built with Llama 的标注、派生模型的命名，这些也是成本。</p>
+  <p><strong>误解四：「官方文档写的一定是对的，照抄就行。」</strong></p>
+  <p>这一节整个前半部分就是这条误解的反例。<strong>官方文档是<em>可靠性最高的一类</em>资料，但不等于<em>绝对正确且内部一致</em>。</strong>正确的态度是：<mark class="key">官方文档是最好的起点，但要看它的身份、日期，并且尽量交叉验证两个官方入口。</mark></p>
+  <p><strong>误解五：「模型能力靠版本号判断，5.6 一定比 5.5 全面强。」</strong></p>
+  <p>Gemini 3.6 与 3.5 的官方描述已经反驳了这一点。而 OpenAI 那边更微妙：<strong>GPT-5.5 和 GPT-5.6 Sol 的价格完全一样（$5 / $30），上下文只从 1M 涨到 1.05M</strong>——<em>如果 5.6 Sol 是一次全面代际跃升，很难解释为什么价格一分没变。</em>注意这句是推断不是结论，官方没有说明原因，我们只是把可核实的两组数字并排放在这里。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="同一天，<code>platform.openai.com</code> 写「use gpt-5.5, our flagship model」，<code>developers.openai.com</code> 写「use GPT-5.6 Sol, our flagship model」，而官方定价页没有列 5.6 的价格。按本节的方法，最恰当的处理是？"
+       data-opts="选新站说法，因为 developers 域更新更及时|选定价页说法，因为涉及钱的页面最权威|三处原文与出处并列写出，注明查询日期，不替读者做判断|判定 OpenAI 官方文档不可信，改引用第三方媒体报道"
+       data-explain="矛盾本身是可核实的事实，「哪个才对」则是我们没有依据做的判断。挑一个写上去，等于把自己的猜测伪装成官方结论；判定官方不可信转向第三方媒体，更是把可靠性从高降到低。正确做法是并列呈现三处原文、标明各自出处与查询日期，让读者看见不确定性的存在。至于实践取舍：写文章两边都写，写代码以能调通的 ID 为准，做预算以定价页为准——这三件事的答案可以不同，但都不该靠猜。"
+       data-answer="2"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节收束</span>
+    <p><strong>一、本节最重要的收获是方法，不是型号名。</strong>型号名半年就过期，「先确认资料的身份、日期、写给谁看的」这套方法不会过期。所有内容的查询日期统一为<strong>截至 2026 年 8 月 8 日</strong>。</p>
+    <p><strong>二、官方文档会自相矛盾，这是事实而非丑闻。</strong>同一天：platform 域说 flagship 是 gpt-5.5，developers 域说是 GPT-5.6 Sol，定价页完全没列 5.6 的价格。<mark class="key">处理办法是三处原文并列、标明出处，不替读者挑一个。</mark>实践中的取舍则分三种：写文章两边都写、写代码以能调通的 ID 为准、做预算以定价页为准。</p>
+    <p><strong>三、限定词是官方措辞里最重的部分。</strong>Anthropic 说 Opus 4.7 是「our most capable <em>generally available</em> model」（可普遍获取的最强），而同页就列着受邀预览的 Claude Mythos Preview——「菜单上最贵」不等于「店里最贵」。Google 把「Most intelligent」给了 3.5、「latest」给了 3.6，<mark class="key">版本号高不等于全面更强。</mark></p>
+    <p><strong>四、Stable 与 Preview 的区别，比型号强弱重要。</strong>Google 官方页面上 Gemini 3 Pro Preview 已标 (Shut down)——Preview 真的会被关掉。而当天 Pro 系列全在 Preview 栏、Flash 系列才在 Stable 栏，与「Pro 更稳」的直觉相反。</p>
+    <p><strong>五、定价表里有三条通用规律。</strong>输出比输入贵好几倍（生成必须一个字一个字来）；不同模态不同价（Gemini 3.1 Flash-Lite 音频输入是文本的两倍）；上下文越长单价越高（Gemini 3.1 Pro Preview 在 200k 门槛上翻倍，OpenAI 也有 270K 的费率说明）。</p>
+    <p><strong>六、Meta 走的是另一条路，代价写在许可里。</strong>Llama 4 Community License（生效日 2025 年 4 月 5 日）含三项硬义务：<strong>发版日月活超 7 亿须另行申请且 Meta「可自行酌情决定」</strong>、产品页须显著标注「Built with Llama」、派生模型名开头须带「Llama」。<mark class="key">这是 Meta 自定义的社区许可，不是任何 OSI 认可的开源许可。</mark></p>
+    <p><strong>七、本节的留白清单（诚实交代）：</strong>是否存在比 Llama 4 更新的版本<strong>未取得</strong>（下载页 JS 渲染，故本节不宣称 Llama 4 是「最新版本」）；<strong>Gemini 各型号的上下文窗口数字未取得</strong>（官方列表页未在同表给出，未逐页取证，故一律不给）；<strong>2026 年任何横向评测与排名数据未取得</strong>，故本节不做任何强弱排序。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./12-1-chips.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 12.1 · 芯片与算力</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./12-3-china-models.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 12.3 · 中国阵营</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 12.2</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-33"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-33"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-33"></script>
+</body>
+</html>

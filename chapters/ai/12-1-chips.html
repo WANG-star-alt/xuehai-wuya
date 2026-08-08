@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 12.1 · 芯片与算力 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-33">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-33">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./12-landscape.html">智能篇 · 第 12 章</a>
+      <span class="sep">›</span>
+      <span>§ 12.1</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 12.1 · Section</div>
+    <h1>芯片与算力</h1>
+    <div class="cn">模型跑在什么东西上，以及怎么看懂规格表</div>
+  </header>
+
+  <p class="lead">
+    你在网页上敲一句话，几秒钟后文字一个个冒出来。这个过程里真正在干活的，是地球另一头某个机房里一排排嗡嗡响的机柜。<mark class="key">这一节要做两件事：第一，把「算力」这个被说滥了的词拆开，让你知道它到底在数什么；第二，教你看懂厂商规格表——尤其是那些藏在数字旁边的小字。</mark>本节最重要的收获不是背下哪张卡多少 PFLOPS，而是学会三个英文词的分量：<strong>preliminary</strong>（初步数据）、<strong>expected</strong>（预期）、<strong>peak theoretical</strong>（峰值理论值）。看懂这三个词，你以后看任何硬件宣传都不容易被数字唬住。本节所有数字都注明「截至 2026 年 8 月 8 日」，因为它们全都会变；而查不到官方出处的地方，我们会明确留白，绝不用记忆填补。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏭 一间包饺子的车间</div>
+    <p>想象你开了一间给超市供货的速冻饺子厂。厂房里有三样关键东西，它们的关系，几乎完美对应一台 AI 服务器。</p>
+    <p><strong>第一样：包饺子的工人。</strong>他们决定「一小时能包多少个」。工人越多、手越快，出货越多。<em>这就是算力</em>——芯片里成千上万个计算单元，同时在做加法和乘法。</p>
+    <p><strong>第二样：车间里的案板和料台。</strong>工人手边得有地方摊皮、放馅、码盘。案板太小，工人再快也得停下来等收拾。<em>这就是显存</em>（GPU 上的高速内存）——模型的参数和中间结果必须先摊在这里，摊不下就干不了。</p>
+    <p><strong>第三样：从冷库到案板的那条传送带。</strong>面和馅都在冷库里，得靠传送带运到案板上。<mark class="key">传送带太慢，你雇再多工人也全都在干等。</mark><em>这就是内存带宽</em>——每秒能往计算单元送多少数据。</p>
+    <p>这三样东西的一个残酷规律是：<strong>短板决定产量。</strong>而在跑大模型这件事上，最常见的短板恰恰不是工人不够，而是<em>传送带跟不上</em>。这也是为什么厂商的规格表里，显存容量和带宽这两行往往比算力那一行更值得你先看。</p>
+    <div class="link">→ 算力 = 工人数量与手速；显存 = 案板面积；带宽 = 传送带速度。三者任一是短板，整条线的产量就被它卡死。</div>
+  </div>
+
+  <h3>先把「算力」翻译成大白话</h3>
+  <p>「算力」这个词听着很玄，好像是某种神秘的能量。<strong>其实就是</strong>一个非常朴素的东西：<mark class="key">一秒钟能做多少次算术题。</mark>就这么简单。</p>
+  <p>厂商用来标这件事的单位叫 <strong>FLOPS</strong>（Floating-point Operations Per Second，读作「弗洛普斯」，中文「每秒浮点运算次数」）。拆开看：<strong>Floating-point</strong>（浮点）指的是带小数点的数，比如 3.1415；<strong>Operations</strong>（运算）指一次加法或一次乘法；<strong>Per Second</strong>（每秒）就是每秒。<strong>所以 FLOPS 说白了就是「每秒能算多少道带小数的加减乘除」。</strong></p>
+  <p>因为这个数字动辄天文数字，就得加词头。这套词头你在买硬盘时其实早就见过：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>读法</th><th>是多少次</th><th>换算成能感知的量</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GFLOPS</strong></td><td>吉弗洛普斯</td><td>每秒 10 亿次</td><td>一个人用纸笔一秒算一道题，要不停算 <strong>31.7 年</strong>才够一秒的量</td></tr>
+        <tr><td><strong>TFLOPS</strong></td><td>太弗洛普斯</td><td>每秒 1 万亿次</td><td>同样一个人，要算 <strong>3.17 万年</strong>——比人类文明史还长</td></tr>
+        <tr><td><strong>PFLOPS</strong></td><td>拍弗洛普斯</td><td>每秒 1000 万亿次</td><td>要算 <strong>3170 万年</strong>；换成全中国 14 亿人一起算，也要不停算 <strong>26 天</strong></td></tr>
+        <tr><td><strong>TOPS / POPS</strong></td><td>太/拍欧普斯</td><td>同上，但数的是<strong>整数</strong>运算</td><td>整数运算不带小数点，芯片算起来更省，所以同一颗芯片的 TOPS 通常比 TFLOPS 高</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>打个比方：</strong>如果 TFLOPS 是「一秒钟包一万亿个饺子」，那 PFLOPS 就是「一秒钟包一千万亿个」。这种数字大到已经失去日常直觉了，所以不必去感受它有多大，<mark class="key">只要记住它们之间是每级一千倍的关系，看规格表时不会把 T 和 P 看混就够了。</mark></p>
+  <p>这里必须交代一件诚实的事：<strong>本节没有取到 IEEE 或 ISO 这类标准机构对 FLOPS 的正式定义原文</strong>，所以上面的解释是按行业通行用法说的，不是引用标准。但「厂商如何使用这套单位」是有硬证据的——Google Cloud 的 TPU 官方文档同页并列标注了 TFLOPs、PFLOPs 和 TOPs，NVIDIA 的官方规格表同样区分 PFLOPS / TFLOPS / POPS / TOPS。<strong>这两家官方文档的写法，足以支撑「浮点用 FLOPS 家族、整数用 OPS 家族」这个结论。</strong></p>
+
+  <h3>没有精度的算力数字，是一句废话</h3>
+  <p>这是本节第一个真正重要的知识点，而且是绝大多数科普文章会漏掉的。</p>
+  <p>如果有人问你「这张卡多少 TFLOPS」，<mark class="key">这个问题本身就是不完整的，你没法回答。</mark>因为同一颗芯片，算不同「精度」的数时，速度差得非常远。</p>
+  <p>所谓<strong>精度</strong>（precision），说白了就是<em>一个数用多少位来记</em>。这件事在生活里有个完美对应：<strong>菜市场</strong>买菜的秤。卖白菜的电子秤精确到 5 克，卖黄金的天平精确到 0.001 克。<strong>相当于</strong>同一件「称重」的事，你可以用糙一点的工具快速做完，也可以用精密工具慢慢做。芯片也一样：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>精度名称</th><th>大白话</th><th>典型用在哪</th><th>秤的类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>FP64</strong>（双精度）</td><td>一个数用 64 位记，最精细</td><td>科学计算、气象模拟、核物理——差一点点结果就跑偏</td><td>实验室里的<strong>分析天平</strong>，读到万分之一克</td></tr>
+        <tr><td><strong>FP32 / TF32</strong></td><td>32 位，够精细</td><td>传统深度学习训练的老标准</td><td>药店里的<strong>电子秤</strong>，读到 0.1 克</td></tr>
+        <tr><td><strong>bf16 / FP16</strong>（半精度）</td><td>16 位，粗一半</td><td>现在训练大模型的主力精度</td><td><strong>超市</strong>散装秤，读到 1 克</td></tr>
+        <tr><td><strong>FP8</strong></td><td>8 位，更粗</td><td>训练与推理都在用</td><td>菜场的<strong>台秤</strong>，读到 5 克</td></tr>
+        <tr><td><strong>NVFP4</strong>（NVIDIA 的 4 位格式）</td><td>4 位，非常粗</td><td>专门为大模型<strong>推理</strong>设计</td><td>拎在手里估「大概两斤」——够用就行</td></tr>
+        <tr><td><strong>Int8</strong>（8 位整数）</td><td>不带小数点，只记整数</td><td>推理量化、边缘设备</td><td>数个数：「三个苹果」——根本不用秤</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>为什么大家越来越往「糙」的方向走？</strong>因为发现了一件很反常识的事：<mark class="key">对大模型来说，把每个数记得那么精细基本是浪费。</mark>模型里有几千亿个参数，每个参数记糙一点带来的误差，会在这么大的规模下互相抵消掉一部分，最终答案的质量往下掉得很有限，但速度和省下的显存却是成倍的。</p>
+  <p><strong>用照相馆打个比方：</strong>你拍一张全家福，用专业相机存成一张 80 MB 的原始文件，和存成一张 2 MB 的 JPG，挂在客厅墙上看几乎分辨不出差别。但那 2 MB 的版本，手机存得下几千张、发微信一秒就发出去了。<strong>本质上就是</strong>：在「肉眼看不出差别」的前提下，能省的都省掉。精度降低（业内叫<strong>量化</strong>，quantization）干的就是这件事，只不过这里的「肉眼」是模型的输出质量。</p>
+  <p>所以以后你看到「某卡 3600 PFLOPS」这种说法，第一反应应该是问：<strong>在什么精度下？</strong>如果对方说不出来，这个数字就没有讨论价值。官方规格表从来都是把精度写在数字旁边的，是转述的人把它丢了。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一整柜的饺子车间</span>
+    <p>单张加速卡的规格看久了会有个错觉，以为买卡就是买算力。但真正训练前沿模型的单位<strong>不是卡，是机柜</strong>。这件事用<strong>车间</strong>的比方最容易讲通。</p>
+    <p>你的饺子厂从一台包饺子机变成一整条流水线之后，会立刻冒出一个新问题：<mark class="key">机器之间怎么传东西。</mark>一号机把皮擀好，得递给二号机包馅。如果这个「递」的动作靠工人端着盘子走过去，那不管每台机器多快，整条线的速度都被走路的人拖住了。</p>
+    <p>所以真正的现代化车间，会在机器之间铺<strong>传送带</strong>，而且传送带的速度必须比机器的产能还高，否则机器就得停下来等。<strong>换成大白话</strong>：<em>决定一整条线产量的，往往是机器之间的连接，而不是单台机器的性能。</em></p>
+    <p>AI 机柜里的这条「传送带」有专门的名字。NVIDIA Vera Rubin NVL72 这套机柜方案，官方原文写的是它整合了「72 颗 Rubin GPU、36 颗 Vera CPU、NVIDIA ConnectX-9 SuperNIC 网卡和 BlueField-4 DPU」。<mark class="key">注意这份清单里只有第一项是「计算」，后面三项全都是在解决「怎么把数据快速搬来搬去」。</mark></p>
+    <p>这就是为什么大模型训练是<em>系统工程</em>而不是采购工程。你不能买 72 张卡插在 72 台机器上就算完事——那 72 张卡之间会因为「递盘子」太慢而互相干等，实际效率远远达不到规格表上把 72 个数字加起来的那个值。</p>
+  </div>
+
+  <h3>NVIDIA 当前的旗舰方案：Vera Rubin NVL72</h3>
+  <p>先说清楚这一小节的性质：<strong>下面所有数字都来自 NVIDIA 官方页面，查询日期是 2026 年 8 月 8 日；而 NVIDIA 自己在规格表底下写了一行免责声明。</strong>我们先把这行声明摆在最前面，因为它决定了你该怎么理解后面的每个数字。</p>
+  <p>官方原文：<strong>「Preliminary information. All values are up to and subject to change.」</strong>翻译过来是「初步资料。所有数值均为『最高可达』，且可能变更。」</p>
+  <p>这行小字里有两个词要单独拎出来讲，因为它们改变了整张表的含义：</p>
+  <ul class="keylist">
+    <li><span class="k">preliminary（初步的）</span><span class="v"><strong>说白了就是</strong>「这还不是定稿」。这个词在硬件行业有明确分量：意味着产品还在爬产阶段，规格可能随批次、固件、散热方案调整。<mark class="key">你不能拿它去做严格的性能承诺，只能当参考量级。</mark></span></li>
+    <li><span class="k">up to（最高可达）</span><span class="v">这个词你在买宽带时天天见——「最高可达 1000 兆」。<strong>相当于</strong>说这是理想条件下的天花板，不是你日常能稳定拿到的值。实际跑起来受散热、功耗墙、任务类型影响，通常达不到。</span></li>
+  </ul>
+  <p>把这两个限定词记牢了，再来看数字。官方规格（截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>单张 Rubin GPU</th><th>整机 NVL72（72 颗）</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>NVFP4 推理算力</strong></td><td>50 PFLOPS</td><td>3,600 PFLOPS</td><td>这是<strong>推理</strong>专用的 4 位精度，专为「让模型答话」优化，不是训练精度</td></tr>
+        <tr><td><strong>FP64 双精度</strong></td><td>33 TFLOPS</td><td>官方未在同表给出整机值</td><td>科学计算用的高精度。<mark class="key">注意它比 NVFP4 那个数小了三个数量级以上</mark>——同一颗芯片，精度不同差距就这么大</td></tr>
+        <tr><td><strong>显存容量</strong></td><td>288 GB HBM4</td><td>20.7 TB HBM4</td><td>案板面积。HBM 是 High Bandwidth Memory（高带宽内存），第 4 代</td></tr>
+        <tr><td><strong>显存带宽</strong></td><td>22 TB/s</td><td>1,580 TB/s</td><td>传送带速度。<strong>每秒 22 万亿字节</strong>——相当于一秒钟搬完 4400 部 5 GB 的高清电影</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>官方原文对整机的表述是：「NVFP4 Inference | 3,600 PFLOPS | 100 PFLOPS | 50 PFLOPS」以及「GPU Memory | Bandwidth | 20.7 TB HBM4 | 1,580 TB/s」。</p>
+  <p><strong>这张表里最值得琢磨的是 FP64 那一行。</strong>同一颗芯片，标 NVFP4 时是 50 PFLOPS（也就是 50000 TFLOPS），标 FP64 时是 33 TFLOPS——<mark class="key">差了一千五百倍。</mark>这不是笔误，这就是「精度决定速度」这件事最直观的证据。<strong>打个比方</strong>：让你估「这袋米大概几斤」，你一秒能估十袋；让你用天平精确到毫克，一袋要称五分钟。同一双手，同一件事，快慢差几千倍。</p>
+  <p>所以如果有人拿着 NVFP4 的数字去跟另一家的 FP64 数字比，那是在<strong>用估米的速度对比称金子的速度</strong>——这种对比每天都在网上发生。</p>
+
+  <h3>「量产爬坡」这个状态说明了什么</h3>
+  <p>NVIDIA 官方博客（2026 年 7 月 21 日）关于 Vera Rubin 的原文有两句值得注意：</p>
+  <p>第一句：<strong>「The NVIDIA Vera Rubin is ramping into full production, with Taiwan's top server makers and global supply chain leaders manufacturing at scale and shipping Vera Rubin-based systems」</strong>——正在进入满产爬坡，台湾主要服务器厂商与全球供应链在规模化制造并出货。</p>
+  <p>第二句：<strong>「Vera Rubin NVL72 production is ramping up with racks running at partners CoreWeave, Google Cloud, Microsoft Azure, Oracle Cloud Infrastructure and Nebius.」</strong>——机柜已在 CoreWeave、Google Cloud、Microsoft Azure、Oracle 云和 Nebius 这几家合作方运行。</p>
+  <p><strong>「ramping into full production」（进入满产爬坡）</strong>这个说法值得单独解释一下，因为它和「已经大量供货」是两回事。<strong>用面包店打个比方：</strong>新店开业第一周，烤箱调温、配方微调、员工手生，每天只能出两百个面包；三个月后流程顺了，每天出两千个。<mark class="key">「爬坡」指的就是那个从两百爬到两千的过程——产品是真的在卖，但你想买不一定马上有货。</mark></p>
+  <p>另一个信息在字面之外：Blackwell 架构（上一代）的页面仍然挂在官网上，但数据中心首页「最新」那个位置已经换成了 Vera Rubin。<strong>这说明</strong>老产品并没有下架，只是不再是被首推的那一个。<strong>本质上就是</strong>汽车 4S 店的做法：新款摆在门口射灯下，老款挪到侧边，但你想买老款照样卖给你，而且往往还便宜些。</p>
+  <p>诚实交代一下可靠度分层：<strong>型号名与量产状态这两件事可靠度高</strong>（官方博客明确表述、有具体日期）；<strong>规格数值可靠度只能算中等</strong>（官方自标 preliminary）。这种分层不是我们谨慎过度，而是官方页面自己就是这么写的。</p>
+
+  <h3>为什么 NVIDIA 的财报数字值得单独看一眼</h3>
+  <p>讲芯片时插一段财报，不是为了讲股票，而是因为<mark class="key">这个数字是整章「谁在这条链上赚钱」这个问题最硬的一份证据。</mark>它来自上市公司法定披露，可靠度极高——比任何分析师估算都硬。</p>
+  <p>NVIDIA 官方投资者关系页面（截至 2026 年 8 月 8 日查询）披露的 FY2027 第一财季数据，财季截止日为 <strong>2026 年 4 月 26 日</strong>，发布日为 <strong>2026 年 5 月 20 日</strong>：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>金额</th><th>同比</th><th>官方原文</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>总营收</strong></td><td>816 亿美元</td><td>+85%</td><td>「Record revenue of $81.6 billion, up 85% from a year ago」</td></tr>
+        <tr><td><strong>数据中心营收</strong></td><td>752 亿美元</td><td>+92%</td><td>「Record Data Center revenue of $75.2 billion, up 92% from a year ago」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>把这两行放在一起，能读出一件事：<strong>752 除以 816，数据中心业务占了总营收的九成以上。</strong>换成大白话——这家公司现在<em>主要不是一家游戏显卡公司了</em>，它主要是一家给机房卖加速卡的公司。</p>
+  <p>再把这个数字换算成能感知的量。816 亿美元是<strong>一个季度</strong>的营收，也就是九十来天。<mark class="key">平均每天进账约 9 亿美元，每小时约 3800 万美元。</mark>你读完这一节大概花十分钟，这十分钟里它进账约 630 万美元。</p>
+  <p>这个数字对本章的意义在于：它印证了章总览里那个「衬衫反过来」的说法。<strong>在 AI 这条产业链上，钱大量流向了最底层的「卖织布机的」，而不是最上层做产品的。</strong>至于为什么会这样，答案在下面要讲的 CUDA 那一段里。</p>
+
+  <h3>真正的护城河不是芯片，是 CUDA</h3>
+  <p>这一小节是本节最重要的观念，也是很多人想不通「为什么别家做出更快的芯片也抢不走生意」的答案。</p>
+  <p><strong>CUDA</strong>（Compute Unified Device Architecture，统一计算设备架构，读作「库达」）是 NVIDIA 的一套软件平台。<strong>说白了就是</strong>：一套让程序员能用熟悉的语言去指挥显卡干活的工具和说明书。</p>
+  <p>它的诞生时间在 CUDA 官方编程指南里写得很清楚：<strong>「In November 2006, NVIDIA introduced CUDA, a general purpose parallel computing platform and programming model that leverages the parallel compute engine in NVIDIA GPUs」</strong>——2006 年 11 月推出，是一个通用并行计算平台与编程模型，用来发挥 NVIDIA GPU 里的并行计算引擎。</p>
+  <p><mark class="key">2006 年。这个年份是整件事的关键。</mark>那一年离深度学习火起来还有六七年，离 ChatGPT 还有十六年。也就是说，当所有人开始需要「让显卡做通用计算」这件事的时候，NVIDIA 已经把地基打好、把路铺完、把工具箱塞满了。</p>
+  <p><strong>用装修打个比方，这件事就特别好懂。</strong>假设有两家卖电钻的公司。A 家的电钻从二十年前就开始卖，而且这二十年里它顺手做了一件事：把所有钻头、所有配件、所有接口都做成自家标准，还免费送出去几百万套。全世界的装修师傅都用惯了这套钻头，工具箱里塞的全是 A 家的配件，学徒学的第一课就是 A 家的用法。</p>
+  <p>现在 B 家做出了一把更有力、更省电的电钻。<mark class="key">问题是，师傅们手里那几百套钻头全都插不上去。</mark>要换 B 家，得重新买全套钻头、重新培训所有工人、重新写所有施工方案，而且过去二十年积累的经验有一半作废。<strong>本质上就是</strong>：B 家要战胜的不是 A 家的电钻，是二十年积累下来的<em>习惯和配件库</em>。</p>
+  <p>这个「配件库」在 CUDA 这边具体是什么？官方 CUDA Zone 页面自己说得很清楚：<strong>「Developers can program in languages such as C++, Python, and Fortran or leverage GPU-accelerated libraries and frameworks like PyTorch. This flexibility lets developers integrate GPU computing into any layer of their software stack」</strong>——可以用 C++、Python、Fortran 编程，也可以直接用 PyTorch 这类已经加速好的库和框架，能把 GPU 计算插进软件栈的任何一层。</p>
+  <p>再往上还有一层叫 <strong>CUDA-X</strong>：<strong>「NVIDIA CUDA-X, built on CUDA, is a collection of libraries that deliver dramatically higher performance across application domains, including AI and HPC.」</strong>——建立在 CUDA 之上的一套库集合，覆盖 AI 与高性能计算等应用领域。</p>
+  <p><strong>换成大白话总结这套锁定：</strong>你要换掉 NVIDIA，不只是换一块硬件，是要把从最底层驱动、到中间的数学库、到上层的 PyTorch 训练代码、再到工程师脑子里那套调优经验，<mark class="key">全部换一遍。</mark>硬件可以一夜之间买到，这套东西得几年时间长出来。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · 关于「CUDA 有几百万开发者」这个说法</span>
+    <p>网上流传着「CUDA 有数百万开发者」这类数字，听起来很有说服力。<strong>但截至 2026 年 8 月 8 日，我们逐页检查了 NVIDIA 官方 CUDA 文档页与 CUDA Zone 页面，没有找到任何关于开发者数量或生态规模的官方数字。</strong></p>
+    <p>所以本节<strong>不给任何量化的生态规模数字</strong>，只做定性描述：CUDA 于 2006 年 11 月推出，支持 C++/Python/Fortran，配套 PyTorch 等框架与 CUDA-X 库集合。<mark class="key">这些都是官方原文能支撑的；「数百万开发者」不是。</mark></p>
+    <p>为什么要这么较真？因为这类「听起来合理的大数字」是最容易在传播中被越传越大的。<strong>一个没有出处的数字，无论多符合直觉，写进书里就是给读者一个假的确定感。</strong></p>
+  </div>
+
+  <h3>Google TPU：另一条路线，自己用自己造</h3>
+  <p><strong>TPU</strong>（Tensor Processing Unit，张量处理单元）是 Google 自己设计的 AI 加速芯片。它和 NVIDIA 的 GPU 有一个根本区别：<mark class="key">GPU 是卖给别人的商品，TPU 主要是自己用的自研工具。</mark></p>
+  <p>「张量」这个词听着吓人，<strong>其实就是</strong>「一堆按格子排好的数」。一个数是标量，一排数是向量，一个表格是矩阵，更多维度堆起来就叫张量。<strong>用超市的货架打比方</strong>：一个格子里放一件商品是标量，一排格子是向量，一整面货架是矩阵，整个仓库里几十排货架就是张量。AI 计算的绝大部分工作，就是在这些「货架」之间做搬运和相乘。</p>
+  <p>Google Cloud 的 TPU v6e 官方文档（中文版原文）写道：<strong>「Trillium 是 Cloud TPU 的最新一代 AI 加速器。在所有技术界面（例如 API 和日志）以及本文档中，Trillium 都将称为 v6e。」</strong></p>
+  <p>这句话本身就有个细节值得学：<strong>同一个东西有两个名字。</strong>市场宣传叫它 Trillium，技术接口里叫它 v6e。<strong>相当于</strong>一个人的大名和小名——你在户口本上查得到「王建国」，但家里人都叫他「二子」。查资料时如果只记住其中一个，另一个就搜不到。</p>
+  <p>官方规格（截至 2026 年 8 月 8 日查询该页）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>数值</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>单芯片 bf16 峰值</strong></td><td>918 TFLOPs</td><td>16 位半精度下每秒 918 万亿次浮点运算</td></tr>
+        <tr><td><strong>单芯片 Int8 峰值</strong></td><td>1836 TOPs</td><td><mark class="key">恰好是 bf16 的两倍</mark>——精度砍半、速度翻倍，这个比例关系很典型</td></tr>
+        <tr><td><strong>单芯片显存</strong></td><td>32 GB HBM</td><td>案板面积。与 Rubin 单卡 288 GB 是完全不同量级的设计取向</td></tr>
+        <tr><td><strong>单芯片带宽</strong></td><td>1600 GBps</td><td>也就是 1.6 TB/s</td></tr>
+        <tr><td><strong>每 Pod 芯片数</strong></td><td>256 颗</td><td>Pod 是 Google 对「一整组」的叫法，相当于 NVIDIA 那边的机柜概念</td></tr>
+        <tr><td><strong>每 Pod BF16 峰值</strong></td><td>234.9 PFLOPs</td><td>256 × 918 TFLOPs ≈ 235 PFLOPs，能对上</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里 <strong>Int8 恰好是 bf16 两倍</strong>这一条，把前面讲的「精度换速度」量化了：位宽砍一半，吞吐翻一倍。<strong>打个比方</strong>就像<strong>快递</strong>打包——同样一辆车，装小盒子能装两倍数量的件数。<strong>不过要注意</strong>，这个「两倍」关系在不同架构上并不总是成立，NVIDIA 那边 FP64 到 NVFP4 差了一千多倍，就远不止翻倍那么简单（因为里面还有专用计算单元的设计差异，不只是位宽账）。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · 关于「TPU 最新一代」的表述</span>
+    <p>核实时我们只查证了 <strong>v6e 这个页面本身</strong>，<mark class="key">没有核实是否已经存在更新一代（例如传闻中的 v7 / Ironwood）的正式可用文档。</mark></p>
+    <p>所以本节的准确表述是：<strong>截至 2026 年 8 月 8 日，Google Cloud 的 v6e 架构官方文档中，把 Trillium 描述为「Cloud TPU 的最新一代」。</strong>这句话转述的是「那个页面当天怎么写的」，而不是我们独立断言「这就是当前最新」。</p>
+    <p>这两句话的差别很微妙但很重要。<strong>前者是可核实的转述，后者是需要穷尽检索才能成立的断言。</strong>写作时始终选前者，是这一章的基本纪律。</p>
+  </div>
+
+  <h3>AMD Instinct：一个教你识别营销话术的绝佳样本</h3>
+  <p>AMD 是 NVIDIA 在通用 GPU 领域最主要的竞争者。它当前的 AI 加速卡叫 <strong>Instinct</strong> 系列，最新一代是 MI400 系列，架构代号 <strong>CDNA 5</strong>。</p>
+  <p>官方原文：<strong>「AMD Instinct MI400 Series GPUs, built on the AMD CDNA 5 architecture, are supported by an open, ROCm software-based foundation. The portfolio spans the AMD Instinct MI455X GPU for frontier and sovereign AI and the AMD Instinct MI430X GPU for sovereign AI and HPC」</strong>——基于 CDNA 5 架构，由开放的 ROCm 软件基础支撑；产品线包含面向前沿与主权 AI 的 MI455X，以及面向主权 AI 与高性能计算的 MI430X。</p>
+  <p>这里出现了两个需要当场翻译的词：</p>
+  <ul class="keylist">
+    <li><span class="k">ROCm</span><span class="v">AMD 对标 CUDA 的那套软件平台。<strong>相当于</strong>前面电钻比方里 B 家自己那套钻头标准。它的卖点是「开放」，但要跨越的是几百万工程师的使用习惯。</span></li>
+    <li><span class="k">sovereign AI（主权 AI）</span><span class="v"><strong>说白了就是</strong>：一个国家或地区希望「AI 的算力和数据都留在自己境内、由自己掌控」。这类客户往往是政府或国家级研究机构。<mark class="key">这个词在 2025—2026 年成为芯片厂商官网上的高频词，本身就说明了买家结构的变化。</mark></span></li>
+  </ul>
+  <p>机架方案官方原文：<strong>「AMD Helios Rackscale Solution Powered by 72 AMD Instinct MI455X GPUs: Built for Frontier AI」</strong>——Helios 机架方案由 72 颗 MI455X 组成。<strong>注意这个 72 这个数字</strong>，和 NVIDIA NVL72 的 72 一样。这不是巧合，而是整机柜方案在供电、散热、互联拓扑上收敛到了相似的规模。</p>
+  <p>官网列出的在售系列有四代并存：<strong>MI400 / MI350 / MI300 / MI200</strong>。这也印证了前面说的「老产品不下架」的行业惯例。</p>
+  <p><strong>下面这一段是本节最该抄进笔记本的部分。</strong>AMD 官网上关于 MI400 的性能对比数字，每一条都带限定词，我们把原文完整摆出来：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>官方原文</th><th>字面意思</th><th>它到底承诺了什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「are <strong>expected to</strong> offer <strong>up to</strong> 4X better <strong>peak theoretical</strong> performance compared to AMD Instinct MI355X GPU」</td><td><strong>预期</strong>相比自家 MI355X 提供<strong>最高</strong>四倍的<strong>峰值理论</strong>性能</td><td>三重限定叠加：预期（还没实测）+ 最高（天花板）+ 峰值理论（纸面算出来的）</td></tr>
+        <tr><td>「are <strong>expected to</strong> offer <strong>up to</strong> 15% better OCP MXFP4 <strong>peak theoretical</strong> performance compared to NVIDIA Vera Rubin NVL72」</td><td><strong>预期</strong>在 OCP MXFP4 精度下相比 NVIDIA Vera Rubin NVL72 高<strong>最多</strong> 15% 的<strong>峰值理论</strong>性能</td><td>同样三重限定，且<mark class="key">只在一种特定的 4 位精度格式下比较</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>把这三个限定词一层层剥开，你会发现这些句子的实际信息量远小于它们看起来的样子：</p>
+  <ul class="keylist">
+    <li><span class="k">expected（预期）</span><span class="v">这不是测出来的，是<strong>算出来的或预计的</strong>。<strong>相当于</strong>装修队跟你说「这套房子预计四十天完工」——那是计划，不是已经完工的事实。</span></li>
+    <li><span class="k">up to（最高可达）</span><span class="v">天花板，不是常态。<strong>相当于</strong>超市促销牌上写「最高立减 200 元」——你实际可能只减了 5 块。</span></li>
+    <li><span class="k">peak theoretical（峰值理论）</span><span class="v">纯纸面算术：把计算单元数量乘上时钟频率乘上每周期运算数。<mark class="key">它完全不考虑数据能不能及时送到、散热能不能撑住、软件能不能榨出来。</mark><strong>相当于</strong>说「这条马路四车道、限速 120，所以每小时能过一万辆车」——不考虑红绿灯、不考虑加塞、不考虑早高峰。</span></li>
+  </ul>
+  <p>所以这两句官方表述的准确读法是：<strong>厂商的性能宣称</strong>，不是第三方实测评测结果。这不是说 AMD 在骗人——恰恰相反，<mark class="key">它把限定词一个不少地全写上了，这是相当规范的做法。</mark>不规范的是那些转述时把限定词全删掉、只留下「AMD 新卡比 NVIDIA 快 15%」这个标题的人。</p>
+  <p>本节对 AMD 的可靠度分层因此很明确：<strong>型号名称可靠度高</strong>（官方产品页明确列出）；<strong>性能对比可靠度低</strong>（厂商宣称的预期峰值理论值，无第三方实测支撑）。</p>
+
+  <h3>华为昇腾：一次诚实的留白示范</h3>
+  <p>这一小节要讲的东西很少，但它讲「怎么做研究」这件事的分量，超过本节任何一张规格表。</p>
+  <p><strong>华为昇腾</strong>（Ascend）是中国最受关注的 AI 加速芯片品牌。任何一篇讲 AI 芯片格局的文章都不可能不提它。<mark class="key">但截至 2026 年 8 月 8 日，我们没有能从华为官方渠道取得任何型号规格数据。</mark></p>
+  <p>尝试过的地址与结果，全部列出来供你复核：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>尝试的官方地址</th><th>结果</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>e.huawei.com/en/products/computing/ascend</code></td><td>返回 404，页面不存在</td></tr>
+        <tr><td><code>hiascend.com/en/hardware/product</code></td><td>跳回首页，无规格内容</td></tr>
+        <tr><td><code>hiascend.com/en/hardware/chip</code></td><td>仅返回 cookie 提示页</td></tr>
+        <tr><td><code>hiascend.com/en/ascend910</code></td><td>仅返回 cookie 提示页</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>所以本节对昇腾只写一件有据可查的事：它在开源推理栈中被作为后端支持。</strong>这一条有两处硬证据：</p>
+  <ul class="keylist">
+    <li><span class="k">llama.cpp 官方 README</span><span class="v">在后端支持列表里明确列出「<strong>CANN | Ascend NPU</strong>」一项。CANN 是华为为昇腾提供的计算架构名称，NPU 是 Neural Processing Unit（神经网络处理单元）。<strong>换成大白话：</strong>这个全球最流行的本地推理项目，官方支持把模型跑在昇腾卡上。出处：<code>github.com/ggml-org/llama.cpp</code></span></li>
+    <li><span class="k">GLM-5.2 官方模型卡</span><span class="v">原文：「For deployment on the <code>Ascend NPU</code> platform, inference frameworks such as vLLM-Ascend, xLLM and SGLang are supported」——在昇腾 NPU 平台上部署时，支持 vLLM-Ascend、xLLM、SGLang 等推理框架。出处：Hugging Face 上的 <code>zai-org/GLM-5.2</code> 模型卡</span></li>
+  </ul>
+  <p><strong>这两条证据能支撑什么，不能支撑什么，界限必须划得很清楚：</strong></p>
+  <p>能支撑的：<em>昇腾在主流开源推理生态中是被支持的一条部署路径，且这个支持来自项目官方与模型发布方官方，不是社区非官方补丁。</em></p>
+  <p>不能支撑的：<mark class="key">任何型号名称、任何算力数字、任何显存容量、任何与 NVIDIA 的性能对比。</mark>这些我们一个都不给。</p>
+  <div class="callout">
+    <span class="tag">这件事为什么值得单独讲</span>
+    <p>写到这里，一个偷懒的做法是：从记忆里搬出一个昇腾型号和一个算力数字填上去，读者根本查不出来。<strong>但这么做会犯本书最不该犯的错——用「看起来完整」换掉「实际可靠」。</strong></p>
+    <p><strong>打个比方：</strong>你去<strong>医院</strong>做体检，有一项指标机器坏了没测出来。负责的医生会在报告上写「该项未检」，不负责的医生会填一个「大概正常」的数字。<mark class="key">前者让你知道自己还有一项不知道，后者让你以为自己什么都知道了——后者危险得多。</mark></p>
+    <p>所以这一小节的留白，请把它当成一个可复用的方法：<strong>取不到出处，就明确写「未取得」，并把尝试过的地址列出来，让读者能自己去补。</strong>这比编一个数字有用，也比装作这家公司不存在诚实。</p>
+  </div>
+
+  <h3>训练和推理是两笔完全不同的账</h3>
+  <p>前面反复出现「训练」和「推理」这两个词，这里得把它们的区别讲清楚，因为<mark class="key">它们对硬件的要求几乎是相反的，而这个区别直接决定了芯片市场为什么会分成两半。</mark></p>
+  <p><strong>训练</strong>（training）说白了就是：把海量资料喂给模型，让它一遍遍调整自己内部那几千亿个数字，直到它答得像样。<strong>推理</strong>（inference）说白了就是：模型已经训好了，你问它一句，它答你一句。</p>
+  <p><strong>用裁缝店打个比方，这两件事的差别一目了然。</strong></p>
+  <p><strong>训练相当于「打版」</strong>：一位老师傅要做出一件全新款式的衣服，得反复量、反复裁、反复改，做废几十块布料，花几个月。这个过程<em>极其昂贵、只做一次、失败重来的代价很大</em>，而且必须一个人（或一个紧密协作的小组）从头盯到尾。</p>
+  <p><strong>推理相当于「照着版子批量做」</strong>：版子定好了，工厂里几十台缝纫机照着它一天做两千件。这个过程<em>单件成本很低，但要做几百万件，所以总账很大</em>，而且每台缝纫机各干各的、互不相干。</p>
+  <p>这个差别落到硬件上，要求就分岔了：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>训练（打版）</th><th>推理（批量生产）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>频率</strong></td><td>少数几次，每次几周到几个月</td><td>持续不断，每秒成千上万次</td></tr>
+        <tr><td><strong>最看重什么</strong></td><td><mark class="key">卡与卡之间的互联速度</mark>——因为要把一个模型摊在几千张卡上一起算</td><td><mark class="key">单位成本与延迟</mark>——用户等不起，账也算不起</td></tr>
+        <tr><td><strong>精度取向</strong></td><td>偏高（bf16 / FP8），太糙会训不出来</td><td>偏低（NVFP4 / Int8），够用就行</td></tr>
+        <tr><td><strong>显存压力</strong></td><td>极大——参数、梯度、优化器状态三份都要放</td><td>较小——只放参数和当前对话的缓存</td></tr>
+        <tr><td><strong>能不能拆开跑</strong></td><td>不能，必须紧密协同</td><td>能，一台机器服务一批用户，互不相干</td></tr>
+        <tr><td><strong>硬件类比</strong></td><td>一座<strong>大型工厂</strong>，全员协同一个项目</td><td>成千上万台<strong>独立缝纫机</strong>，各接各的单</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这就解释了 NVIDIA 为什么专门给 Rubin 标一个 <strong>NVFP4 Inference</strong>（NVFP4 推理）指标——因为推理是一个独立的、量更大的市场，而它的需求跟训练不一样。<strong>说白了：</strong>训练市场卖的是「几百套完整生产线」，推理市场卖的是「几百万台缝纫机」，后者的总量最终会远大于前者。</p>
+  <p>对普通读者来说，最实用的一条推论是：<mark class="key">你在网页上跟 AI 聊天时，花的是推理的钱，不是训练的钱。</mark>训练那笔巨额投入是一次性的、由厂商垫付的；而你每问一句，都在实打实地消耗一点推理算力。这也是为什么各家的定价都是按 token 数算，而不是按月固定收费——因为成本本来就是按次发生的。</p>
+
+  <h3>为什么显存这一行往往比算力那一行更要命</h3>
+  <p>前面「饺子车间」的比方里，案板面积（显存）和传送带速度（带宽）被放在与工人手速（算力）同等重要的位置。这不是为了凑齐三个类比，而是因为<mark class="key">在跑大模型这件事上，绝大多数时候卡住你的是显存不够，不是算力不够。</mark></p>
+  <p>道理很朴素：<strong>模型的参数必须整个装进显存，才能开始算。</strong>装不下就是装不下，你的算力再强也用不上。<strong>相当于</strong>你请了十个厨师来家里做年夜饭，结果厨房只有一张一米宽的案板——十个人挤在那里，能同时下手的只有两个，其余八个只能站着看。</p>
+  <p>做个粗略的账你就明白量级了。<strong>注意下面这是按定义做的量级估算，不是任何厂商的官方数字。</strong>一个参数如果用 16 位（也就是 2 个字节）来存，那么：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型参数量</th><th>只放参数需要（16 位）</th><th>装得进 Rubin 单卡 288 GB 吗</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>70 亿（7B）</td><td>约 14 GB</td><td>轻松</td><td>相当于一本菜谱摊在案板上，边上还能切菜</td></tr>
+        <tr><td>700 亿（70B）</td><td>约 140 GB</td><td>单卡刚好能放下参数</td><td>案板被菜谱占了一半，还能勉强腾出地方</td></tr>
+        <tr><td>7000 亿（700B）</td><td>约 1400 GB</td><td><mark class="key">单卡放不下，必须多卡拆开</mark></td><td>菜谱厚得摊满五张案板，只能几个人分册看</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>而这只是「放参数」。<strong>训练</strong>的时候还要额外放梯度和优化器状态，通常是参数体积的好几倍；<strong>推理</strong>的时候要放 KV 缓存（对话越长，这块越大）。所以真实需求比上表还要更紧张。</p>
+  <p><strong>这就解释了两件事。</strong>第一，为什么厂商拼命堆显存容量——Rubin 单卡 288 GB，这个数字放在几年前是不可想象的。第二，为什么「量化」这么受欢迎：<mark class="key">把 16 位压到 4 位，同一个模型的显存占用直接降到四分之一</mark>，一张卡就能跑原本要四张卡的模型。§12.4 讲 llama.cpp 时你会看到它支持从 1.5 位到 8 位的一整排量化档位，原因就在这里。</p>
+  <p>带宽的道理也一样朴素。模型每生成一个字，都要把相关的参数从显存搬到计算单元过一遍。<strong>说白了：</strong>生成文字这件事的瓶颈往往不是「算得慢」，而是「搬得慢」。这就是为什么 Rubin 要把带宽做到 22 TB/s——<strong>相当于</strong>把传送带修得比工人的手速还快，让工人永远不用等料。</p>
+
+  <h3>把这一节的看表方法收成一张清单</h3>
+  <p>如果你以后要看任何一份 AI 加速器的规格表，下面这套顺序能帮你避开绝大多数坑。<strong>它的核心思路是：先看限定词，再看数字；先看短板，再看亮点。</strong></p>
+  <ul class="keylist">
+    <li><span class="k">第一步 · 先找免责声明</span><span class="v">翻到表格最底下，看有没有 <em>preliminary</em>、<em>subject to change</em>、<em>up to</em> 这类字样。<mark class="key">有的话，整张表的可信度都要打折。</mark>这一步只花五秒，却决定了后面所有阅读的基调。</span></li>
+    <li><span class="k">第二步 · 每个算力数字都问「什么精度」</span><span class="v">没标精度的算力数字直接跳过，那不是信息。标了精度的，要注意别把不同精度的数字横向对比——那等于拿估米的速度比称金子的速度。</span></li>
+    <li><span class="k">第三步 · 先看显存和带宽，再看算力</span><span class="v">因为短板决定产量，而短板通常在这两项。<strong>相当于</strong>看房子先看厨房和卫生间的下水，再看客厅有多大。</span></li>
+    <li><span class="k">第四步 · 分清「单卡」还是「整柜」</span><span class="v">Rubin 单卡 50 PFLOPS，NVL72 整柜 3600 PFLOPS，差 72 倍。<mark class="key">网上有大量文章把整柜的数字当成单卡在传播。</mark>看到一个特别惊人的数字，先确认它的计量单位。</span></li>
+    <li><span class="k">第五步 · 分清「训练」还是「推理」</span><span class="v">标着 Inference（推理）的指标，不能用来推断训练能力，反之也不行。这两件事对硬件的要求本来就不一样。</span></li>
+    <li><span class="k">第六步 · 跨厂商对比只信第三方实测</span><span class="v">厂商自己做的跨品牌对比，几乎总会挑一个对自己最有利的精度格式和任务。想知道真实差距，得看独立第三方在相同任务、相同框架、相同精度下的测试。<strong>本节没有取到任何这类第三方评测数据，所以本节不给任何跨厂商性能结论。</strong></span></li>
+  </ul>
+  <p>这套清单的价值不限于芯片。<strong>你把它套到买手机、买家电、买路由器上，同样管用</strong>——「续航最长 30 小时」「网速最高可达 3000 兆」「制冷量峰值」，全是同一套修饰词游戏。<strong>本质上就是</strong>：厂商有义务把限定词写上，你有责任把限定词读进去。</p>
+
+  <h3>常见误解澄清</h3>
+  <p>这一节涉及的数字多，也就格外容易生出误解。挑四个最常见的说清楚。</p>
+  <p><strong>误解一：「算力越高，模型就越聪明。」</strong></p>
+  <p>不对。算力决定的是<em>多快</em>和<em>多大规模</em>，不直接决定<em>多好</em>。同样的算力，数据质量差、训练方法差，照样训出个笨模型。<strong>打个比方：</strong><strong>厨房</strong>里换一口更大的锅，只意味着你能一次炒更多菜，不意味着炒得更好吃。<mark class="key">火力和厨艺是两件事。</mark></p>
+  <p><strong>误解二：「买了同样多的卡，就能训出同样的模型。」</strong></p>
+  <p>不对。前面那个「机器之间怎么递盘子」的问题，是整机柜方案要解决的核心问题。散装买 72 张卡和买一套设计好的 NVL72 机柜，实际可用效率相差很远。<strong>相当于</strong>请了 72 个工人，和组织好一条 72 人的<strong>流水线</strong>——人数一样，产出不一样。</p>
+  <p><strong>误解三：「国产芯片只要算力追上，就没问题了。」</strong></p>
+  <p>这句话把最难的部分省略了。硬件差距是可以用工程和资金追的，<mark class="key">但 CUDA 那一整套软件生态、工具链、几百万人的使用习惯，是时间换出来的，钱买不来。</mark>这也是为什么昇腾能出现在 llama.cpp 的后端列表里是件有意义的事——<strong>它说明的不是硬件参数，而是「有多少软件愿意为它适配」。</strong>本节对昇腾不给规格数字，但这条生态层面的事实是可核实的。</p>
+  <p><strong>误解四：「算力是无限堆的，堆到底就通用人工智能了。」</strong></p>
+  <p>这属于超出本节能力范围的推测，本节不做判断。<strong>但有一个可核实的现实约束值得指出：</strong>整机柜方案的规模已经收敛到 72 颗这个量级（NVIDIA NVL72 与 AMD Helios 都是 72），这个数字背后是供电、散热、互联距离的物理限制。<strong>说白了：</strong>不是想堆多少就能堆多少，一个机柜能塞进去多少颗，是被电和热管着的。</p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="某厂商官网写：其新款加速卡「<strong>are expected to</strong> offer <strong>up to</strong> 4X better <strong>peak theoretical</strong> performance」。按本节的读法，这句话最准确的理解是？"
+       data-opts="第三方实测证实新卡比上一代快 4 倍|厂商预期在理论峰值下最多可达 4 倍，非实测结果|新卡在所有任务上平均快 4 倍|新卡的显存带宽是上一代的 4 倍"
+       data-answer="1"
+       data-explain="三个限定词要一层层剥：expected = 预期而非实测；up to = 天花板而非常态；peak theoretical = 纸面算出的峰值，不考虑数据供给、散热与软件效率。三者叠加后，这句话只是厂商的性能宣称，不构成任何实测承诺，也没说是「平均」，更没说是显存带宽。看到这三个词中的任何一个，都要把心里的预期调低一档。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节收束</span>
+    <p><strong>一、算力说白了就是「一秒能算多少道算术题」。</strong>单位是 FLOPS 家族（浮点）与 OPS 家族（整数），每级一千倍。<mark class="key">但脱离精度谈算力毫无意义</mark>——同一颗 Rubin GPU，NVFP4 下 50 PFLOPS，FP64 下 33 TFLOPS，差一千五百倍。（注：本节未取到 IEEE/ISO 对 FLOPS 的正式定义原文，单位用法以 NVIDIA 与 Google Cloud 官方规格表的写法为据。）</p>
+    <p><strong>二、决定产量的是短板，而短板通常不是算力。</strong>饺子车间的三样东西：工人手速（算力）、案板面积（显存）、传送带速度（带宽）。跑大模型时最先卡住你的往往是后两样。这也是「量化」这么受欢迎的根本原因——把 16 位压到 4 位，显存占用直接降到四分之一。</p>
+    <p><strong>三、看规格表要先读限定词。</strong>NVIDIA 在 Vera Rubin 规格表下明写「Preliminary information. All values are up to and subject to change.」；AMD 关于 MI400 的所有对比数字都带 <em>expected</em> 和 <em>peak theoretical</em>。<mark class="key">这些是厂商性能宣称，不是第三方实测。</mark>把限定词删掉再传播，是最常见的数字滥用。</p>
+    <p><strong>四、真正的护城河是 CUDA，不是芯片。</strong>2006 年 11 月推出（官方原文可查），比深度学习热潮早了六七年。要换掉它，得把驱动、数学库、PyTorch 代码、工程师的经验全换一遍。<strong>顺带说明本节的诚实边界：官方 CUDA 页面当天没有任何开发者数量数字，所以本节只做定性描述，不给「数百万开发者」这类无出处的量化说法。</strong></p>
+    <p><strong>五、训练和推理是两笔账。</strong>训练像裁缝打版（一次性、极贵、必须紧密协同、精度要高），推理像批量缝制（持续发生、单件便宜、可并行、精度可低）。你跟 AI 聊天花的是推理的钱。</p>
+    <p><strong>六、本节的留白清单（诚实交代）：</strong>华为昇腾官方型号与规格<strong>未取得</strong>（四个官方地址全部失败，只写「在 llama.cpp 等开源推理栈中被支持」这一有据可查的事实，不给任何算力数字）；CUDA 生态规模量化数字<strong>未取得</strong>；FLOPS 标准机构定义原文<strong>未取得</strong>；Google TPU「是否仍是最新一代」<strong>未完整核实</strong>（只能转述 v6e 页面当天的表述）；<strong>任何跨厂商第三方实测评测数据未取得</strong>，故本节不给跨厂商性能结论。所有数字的查询日期均为<strong>截至 2026 年 8 月 8 日</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./12-landscape.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">第 12 章 · 生态地图</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./12-2-foreign-models.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 12.2 · 海外基础模型</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 12.1</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-33"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-33"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-33"></script>
+</body>
+</html>

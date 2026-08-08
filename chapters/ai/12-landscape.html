@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 12 章 · 生态地图 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-33">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html#vol-ai">智能篇</a>
+      <span class="sep">›</span>
+      <span>第 12 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 12</div>
+    <h1>第 12 章 · 生态地图</h1>
+    <div class="cn">The AI Landscape · 谁在造、谁在卖、谁在用</div>
+  </header>
+
+  <p class="lead">
+    前面十一章讲的全是<strong>原理</strong>：神经网络怎么算、Transformer 怎么看句子、提示词怎么写、Agent 怎么循环。这一章换一个完全不同的视角——<mark class="key">不看「它怎么工作」，只看「它由谁做出来、跑在谁的机器上、通过谁的产品到你手里」。</mark>说白了，前面十一章是在拆一台机器，这一章是在画一张地图：从最底下的芯片，到中间的模型，到最上面你每天在用的编辑器和搜索框，一层一层看清楚谁站在哪个位置。这一章还有一个隐藏目标，可能比记住任何一个型号名都更有用：<strong>教你怎么查一手资料，以及当官方资料自己都对不上时该怎么办。</strong>本章会诚实地摊开三处「官方文档自相矛盾」的真实案例，它们不是我们的疏漏，恰恰是这一章最值钱的部分。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍜 一碗牛肉面背后的四层人</div>
+    <p>你在店里点了一碗牛肉面，端上来只花了八分钟。但这碗面的背后，站着四层完全不同的人，他们互相之间可能一辈子都没见过面。</p>
+    <p><strong>第一层：种麦子的农民和养牛的牧民。</strong>他们不做面，只提供最原始的原料。他们决定了这碗面的天花板——麦子不好，什么厨子都救不回来。<em>这一层，对应 AI 世界里的芯片厂：NVIDIA、AMD、Google 的 TPU。</em></p>
+    <p><strong>第二层：面粉厂和屠宰分割厂。</strong>他们把麦子磨成面粉、把牛拆成腱子肉和牛腩，做的是「把原料变成半成品」的重活。这一层投入巨大、门槛极高，全国也就那么几家。<em>这一层，对应造基础大模型的公司：OpenAI、Anthropic、Google、DeepSeek、阿里、字节。</em></p>
+    <p><strong>第三层：菜市场和批发市场。</strong>面粉和肉在这里被摆上货架，谁都能来买，价格公开、随便挑。<strong>相当于</strong>一个谁都能进的公共集市。<em>这一层，对应开源生态：Hugging Face 这样的模型仓库、Ollama 和 llama.cpp 这样的「自己在家就能开火」的工具。</em></p>
+    <p><strong>第四层：这家面馆的师傅。</strong>他不种麦子、不磨面粉，他做的是「把半成品变成你嘴里那一口」——调汤、揉面、掌握火候、决定辣椒放多少。<mark class="key">而你付钱的对象，永远只是这第四层。</mark><em>这一层，对应 Cursor、TRAE、GitHub Copilot、Midjourney 这些你天天打开的产品。</em></p>
+    <div class="link">→ 这一章的五节，正好就是从第一层走到第四层：§12.1 芯片（种麦子）→ §12.2 海外模型 + §12.3 中国模型（磨面粉）→ §12.4 开源生态（菜市场）→ §12.5 应用与工具（面馆师傅）。</div>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>「AI 行业格局」这种题目最容易写成一篇过期得飞快的新闻稿。所以这一章刻意换了写法：<strong>凡是会变的数字，一律带上查询日期；凡是查不到权威出处的，一律明说「未取得」，绝不用记忆或传闻填补。</strong>这么做的结果是，你读到的东西不是「2026 年的排行榜」，而是<em>一套自己去查、自己去判断的方法</em>——榜单会换，方法不会。</p>
+  <p>五节各回答一个具体问题：</p>
+  <ul class="keylist">
+    <li><strong>模型跑在什么东西上，那东西凭什么这么贵？</strong>——从一张显卡的规格表讲到一整个机柜，并且教你看懂厂商标的算力数字里哪些是实测、哪些只是「预期」和「峰值理论值」。你会看到 NVIDIA 自己在规格表底下写的免责声明。</li>
+    <li><strong>海外那几家的模型，到底谁是谁？</strong>——不排名，只讲各家官方文档当天自己是怎么写的。这一节会碰到本章第一处「官方自己打自己」：<mark class="key">OpenAI 两个官方域名，对「我们的旗舰模型是哪个」给出了不同答案，而定价页上连新型号都还没列。</mark></li>
+    <li><strong>中国这边有哪些队伍，各自的路数是什么？</strong>——DeepSeek、Qwen、豆包、Kimi、GLM 五家，按官方文档摊开对照。同时会认真讲一件写作伦理上的事：为什么本章不给任何「市场份额」和「用户量排名」。</li>
+    <li><strong>「开源模型」这四个字，是不是真的开源？</strong>——这一节可能是本章观念冲击最大的一节。开放国际组织（OSI）有一份正式定义，按那份定义，<strong>光把权重放出来根本不算开源。</strong>我们会用 Meta Llama 许可里那条「7 亿月活门槛」做实例，把这件事讲透。</li>
+    <li><strong>你每天用的这些工具，钱是怎么算的？</strong>——重点讲你手上正在用的 TRAE，以及 Cursor、GitHub Copilot、Midjourney。这一节会碰到另外两处「官方自己打自己」，其中一处就在 TRAE 的中英文官网之间。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 一件衬衫的四层价格</span>
+    <p>如果「四层人」这个比方还不够解气，那就换一个更能看出<strong>钱去哪了</strong>的：一件卖 399 元的衬衫。</p>
+    <p><strong>棉花地</strong>里的原棉，一件衬衫用量摊下来可能只值几块钱。<strong>纱厂和织布厂</strong>把它变成布，价格翻几倍。<strong>成衣厂</strong>裁剪缝制，再翻几倍。最后<strong>品牌店</strong>挂上吊牌、开在商场一楼、配上灯光和导购，卖 399。<mark class="key">你付的 399 里，大部分钱并没有给种棉花的人。</mark></p>
+    <p>AI 这条链几乎是反过来的，这才是它最反常识的地方：<strong>钱大量地流向了最底层。</strong>NVIDIA 在 2026 年 5 月 20 日公布的 FY2027 第一财季财报里，单季数据中心营收 752 亿美元（截至 2026 年 4 月 26 日）——<em>这是「卖织布机的」赚的钱</em>。而最上面那些做产品的公司，很多还在亏钱补贴用户。</p>
+    <p>为什么会这样？<strong>因为「织布机」这一层的替代品太少。</strong>你想做衬衫可以换十家布厂，但想训练一个前沿大模型，你能选的加速卡供应商屈指可数，而且换一家就要把整套软件重写一遍——这套软件锁定叫 <strong>CUDA</strong>，我们在 §12.1 会专门讲它为什么比硬件本身更难绕过。<strong>本质上就是</strong>：这条链上真正稀缺的不是创意，是产能和生态。</p>
+  </div>
+
+  <h3>为什么这一章要花大力气讲「怎么查资料」</h3>
+  <p>这一章所有内容都建立在一次严格的事实核实上，核实日期是 <strong>2026 年 8 月 7 日至 8 日</strong>。核实过程中撞到一件事，比任何型号规格都更值得写进书里：<mark class="key">官方资料自己会互相矛盾，而且不是偶然一处，是三处。</mark></p>
+  <ul class="keylist">
+    <li><span class="k">矛盾一 · OpenAI 内部</span><span class="v"><code>platform.openai.com</code> 的模型页写「拿不准就用 <strong>gpt-5.5</strong>，我们的旗舰模型」；同一天 <code>developers.openai.com</code> 的模型页写「拿不准就用 <strong>GPT-5.6 Sol</strong>，我们的旗舰模型」。而官方定价页 <code>openai.com/api/pricing</code> 当天<strong>压根没有列 5.6 系列的价格</strong>。三个官方页面，三种口径。详见 §12.2。</span></li>
+    <li><span class="k">矛盾二 · TRAE 中英文站</span><span class="v">中文站公告说 TraeWork「设有 Work、Code 与 Design <strong>三种模式</strong>」，英文站同一条公告写的是「two modes—Work and Code」。不止模式数不同，<strong>整个计费体系也不同</strong>：中国站是人民币积分制，国际站是美元 Dollar Usage 制。详见 §12.5。</span></li>
+    <li><span class="k">矛盾三 · 平台列表 vs 厂商文档</span><span class="v">GitHub Copilot 的套餐页列出了可用模型 <strong>Claude Opus 4.8</strong>，而 Anthropic 自家官方模型总览当天最高只列到 <strong>Opus 4.7</strong>。这两个都是官方页面，但它们的<em>身份不同</em>——一个是第三方平台的清单，一个是厂商自己的文档。详见 §12.5。</span></li>
+  </ul>
+  <p>遇到这种情况，最坏的做法是<strong>挑一个自己觉得对的写上去</strong>——那等于替读者做了一个你没资格做的判断。正确做法只有一个：<mark class="key">把两边原文都摆出来，标清各自出处和日期，让读者自己看见这个矛盾存在。</mark>这个手法我们在 §2.5 和 §11.6 已经用过（§11.6 里 MCP 规范的版本号，官方 versioning 页写 2025-11-25，而 latest 解析到 2026-07-28，两者也并列呈现）。<strong>说白了就是</strong>：写作者的职责是<em>如实转述并标明来源</em>，不是当裁判。</p>
+
+  <h3>本章不写什么，以及为什么</h3>
+  <p>有几类内容本章刻意留白，这不是偷懒，是有意为之：</p>
+  <ul class="keylist">
+    <li><span class="k">不给市场份额、用户量、排名</span><span class="v">核实时没有在任何厂商财报或官方公告里找到这类数据。第三方咨询机构的估算口径各不相同、互相打架，引用等于给读者一个虚假的确定感。<strong>凡是这类断言，本章一律标「未取得权威来源」。</strong></span></li>
+    <li><span class="k">不写「最强」「当前最好」</span><span class="v">这类词几个月就失效，而且几乎总能被找到反例。本章的写法是引用官方原文——比如 Anthropic 官方说「若拿不准，可以从 Claude Opus 4.7 开始，它是我们目前<em>可普遍获取</em>的最强模型」。<mark class="key">这是「官方文档首推」，不等于「业界最强」，两者差别很大。</mark></span></li>
+    <li><span class="k">不填补查不到的规格</span><span class="v">最典型的是华为昇腾。核实时尝试了华为多个官方地址，全部拿不到型号规格页正文。所以 §12.1 里关于昇腾，<strong>只写一件有据可查的事：它在 llama.cpp 等开源推理栈里作为后端被支持。</strong>任何型号算力数字一概不给——凭记忆写一个数字出来，是这本书最不该犯的错。</span></li>
+    <li><span class="k">未取得的清单会明说</span><span class="v">本章合计有 8 条「未取得」，包括 Qwen 与 GLM 的开源许可原文、Hugging Face 平台规模、Mistral AI 的型号与许可、TraeCode CLI 官方文档、Midjourney 与 Perplexity 定价。<strong>这些地方你会在正文里看到明确的留白声明。</strong></span></li>
+  </ul>
+
+  <h3>这一章怎么读</h3>
+  <p>五节之间依赖很松，可以跳着读，但按顺序读会有一条清晰的「从下到上」的线索。如果你时间有限，这里有一份优先级建议：</p>
+  <p><strong>只读一节的话，读 §12.4。</strong>因为「开放权重 ≠ 开源」这件事会直接改变你看待所有「开源模型」新闻的方式，而且它的知识寿命最长——OSI 那份定义不会像型号名一样每季度换一遍。<strong>读两节的话，加上 §12.5</strong>，因为它讲的是你每天真金白银在用的东西，而且把「同一家公司的中英文官网为什么会不一样」这件事讲透了。</p>
+  <p><strong>§12.1 建议慢读。</strong>它是全章唯一涉及大量数字的一节，而这一节真正想教的不是背规格，是<mark class="key">看懂厂商算力数字的三层修饰词：「preliminary（初步数据）」「expected（预期）」「peak theoretical（峰值理论值）」。</mark>看懂这三个词，你以后看任何硬件宣传都不容易被唬住。</p>
+  <p>另外提前打个招呼：本章会大量出现 <strong>token</strong>（词元）和<strong>上下文窗口</strong>这两个概念，因为几乎所有模型的定价和规格都是按它们标的。<strong>说白了</strong>，token 就像<strong>乐高</strong>积木——句子是一块块拼出来的，而各家收钱是按你用掉多少块积木算的。如果印象模糊了，建议先回头翻 <strong>§8.1</strong>（Token 与分词，那里有一个能亲手输入句子看分词结果的互动组件）和 <strong>§8.3</strong>（上下文窗口）。</p>
+
+  <h3>本章的五节</h3>
+  <div class="cards">
+    <a class="card" href="./12-1-chips.html">
+      <div class="card-num">§ 12.1</div>
+      <h4>芯片与算力</h4>
+      <p>模型跑在什么上面。以及怎么看懂厂商算力数字里的「preliminary」「expected」「峰值理论值」。</p>
+    </a>
+    <a class="card" href="./12-2-foreign-models.html">
+      <div class="card-num">§ 12.2</div>
+      <h4>海外基础模型</h4>
+      <p>OpenAI、Anthropic、Google、Meta——按官方文档原文摊开。含 OpenAI 三个官方页面互相矛盾的实例。</p>
+    </a>
+    <a class="card" href="./12-3-china-models.html">
+      <div class="card-num">§ 12.3</div>
+      <h4>中国阵营</h4>
+      <p>DeepSeek、Qwen、豆包、Kimi、GLM。为什么本章不给任何市场份额和排名。</p>
+    </a>
+    <a class="card" href="./12-4-opensource.html">
+      <div class="card-num">§ 12.4</div>
+      <h4>开源生态</h4>
+      <p>OSI 的正式定义：只放权重不算开源。Llama 的 7 亿月活门槛、GGUF、llama.cpp、Ollama。</p>
+    </a>
+    <a class="card" href="./12-5-apps.html">
+      <div class="card-num">§ 12.5</div>
+      <h4>应用与工具层</h4>
+      <p>TRAE、Cursor、GitHub Copilot、Midjourney。中国站积分制与国际站美元制的差别。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">这一章的每个数字都有保质期</span><span class="v">所以本章所有数字都写成「截至 2026 年 8 月 8 日」这种带日期的形式。<mark class="key">你读到的不是事实的现在，是事实在某一天的快照。</mark>看到没带日期的模型价格或算力数字，无论出自哪里，都该先怀疑一下。</span></li>
+    <li><span class="k">厂商宣称 ≠ 实测</span><span class="v">AMD 官网关于 MI400 系列的对比数字全部带 <em>expected</em>（预期）和 <em>peak theoretical</em>（峰值理论）两个限定词；NVIDIA 的 Vera Rubin 规格表底下明写 <em>Preliminary information. All values are up to and subject to change.</em>（初步数据，全部为「最高可达」且可能变更）。<strong>这些都不是第三方评测结果。</strong></span></li>
+    <li><span class="k">算力数字必须绑定精度才有意义</span><span class="v">同一颗芯片，用 bf16 算和用 Int8 算，标出来的数字能差一倍以上。所以「这卡多少 TFLOPS」这个问题本身就是不完整的，<strong>必须问「在什么精度下」</strong>。这一点 NVIDIA 和 Google Cloud 的官方规格表都是这么标的。</span></li>
+    <li><span class="k">开放权重不等于开源</span><span class="v">按 OSI 的 Open Source AI Definition（开源 AI 定义）v1.0，一个 AI 系统要称得上开源，需要同时提供 <strong>Data Information（数据信息）、Code（训练与运行代码）、Parameters（参数）</strong> 三样。<mark class="key">只发布权重、不说训练数据、不给训练代码的，按这份定义不构成开源。</mark></span></li>
+    <li><span class="k">同一家公司的不同官方页面可能不一致</span><span class="v">这不是阴谋，是大公司里文档由不同团队维护、更新节奏不同步的自然结果。<strong>正确反应不是生气，是记下「查一个事实至少要看两个官方入口」。</strong></span></li>
+    <li><span class="k">看「许可证」比看「跑分」更能决定你能不能用</span><span class="v">一个模型跑分再高，如果它的许可禁止你的用法，跑分对你毫无意义。Llama 4 社区许可里有一条：<strong>发版当日你的产品月活超过 7 亿，就必须另行向 Meta 申请授权，Meta 可自行决定给不给。</strong>另外还有「产品页要显著写 Built with Llama」「派生模型名字开头必须带 Llama」这些义务。</span></li>
+  </ul>
+
+  <div class="pager">
+    <a class="btn prev" href="./11-6-mcp.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 11.6 · MCP 与多 Agent</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./12-1-chips.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 12.1 · 芯片与算力</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · 第 12 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-33"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-33"></script>
+</body>
+</html>

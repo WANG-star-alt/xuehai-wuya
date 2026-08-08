@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 12.3 · 中国阵营 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-33">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-33">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./12-landscape.html">智能篇 · 第 12 章</a>
+      <span class="sep">›</span>
+      <span>§ 12.3</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 12.3 · Section</div>
+    <h1>中国阵营</h1>
+    <div class="cn">DeepSeek、Qwen、豆包、Kimi、GLM · 以及为什么本节不给排名</div>
+  </header>
+
+  <p class="lead">
+    这一节讲中国这边造基础模型的五支队伍。写法延续上一节：<mark class="key">不排名、不评优劣，只把各家官方文档在 2026 年 8 月 8 日这一天写了什么摆出来，并且逐条标注可靠度。</mark>但这一节比上一节多了一个必须认真对待的问题：<strong>关于中国 AI，网上流传的「市场份额」「用户量第一」「国产最强」这类说法特别多，而它们几乎全都找不到官方出处。</strong>所以本节会用整整一小节的篇幅，讲清楚为什么这些数字一个都不给，以及一个「厂商自述」和「第三方评测」被混在一起时该怎么拆开。这一节还有一个很实用的收获：<strong>中国这几家的 API 价格便宜到什么程度，看完那张对照表你会有直观感受。</strong>
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏪 五家新开的面馆，各有各的活法</div>
+    <p>你家附近的美食街上，半年内开了五家面馆。它们卖的东西差不多，但活法完全不同。</p>
+    <p><strong>第一家：主打「便宜到不可思议」。</strong>同样一碗牛肉面，别家二十八，它卖六块。老板不解释怎么做到的，就是敢这么卖。<em>这一家是 DeepSeek。</em></p>
+    <p><strong>第二家：把配方公开挂在墙上，还印成小册子免费发。</strong>你可以拿回家自己照着做，它不介意。<em>这一家是阿里的 Qwen。</em></p>
+    <p><strong>第三家：开在一个巨大商场的美食广场里。</strong>它自己一家店，但整个美食广场的其他摊位也归同一个物业管，你在这里能顺手点到别家的菜。<em>这一家是字节的豆包（火山方舟平台）。</em></p>
+    <p><strong>第四家：专门做「特别能记住老客口味」的活儿。</strong>你上次说不要香菜、汤要少，它这次全记得，而且还能看照片认菜。<em>这一家是月之暗面的 Kimi。</em></p>
+    <p><strong>第五家：门口挂了个牌子写「本店水准可与米其林某某餐厅比肩」。</strong><mark class="key">注意——这块牌子是老板自己挂的，不是米其林评的。</mark><em>这一家是智谱的 GLM，而这块牌子会成为本节一个重要的教学点。</em></p>
+    <div class="link">→ 五家的官方原文都在下面。<strong>说白了</strong>本节要做的，就是把「店家自己怎么说」和「谁来评的」这两件事严格分开。</div>
+  </div>
+
+  <h3>DeepSeek：价格表本身就是最大的信息</h3>
+  <p>DeepSeek 官方定价页（<code>api-docs.deepseek.com/quick_start/pricing</code>，截至 2026 年 8 月 8 日）列出两个当前型号：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>deepseek-v4-flash</th><th>deepseek-v4-pro</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>官方版本名</strong></td><td>DeepSeek-V4-Flash</td><td>DeepSeek-V4-Pro</td></tr>
+        <tr><td><strong>上下文</strong></td><td>1M</td><td>1M</td></tr>
+        <tr><td><strong>最大输出</strong></td><td>384K</td><td>384K</td></tr>
+        <tr><td><strong>输入价（缓存命中）</strong></td><td>$0.0028 / 百万 token</td><td>$0.003625</td></tr>
+        <tr><td><strong>输入价（缓存未命中）</strong></td><td>$0.14</td><td>$0.435</td></tr>
+        <tr><td><strong>输出价</strong></td><td>$0.28</td><td>$0.87</td></tr>
+        <tr><td><strong>并发上限</strong></td><td>2500</td><td>500</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>先把这张表最惊人的一行拎出来说。</strong>缓存命中时的输入价是 <strong>$0.0028</strong> 每百万 token。<mark class="key">而 §12.2 里 GPT-5.5 和 Claude Opus 4.7 的输入价都是 $5 每百万 token——差了大约一千八百倍。</mark></p>
+  <p>这个数字太抽象，换算成能感知的量：<strong>$0.0028 是不到两分钱人民币。</strong>一百万 token 大概相当于几十万汉字，也就是几本长篇小说的量。<strong>说白了：让它读几本小说，收你两分钱。</strong></p>
+  <p>但这里必须把「缓存命中」这个前提讲清楚，否则这个数字是误导性的。</p>
+  <p><strong>什么是缓存命中？</strong>说白了就是：<em>你这次发过去的开头部分，跟上次发的一模一样，服务器还留着上次算好的结果，就直接拿来用，不重算。</em></p>
+  <p><strong>用餐厅打比方：</strong>你是熟客，每次来都点「一碗牛肉面，面硬一点，不要香菜，汤少放」。前十个字每次都一样。<mark class="key">熟练的服务员听到「一碗牛肉」就已经在往后厨喊了，剩下的话他都不用听完。</mark>省下的就是这部分重复劳动的钱。</p>
+  <p>所以这两档价格的实际含义是：</p>
+  <ul class="keylist">
+    <li><span class="k">缓存未命中 $0.14</span><span class="v">这是<strong>真实的入门价</strong>——第一次问、或者每次问的内容都不一样时按这个算。跟 §12.2 那些 $5 的比，还是便宜了三十多倍。</span></li>
+    <li><span class="k">缓存命中 $0.0028</span><span class="v">这是<strong>反复使用同一段长前缀时的价</strong>。<mark class="key">典型场景是：你有一份很长的系统提示词或一份固定文档，每次都带着它去问不同的问题。</mark>这时候省下的比例极高。</span></li>
+    <li><span class="k">两者差 50 倍</span><span class="v">$0.14 ÷ $0.0028 = 50。<strong>这个倍数直接告诉你「把固定内容放在提示词最前面」这个技巧值多少钱。</strong>顺序反了，缓存就命不中。</span></li>
+  </ul>
+  <p><strong>Flash 与 Pro 的差别也值得琢磨。</strong>Pro 的输出价（$0.87）是 Flash（$0.28）的三倍多，但并发上限（500）只有 Flash（2500）的五分之一。<mark class="key">换成大白话：Pro 是「慢工出细活的老师傅，一次只接少量单」，Flash 是「手脚快的伙计，能同时招呼一屋子人」。</mark>选哪个不取决于预算，取决于你是要「质量」还是要「吞吐」。</p>
+
+  <h3>一条官方脚注，教你「模型下线」是怎么发生的</h3>
+  <p>DeepSeek 定价页上有一条脚注，信息密度极高：</p>
+  <pre><code>"The model names `deepseek-chat` and `deepseek-reasoner` will be
+deprecated on 2026/07/24 15:59 UTC. For compatibility, they
+correspond to the non-thinking mode and thinking mode of
+`deepseek-v4-flash`, respectively."</code></pre>
+  <p>翻译：<em>「模型名 <code>deepseek-chat</code> 与 <code>deepseek-reasoner</code> 将于 2026 年 7 月 24 日 15:59 UTC 弃用。为兼容起见，它们分别对应 <code>deepseek-v4-flash</code> 的非思考模式与思考模式。」</em></p>
+  <p><strong>这条脚注有四个层面的信息，值得逐层拆：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">一 · 弃用是有明确时间点的</span><span class="v">精确到<strong>分钟</strong>：2026 年 7 月 24 日 15:59 UTC。<mark class="key">这是负责任的做法——它给了你一个可以写进日历的截止日期。</mark><strong>相当于</strong>银行网点门口贴「本网点 8 月 31 日下班后停止营业，请到某某支行办理」。</span></li>
+    <li><span class="k">二 · 旧名字有对应的新去处</span><span class="v">不是直接砍掉，而是<strong>给出映射关系</strong>。旧的 <code>deepseek-chat</code> = 新的 flash 的「非思考模式」，旧的 <code>deepseek-reasoner</code> = flash 的「思考模式」。<strong>说白了就是</strong>：两个门牌号合并成一个门，但门里的两个房间还在。</span></li>
+    <li><span class="k">三 · 「思考模式」被并进了一个模型</span><span class="v">这是一个重要的产品思路变化。以前「会思考的」和「直接答的」是两个独立模型，现在变成<strong>同一个模型的两种模式</strong>。<strong>相当于</strong><strong>洗衣机</strong>从「洗衣机」和「烘干机」两台，变成一台带两个档位的洗烘一体机。</span></li>
+    <li><span class="k">四 · 这条脚注在写作当天已经过期了</span><span class="v">今天是 2026 年 8 月 8 日，弃用日期是 7 月 24 日。<mark class="key">也就是说：这条脚注描述的是一件已经发生完的事，但官方页面还挂着它。</mark>这是很常见的现象——公告发出后往往会留一段时间，方便还没迁移的人看到。</span></li>
+  </ul>
+  <p><strong>第四点值得多说一句，因为它教的是「读日期」这个习惯。</strong>如果你不看日期，很可能以为「哦，那我现在还能用 deepseek-chat，只是以后不行」——实际上已经不行了。<strong>打个比方：</strong>你在<strong>小区</strong>电梯里看到一张通知「本周六停水检修」，但你没看那张纸是哪天贴的，结果那是三个月前贴的。<mark class="key">通知的内容和通知的日期，必须一起读。</mark></p>
+  <p>另外这一页还给了两个接口地址，一个细节很有意思：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Base URL</th><th>兼容格式</th><th>这意味着什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>https://api.deepseek.com</code></td><td>OpenAI 格式</td><td>你原本调 OpenAI 的代码，<strong>改一行地址就能用</strong></td></tr>
+        <tr><td><code>https://api.deepseek.com/anthropic</code></td><td>Anthropic 格式</td><td>你原本调 Claude 的代码，同样<strong>改一行地址就能用</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这个设计说明了一件事：兼容别人的接口格式，是后来者最有效的一招。</strong><strong>用装修的比方讲：</strong>你新出一款开关面板，最聪明的做法不是设计一个全新的漂亮尺寸，而是<mark class="key">让它的螺丝孔位和市面上最通用的那款完全一样</mark>——这样师傅换的时候不用重新打孔，五分钟搞定。<strong>本质上就是</strong>：降低别人换到你这里的成本，比夸自己好用有效得多。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 门口那块自己挂的牌子</span>
+    <p>本节最重要的一个方法论，用一家面馆门口的牌子就能讲透。</p>
+    <p>假设你路过两家店，都挂着牌子。<strong>第一家</strong>挂的是一块印着某权威美食评级机构标志的铜牌，上面有编号和年份。<strong>第二家</strong>挂的是一块自己做的木牌，上面写着「本店水准可与城中一流名店比肩」。</p>
+    <p><mark class="key">这两块牌子的字面意思可能差不多，但它们的性质完全不同。</mark>第一块是<em>别人评的</em>，评的过程有标准、有记录、可追溯；第二块是<em>自己写的</em>，写什么完全由老板决定。<strong>说白了：前者是证书，后者是广告。</strong></p>
+    <p><strong>两块牌子都不是「假的」。</strong>第二家店的面可能真的很好吃，老板那句话也可能是真心话。<strong>但你在向朋友转述时，如果说成「那家店被评为可与名店比肩」，你就把一块木牌升级成了一块铜牌</strong>——这是转述过程中最常见、也最容易被原谅、但确实错了的一种失真。</p>
+    <p>本节后面讲智谱 GLM 时会遇到一句完全属于「木牌」性质的官方表述。<strong>处理办法很简单，也是本章从头到尾在用的那一招：照抄原文，然后在旁边明确写上「这是厂商自述，不是第三方评测」。</strong>不删除、不美化、也不假装它是证书。</p>
+    <p><strong>为什么不干脆不写？</strong>因为厂商自己怎么定位自己，本身就是有价值的信息——它告诉你这家公司想被看成什么。<mark class="key">把它标好性质放进来，比把它删掉更有信息量。</mark></p>
+  </div>
+
+  <h3>阿里 Qwen：把尺码表整个公开</h3>
+  <p>阿里的 Qwen（通义千问）系列，最大的特点是<strong>把不同规模的模型全都公开发布</strong>。官方文档站（<code>qwen.readthedocs.io</code>）关于 Qwen3 的原文：</p>
+  <pre><code>"Dense and Mixture-of-Experts (MoE) models, available in 0.6B,
+1.7B, 4B, 8B, 14B, 32B and 30B-A3B, 235B-A22B."</code></pre>
+  <p>这句话里有三个术语要当场翻译：</p>
+  <ul class="keylist">
+    <li><span class="k">Dense（稠密模型）</span><span class="v">回答每个问题时，<strong>模型里所有参数都要参与计算</strong>。<strong>相当于</strong>一家餐厅接到任何一张单子，全体厨师都得动手。可靠但费劲。</span></li>
+    <li><span class="k">MoE（Mixture-of-Experts，混合专家）</span><span class="v"><strong>说白了就是</strong>：模型内部分成很多个「专家小组」，来一个问题只叫醒其中几个相关的组，其余的接着睡。<strong>相当于</strong><strong>医院</strong>的分诊台——你说牙疼，它只叫牙科医生，不会把内科、骨科、眼科全喊来会诊。§7.5 有更详细的讲解。</span></li>
+    <li><span class="k">B 是什么</span><span class="v">Billion，十亿。<strong>0.6B 就是 6 亿参数，235B 就是 2350 亿参数。</strong>换算成能感知的量：2350 亿个数，如果每秒数一个，不停地数要<mark class="key">七千四百多年</mark>。</span></li>
+    <li><span class="k">30B-A3B 这种写法</span><span class="v">这是 MoE 的标准写法：<strong>总共 300 亿参数，但每次实际激活（Active）只用 30 亿。</strong><strong>说白了：</strong>店里养着一百个专家，但每桌客人只请三个来。所以它的「体格」是 300 亿，「跑起来的开销」接近 30 亿。<strong>235B-A22B</strong> 同理：总共 2350 亿，每次激活 220 亿。</span></li>
+  </ul>
+  <p><strong>这份尺码表为什么重要？</strong>因为它直接决定了「你的机器能不能跑」。回忆 §12.1 那个显存的账：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>规模</th><th>16 位下只放参数约需</th><th>大概什么设备能跑</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>0.6B</strong></td><td>约 1.2 GB</td><td>普通手机、树莓派</td><td>一本随身小册子</td></tr>
+        <tr><td><strong>4B</strong></td><td>约 8 GB</td><td>带独显的笔记本</td><td>一本厚字典</td></tr>
+        <tr><td><strong>14B</strong></td><td>约 28 GB</td><td>较高端的单张消费级显卡（配合量化）</td><td>一整套百科全书</td></tr>
+        <tr><td><strong>32B</strong></td><td>约 64 GB</td><td>专业卡或多卡</td><td>一面墙的书架</td></tr>
+        <tr><td><strong>235B-A22B</strong></td><td>约 470 GB（按总参数算）</td><td><mark class="key">必须多卡集群</mark></td><td>一整间图书馆</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>注意这张表是按定义做的量级估算，不是任何厂商的官方数字。</strong>实际占用还受量化档位、上下文长度、推理框架影响，可能差不少。<strong>放这张表的目的不是让你照着买硬件，是让你对「B」这个数字有实感</strong>——看到 235B 时能立刻反应「这个我家里跑不了」。</p>
+  <p>官方对 Qwen3-2507 系列的描述：<strong>「Qwen3-Instruct-2507」「Qwen3-Thinking-2507」</strong>，官方称<strong>「Enhanced capabilities in 256K long-context understanding, extensible to 1M.」</strong>——增强了 256K 长上下文理解能力，可扩展到 1M。</p>
+  <p><strong>「extensible to 1M」（可扩展到 1M）这个措辞要留个心。</strong><mark class="key">「可扩展到」和「支持」不是一回事。</mark><strong>相当于</strong>家里的<strong>水管</strong>——「可以接到六分管」意味着你得自己去改，不是开箱就是六分的。这类措辞通常暗示需要额外配置或特定技术手段。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · 两处留白</span>
+    <p><strong>第一，页面更新日期未知。</strong>Qwen 官方文档站的这一页<strong>没有标注更新日期</strong>。按 §12.2 那套六步法的第一条，这会让可靠度降一档——所以本小节的可靠度评为<strong>中</strong>（页面是官方的，但新鲜度无法确认）。</p>
+    <p><strong>第二，Qwen 的开源许可原文未取得。</strong>我们尝试抓取 Hugging Face 上的模型页面失败。<mark class="key">所以本节不宣称「Qwen3 是 Apache 2.0 许可」</mark>——这个说法在网上很常见，可能是对的，但我们没有从官方渠道核实到，就不写。</p>
+    <p>这一条尤其要克制，因为许可证类型是<strong>会直接影响你能不能商用的法律事实</strong>。<strong>说白了：搞错一个型号名最多是尴尬，搞错一个许可证可能是官司。</strong>如果你要商用，请自己去模型卡页面读 LICENSE 文件原文。</p>
+  </div>
+
+  <h3>字节豆包：一家自己开的美食广场</h3>
+  <p>字节跳动的模型叫<strong>豆包</strong>（Doubao），但它对外的入口是一个叫<strong>火山方舟</strong>的平台。这个结构本身就值得说一句：<mark class="key">平台上不只有自家的豆包，还挂着别家的模型。</mark></p>
+  <p>官方模型列表页（<code>volcengine.com/docs/82379/1330310</code>）标注的更新时间是 <strong>2025.12.10</strong>，我们的查询日期是 2026 年 8 月 8 日——<strong>也就是说这份清单可能已经滞后了大半年</strong>，这一点务必记住。</p>
+  <p>清单上的自家系列（截至该页 2025.12.10 的状态）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>版本号</th><th>上下文</th><th>最大输入</th><th>最大回答</th><th>特点</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>doubao-seed-1.6</strong></td><td>250615 / 251015</td><td>256k</td><td>224k</td><td>32k</td><td>主力通用型，另标最大思维链 32k</td></tr>
+        <tr><td><strong>doubao-seed-1.6-vision</strong></td><td>250815</td><td>256k</td><td>224k</td><td>32k</td><td>带视觉，能看图</td></tr>
+        <tr><td><strong>doubao-seed-1.6-flash</strong></td><td>250828</td><td>256k</td><td>224k</td><td>32k</td><td>快速档</td></tr>
+        <tr><td><strong>doubao-seed-1.6-thinking</strong></td><td>250715</td><td>256k</td><td>224k</td><td>32k</td><td>思考档</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这张表有一个细节特别值得学：上下文 256k，但最大输入只有 224k。</strong>为什么不一样？<mark class="key">因为上下文窗口是「输入 + 输出」的总额度，得给回答留位置。</mark>256k 减去 32k 的最大回答，正好等于 224k。</p>
+  <p><strong>用停车场打比方：</strong>整个停车场有 256 个位（上下文），但门口划了 32 个位专门留给待出场的车（输出），所以能进来停的最多 224 个（输入）。<strong>说白了：</strong>你不能把上下文填满输入，否则模型就没地方说话了。这个账很多人第一次算的时候都会算错。</p>
+  <p><strong>而这个平台真正有意思的地方，是它同时挂着别家的模型。</strong>同一份官方清单里还有：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>来自</th><th>上下文</th><th>其他</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>deepseek-v3.1</strong>（terminus / 250821）</td><td>DeepSeek</td><td>128k</td><td>最大输入 96k</td></tr>
+        <tr><td><strong>kimi-k2-thinking-251104</strong></td><td>月之暗面</td><td>256k</td><td>最大回答 32k</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><mark class="key">这就是「自己开美食广场」的意思：字节既卖自家的面，也把隔壁两家的招牌菜摆进自己的档口。</mark><strong>为什么要这么干？</strong>因为对客户来说，「一个账号能调所有模型」比「哪家模型最强」更省事。<strong>相当于</strong>超市不会只卖自有品牌的酱油，它把所有牌子都摆上货架——<em>你在我这里买了什么牌子不重要，重要的是你在我这里买。</em></p>
+  <p>清单上还有图像与向量两类，也一并列出（同为该页 2025.12.10 状态）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>类别</th><th>官方列出的模型</th><th>官方标记</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>图像生成</strong></td><td>doubao-seedream-4.5（251128）</td><td>官方标「<strong>强烈推荐</strong>」</td></tr>
+        <tr><td></td><td>doubao-seedream-4.0（250828）</td><td>官方标「推荐」</td></tr>
+        <tr><td></td><td>doubao-seedream-3.0-t2i</td><td>t2i = text to image，文生图</td></tr>
+        <tr><td></td><td>doubao-seededit-3.0-i2i</td><td>i2i = image to image，图改图</td></tr>
+        <tr><td><strong>向量（Embedding）</strong></td><td>doubao-embedding-large、doubao-embedding、doubao-embedding-vision</td><td>把文字或图片变成一串数字，§9.2 讲过</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>「强烈推荐」和「推荐」这两个标记也是官方自述</strong>，性质上属于前面那块「木牌」——它告诉你官方希望你用哪个，不构成任何客观优劣评价。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · 豆包价格未取得</span>
+    <p>你可能注意到豆包这一小节<strong>完全没有价格</strong>，而 DeepSeek 那一节价格列得很细。原因是：<mark class="key">火山方舟这个官方页面的价格数据在 HTML 里没有渲染出来</mark>（应该是由 JavaScript 动态加载的），静态抓取拿不到。</p>
+    <p>所以本节<strong>不给豆包任何每百万 token 的价格数字</strong>。要查价格请自己去火山方舟控制台看，那里的价格才是会开发票的那一版。</p>
+    <p>另外再强调一次这一小节的可靠度：<strong>中</strong>。页面是官方的（可靠度加分），但它自标的更新时间是 2025.12.10，距我们查询日已过大半年（可靠度减分）。<strong>说白了：这份清单可以用来了解产品线结构，不适合用来确认「现在有哪些型号」。</strong></p>
+  </div>
+
+  <h3>月之暗面 Kimi：一个官方自承文档过期的例子</h3>
+  <p>月之暗面的 Kimi 官方定价页（<code>platform.moonshot.ai/docs/pricing/chat</code>）把模型分成三组：</p>
+  <ul class="keylist">
+    <li><span class="k">Kimi K2.5</span><span class="v">官方描述「Multi-modal model with visual and text input」——支持视觉与文本输入的多模态模型。</span></li>
+    <li><span class="k">Kimi K2</span><span class="v">官方描述「MoE model with exceptional code and agent capabilities」——具备出色代码与智能体能力的混合专家模型。<strong>注意 exceptional（出色的）这个词是厂商自述。</strong></span></li>
+    <li><span class="k">Moonshot V1</span><span class="v">早期系列，仍在清单上。</span></li>
+  </ul>
+  <p>官方给出的具体定价（截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>单位</th><th>输入（缓存命中）</th><th>输入（缓存未命中）</th><th>输出</th><th>上下文</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>kimi-k2.5</strong></td><td>每百万 token</td><td>$0.10</td><td>$0.60</td><td>$3.00</td><td>262,144</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这里有个小细节值得指出：上下文写的是 262,144，不是「256k」。</strong>262144 = 256 × 1024，也就是精确的 256K。<mark class="key">官方用精确数字而不是约数，说明这是一个硬性的技术上限，不是市场宣传的圆整说法。</mark><strong>相当于</strong>电梯里写「限载 13 人 / 1000 公斤」——那个 1000 是设计值，不是「大概一吨」。</p>
+  <p>官方对 K2.5 能力的原文：<strong>「Kimi K2.5 supports text, image, and video input, thinking and non-thinking modes, and dialogue and agent tasks.」</strong>——支持文本、图像、视频输入，支持思考与非思考模式，支持对话与智能体任务。</p>
+  <p><strong>而这一页上最有教学价值的一句，是官方自己承认文档过期：</strong></p>
+  <pre><code>"The web search (web_search) is currently being updated. We do not
+recommend using this functionality in the near term. This
+documentation is outdated; please follow subsequent content
+updates."</code></pre>
+  <p>翻译：<em>「联网搜索（web_search）功能目前正在更新。我们不建议近期使用该功能。<strong>本文档已过期</strong>，请关注后续内容更新。」</em></p>
+  <p><mark class="key">这是本章能找到的最诚实的一段官方文案。</mark>它做了三件很少有厂商会做的事：<strong>主动承认某个功能正在改、主动劝你别用、主动声明自己这页文档是旧的。</strong></p>
+  <p><strong>用医院打比方：</strong>大多数科室的门牌都是「本科室正常接诊」；<mark class="key">而这一句相当于门口贴了张纸——「本科室 CT 机正在维修，这段时间的检查结果不准，建议改天再来，墙上贴的流程图也是旧版的」。</mark>看到这种告示你不该觉得这家医院差，恰恰相反，<strong>它是少数愿意把自己的不完整状态告诉你的地方。</strong></p>
+  <p><strong>对你的实际启示是：文档上的「过期声明」是最有价值的信息之一，看到了就该额外留意。</strong>因为绝大多数过期文档是不会自己声明的——它就那么静静地挂在那里，看起来跟正常文档一模一样。</p>
+  <p>本小节可靠度：<strong>中高</strong>。定价数字来自官方页面且结构完整（加分），但官方自承部分内容已过期（减分）。</p>
+
+  <h3>智谱 GLM：那块「自己挂的牌子」长什么样</h3>
+  <p>轮到本节前面预告过的那个教学点了。智谱的 GLM 官方文档（<code>docs.z.ai/guides/llm/glm-4.6</code>，截至 2026 年 8 月 8 日）关于 GLM-4.6 的规格：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>官方值</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>输入 / 输出模态</strong></td><td>Text（纯文本）</td></tr>
+        <tr><td><strong>上下文长度</strong></td><td>200K</td></tr>
+        <tr><td><strong>最大输出</strong></td><td>128K</td></tr>
+        <tr><td><strong>API 地址</strong></td><td><code>https://api.z.ai/api/paas/v4/chat/completions</code></td></tr>
+        <tr><td><strong>model 参数名</strong></td><td><code>glm-4.6</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>官方对上下文扩容的说明原文：<strong>「Longer context window: The context window has been expanded from 128K to 200K tokens, enabling the model to handle more complex agentic tasks.」</strong>——上下文窗口从 128K 扩展到 200K，使模型能处理更复杂的智能体任务。<strong>这一句是可核实的客观描述</strong>，说的是自己的两个版本之间的变化，没有涉及任何跨厂商比较。</p>
+  <p><strong>而下面这一句性质完全不同，请注意我怎么标注它：</strong></p>
+  <pre><code>"GLM-4.6 achieves performance on par with Claude Sonnet 4/Claude
+Sonnet 4.6 on several leaderboards, solidifying its position as the
+top model developed in China."</code></pre>
+  <p>翻译：<em>「GLM-4.6 在若干榜单上达到与 Claude Sonnet 4 / Claude Sonnet 4.6 相当的表现，稳固了其作为中国研发的顶尖模型的地位。」</em></p>
+  <p><mark class="key">★ 这是厂商官方自述，不是第三方评测结论。</mark>这个标注不是为了贬低这句话，而是为了准确说明它的性质。我们逐层拆一下这句话，你会看到它由三种不同强度的成分组成：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>句子成分</th><th>原文</th><th>性质</th><th>能不能直接引用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>比较对象</strong></td><td>on par with Claude Sonnet 4 / 4.6</td><td>具体、可验证的对标声明</td><td>可以引用，<strong>但必须写「智谱官方称」</strong></td></tr>
+        <tr><td><strong>比较依据</strong></td><td>on <strong>several</strong> leaderboards</td><td><mark class="key">「若干榜单」——没说是哪几个，没给分数，没给日期</mark></td><td>信息量很低。<strong>相当于</strong>说「在好几次考试里」，但不说是哪几门</td></tr>
+        <tr><td><strong>结论</strong></td><td>the <strong>top</strong> model developed in China</td><td>排名式断言，无客观标准</td><td><strong>不能作为事实引用。</strong>这属于本章明确不采用的那一类断言</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>把这三层摊开之后，事情就清楚了。</strong>第一层是可核实的对标声明（虽然要标明是谁说的）；第二层「several leaderboards」是本句最薄弱的一环——<mark class="key">没有列出榜单名、没有分数、没有测试日期，实际上无法核实。</mark>第三层「中国研发的顶尖模型」是纯粹的排名式断言，本章从头到尾不采用这类说法。</p>
+  <p><strong>用招聘打个比方，你就明白该怎么读这句话了。</strong>一份简历上写「本人在多个项目中表现与行业顶尖工程师相当，是国内最优秀的开发者之一」。<strong>作为面试官，你不会认为这句话是假的，但你也不会把它当成录用依据</strong>——你会问「具体哪几个项目？评价来自谁？有什么可查的记录？」<mark class="key">得不到这三个答案时，这句话就只是一句自我陈述。</mark></p>
+  <p><strong>那本书为什么还要把它写出来？</strong>因为「一家公司怎么定位自己」本身是有价值的信息。<strong>它告诉你：智谱把自己的对标对象设成了 Claude Sonnet 系，并且把「中国最好」当成对外的核心叙事。</strong>这个定位信息，比一个虚假的准确分数有用得多。<strong>说白了：我们不是在传播这个断言，我们是在展示这个断言存在。</strong></p>
+  <div class="callout">
+    <span class="tag">诚实声明 · GLM 的两处留白</span>
+    <p><strong>第一，GLM 的 API 定价未取得。</strong>本节没有列 GLM 的每百万 token 价格，因为我们没有从官方渠道核实到。</p>
+    <p><strong>第二，GLM 开源权重的许可证未取得。</strong>智谱有公开发布模型权重的做法（§12.1 里引用的 GLM-5.2 模型卡就是证据），但<mark class="key">我们没有取得它的 LICENSE 原文，所以不宣称它是任何具体的许可类型。</mark></p>
+    <p>顺带把本节涉及的许可情况一起交代清楚，避免你在别处看到不同说法时困惑：</p>
+    <ul class="keylist">
+      <li><span class="k">Meta Llama 4</span><span class="v">自定义 Community License，含 7 亿 MAU 门槛。<strong>可靠度：高</strong>（原文见 §12.2）</span></li>
+      <li><span class="k">Qwen</span><span class="v"><strong>★ 未取得 LICENSE 原文</strong></span></li>
+      <li><span class="k">GLM</span><span class="v"><strong>★ 未取得</strong></span></li>
+      <li><span class="k">DeepSeek</span><span class="v"><strong>★ 未取得</strong>——我们查到的定价页只涉及 API 服务条款，没有开源权重的许可条款</span></li>
+      <li><span class="k">llama.cpp</span><span class="v">MIT license，GitHub 官方仓库侧栏明确标注。<strong>可靠度：高</strong>（§12.4 会详细讲）</span></li>
+    </ul>
+  </div>
+
+  <h3>为什么本节不给市场份额、用户量、排名</h3>
+  <p>这一小节没有任何数字，但它是本节写作立场最集中的地方。</p>
+  <p><strong>关于中国 AI 公司，网上最常见的说法长这样：</strong>「某某月活破亿，稳居国内第一」「某某在 C 端市场份额超过百分之几十」「国产大模型第一梯队排名」。<mark class="key">这类数字本节一个都不给。</mark></p>
+  <p><strong>原因很朴素：我们在核实过程中，没有在任何厂商的财报或官方公告里找到这类数据。</strong></p>
+  <p>请注意这句话的措辞——不是「这些数字是假的」，而是「我们没有找到官方出处」。这两句话差别很大。<strong>用一件生活里的事打比方：</strong>你听说邻居家孩子考了全区第一。这可能是真的，<mark class="key">但如果你没见过成绩单，你就不该把它当成事实转述给第三个人。</mark></p>
+  <p>这类数据为什么特别难核实？三个原因：</p>
+  <ul class="keylist">
+    <li><span class="k">口径不统一</span><span class="v">「月活」是怎么算的？打开过 App 就算，还是发起过一次对话才算？<strong>网页端、App 端、API 调用要不要合并？</strong><mark class="key">不同机构用不同口径，算出来的数能差好几倍，而且各家都不会公布自己的口径细节。</mark></span></li>
+    <li><span class="k">第三方估算往往是推算</span><span class="v">咨询机构常用的做法是抽样调查、应用商店排名反推、流量监测推算。这些方法在方向上有价值，<strong>但精度远不足以支撑「份额 37.2%」这种小数点后一位的说法</strong>。<strong>相当于</strong>从<strong>菜市场</strong>门口数进出的人头，来推算全城的猪肉消费量——趋势可能对，具体数字不能当账用。</span></li>
+    <li><span class="k">这些公司大多没有公开财报义务</span><span class="v">§12.1 里 NVIDIA 那 752 亿美元数据中心营收之所以可靠度极高，是因为它是<strong>上市公司的法定披露</strong>，造假有法律后果。而本节这几家里有的未上市、有的相关业务并在大集团报表里不单独披露。<mark class="key">没有法定披露义务，就没有可核对的一手数据。</mark></span></li>
+  </ul>
+  <p><strong>所以本节的立场是：这类断言一律标「未取得权威来源」，宁可留白。</strong></p>
+  <p>这个原则本书是一贯的。§2.5 原本有一处关于豆包的排名式断言（说它用户量最大），在 2026 年 8 月的一次全站核查中被改成了「中文场景投入大、迭代快」这样的中性描述——<mark class="key">因为原来那句话违反了本书自己定的核实原则。</mark><strong>说白了：规则得对自己也生效，否则就不是规则。</strong></p>
+  <p><strong>那你想了解真实格局怎么办？</strong>给三条可操作的替代路径：</p>
+  <ul class="keylist">
+    <li><span class="k">看价格，不看排名</span><span class="v">价格是官方公布、随时可查、无法含糊的硬数据。DeepSeek 缓存未命中 $0.14 vs GPT-5.5 的 $5，<strong>这个三十多倍的差距比任何「份额第几」都能说明竞争态势。</strong></span></li>
+    <li><span class="k">看谁被摆进了别人的货架</span><span class="v">火山方舟的官方清单里挂着 DeepSeek 和 Kimi；§12.5 会看到 TRAE 的内置模型清单里挂着 MiniMax、GLM、DeepSeek、Kimi、Qwen 五家。<mark class="key">被多少平台集成，是一个可核实的、比自我宣称硬得多的指标。</mark></span></li>
+    <li><span class="k">看官方自己的措辞变化</span><span class="v">一家公司从「我们对标某某」变成「我们是行业标准」，这个措辞变化本身就是信号。<strong>相当于</strong>看一家店的招牌从「××风味」变成「××正宗总店」。</span></li>
+  </ul>
+
+  <h3>五家横向对照：一张表看清各自的路数</h3>
+  <p>把五家摊在一起，仍然按 §12.2 那个思路排——不比强弱，比「你要用它得付出什么、要注意什么」（全部截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>DeepSeek</th><th>阿里 Qwen</th><th>字节豆包</th><th>月之暗面 Kimi</th><th>智谱 GLM</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>最鲜明的特点</strong></td><td><mark class="key">价格极低</mark></td><td>规模全公开，从 0.6B 到 235B</td><td>平台化，<strong>也卖别家的</strong></td><td>多模态 + 长上下文</td><td>对标叙事清晰</td></tr>
+        <tr><td><strong>当前主力型号</strong></td><td>V4-Flash / V4-Pro</td><td>Qwen3 系、Qwen3-2507 系</td><td>doubao-seed-1.6 四个变体</td><td>K2.5 / K2 / Moonshot V1</td><td>GLM-4.6</td></tr>
+        <tr><td><strong>官方上下文</strong></td><td>1M（两档同）</td><td>256K，官方称「可扩展到 1M」</td><td>256k（其中最大输入 224k）</td><td>262,144（即精确 256K）</td><td>200K</td></tr>
+        <tr><td><strong>最大输出</strong></td><td>384K</td><td>官方未在该页给出</td><td>32k</td><td>官方未在该表给出</td><td>128K</td></tr>
+        <tr><td><strong>输入价（未命中）</strong></td><td>$0.14 / $0.435</td><td>不适用（发布权重）</td><td><strong>★ 未取得</strong></td><td>$0.60（k2.5）</td><td><strong>★ 未取得</strong></td></tr>
+        <tr><td><strong>输出价</strong></td><td>$0.28 / $0.87</td><td>不适用</td><td><strong>★ 未取得</strong></td><td>$3.00（k2.5）</td><td><strong>★ 未取得</strong></td></tr>
+        <tr><td><strong>开源权重许可</strong></td><td>★ 未取得</td><td>★ 未取得</td><td>未涉及</td><td>未涉及</td><td>★ 未取得</td></tr>
+        <tr><td><strong>页面新鲜度</strong></td><td>好（含 2026-07 的弃用公告）</td><td><mark class="key">未标更新日期</mark></td><td><mark class="key">自标 2025.12.10，滞后大半年</mark></td><td>官方自承部分内容过期</td><td>好</td></tr>
+        <tr><td><strong>本节评的可靠度</strong></td><td>高</td><td>中</td><td>中</td><td>中高</td><td>高（就该页而言）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这张表里「★ 未取得」出现了七次。</strong>这不好看，但它是诚实的。<mark class="key">一张全是数字的漂亮表格，和一张有七处留白但每个数字都能追溯到出处的表格，后者才是能用的。</mark></p>
+  <p><strong>打个比方：</strong>去<strong>银行</strong>办贷款，柜员给你一份材料清单，上面有三项标着「暂缺，需补交」。<em>你不会因此觉得这家银行不专业</em>——恰恰相反，如果他给你一份全部打勾但其中三项是他随手替你填的，那才是真正的问题。</p>
+
+  <h3>把价格拉平对比：中国这边到底便宜多少</h3>
+  <p>前面几张表的价格分散在各小节里，这里集中拉平对比一次。<strong>因为这个对比是本节最硬、最可核实、也最有实际决策价值的信息。</strong>（全部为官方公布价，每百万 token，截至 2026 年 8 月 8 日）</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模型</th><th>来自</th><th>输入</th><th>输出</th><th>相对 GPT-5.5 的输入价</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>GPT-5.5</strong></td><td>OpenAI（§12.2）</td><td>$5.00</td><td>$30.00</td><td>基准 1×</td></tr>
+        <tr><td><strong>Claude Opus 4.7</strong></td><td>Anthropic（§12.2）</td><td>$5.00</td><td>$25.00</td><td>1×</td></tr>
+        <tr><td><strong>Gemini 3.6 Flash</strong></td><td>Google（§12.2）</td><td>$1.50</td><td>$7.50</td><td>约 0.3×</td></tr>
+        <tr><td><strong>kimi-k2.5</strong></td><td>月之暗面</td><td>$0.60</td><td>$3.00</td><td>约 0.12×（便宜约 8 倍）</td></tr>
+        <tr><td><strong>deepseek-v4-pro</strong></td><td>DeepSeek</td><td>$0.435</td><td>$0.87</td><td>约 0.087×（便宜约 11 倍）</td></tr>
+        <tr><td><strong>deepseek-v4-flash</strong></td><td>DeepSeek</td><td>$0.14</td><td>$0.28</td><td><mark class="key">约 0.028×（便宜约 36 倍）</mark></td></tr>
+        <tr><td><strong>deepseek-v4-flash</strong>（缓存命中）</td><td>DeepSeek</td><td>$0.0028</td><td>$0.28</td><td><mark class="key">约 0.00056×（便宜约 1800 倍）</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>把最极端的那个对比换算成生活里的钱，感受会很强烈。</strong>假设你要处理一亿 token 的输入（大概相当于几千万汉字，一个中型企业的全部文档）：</p>
+  <ul class="keylist">
+    <li><span class="k">用 GPT-5.5</span><span class="v">$5 × 100 = <strong>500 美元</strong>，约合三千六百多元人民币</span></li>
+    <li><span class="k">用 deepseek-v4-flash（未命中）</span><span class="v">$0.14 × 100 = <strong>14 美元</strong>，约合一百元</span></li>
+    <li><span class="k">用 deepseek-v4-flash（全部缓存命中）</span><span class="v">$0.0028 × 100 = <strong>0.28 美元</strong>，<mark class="key">约合两块钱</mark></span></li>
+  </ul>
+  <p><strong>三千六百元和两块钱。</strong>这个差距大到会改变产品形态——<em>有些应用在前一种价格下压根不成立，在后一种价格下才变得可行</em>。<strong>相当于</strong>从「打车」变成「坐公交」：不是省了点钱，是让原本不会天天出门的人开始天天出门了。</p>
+  <p><strong>但必须把三条限定说清楚，否则这张表就成了误导：</strong></p>
+  <p><strong>限定一：价格不代表效果。</strong>这张表只说明「花多少钱」，完全不说明「效果好不好」。本节没有取到任何权威第三方横向评测，所以<mark class="key">不做任何「便宜且效果一样」的暗示。</mark></p>
+  <p><strong>限定二：缓存命中价有严格前提。</strong>$0.0028 只在「重复的长前缀」这个条件下生效。如果你每次问的内容都不一样，就是 $0.14。<strong>说白了：那个 1800 倍不是常态价，是特定用法下的价。</strong></p>
+  <p><strong>限定三：豆包和 GLM 的价格未取得，所以它们没进这张表。</strong>不进表不代表它们贵或便宜，只代表我们没查到。</p>
+
+  <h3>常见误解澄清</h3>
+  <p><strong>误解一：「中国模型便宜是因为在补贴烧钱，早晚要涨回去。」</strong></p>
+  <p>这个说法本节<strong>既不支持也不反驳</strong>——因为我们没有取到任何厂商的成本结构数据，无法判断。<mark class="key">能确认的只有一件事：这些价格是官方公布的、可查的、当天有效的。</mark>至于它能维持多久，任何人的说法都是推测。<strong>相当于</strong>看到<strong>超市</strong>某个牌子的鸡蛋比别家便宜一半——你可以猜它是促销、是产地优势、还是马上要过期，但站在货架前你能确认的只有标价。</p>
+  <p><strong>误解二：「国产模型只能用来做简单的活儿。」</strong></p>
+  <p>这类判断需要横向评测支撑，而本节明确没有取到。<strong>但有两条可核实的间接证据值得放在一起看：</strong>火山方舟这个字节自家平台的官方清单里，挂着 DeepSeek 和 Kimi 的模型；§12.5 会看到 TRAE 的官方内置模型清单里，MiniMax、GLM、DeepSeek、Kimi、Qwen 五家全在。<mark class="key">被同行的商业平台选进内置清单，是一个比任何自我宣称都硬的信号</mark>——因为平台方要为效果负责，选错了是自己挨骂。</p>
+  <p><strong>误解三：「上下文 1M 就意味着能一次读完一整本书还记得住。」</strong></p>
+  <p>这是把「装得下」和「用得好」混为一谈了。§11.4 讲 RAG 时提过 <strong>Lost in the Middle</strong>（迷失在中间）这个现象——<mark class="key">它测的是关键信息放在长文本不同位置时的表现差异，说明「塞进去」和「找得到」不是一回事。</mark><strong>用图书馆打比方：</strong>图书馆再大，也不等于你能在里面迅速找到那本书；书架越长，你越需要一个索引。</p>
+  <p><strong>误解四：「上下文 256k，所以我可以塞 256k 的输入。」</strong></p>
+  <p>豆包那张表已经反驳了这一点：上下文 256k，但最大输入只有 224k，因为要给 32k 的输出留位置。<strong>说白了：上下文是「一间屋子的总面积」，不是「你能堆多少货」——得留出走路的地方。</strong>这个账算错了，请求会直接被拒。</p>
+  <p><strong>误解五：「官方文档写了就一定还有效。」</strong></p>
+  <p>DeepSeek 那条「<code>deepseek-chat</code> 将于 2026 年 7 月 24 日弃用」的脚注，在我们查询的 8 月 8 日已经过期了，但它还挂在页面上。豆包那份清单自标 2025.12.10。Kimi 更是官方自承文档过期。<mark class="key">三家里三家都有新鲜度问题——这不是个别现象，这是常态。</mark><strong>所以「看更新日期」这个动作不是洁癖，是必要步骤。</strong></p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="智谱官方文档写：「GLM-4.6 achieves performance on par with Claude Sonnet 4/Claude Sonnet 4.6 on several leaderboards, solidifying its position as the top model developed in China.」按本节的方法，最恰当的引用方式是？"
+       data-opts="直接写「GLM-4.6 性能与 Claude Sonnet 4.6 相当，是中国最强模型」|完整照抄原文，并明确标注这是智谱官方自述而非第三方评测，同时指出「several leaderboards」未列出具体榜单与分数|因为无法核实，把这句话整个删掉不提|把它改写成「据多个权威榜单显示，GLM-4.6 达到国际一流水平」"
+       data-answer="1"
+       data-explain="这句话由三层不同强度的成分组成：对标声明（可引用但须标明是谁说的）、比较依据「several leaderboards」（未列榜单名、无分数、无日期，实际无法核实）、排名式断言「中国最顶尖」（本章明确不采用）。选项一把厂商自述升级成了客观事实——这是最常见的失真；选项四更糟，它把「厂商自称」偷换成了「据权威榜单显示」，凭空造出了一个信源。删掉也不对：厂商如何定位自己本身就是有价值的信息，标好性质放进来比删掉更有信息量。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节收束</span>
+    <p><strong>一、五家的路数各不相同。</strong>DeepSeek 走极低价（缓存未命中 $0.14，比 GPT-5.5 便宜约 36 倍；缓存命中 $0.0028，便宜约 1800 倍）；Qwen 把从 0.6B 到 235B-A22B 的完整尺码表公开发布；字节把火山方舟做成平台，连 DeepSeek 和 Kimi 的模型也一起挂；Kimi 主打多模态与 262,144 的精确长上下文；GLM 的对标叙事最清晰。</p>
+    <p><strong>二、「厂商自述」和「第三方评测」必须分开。</strong>智谱官方那句「on par with Claude Sonnet 4/4.6 on several leaderboards, ... the top model developed in China」是<mark class="key">厂商官方自述</mark>：其中「several leaderboards」没有列榜单名、没有分数、没有日期，实际无法核实；「中国最顶尖」属排名式断言，本章不采用为事实。处理办法是照抄原文 + 明确标注性质，不删除也不升级。</p>
+    <p><strong>三、本节不给市场份额、用户量、排名。</strong>因为没有在任何厂商财报或官方公告里找到这类数据。三条原因：口径不统一、第三方多为推算、这几家大多无公开财报义务。<strong>替代做法：看价格（官方公布可查）、看谁被摆进了别人的货架（可核实的集成关系）、看官方措辞的变化。</strong></p>
+    <p><strong>四、几条容易算错的账。</strong>上下文 ≠ 最大输入（豆包 256k 上下文只允许 224k 输入，因为要留 32k 给输出）；「extensible to 1M」不等于「支持 1M」；缓存命中价有严格前提（重复的长前缀），不是常态价。</p>
+    <p><strong>五、官方文档的新鲜度问题是常态，不是例外。</strong>DeepSeek 那条 2026 年 7 月 24 日的弃用公告在查询当天已过期却仍挂着；Qwen 文档页未标更新日期；豆包清单自标 2025.12.10，滞后大半年；Kimi 官方直接写「This documentation is outdated」。<mark class="key">五家里四家有新鲜度线索，所以「先看日期」是必要动作。</mark></p>
+    <p><strong>六、本节的留白清单（诚实交代）：</strong>豆包每百万 token 价格<strong>未取得</strong>（官方页价格未在 HTML 中渲染）；GLM 的 API 定价<strong>未取得</strong>；Qwen、GLM、DeepSeek 三家的<strong>开源权重许可原文均未取得</strong>（故不宣称 Qwen3 是 Apache 2.0 这类说法）；任何<strong>市场份额、用户量、排名数据未取得</strong>，一律不给；任何<strong>权威第三方横向评测未取得</strong>，故不做效果优劣判断。所有数字的查询日期均为<strong>截至 2026 年 8 月 8 日</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./12-2-foreign-models.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 12.2 · 海外基础模型</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./12-4-opensource.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 12.4 · 开源生态</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 12.3</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-33"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-33"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-33"></script>
+</body>
+</html>

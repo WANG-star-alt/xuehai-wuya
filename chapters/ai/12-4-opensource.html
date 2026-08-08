@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 12.4 · 开源生态 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-33">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-33">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./12-landscape.html">智能篇 · 第 12 章</a>
+      <span class="sep">›</span>
+      <span>§ 12.4</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 12.4 · Section</div>
+    <h1>开源生态</h1>
+    <div class="cn">「开放权重」为什么不等于「开源」</div>
+  </header>
+
+  <p class="lead">
+    这一节要纠正一个几乎所有人都在用错的说法。<mark class="key">当媒体说「某某发布了开源大模型」时，绝大多数情况下他们描述的其实是「开放权重」，而按开放源代码促进会（OSI）的正式定义，只发布权重根本不构成开源。</mark>这不是文字游戏——两者的差别，决定了你能不能真正理解这个模型、能不能复现它、能不能对它负责。本节前半部分把 OSI 那份定义逐条拆开讲，并用 Meta Llama 许可里那条「7 亿月活门槛」做实例；后半部分讲一套真正能上手的东西：<strong>llama.cpp、GGUF 格式、Ollama——也就是「怎么在自己的电脑上跑一个模型」。</strong>这后半部分是全章唯一能让你今晚就动手试一试的内容。所有内容截至 2026 年 8 月 8 日。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🥣 一罐给你的秘制辣酱</div>
+    <p>你邻居做的辣酱特别香，你夸了半天，她很大方地说「送你一罐」。</p>
+    <p><strong>情况一：她给了你一罐酱。</strong>你拿回家，想吃就舀一勺，好吃得停不下来。<mark class="key">但吃完就没了，你也做不出第二罐。</mark>你甚至说不清里面到底放了什么——闻着像有豆瓣，但不确定；辣度很特别，但不知道是哪种辣椒。</p>
+    <p><strong>情况二：她给了你配方。</strong>「三种辣椒各多少克、豆瓣哪个牌子、油温几度下锅、炒几分钟、放凉多久装瓶。」<strong>这时候你就能自己做了</strong>，而且能改——嫌太辣就少放一种辣椒，想更香就多加点花椒。</p>
+    <p><strong>情况三：她还告诉你辣椒是从哪个市场哪个摊买的、哪一季的、为什么选这一季。</strong><mark class="key">这时候你才算真正掌握了这罐酱</mark>——你能判断为什么某次做出来味道不一样，能在换了产地之后知道该怎么调整。</p>
+    <p><strong>说白了</strong>，「开放权重」是情况一：<em>东西给你了，你能用，但你不知道它怎么来的，也没法真正复现。</em>而 OSI 定义的「开源 AI」要求做到情况三：<mark class="key">不但给你成品，还要给你配方（训练代码）和原料来源信息（数据信息）。</mark></p>
+    <div class="link">→ 这就是本节的核心：<strong>权重 = 那罐酱；训练代码 = 配方；数据信息 = 原料来源。三样齐了才叫开源，只给第一样叫「开放权重」。</strong></div>
+  </div>
+
+  <h3>先把「权重」这个词彻底说清楚</h3>
+  <p>要理解后面所有内容，得先把这个最基础的词讲透。</p>
+  <p><strong>权重</strong>（weights）说白了就是：<mark class="key">模型内部那几千亿个数字。</mark>就这么简单，它不神秘。</p>
+  <p><strong>用调收音机打比方</strong>（§5.1 用过这个比方，这里再用一次）：一台老式收音机有几个旋钮，你转动它们直到声音最清楚。<strong>那几个旋钮此刻停在的位置，就是「权重」。</strong>而神经网络相当于一台有几千亿个旋钮的收音机，训练过程就是有人花几个月时间，把这几千亿个旋钮一个个转到最合适的位置。</p>
+  <p>所以「发布权重」这件事的实质是：<strong>把那几千亿个旋钮的最终位置抄下来，做成一个文件给你。</strong>你拿到这个文件，就能造出一台旋钮位置完全一样的收音机，听到一样清楚的声音。</p>
+  <p><mark class="key">但你不知道这些位置是怎么找到的。</mark>你不知道调试者试过多少个组合、听的是哪个电台、用什么标准判断「清楚」。<strong>换成大白话：你拿到了答案，但没拿到解题过程。</strong></p>
+  <p>OSI 的定义原文对这几个概念做了非常精确的区分，值得逐字看：</p>
+  <pre><code>"An AI model consists of the model architecture, model parameters
+(including weights) and inference code for running the model.
+AI weights are the set of learned parameters that overlay the model
+architecture to produce an output from a given input."</code></pre>
+  <p>翻译：<em>「一个 AI 模型由<strong>模型架构</strong>、<strong>模型参数（含权重）</strong>和<strong>用于运行模型的推理代码</strong>组成。AI 权重是那组学到的参数，它们叠加在模型架构上，从而对给定输入产出输出。」</em></p>
+  <p>把这句话拆成三样东西，对应到收音机：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>OSI 的用词</th><th>是什么</th><th>收音机类比</th><th>厨房类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>模型架构</strong><br>model architecture</td><td>网络有几层、每层怎么连</td><td>这台收音机的<strong>电路设计图</strong>：有几个旋钮、各控制什么</td><td>厨房的<strong>格局</strong>：几个灶、水槽在哪</td></tr>
+        <tr><td><strong>参数 / 权重</strong><br>parameters / weights</td><td>那几千亿个具体数字</td><td>每个旋钮<strong>当前转到的刻度</strong></td><td>这道菜每样调料<strong>放了多少克</strong></td></tr>
+        <tr><td><strong>推理代码</strong><br>inference code</td><td>让模型跑起来的那段程序</td><td>收音机的<strong>开关和使用方法</strong></td><td>照着做的<strong>操作步骤</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>注意这三样里没有「训练代码」和「训练数据」。</strong>这就是关键——<mark class="key">上面这三样加起来只够让模型「跑起来」，不够让人「重做一个」。</mark>而 OSI 定义要的恰恰是后者。</p>
+
+  <h3>OSI 与 OSAID：开源这个词是有主人的</h3>
+  <p>在讲定义之前，先说清楚<strong>凭什么是 OSI 说了算</strong>。</p>
+  <p><strong>OSI</strong>（Open Source Initiative，开放源代码促进会）是 1998 年成立的非营利组织。<mark class="key">「开源」（open source）这个词的定义、以及「哪些许可证算开源许可证」这件事，几十年来就是由它维护的。</mark></p>
+  <p><strong>用一个生活里的对应关系来理解它的地位：</strong>「有机蔬菜」这四个字不是谁想印在包装上就能印的，得符合一套认证标准。<strong>相当于</strong>菜市场里有个专门的机构管着「什么才算有机」，你的菜再干净、再没打农药，没过认证也不能标「有机」。<strong>OSI 在软件世界扮演的就是这个角色。</strong></p>
+  <p>2024 年 10 月，OSI 发布了 <strong>Open Source AI Definition（OSAID，开源 AI 定义）v1.0</strong>，专门回答「一个 AI 系统怎样才算开源」。<strong>这就是本节的核心依据，出处 <code>opensource.org/ai/open-source-ai-definition</code>，可靠度：高。</strong></p>
+  <p>它先给出四项自由，原文：</p>
+  <pre><code>"An Open Source AI is an AI system made available under terms and
+in a way that grant the freedoms to:
+  Use the system for any purpose and without having to ask for
+    permission.
+  Study how the system works and inspect its components.
+  Modify the system for any purpose, including to change its output.
+  Share the system for others to use with or without modifications,
+    for any purpose."</code></pre>
+  <p>翻译成四条大白话，并配上生活类比：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>四项自由</th><th>原文关键词</th><th>大白话</th><th>辣酱类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>使用</strong>（Use）</td><td>for any purpose and <strong>without having to ask for permission</strong></td><td>想用来干什么都行，<mark class="key">而且不用申请许可</mark></td><td>这罐酱你想蘸饺子、拌面、送人，都不用问我</td></tr>
+        <tr><td><strong>研究</strong>（Study）</td><td>Study how the system works and <strong>inspect its components</strong></td><td>能搞清它<strong>怎么工作</strong>、能<strong>逐个检查它的零件</strong></td><td>你能知道里面放了哪几种辣椒、各多少克</td></tr>
+        <tr><td><strong>修改</strong>（Modify）</td><td>for any purpose, <strong>including to change its output</strong></td><td>想怎么改就怎么改，<strong>包括改变它输出的内容</strong></td><td>嫌太辣就减辣椒，想更麻就加花椒</td></tr>
+        <tr><td><strong>分享</strong>（Share）</td><td>with or without modifications, for any purpose</td><td>改过的、没改过的，都能给别人</td><td>你改良的版本可以随便送给朋友</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>请特别注意「使用」那一条里的 without having to ask for permission（不必征得许可）。</strong><mark class="key">Meta Llama 那条「月活超 7 亿必须向 Meta 申请，Meta 可自行酌情决定」的条款，恰好就撞在这七个字上。</mark>这个对撞我们下面单独讲。</p>
+  <p><strong>再注意「研究」那一条里的 inspect its components（检查它的组件）。</strong>光有权重你没法「检查组件」——<strong>说白了：</strong>你能听到收音机响，但你不知道那几千亿个旋钮为什么停在那个位置。这条自由要求的是能<em>看进去</em>，不只是能<em>用起来</em>。</p>
+
+  <h3>三要素：Data Information + Code + Parameters</h3>
+  <p>四项自由是目标，那怎么才算达成？OSI 给出了一个非常具体的判据，叫<strong>「优先修改形式」</strong>（preferred form to make modifications）。<mark class="key">这是全节最重要的一段，它把「算不算开源」变成了一道可以打勾的清单。</mark></p>
+  <p><strong>它要求三样东西，缺一样都不行。逐条看原文。</strong></p>
+  <p><strong>第一样：Data Information（数据信息）。</strong>原文：</p>
+  <pre><code>"Data Information: Sufficiently detailed information about the data
+used to train the system so that a skilled person can build a
+substantially equivalent system. Data Information shall be made
+available under OSI-approved terms."</code></pre>
+  <p>翻译：<em>「关于训练该系统所用数据的<strong>足够详细的信息</strong>，使得一个熟练的人能够构建出一个<strong>实质等效</strong>的系统。数据信息须以 OSI 认可的条款提供。」</em></p>
+  <p><strong>这一条有两个非常聪明的设计，值得单独说：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">它要的是「信息」，不是「数据本身」</span><span class="v">OSI 没有要求你把训练数据整个放出来。<mark class="key">这是一个务实的妥协</mark>——训练数据里可能有版权内容、隐私信息，全部公开在法律上往往不可行。<strong>相当于</strong>辣酱配方里不要求你把那袋辣椒寄给我，只要求你告诉我「用的是哪个品种、哪个产地、大概什么比例」。</span></li>
+    <li><span class="k">判定标准是「实质等效」</span><span class="v">substantially equivalent system——<strong>一个熟练的人照着这些信息，能做出一个差不多的东西。</strong>这个标准很实用，因为它不要求逐字节一致（那不可能，训练本身有随机性），只要求<em>能重做一个功能相当的</em>。<strong>说白了：能不能照着你的说明再做一罐味道差不多的酱。</strong></span></li>
+  </ul>
+  <p><strong>第二样：Code（代码）。</strong>原文：</p>
+  <pre><code>"Code: The complete source code used to train and run the system.
+... Code shall be made available under OSI-approved licenses."</code></pre>
+  <p>翻译：<em>「用于<strong>训练和运行</strong>该系统的完整源代码。……代码须以 OSI 认可的许可证提供。」</em></p>
+  <p><mark class="key">注意这里是「train and run」（训练和运行），不是只有运行。</mark>这一点极为关键，因为绝大多数「开源模型」发布的只有运行所需的推理代码，训练代码根本不给。<strong>相当于</strong>邻居告诉你「这罐酱怎么开盖、怎么保存、怎么蘸着吃」，但不告诉你「怎么炒出来的」。</p>
+  <p><strong>第三样：Parameters（参数）。</strong>原文：</p>
+  <pre><code>"Parameters: The model parameters, such as weights or other
+configuration settings. Parameters shall be made available under
+OSI-approved terms."</code></pre>
+  <p>翻译：<em>「模型参数，例如权重或其他配置设置。参数须以 OSI 认可的条款提供。」</em></p>
+  <p><strong>把三样合起来，就是那句最关键的结论。OSI 原文：</strong></p>
+  <pre><code>"'Open Source models' and 'Open Source weights' must include the
+data information and code used to derive those parameters."</code></pre>
+  <p>翻译：<em>「『开源模型』和『开源权重』<strong>必须包含用于导出这些参数的数据信息与代码</strong>。」</em></p>
+  <p><mark class="key">所以答案很明确：仅发布权重、不提供 Data Information 与训练 Code，按 OSAID 不构成 Open Source。</mark></p>
+  <p><strong>把这个判据做成一张能打勾的表，你以后看任何「开源模型」发布公告都能自己判断：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>要素</th><th>大部分「开源模型」给了吗</th><th>辣酱类比</th><th>缺了会怎样</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Parameters</strong>（权重）</td><td>✅ 基本都给</td><td>那罐酱</td><td>缺了压根不能用</td></tr>
+        <tr><td><strong>推理代码</strong></td><td>✅ 大多给了</td><td>怎么开盖、怎么吃</td><td>缺了不知道怎么用</td></tr>
+        <tr><td><strong>训练 Code</strong></td><td><mark class="key">❌ 大多不给</mark></td><td>炒制的完整步骤</td><td>缺了你没法从头做一个</td></tr>
+        <tr><td><strong>Data Information</strong></td><td><mark class="key">❌ 极少给</mark></td><td>辣椒的品种、产地、比例</td><td>缺了你连「为什么会这样」都不知道</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>看这张表最下面两行——那正是「开放权重」和「开源」的分界线。</strong></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 免费开放的小区花园</span>
+    <p>「开放权重」被叫成「开源」这件事，用一个小区花园的比方能讲得最清楚，而且能同时讲清 Llama 那条 7 亿门槛为什么是个问题。</p>
+    <p>假设小区门口挂着一块牌子：<strong>「本小区花园免费向公众开放。」</strong>听起来很大方。但你走近细看，牌子下面还有几行小字：</p>
+    <p><strong>小字一：</strong>「如果你所在的公司在本告示发布当日员工超过一万人，须先向物业申请，<mark class="key">批不批我们说了算。</mark>」</p>
+    <p><strong>小字二：</strong>「入园后，你在任何社交媒体提到本花园时，须显著标注『游于××花园』。」</p>
+    <p><strong>小字三：</strong>「如果你受本花园启发自己造了一个花园，那个花园的名字开头必须带『××』。」</p>
+    <p><strong>这三行小字，就是 §12.2 讲过的 Llama 4 Community License 里的三条真实义务。</strong>而 OSI 四项自由里的第一条要的是 <em>without having to ask for permission</em>（不必征得许可）——<mark class="key">小字一直接撞上了它。</mark></p>
+    <p><strong>但这还不是最要紧的地方。</strong>最要紧的是另一件事：这个花园你可以进去逛，可以拍照，可以坐在长椅上晒太阳。<em>但没人告诉你这些树是什么品种、从哪买的苗、怎么养到这么大的。</em><strong>你想在自己家院子里照着造一个，做不到。</strong></p>
+    <p><mark class="key">这就是 OSAID 三要素的真正意义所在。</mark>它管的不只是「你能不能进」这个权限问题（那是许可条款的事），更是「你能不能自己也造一个」这个能力问题（那是 Data Information + Code 的事）。<strong>本质上就是：许可宽松只解决了「让不让你用」，开源要解决的是「你能不能独立重来一遍」。</strong></p>
+  </div>
+
+  <h3>拿 Llama 4 当尺子量一遍</h3>
+  <p>光讲定义容易空。现在把 §12.2 引用过的 Llama 4 Community License 拿出来，逐条对着 OSAID 量一遍。<mark class="key">这是本节最实用的一段，因为它给了你一套可以套用到任何模型上的检查动作。</mark></p>
+  <p><strong>先重申一次那条最关键的原文</strong>（Section 2 Additional Commercial Terms，生效日 2025 年 4 月 5 日）：</p>
+  <pre><code>"If, on the Llama 4 version release date, the monthly active users
+of the products or services made available by or for Licensee, or
+Licensee's affiliates, is greater than 700 million monthly active
+users in the preceding calendar month, you must request a license
+from Meta, which Meta may grant to you in its sole discretion..."</code></pre>
+  <p><strong>现在逐条对照：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>OSAID 要求</th><th>Llama 4 的情况</th><th>判定</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>自由一 · Use</strong><br>「for any purpose and <em>without having to ask for permission</em>」</td><td>月活超 7 亿必须向 Meta 申请，且 Meta「<strong>可自行酌情决定</strong>」</td><td><mark class="key">冲突</mark>——对一部分主体而言，恰恰<em>必须</em>征得许可</td></tr>
+        <tr><td><strong>自由二 · Study</strong><br>「inspect its components」</td><td>能拿到权重，但训练数据信息未提供</td><td><strong>不满足</strong>——能用不等于能看进去</td></tr>
+        <tr><td><strong>自由三 · Modify</strong></td><td>可以微调、可以改，但派生模型<strong>名字开头必须带「Llama」</strong></td><td><strong>附带条件</strong></td></tr>
+        <tr><td><strong>自由四 · Share</strong></td><td>可以分发，但须附协议副本、须显著标注「Built with Llama」</td><td><strong>附带条件</strong></td></tr>
+        <tr><td><strong>要素 · Parameters</strong></td><td>✅ 提供</td><td>满足</td></tr>
+        <tr><td><strong>要素 · Code（train and run）</strong></td><td>推理侧有，<strong>完整训练代码未提供</strong></td><td><mark class="key">不满足</mark></td></tr>
+        <tr><td><strong>要素 · Data Information</strong></td><td>未提供到「熟练者可构建实质等效系统」的详细程度</td><td><mark class="key">不满足</mark></td></tr>
+        <tr><td><strong>许可类型</strong></td><td>Meta 自定义 Community License</td><td><strong>非 OSI 认可的开源许可</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>所以结论是什么？</strong>按 OSAID 这把尺子，<mark class="key">Llama 4 属于「开放权重」（open weights），不属于「开源 AI」（Open Source AI）。</mark></p>
+  <p><strong>但请务必把这个结论理解对，它非常容易被读成一句攻击的话。</strong>这里说三点：</p>
+  <ul class="keylist">
+    <li><span class="k">一 · 这不是说 Llama 不好</span><span class="v">Meta 把一个前沿模型的权重公开发布，这件事对整个行业的推动是巨大的。<strong>说白了：邻居送你一罐辣酱，本身是件好事。</strong>我们只是在说，这罐酱不等于那份配方。</span></li>
+    <li><span class="k">二 · 这不是说 Meta 在骗人</span><span class="v">Meta 官方给这份协议的名字是 <em>Community License</em>（社区许可），<mark class="key">它从来没有自称是 OSI 认可的开源许可证。</mark>把「开放权重」传成「开源」这件事，主要发生在转述和媒体标题里，不是在原始协议里。</span></li>
+    <li><span class="k">三 · 这个判定是「按 OSAID」的判定</span><span class="v">本节的结论有一个明确的前提：<strong>依据是 OSI 的 OSAID v1.0。</strong>换一把尺子可能得出不同结论。<strong>相当于</strong>说「这块菜按有机认证标准不算有机」——这是在陈述认证结果，不是在说这菜不好吃。</span></li>
+  </ul>
+  <p><strong>那正确的说法是什么？</strong>给你三组用词对照，以后写东西可以直接用：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>不严谨的说法</th><th>严谨的说法</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「Meta 开源了 Llama 4」</td><td>「Meta <strong>公开发布了</strong> Llama 4 的<strong>权重</strong>」</td><td>准确描述了做了什么，不做资格认定</td></tr>
+        <tr><td>「Llama 4 是开源模型」</td><td>「Llama 4 是<strong>开放权重模型</strong>，采用 Meta 自定义的社区许可」</td><td>用了业界通行且准确的术语 open weights</td></tr>
+        <tr><td>「Llama 4 可以免费商用」</td><td>「Llama 4 <strong>在满足社区许可条件的前提下</strong>可商用，其中含 7 亿月活门槛与署名、命名义务」</td><td><mark class="key">把前提条件说出来，这是对读者负责</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>「开放权重」（open weights）这个词是有的，而且越来越多人在用。</strong>它准确、诚实、不需要争论。<strong>用超市标签打比方：</strong>「本地种植」和「有机认证」是两个不同的标签，前者也是好东西，但它就是不叫后者。<mark class="key">用对标签，比争论哪个更高级有意义得多。</mark></p>
+
+  <h3>llama.cpp：让普通电脑也能跑模型的那个项目</h3>
+  <p>讲完定义，现在讲能上手的东西。<strong>这一小节和后面两小节，是全章唯一你今晚就能动手试的部分。</strong></p>
+  <p><strong>llama.cpp</strong> 是一个开源推理项目，官方仓库 <code>github.com/ggml-org/llama.cpp</code>，<strong>许可是 MIT license</strong>（GitHub 仓库侧栏明确标注，可靠度：高）。</p>
+  <p><mark class="key">这里请注意一个容易搞混的地方：llama.cpp 的许可是 MIT（一个标准的 OSI 认可开源许可），但它跑的那些模型的许可各不相同。</mark><strong>相当于</strong>你家的<strong>微波炉</strong>是你自己的，但你放进去加热的那盒便当归谁、能不能转卖，是另一回事。</p>
+  <p>官方 README 里对项目目标的表述：</p>
+  <pre><code>"The main goal of `llama.cpp` is to enable LLM (and VLM) inference
+with minimal setup and state-of-the-art performance on a wide range
+of hardware - locally and in the cloud."</code></pre>
+  <p>翻译：<em>「llama.cpp 的主要目标是：以<strong>最少的配置</strong>、在<strong>各种硬件</strong>上（本地或云端）实现大语言模型（以及视觉语言模型）的推理，并达到一流的性能。」</em></p>
+  <p><strong>「minimal setup」（最少的配置）这四个字是这个项目的灵魂。</strong>为什么这件事重要？因为传统的模型推理需要装 Python、装 PyTorch、装 CUDA、配环境变量，一整套下来对普通人是灾难。<strong>相当于</strong>你想在家煮碗面，结果得先装修厨房、通煤气、买抽油烟机。</p>
+  <p>官方列出的特性里，有四条特别值得逐条翻译：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>官方原文特性</th><th>大白话</th><th>为什么重要</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>「Plain C/C++ implementation <strong>without any dependencies</strong>」</td><td>纯 C/C++ 写的，<strong>不依赖任何外部库</strong></td><td><mark class="key">这是「minimal setup」的根本原因</mark>——不用装 Python 环境，编译出来就是一个能跑的程序。<strong>相当于</strong>一把不用充电、不用配件的手动工具</td></tr>
+        <tr><td>「Apple silicon is a <strong>first-class citizen</strong> - optimized via ARM NEON, Accelerate and Metal frameworks」</td><td>苹果自研芯片是<strong>一等公民</strong>，通过三套苹果框架专门优化</td><td>意味着 Mac 上跑得特别顺。<strong>说白了：</strong>M 系列芯片的 Mac 是这个项目最舒服的平台之一</td></tr>
+        <tr><td>「<strong>1.5-bit, 2-bit, 3-bit, 4-bit, 5-bit, 6-bit, and 8-bit</strong> integer quantization for faster inference and reduced memory use」</td><td>支持从 <strong>1.5 位到 8 位</strong>的整数量化，加快推理、减少内存占用</td><td>这就是 §12.1 讲过的「精度换资源」，<mark class="key">这里给了七个可选档位</mark>，让你在效果和资源之间自己挑</td></tr>
+        <tr><td>「<strong>CPU+GPU hybrid inference</strong> to partially accelerate models larger than the total VRAM capacity」</td><td>CPU 与 GPU <strong>混合推理</strong>，能部分加速那些<strong>大于显存总容量</strong>的模型</td><td><mark class="key">这一条是普通人的救命稻草</mark>——显存装不下的模型，也能靠内存兜一部分，慢但能跑</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>最后那条「CPU+GPU 混合推理」值得用生活场景说透，因为它解决的是最常见的痛点。</strong></p>
+  <p>回忆 §12.1 那个饺子车间的比方：显存是案板。你的案板（显存）只有 8 GB，但要摊的菜谱（模型）有 20 GB。<mark class="key">纯 GPU 方案会直接告诉你「放不下，干不了」。</mark></p>
+  <p><strong>而混合推理相当于说：</strong>案板上先放最常用的那部分，剩下的暂时摊在旁边的<strong>餐桌</strong>上（也就是普通内存里），需要时再端过来。<strong>结果是慢一些，但活儿能干成。</strong><strong>说白了：从「不能做」变成「做得慢」，这个改变对个人用户是决定性的。</strong></p>
+  <p>官方 Quick start 给的命令长这样，简洁程度值得一看：</p>
+  <pre><code>llama cli -hf ggml-org/Qwen3.5-0.8B-GGUF
+llama serve -hf ggml-org/Qwen3.5-0.8B-GGUF</code></pre>
+  <p>两条命令的区别：<strong><code>cli</code> 是在命令行里直接跟模型聊天</strong>；<strong><code>serve</code> 是起一个服务，让别的程序能通过接口来调它</strong>。<strong>相当于</strong>前者是你自己走到窗口去问，后者是开一个<strong>窗口</strong>让所有人来排队问。安装入口官方给的是 <code>llama.app</code>。</p>
+  <p>后端支持列表也值得抄一遍，因为它是一张「谁的硬件被认真支持」的清单：<strong>CUDA、HIP、Metal、Vulkan、SYCL、CANN（Ascend NPU）、MUSA（Moore Threads）、OpenCL（Adreno）、WebGPU、ZenDNN。</strong></p>
+  <p><mark class="key">§12.1 里关于华为昇腾唯一那条有据可查的事实，就在这份列表里：CANN | Ascend NPU。</mark>而 MUSA 对应的摩尔线程也是一家中国厂商。<strong>这份列表能说明的事情很朴素但很硬：这些硬件在最主流的开源推理项目里被官方支持。</strong>它不说明任何性能数字，但它说明了生态适配的存在。</p>
+  <p><strong>项目规模数据（截至 2026 年 8 月 8 日查询该仓库当日显示）：</strong>1,873 位贡献者，最新发布标签 <code>b10313</code>。</p>
+  <p>这两个数字换算一下会更有感觉：<mark class="key">1873 个人给同一个项目提交过代码</mark>——这个规模相当于一个中型软件公司的全部工程师。而 <code>b10313</code> 这个标签说明它已经发过一万多个版本，<strong>相当于</strong>如果每天发一个版本，也要发二十八年。<strong>说白了：这不是一个业余项目，是一个高强度持续迭代的工程。</strong></p>
+
+  <h3>GGUF：模型的「统一集装箱」</h3>
+  <p>上面那条命令里出现了 <code>Qwen3.5-0.8B-<strong>GGUF</strong></code>。这个后缀是什么？<strong>这一小节讲一个只有五个字母、但极大简化了本地跑模型这件事的东西。</strong></p>
+  <p><strong>GGUF</strong> 是一种模型文件格式。官方规范（<code>github.com/ggml-org/ggml/blob/master/docs/gguf.md</code>）原文：</p>
+  <pre><code>"GGUF is a file format for storing models for inference with GGML
+and executors based on GGML. GGUF is a binary format that is
+designed for fast loading and saving of models, and for ease of
+reading. Models are traditionally developed using PyTorch or
+another framework, and then converted to GGUF for use in GGML."</code></pre>
+  <p>翻译：<em>「GGUF 是一种文件格式，用于存放供 GGML 及基于 GGML 的执行器做推理的模型。它是一种<strong>二进制格式</strong>，设计目标是<strong>快速加载和保存</strong>模型、以及<strong>便于读取</strong>。模型通常先用 PyTorch 或其他框架开发，然后<strong>转换成 GGUF</strong> 以便在 GGML 中使用。」</em></p>
+  <p><strong>用快递的比方讲这件事，一句就懂：</strong>不同工厂生产的商品，包装规格五花八门——有的用泡沫箱、有的用麻袋、有的散装。<mark class="key">而集装箱标准化之后，所有东西都装进统一尺寸的箱子，任何一台起重机、任何一条船都能处理。</mark><strong>GGUF 就是模型世界的集装箱标准。</strong></p>
+  <p><strong>注意原文里那句「converted to GGUF」（转换成 GGUF）。</strong>这说明 GGUF 不是模型训练时的原生格式——<em>模型先在 PyTorch 那边训好，再打包成 GGUF 拿出来用</em>。<strong>相当于</strong>工厂里生产完的货，装进集装箱才上船；集装箱不是生产用的容器，是运输用的容器。</p>
+  <p>官方还说明了它的来历：</p>
+  <pre><code>"It is a successor file format to GGML, GGMF and GGJT, and is
+designed to be unambiguous by containing all the information needed
+to load a model."</code></pre>
+  <p>翻译：<em>「它是 GGML、GGMF 和 GGJT 的<strong>后继格式</strong>，通过包含加载模型所需的<strong>全部信息</strong>来做到无歧义。」</em></p>
+  <p><strong>「包含全部所需信息」这一点，比听起来重要得多。</strong>它解决的是一个非常具体的痛苦：<mark class="key">以前拿到一个模型文件，你还得另外知道一堆配置——多少层、词表在哪、用什么分词器。少一样就跑不起来。</mark><strong>相当于</strong>你收到一个<strong>包裹</strong>，箱子里有零件但说明书丢了，你得自己猜怎么装。</p>
+  <p>而 GGUF 与前一代 GGJT 的关键差别，官方点得很准：</p>
+  <pre><code>"The key difference between GGJT and GGUF is the use of a key-value
+structure for the hyperparameters (now referred to as metadata),
+rather than a list of untyped values."</code></pre>
+  <p>翻译：<em>「GGJT 与 GGUF 的关键差别在于：超参数（现在改称元数据）采用<strong>键值结构</strong>，而不是一串<strong>无类型的值</strong>。」</em></p>
+  <p><strong>这个改动值得用一个生活场景讲透，因为它是所有「配置文件设计」共通的道理。</strong></p>
+  <p><strong>旧办法（一串无类型的值）相当于：</strong>你去药店取药，药师递给你一张纸条，上面只写着「3 2 7 1」。你得自己知道第一个数是每天几次、第二个是几片、第三个是几天、第四个是饭前还是饭后。<mark class="key">顺序一错就全错，而且中间加一项会把后面全部错位。</mark></p>
+  <p><strong>新办法（键值结构）相当于：</strong>纸条上写「每天次数=3；每次片数=2；服用天数=7；饭前饭后=饭后」。<strong>顺序可以任意打乱，加新项也不影响老项，而且看一眼就知道每个数是什么意思。</strong></p>
+  <p>再看两个规范细节，它们能教你「文件格式」是怎么设计的：</p>
+  <ul class="keylist">
+    <li><span class="k">文件头 magic 必须是 GGUF</span><span class="v">对应字节 <code>0x47 0x47 0x55 0x46</code>。<strong>这四个字节就是文件开头的「身份印章」。</strong>程序打开文件先看这四个字节，不对就直接判定「这不是我认识的格式」，省得白读几个 G。<strong>相当于</strong>快递员先看箱子上的<strong>印章</strong>是不是自家公司的，不是就不签收。</span></li>
+    <li><span class="k">当前规范版本必须为 3</span><span class="v">官方原文「Must be <code>3</code> for version described in this spec, which introduces big-endian support.」——本规范描述的版本必须为 3，该版本引入了大端字节序支持。<mark class="key">「大端 / 小端」说白了就是「一个多字节的数，从左往右写还是从右往左写」</mark>——不同 CPU 架构习惯不同，格式得都支持才能跨平台。<strong>相当于</strong>有的国家日期写「日/月/年」，有的写「年/月/日」，表格得能认两种。</span></li>
+  </ul>
+  <p>官方还给了一套文件命名规范，看着复杂但拆开就明白：</p>
+  <pre><code>[&lt;Sidecar&gt;]&lt;BaseName&gt;&lt;SizeLabel&gt;&lt;FineTune&gt;&lt;Version&gt;&lt;Encoding&gt;&lt;Type&gt;&lt;Shard&gt;.gguf</code></pre>
+  <p>翻译成大白话，这就是一张<strong>商品标签</strong>的字段清单：基础模型名、尺寸标签（多少 B）、微调版本、版本号、编码方式（量化档位）、类型、分片编号。<strong>说白了：</strong>看文件名就能知道这是「哪个模型、多大、什么量化、第几片」，<mark class="key">不用打开就知道箱子里装的是什么。</mark>这跟<strong>超市</strong>商品标签上「品牌+规格+口味+生产批次」的排法是同一个思路。</p>
+
+  <h3>Ollama：把这一切包成一句话</h3>
+  <p>llama.cpp 已经很省事了，但仍然要碰命令行、要理解量化档位、要自己找模型文件。<strong>Ollama 做的是再往上包一层，让整件事变成一句话。</strong></p>
+  <p>官方文档（<code>docs.ollama.com/quickstart</code>）原文：<strong>「Ollama runs on macOS, Windows, and Linux.」</strong>——三大桌面系统都能跑。</p>
+  <p>官方给的用法极其简单，运行 <code>ollama</code> 就打开一个交互菜单，里面能：</p>
+  <ul class="keylist">
+    <li><span class="k">Run a model</span><span class="v">官方描述「Start an interactive chat」——开始一段交互式对话。<strong>说白了：</strong>选个模型，直接开始聊。</span></li>
+    <li><span class="k">Launch tools</span><span class="v">官方列出「Claude Code, OpenClaw, VS Code, and more」——能直接把本地模型接给这些开发工具用。<mark class="key">这一条意味着你可以让编辑器里的 AI 助手跑在自己的电脑上，一个 token 的钱都不付给云端。</mark></span></li>
+  </ul>
+  <p>最基本的用法就一行，官方示例：</p>
+  <pre><code>ollama run gemma4</code></pre>
+  <p><strong>就这样。</strong>没有配环境、没有装 Python、没有选量化档位、没有下载文件。<mark class="key">它会自动帮你把模型拉下来然后开始对话。</mark>退出输入 <code>/bye</code>。</p>
+  <p><strong>用一个厨房的比方来对比这三层的关系，你会立刻明白它们各自的位置：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>层次</th><th>是什么</th><th>厨房类比</th><th>适合谁</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>模型权重</strong>（GGUF 文件）</td><td>那几千亿个数字打包成的文件</td><td><strong>生食材</strong>：一块肉、一把菜</td><td>需要自己完全掌控的人</td></tr>
+        <tr><td><strong>llama.cpp</strong></td><td>推理引擎，能把权重跑起来</td><td><strong>灶台和锅</strong>：能做菜，但火候、调料都要你自己来</td><td>愿意折腾、要精细调优的人</td></tr>
+        <tr><td><strong>Ollama</strong></td><td>在上面再包一层，一句命令搞定</td><td><mark class="key">一台<strong>预设好程序的电饭煲</strong>：放米放水，按「煮饭」</mark></td><td>只想用起来、不想调参的人</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>官方还提了一个很有意思的功能——<strong>云端模型</strong>：「Cloud models work the same way: <code>ollama run gemma4:cloud</code>」。<mark class="key">加一个 <code>:cloud</code> 后缀，同一条命令就改成跑在云端了。</mark></p>
+  <p><strong>这个设计相当漂亮。</strong>它的意思是：<em>你的使用方式完全不变，只是活儿从自家厨房挪到了外面的厨房。</em><strong>相当于</strong>同一个点菜动作，你可以选「自己做」或者「叫外卖」，而<strong>点菜的方式一模一样</strong>。对使用者来说，本地和云端的切换成本被压到了一个后缀。</p>
+  <p>模型浏览入口官方给的是 <code>ollama.com/search</code>。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · 两处留白</span>
+    <p><strong>第一，Ollama 支持的模型完整清单未取得。</strong>那个页面是动态渲染的，我们抓不到完整列表。所以本节<strong>只给官方文档里出现过的示例模型名（<code>gemma4</code>）</strong>，不列「Ollama 支持哪些模型」的清单。</p>
+    <p><strong>第二，Hugging Face 的平台规模数字未取得。</strong>Hugging Face 是全球最大的模型与数据集托管平台，本该在这一节占重要位置。<mark class="key">但我们尝试的三个官方地址（<code>huggingface.co/models</code>、<code>huggingface.co/</code>、<code>huggingface.co/docs/hub/en/index</code>）全部抓取失败。</mark></p>
+    <p>所以本节<strong>不给出任何 Hugging Face 的模型数、数据集数、用户数</strong>。网上「HF 上有一百多万个模型」这类说法很常见，我们没有核实到，就不写。</p>
+    <p><strong>顺带说明另一处整条留白：Mistral AI。</strong>这是一家常被列入开源阵营的法国公司，我们尝试了 <code>docs.mistral.ai</code> 的 models_overview、models、weights 以及 <code>mistral.ai/technology</code> 四个地址，<strong>全部失败</strong>。搜索结果里只有自媒体内容，按本章原则已排除。<mark class="key">所以本节关于 Mistral 的型号与许可，整条标「未取得」，一个字都不写。</mark></p>
+    <p>这几处留白凑在一起有点难看，但请把它当成一个正面示范：<strong>一份研究里「我不知道的部分」被清楚标出来，比它被漂亮地填满更有价值。</strong></p>
+  </div>
+
+  <h3>自己在电脑上跑一个模型，值不值得</h3>
+  <p>工具讲完了，现在回答一个很实际的问题：<strong>作为普通人，你到底该不该折腾这件事？</strong></p>
+  <p>先把两条路的账摆平（这是按前面各节可核实的信息做的对比，不含任何厂商宣称）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>用云端 API（§12.2、§12.3）</th><th>本地跑（本节的工具）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>启动成本</strong></td><td>注册、拿个密钥，几分钟</td><td>装个 Ollama，也就几分钟；<strong>但要有一台够用的机器</strong></td></tr>
+        <tr><td><strong>每次花钱吗</strong></td><td>是，按 token 算</td><td><mark class="key">不花，电费忽略不计</mark></td></tr>
+        <tr><td><strong>能跑多大的模型</strong></td><td>厂商最强的那个也能用</td><td>受你的显存和内存限制（§12.1 的账）</td></tr>
+        <tr><td><strong>数据去哪</strong></td><td>发到厂商服务器</td><td><strong>完全不出你的电脑</strong></td></tr>
+        <tr><td><strong>断网能用吗</strong></td><td>不能</td><td><mark class="key">能</mark></td></tr>
+        <tr><td><strong>厂商改型号会影响你吗</strong></td><td>会（§12.2、§12.3 有多个真实弃用与关停实例）</td><td><strong>不会，文件在你硬盘上</strong></td></tr>
+        <tr><td><strong>速度</strong></td><td>通常更快，人家的卡更强</td><td>取决于你的机器，小模型很快，大模型可能很慢</td></tr>
+        <tr><td><strong>生活类比</strong></td><td><strong>点外卖</strong>：方便、选择多、每顿付钱</td><td><strong>自己做饭</strong>：省钱、可控、但要有厨房和时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>按这张表，本地跑最值的四种情况是：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">数据绝对不能外传</span><span class="v">病历、合同、内部财务、未公开的研究资料。<mark class="key">这一条是本地部署最无可替代的价值，跟省钱无关。</mark><strong>相当于</strong>有些菜你就是不放心让外面做，得自己在家煮。</span></li>
+    <li><span class="k">要在没网的环境用</span><span class="v">飞机上、野外、内网隔离的机房。云端 API 在这些地方一点用没有。</span></li>
+    <li><span class="k">量特别大且任务简单</span><span class="v">比如把十万条文本分类。<strong>这种活儿用小模型就够，而小模型在本地跑起来很轻松</strong>——省下的是实打实的钱。</span></li>
+    <li><span class="k">想学明白它到底怎么工作</span><span class="v">这是最容易被低估的一条。<mark class="key">亲手下载一个模型文件、看着它加载、感受不同量化档位的差别，这个体验能让前面十一章的所有原理落地。</mark><strong>相当于</strong>你读了十本菜谱，不如自己下厨炒糊一次锅。</span></li>
+  </ul>
+  <p><strong>而不值得折腾的情况也很明确：</strong>如果你只是偶尔用一下、任务需要最强的能力、又不在乎数据发到哪里，<strong>那云端 API 更划算</strong>——尤其是看过 §12.3 那张价格表之后，你会发现便宜档的价格低到「省这个钱不如省时间」。</p>
+  <p><strong>给一条最省事的上手建议：</strong>装 Ollama，跑一个小模型（几 B 参数那种），聊两句，感受一下。<mark class="key">全程不超过半小时，也不用付钱。</mark>这半小时能让你对「模型跑在什么东西上」这件事的理解，超过读十篇文章。</p>
+
+  <h3>开源生态到底改变了什么</h3>
+  <p>把这一节收一下，说三件开放权重和开源工具真正带来的改变。<strong>这三件事都是可以从前面的事实推出来的，不含任何推测性预言。</strong></p>
+  <p><strong>改变一：它给了「不依赖任何一家公司」这个选项。</strong></p>
+  <p>回想 §12.2 和 §12.3 里那些真实发生的事：Gemini 3 Pro Preview 被官方标 (Shut down)；<code>deepseek-chat</code> 于 2026 年 7 月 24 日弃用；Kimi 官方建议近期别用 web_search。<mark class="key">这些都是你无法控制的变动，唯一的应对是改代码。</mark></p>
+  <p>而一个下载到硬盘上的 GGUF 文件，<strong>没人能把它关掉。</strong><strong>相当于</strong>你家<strong>冰箱</strong>里存的东西——外面的店关门、涨价、换菜单，都跟你冰箱里那份没关系。<strong>说白了：这不是性能上的优势，是「主权」上的优势。</strong></p>
+  <p><strong>改变二：它把「跑模型」的门槛从机房拉到了个人电脑。</strong></p>
+  <p>这一点是 llama.cpp 那几条特性的直接结果。「不依赖任何外部库」让安装变简单；「1.5 位到 8 位的七档量化」让模型能塞进小显存；「CPU+GPU 混合推理」让显存不够时也能跑。<mark class="key">三条加起来，把原本需要 §12.1 那种机柜才能做的事，压到了一台普通笔记本上。</mark></p>
+  <p><strong>用照相机打比方：</strong>过去拍好照片得有暗房、有药水、有专业设备，摄影是少数人的事；<strong>后来手机拍照普及，人人都是摄影者。</strong>这个变化不是让专业摄影师失业了，而是<em>让「拍照」这件事从一门手艺变成了一种日常能力</em>。</p>
+  <p><strong>改变三：它逼着所有人把术语说清楚。</strong></p>
+  <p>这就是本节前半部分的意义。<strong>OSAID 这份定义的存在，让「开源」这个词不再是想怎么用就怎么用的营销词。</strong>有了尺子之后，讨论就从「我觉得这算开源」变成了「按三要素清单，这一项满足、那一项不满足」。<mark class="key">能吵出结果的争论，前提是有个大家都承认的尺子。</mark></p>
+  <p><strong>相当于</strong>装修行业有了国标之后，「环保材料」不再是老板嘴上说说——<em>甲醛释放量的检测数值摆在那里，谁都不用争。</em></p>
+
+  <h3>常见误解澄清</h3>
+  <p><strong>误解一：「开源模型就是免费模型。」</strong></p>
+  <p>这里混了两件事。<strong>「开源」讲的是权利与透明度，「免费」讲的是价钱。</strong>Llama 4 不收你钱，但按 OSAID 不算开源；反过来，一个完全符合 OSAID 的模型也完全可以按商业方式收费提供服务。<mark class="key">而且「不收模型的钱」不等于「用起来免费」——你得自己付算力和电费。</mark></p>
+  <p><strong>误解二：「开放权重就等于可以随便商用。」</strong></p>
+  <p>这条误解代价最大，因为可能引出法律问题。Llama 4 Community License 里的三条硬义务（7 亿月活门槛、显著标注 Built with Llama、派生模型命名带 Llama）都是真实条款。<strong>说白了：下载不要钱，不等于用起来没规矩。</strong>要商用，<mark class="key">请自己打开模型页面读 LICENSE 原文，别信任何二手转述——包括本节的转述。</mark></p>
+  <p><strong>误解三：「量化会让模型变笨，所以要用原始精度。」</strong></p>
+  <p>§12.1 那个照相馆的比方已经讲过：80 MB 的原始文件和 2 MB 的 JPG 挂在墙上看不出差别。<strong>量化确实有损失，但在很多任务上这个损失小到无感，而省下的资源是成倍的。</strong>llama.cpp 提供 1.5 位到 8 位七个档位，<mark class="key">正是因为「该用哪一档」取决于你的任务和硬件，没有统一答案。</mark>正确做法是自己在几个档位上试一下，看哪一档开始明显变差。</p>
+  <p><strong>误解四：「Ollama 和 llama.cpp 是竞争关系，得选一个。」</strong></p>
+  <p>它们更像上下两层的关系，参照前面那张厨房表：<strong>llama.cpp 是灶台和锅，Ollama 是电饭煲。</strong><strong>相当于</strong>问「你家要灶台还是电饭煲」——很多人两个都有，做不同的事用不同的。</p>
+  <p><strong>误解五：「本地跑的模型肯定比云端的弱。」</strong></p>
+  <p><mark class="key">这个说法在具体条件下才成立，不能一概而论。</mark>它成立的部分是：你的机器摊不下 §12.3 提到的 235B 那种规模，而云端能提供。它不成立的部分是：<strong>很多任务用小模型就完全够用</strong>——文本分类、格式转换、简单摘要，杀鸡不用牛刀。<strong>说白了：问题不是「谁更强」，是「你的活儿需要多强」。</strong></p>
+  <p><strong>误解六：「llama.cpp 是 MIT 许可，所以我用它跑的模型也能随便用。」</strong></p>
+  <p>前面提过这一点，这里再强调一次，因为它是最容易踩的坑。<strong>工具的许可和内容的许可是两码事。</strong><strong>相当于</strong>你买的<strong>微波炉</strong>是你的，但你热的那盒别人家的便当不是你的。<mark class="key">llama.cpp 的 MIT 许可管的是 llama.cpp 这段代码，管不到你加载进去的那个模型文件。</mark></p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="某公司发布了一个大模型：权重可自由下载，附带推理代码，许可宽松无月活门槛，但<strong>没有公开训练数据的相关信息，也没有公开训练代码</strong>。按 OSI 的 OSAID v1.0，它算不算 Open Source AI？"
+       data-opts="算，因为许可宽松且权重完全公开|不算，因为缺少 Data Information 与训练 Code 这两项要素|算，因为提供了推理代码就满足了 Code 要素|无法判断，OSAID 没有对这种情况做出规定"
+       data-answer="1"
+       data-explain="OSAID 要求「优先修改形式」同时包含三样：Data Information（详细到「熟练者能构建实质等效系统」）、Code（原文是 train AND run，训练与运行的完整源代码）、Parameters。题中只有 Parameters 与运行侧代码，缺 Data Information 与训练 Code，故不构成 Open Source AI——OSI 原文明确写着「'Open Source models' and 'Open Source weights' must include the data information and code used to derive those parameters」。注意：许可宽松只解决了「让不让你用」，而 OSAID 关心的是「你能不能独立重做一个」，这是两个不同层面的问题。这类模型的准确叫法是「开放权重」（open weights）。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节收束</span>
+    <p><strong>一、「开放权重」不等于「开源」，这是本节的核心。</strong>按 OSI 的 OSAID v1.0，开源 AI 要同时提供 <strong>Data Information（详细到熟练者能构建实质等效系统）、Code（train and run 两侧的完整源代码）、Parameters</strong> 三要素。OSI 原文：「'Open Source models' and 'Open Source weights' must include the data information and code used to derive those parameters.」<mark class="key">只放权重、不给训练数据信息与训练代码，按这份定义不构成开源。</mark></p>
+    <p><strong>二、四项自由是判据的上层。</strong>Use（且 <em>without having to ask for permission</em>）、Study（能 inspect its components）、Modify（含改变输出）、Share。<strong>Llama 4 的 7 亿月活门槛条款直接撞在第一条上</strong>——对一部分主体而言恰恰必须征得许可，而且 Meta「可自行酌情决定」。</p>
+    <p><strong>三、拿 Llama 4 量一遍的结论：属于开放权重，不属于开源 AI。</strong>但请把这个结论理解对：这不是说 Llama 不好，也不是说 Meta 骗人（官方给它的名字就是 Community License，从未自称 OSI 开源许可），而是一次按明确尺子做的分类。<mark class="key">正确用词是「公开发布了权重」「开放权重模型」，而不是「开源了」。</mark></p>
+    <p><strong>四、本地跑模型的三层工具。</strong>GGUF 是集装箱式的模型文件格式（键值元数据、文件头 magic 为 <code>GGUF</code>、规范版本必须为 3）；llama.cpp 是推理引擎（MIT 许可、无外部依赖、七档量化、CPU+GPU 混合推理、1873 位贡献者、发布标签 b10313）；Ollama 再包一层，<code>ollama run gemma4</code> 一句搞定，加 <code>:cloud</code> 后缀即转云端。<strong>厨房类比：食材 / 灶台锅 / 电饭煲。</strong></p>
+    <p><strong>五、工具的许可和模型的许可是两码事。</strong>llama.cpp 是 MIT，但它加载的模型各有各的条款。微波炉是你的，便当不是。</p>
+    <p><strong>六、本节的留白清单（诚实交代）：</strong><strong>Hugging Face 平台规模数字未取得</strong>（三个官方地址全部抓取失败，故不给模型数/数据集数/用户数）；<strong>Mistral AI 的型号与许可整条未取得</strong>（四个官方地址全部失败，搜索结果仅自媒体已排除，故一字不写）；<strong>Ollama 官方支持模型完整清单未取得</strong>（动态页面）；<strong>Qwen、GLM、DeepSeek 三家的开源权重许可原文均未取得</strong>（见 §12.3）。所有内容的查询日期为<strong>截至 2026 年 8 月 8 日</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./12-3-china-models.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 12.3 · 中国阵营</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./12-5-apps.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 12.5 · 应用与工具层</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 12.4</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-33"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-33"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-33"></script>
+</body>
+</html>

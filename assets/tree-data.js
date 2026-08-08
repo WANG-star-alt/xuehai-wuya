@@ -145,14 +145,14 @@
         ], { href: 'chapters/ai/11-agent.html' }),
       createNode('ai-12', '第 12 章 · 生态地图',
         'OpenAI、Anthropic、DeepSeek、Qwen——2026 年的玩家地图。',
-        '待撰写',
+        '约 5.0 万字',
         [
-          createNode('ai-12-1', '§ 12.1 · 芯片与算力', 'NVIDIA、华为昇腾、TPU——AI 的石油与发电厂。', '待撰写', []),
-          createNode('ai-12-2', '§ 12.2 · 海外基础模型', 'OpenAI、Anthropic、Google、Meta——第一梯队格局。', '待撰写', []),
-          createNode('ai-12-3', '§ 12.3 · 中国阵营', 'DeepSeek、Qwen、豆包、Kimi、GLM——本土玩家。', '待撰写', []),
-          createNode('ai-12-4', '§ 12.4 · 开源生态', 'Llama、Mistral、Hugging Face、Ollama——自己也能跑。', '待撰写', []),
-          createNode('ai-12-5', '§ 12.5 · 应用与工具层', 'Cursor、TRAE、Perplexity、Midjourney——落地产品。', '待撰写', [])
-        ]),
+          createNode('ai-12-1', '§ 12.1 · 芯片与算力', 'NVIDIA、华为昇腾、TPU——AI 的石油与发电厂。', '10123 字', [], { href: 'chapters/ai/12-1-chips.html', spec: 'pass'}),
+          createNode('ai-12-2', '§ 12.2 · 海外基础模型', 'OpenAI、Anthropic、Google、Meta——第一梯队格局。', '8722 字', [], { href: 'chapters/ai/12-2-foreign-models.html', spec: 'pass'}),
+          createNode('ai-12-3', '§ 12.3 · 中国阵营', 'DeepSeek、Qwen、豆包、Kimi、GLM——本土玩家。', '8727 字', [], { href: 'chapters/ai/12-3-china-models.html', spec: 'pass'}),
+          createNode('ai-12-4', '§ 12.4 · 开源生态', 'Llama、Mistral、Hugging Face、Ollama——自己也能跑。', '9456 字', [], { href: 'chapters/ai/12-4-opensource.html', spec: 'pass'}),
+          createNode('ai-12-5', '§ 12.5 · 应用与工具层', 'Cursor、TRAE、Perplexity、Midjourney——落地产品。', '9863 字', [], { href: 'chapters/ai/12-5-apps.html', spec: 'pass'})
+        ], { href: 'chapters/ai/12-landscape.html' }),
       createNode('ai-13', '第 13 章 · 局限与风险',
         '幻觉、偏见、版权、深度伪造、Prompt 注入——AI 的暗面。',
         '待撰写',

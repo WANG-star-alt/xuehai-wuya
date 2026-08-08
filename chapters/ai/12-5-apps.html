@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 12.5 · 应用与工具层 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-33">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-33">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./12-landscape.html">智能篇 · 第 12 章</a>
+      <span class="sep">›</span>
+      <span>§ 12.5</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 12.5 · Section</div>
+    <h1>应用与工具层</h1>
+    <div class="cn">TRAE、Cursor、GitHub Copilot、Midjourney · 你每天花的钱去哪了</div>
+  </header>
+
+  <p class="lead">
+    终于走到这张地图的最上面一层——<strong>你每天真正打开、真正付钱的那些产品。</strong>前面四节讲的芯片、模型、开源工具，你可能一辈子不会直接碰；<mark class="key">但这一节讲的东西，你此刻很可能正在用其中一个。</mark>本节重点讲 TRAE，因为它的计费体系有一个特别值得摊开的现象：<strong>中国站和国际站是两套完全不同的计费制度，甚至连产品有几种模式，两边官方公告写的都不一样。</strong>这是本章第二处「官方内部不一致」。第三处则在 GitHub Copilot 与 Anthropic 官方之间：<strong>Copilot 的套餐页列出了 Claude Opus 4.8，而 Anthropic 自家官方总览当天最高只列到 4.7。</strong>本节会把这两处双边原文都摆出来，并讲清「第三方平台清单」和「厂商官方文档」为什么不能互相替代。所有内容截至 2026 年 8 月 8 日。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🎫 同一家健身房的两种会员卡</div>
+    <p>假设有一家连锁健身房，在国内和国外都开了店。你要办卡，会发现两边的规则完全不是一套。</p>
+    <p><strong>国内店：卖「点数卡」。</strong>99 元买 4000 点，每上一节课扣多少点，价目表贴在墙上。<mark class="key">你关心的是「我还剩多少点」。</mark>另外店里还搞活动：某两位教练的课打二五折。</p>
+    <p><strong>国外店：卖「额度卡」。</strong>10 美元的月费里含 20 美元的「使用额度」，用掉多少直接按钱扣。<strong>你关心的是「我还剩多少钱」。</strong></p>
+    <p>这时候如果有人问你「这家健身房的会员多少钱、能上多少课」，<mark class="key">你会发现这个问题没法用一句话回答——因为两边根本不是一套计量单位。</mark>说「99 元能上 4000 点的课」在国外店毫无意义，说「10 美元含 20 美元额度」在国内店也对不上。</p>
+    <p><strong>而更微妙的是：</strong>国内店的宣传单上写「本店有力量、有氧、康复三个训练区」，国外店的同一份宣传单写的是「两个区：力量和有氧」。<strong>说白了</strong>——同一个品牌，两边的产品形态和计价方式都不一样，<mark class="key">这不是谁在骗人，是两个市场各自演化的结果。</mark></p>
+    <div class="link">→ 这就是 TRAE 的真实情况，两边原文都在下面。<strong>本节的原则和前面一样：两套都写，标清各自出处，绝不混用。</strong></div>
+  </div>
+
+  <h3>先说清「应用与工具层」是什么位置</h3>
+  <p>回到章总览那个牛肉面的四层结构：芯片是种麦子的，模型公司是磨面粉的，开源生态是菜市场，<strong>而这一节讲的是面馆师傅。</strong></p>
+  <p>这一层有三个共同特征，理解了它们你就能看懂这一层所有产品的逻辑：</p>
+  <ul class="keylist">
+    <li><span class="k">它们大多不自己造模型</span><span class="v">它们买别人的模型，加上自己的界面、流程、上下文管理。<strong>说白了：</strong>面粉是买的，本事在调汤和火候。<mark class="key">所以「这个工具用的是什么模型」往往是可选、可换的。</mark></span></li>
+    <li><span class="k">它们的价值在「把模型接进你的工作流」</span><span class="v">一个模型再强，你也不会愿意每次复制粘贴代码到网页去问。<strong>工具层做的就是把这个来回省掉。</strong><strong>相当于</strong>面馆的价值不在于有面粉，而在于你走进去坐下就有一碗热的。</span></li>
+    <li><span class="k">它们的计费最复杂，因为要在中间赚差价</span><span class="v">上游是按 token 收费的（§12.2、§12.3 那些价格），下游你希望按月付固定的钱。<mark class="key">这中间的换算，就是本节所有计费复杂性的根源。</mark></span></li>
+  </ul>
+  <p><strong>第三条值得多说一句，因为它解释了「为什么这些产品的定价页都这么难懂」。</strong></p>
+  <p><strong>用手机套餐打比方：</strong>运营商的成本是按流量、按分钟发生的，但你希望买一个「99 元包月」。<mark class="key">于是就出现了各种「含 30GB 流量、超出后每 GB 5 元、闲时流量不计入」这类复杂规则</mark>——它们全都是在「上游按量、下游包月」这个矛盾之间做的调和。<strong>AI 工具的定价页复杂，原因完全一样。</strong></p>
+
+  <h3>TRAE 是什么：官方怎么定位自己</h3>
+  <p>先看官方定位。<code>docs.trae.cn</code> 中文原文：</p>
+  <pre><code>「TraeCode 是一款深度融合 AI 能力的开发工具，提供从代码编写、
+项目理解、调试运行到变更管理的完整开发体验。你可以像使用传统 IDE
+一样掌控每一步，也可以把复杂任务交给 AI 智能体规划和执行。」</code></pre>
+  <p>英文站同一页：</p>
+  <pre><code>"TraeCode is a development tool deeply integrated with AI
+capabilities. It provides a complete development experience that
+spans coding, project understanding, debugging and running, and
+change management."</code></pre>
+  <p><mark class="key">这两段在定位上是一致的</mark>——中文多了后半句关于「交给 AI 智能体」的补充，但核心表述对得上。<strong>差异出现在下一小节要讲的模式数和计费上。</strong></p>
+  <p><strong>官方对 TraeCode 双模式的表述（中文原文）：</strong></p>
+  <pre><code>「IDE 模式：保留熟悉的编辑器、终端、调试、插件、源代码管理等工作流……
+SOLO 模式：以 AI 为主导，通过自然语言描述或语音的方式输入需求后，
+AI 会自动规划任务，并推进代码生成、测试、预览和变更总结等步骤。」</code></pre>
+  <p><strong>这两种模式的差别，正好对应 §11.1 讲过的那条分界线。</strong>回忆一下那一节的 Copilot 与 Agent 对照表：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模式</th><th>官方描述的要点</th><th>谁在开车</th><th>§11.1 的对应概念</th><th>生活类比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>IDE 模式</strong></td><td>保留编辑器、终端、调试、插件、源代码管理等工作流</td><td><strong>你</strong>，AI 在旁边帮忙</td><td>偏 <strong>Copilot</strong>（副驾驶）</td><td>你自己下厨，旁边有个帮手递东西</td></tr>
+        <tr><td><strong>SOLO 模式</strong></td><td>以 AI 为主导，自然语言或语音输入需求，AI 自动规划任务并推进生成、测试、预览、变更总结</td><td><mark class="key">AI</mark>，你说需求</td><td>偏 <strong>Agent</strong>（智能体）</td><td>请厨师上门，你只说「今晚想吃红烧肉」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>注意 SOLO 模式描述里那个词序：「自动规划任务，并推进代码生成、测试、预览和变更总结」。</strong><mark class="key">这是一个完整的循环，正是 §11.1 里定义 Agent 的第四个特征。</mark><strong>说白了：</strong>它不是「你说一句它写一段」，而是「你说一句，它自己排出好几步然后一步步做完」。</p>
+
+  <h3>★ 本章第二处官方不一致：中英文站的模式数不同</h3>
+  <p>这一处非常干净——<strong>同一条产品公告，中英文站写的模式数量不一样。</strong>双边原文照抄：</p>
+  <p><strong>中文站公告原文：</strong></p>
+  <pre><code>「TraeWork 客户端上线，提供网页版、桌面版和移动版三种客户端，
+并设有为不同用户群体设计的 Work、Code 与 Design 三种模式。」</code></pre>
+  <p><strong>英文站同一条公告原文：</strong></p>
+  <pre><code>"It features two modes—Work and Code—designed for different user
+groups."</code></pre>
+  <p>摆到表里对比：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>中文站</th><th>英文站</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>模式数</strong></td><td><mark class="key">三种</mark></td><td><mark class="key">两种</mark></td></tr>
+        <tr><td><strong>模式名</strong></td><td>Work、Code、<strong>Design</strong></td><td>Work、Code</td></tr>
+        <tr><td><strong>客户端形态</strong></td><td>网页版、桌面版、移动版三种</td><td>该句未提</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>差异点很明确：中文站多一个 Design 模式。</strong></p>
+  <p>本节<strong>不判断哪个是对的</strong>，因为我们没有依据做这个判断。<mark class="key">但可以指出这个差异本身的可靠度是高的——双边原文都是同一天从各自官方站点抄下来的。</mark></p>
+  <p><strong>那这个差异可能是怎么来的？</strong>下面是<em>推断</em>而非结论，请这么读：常见的原因有三种，都很平常。</p>
+  <ul class="keylist">
+    <li><span class="k">可能一 · 功能分区域上线</span><span class="v">Design 模式可能先在中国区上线，国际区还没开。<strong>相当于</strong>连锁店的新品先在一个城市试，成了再推全国。</span></li>
+    <li><span class="k">可能二 · 文案更新有先后</span><span class="v">中文站更新了，英文站的这条公告还是旧版。这和 §12.2 里 OpenAI 那三个页面的情况同源。</span></li>
+    <li><span class="k">可能三 · 两地产品策略本来就不同</span><span class="v">这一点被下一小节的计费差异强烈支持——<mark class="key">既然连计费制度都是两套，产品形态不同也就顺理成章。</mark></span></li>
+  </ul>
+  <p><strong>但请注意：以上三条全是推断。</strong>官方没有对这个差异做过任何说明。<strong>说白了：我能确认的只有「两边写得不一样」这件事，剩下的都是我在猜。</strong>这条界限必须画清楚。</p>
+
+  <h3>★ TRAE 计费：两套完全不同的体系，绝不能混用</h3>
+  <p>这是本节最实用的一段，尤其如果你正在付钱用它。<mark class="key">中国站与国际站不只是价格不同，是整个计量单位不同。</mark></p>
+  <p><strong>先看中国站：积分制，人民币。</strong>官方原文对制度的表述：</p>
+  <pre><code>「TRAE 采用以积分为核心的计费体系，并提供多档付费会员套餐。
+TRAE 会员可享每月专属积分、高峰期优先使用、更多云端任务并行额度，
+并获得 Seed 系列模型 2.5 折计费福利。」</code></pre>
+  <p>四档套餐的完整对照（出处 <code>docs.trae.cn</code> 与 <code>trae.cn</code>，截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>Lite</th><th>Pro</th><th>Pro+</th><th>Ultra</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>适用产品</strong></td><td><mark class="key">仅 TraeWork</mark></td><td>Code + Work</td><td>Code + Work</td><td>Code + Work</td></tr>
+        <tr><td><strong>单月价</strong></td><td>¥49</td><td>¥99</td><td>¥239</td><td>¥699</td></tr>
+        <tr><td><strong>连续包月价</strong></td><td>¥45<br><em>首月 ¥9.9（限付费新用户）</em></td><td>¥89<br><em>首月 ¥59</em></td><td>¥219</td><td>¥629</td></tr>
+        <tr><td><strong>有效期</strong></td><td>31 自然日</td><td>31 自然日</td><td>31 自然日</td><td>31 自然日</td></tr>
+        <tr><td><strong>每月积分</strong></td><td>2000（<strong>Work 专属</strong>）</td><td>4000（通用）</td><td>12000（通用）</td><td>40000（通用）</td></tr>
+        <tr><td><strong>云端任务并行</strong></td><td>2</td><td>10</td><td>10</td><td>20</td></tr>
+        <tr><td><strong>高峰期优先</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td><strong>新模型优先</strong></td><td>/</td><td>/</td><td>/</td><td><mark class="key">✅（仅 Ultra 有）</mark></td></tr>
+        <tr><td><strong>Seed 福利</strong></td><td colspan="4">Seed-2.1-Turbo 与 Seed-Code 计费 <strong>2.5 折</strong>（四档相同）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这张表里有四个细节，不看仔细容易吃亏：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">Lite 的积分是「Work 专属」</span><span class="v">而其他三档是「通用」。<mark class="key">这意味着 Lite 档的 2000 积分不能用在 Code 上。</mark>如果你主要用 TraeCode 写代码，Lite 档对你是无效的。这一条最容易看漏。</span></li>
+    <li><span class="k">积分不是线性涨的</span><span class="v">¥99 给 4000 分，¥239 给 12000 分，¥699 给 40000 分。<strong>算一下每分的价格：</strong>Pro 约 ¥0.0248/分，Pro+ 约 ¥0.0199/分，Ultra 约 ¥0.0175/分。<strong>说白了：</strong>买得越多单价越便宜，<strong>相当于</strong>超市里大包装比小包装划算。</span></li>
+    <li><span class="k">「31 自然日」不是「一个月」</span><span class="v">这个措辞很精确。<mark class="key">2 月只有 28 天，而它给你 31 天</mark>；而按自然日算意味着从你付款那天起算，不是按日历月。<strong>相当于</strong>健身房的卡写「31 天有效」而不是「一个月」——后者会引出「大月小月怎么算」的纠纷。</span></li>
+    <li><span class="k">「新模型优先」只有 Ultra 有</span><span class="v">前三档这一栏都是「/」。<strong>这是一个典型的差异化设计</strong>——不是给你更多量，而是给你更早的时间。<strong>相当于</strong>演唱会的粉丝会员，票价一样但能先抢票。</span></li>
+  </ul>
+  <p><strong>trae.cn 首页当日还有一条横幅：「新用户赠送 4500 积分」。</strong>把它跟表对一下会发现一个有意思的事：<mark class="key">4500 积分比 Pro 档一个月的 4000 积分还多。</mark>这是相当积极的拉新手段——<strong>说白了：先让你把整个月的量用一遍，用顺手了再谈付钱。</strong></p>
+  <p><strong>现在看国际站：Dollar Usage 制，美元。</strong>这是完全不同的一套东西。官方 FAQ 原文：</p>
+  <pre><code>"All AI requests are billed based on the number of tokens processed.
+TRAE converts the token cost into Dollar Usage, which is deducted
+from your monthly balance."</code></pre>
+  <p>翻译：<em>「所有 AI 请求按处理的 token 数计费。TRAE 把 token 成本换算成 <strong>Dollar Usage</strong>（美元用量），从你的月度余额中扣除。」</em></p>
+  <p><mark class="key">请注意这句话的关键：它不是「积分」，是直接按美元金额记账的。</mark>这就把 §12.2、§12.3 那些 token 价格和你的账单直接挂上了钩。</p>
+  <p>国际站的档位（出处 <code>trae.ai/pricing</code>，截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>档位</th><th>月费</th><th>含用量</th><th>并行任务</th><th>其他官方标注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Free</strong></td><td>$0</td><td>Limited usage</td><td>2</td><td>Autocompletion 5000/月、Standard queue、SOLO included</td></tr>
+        <tr><td><strong>Lite</strong></td><td>$3/月</td><td>$5 Basic usage</td><td>2</td><td>Unlimited Autocomplete</td></tr>
+        <tr><td><strong>Pro</strong></td><td>$10/月</td><td>$20 Basic usage</td><td>10</td><td>当日显示「Free for 7 days. Then $10/month.」</td></tr>
+        <tr><td><strong>Pro+</strong></td><td>$30/月</td><td>$90 Basic usage</td><td>15</td><td>3.5x Pro</td></tr>
+        <tr><td><strong>Ultra</strong></td><td>$100/月</td><td>$400 Basic usage</td><td>20</td><td>20x Pro、Model early access</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>国际站这张表有个特别值得注意的规律：含用量的金额比月费高，而且倍数递增。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>档位</th><th>月费</th><th>含用量</th><th>用量 ÷ 月费</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lite</td><td>$3</td><td>$5</td><td>约 1.7 倍</td><td>付 3 块，能用 5 块的量</td></tr>
+        <tr><td>Pro</td><td>$10</td><td>$20</td><td>2 倍</td><td>付 10 块，能用 20 块的量</td></tr>
+        <tr><td>Pro+</td><td>$30</td><td>$90</td><td>3 倍</td><td>付 30 块，能用 90 块的量</td></tr>
+        <tr><td>Ultra</td><td>$100</td><td>$400</td><td><mark class="key">4 倍</mark></td><td>付 100 块，能用 400 块的量</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这个「越高档越划算」的结构和中国站的积分单价递减是同一个逻辑</strong>——<strong>相当于</strong>批发市场的量价关系：买一箱和买一车的单价不一样。<mark class="key">两套体系表面完全不同，底层的商业设计其实是一致的。</mark></p>
+  <p><strong>那这两套体系能不能换算成同一个数？</strong>不能，而且不该试。理由有三：</p>
+  <ul class="keylist">
+    <li><span class="k">一 · 计量单位不同</span><span class="v">积分 vs 美元金额。<strong>官方没有公布积分与美元的换算率</strong>，任何换算都是自己编的。</span></li>
+    <li><span class="k">二 · 覆盖的产品不同</span><span class="v">中国站 Lite 仅限 TraeWork；国际站 Free 档就标明 SOLO included。<strong>连「一档包含什么」的划分方式都不一样。</strong></span></li>
+    <li><span class="k">三 · 附加权益不同</span><span class="v">中国站有 Seed 系列 2.5 折这个专属福利，国际站表里没有对应项；国际站有 Autocompletion 5000/月 这样的具体额度，中国站表里没有对应项。<mark class="key">拿两边的价格数字直接比较，会得出毫无意义的结论。</mark></span></li>
+  </ul>
+  <p><strong>用一个生活场景收这一段：</strong>你不能问「这家店的会员卡是 99 元还是 10 美元哪个划算」——<strong>因为这是两家店，卖的东西不完全一样，计量方式也不一样。</strong>唯一有意义的问题是：<em>你在哪个站注册的、你要用哪个产品、你的用量大概多少。</em></p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 面馆师傅的进货单</span>
+    <p>工具层的商业模式，用一张面馆的进货单就能讲透，而且能顺带解释「为什么这些产品要支持那么多模型」。</p>
+    <p>你开了一家面馆。你的成本结构是这样的：<strong>面粉按斤买（上游按量计费），而客人按碗付钱（下游按次或包月）。</strong>这中间你要做三件事：</p>
+    <p><strong>第一，你得同时跟好几家面粉厂进货。</strong>一家断货了、涨价了、质量波动了，你不能就此关门。<mark class="key">所以你的储藏室里永远备着两三个牌子的面粉。</mark></p>
+    <p><strong>第二，你得根据菜品挑面粉。</strong>做手擀面用高筋粉，做疙瘩汤用普通粉——<strong>不是越贵越好，是对得上才好。</strong>而且客人只关心那碗面好不好吃，压根不关心你用的哪家面粉。</p>
+    <p><strong>第三，你要把「按斤」的成本换算成「按碗」的定价。</strong>而且要留出余量，因为有人吃一碗、有人吃两碗加两个蛋。<mark class="key">这个换算就是所有会员制、点数制、额度制的来源。</mark></p>
+    <p><strong>把这三件事对回 TRAE，你会发现它一件不差：</strong>第一件对应它的内置模型清单里有 MiniMax、GLM、DeepSeek、Kimi、Qwen 好几家（下面就讲）；第二件对应它允许你切换模型、也允许你接自定义模型；第三件对应中国站的积分和国际站的 Dollar Usage。</p>
+    <p><strong>而这个类比还能解释另一件事：为什么工具层的公司容易活得辛苦。</strong>面馆的面粉是别人的、灶台是租的、客人对价格敏感、隔壁随时能再开一家。<mark class="key">它真正的护城河只有一样——你走进去坐下就有一碗热的这份「顺手」。</mark>这就是为什么这一层的产品拼命打磨体验和工作流集成，因为除此以外它没什么别人拿不走的东西。</p>
+  </div>
+
+  <h3>TRAE 的内置模型清单：一张能说明生态的表</h3>
+  <p>官方（<code>docs.trae.cn/ide/models</code>，截至 2026 年 8 月 8 日）原文：</p>
+  <pre><code>「TRAE 当前提供以下内置模型：Doubao-Seed-2.1-Pro（仅限「优速通
+Express」和「速通 Ultra」用户使用）、Doubao-Seed-2.1-Turbo（同前）、
+Doubao-Seed-Code、MiniMax-M3、GLM-5.2、GLM-5.1、GLM-5、
+DeepSeek-V4-Pro、DeepSeek-V4-Flash、Kimi-K3、Kimi-K2.7-Code、
+Qwen3.7-Plus」</code></pre>
+  <p>把这份清单按厂家归类，能看出不少东西：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>厂家</th><th>清单里的型号</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>字节（自家）</strong></td><td>Doubao-Seed-2.1-Pro、Doubao-Seed-2.1-Turbo、Doubao-Seed-Code</td><td>前两个官方标注<mark class="key">仅限「优速通 Express」和「速通 Ultra」用户</mark></td></tr>
+        <tr><td><strong>MiniMax</strong></td><td>MiniMax-M3</td><td>本章 §12.3 未单独讲这家，因为核实材料未涉及</td></tr>
+        <tr><td><strong>智谱</strong></td><td>GLM-5.2、GLM-5.1、GLM-5</td><td><strong>三个版本同时在列</strong></td></tr>
+        <tr><td><strong>DeepSeek</strong></td><td>DeepSeek-V4-Pro、DeepSeek-V4-Flash</td><td>与 §12.3 官方定价页的型号名完全对上</td></tr>
+        <tr><td><strong>月之暗面</strong></td><td>Kimi-K3、Kimi-K2.7-Code</td><td>带 <code>-Code</code> 后缀的是编码专用</td></tr>
+        <tr><td><strong>阿里</strong></td><td>Qwen3.7-Plus</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这张表有三个观察点，每一个都能说明一件事：</strong></p>
+  <p><strong>观察一：六家厂商同时在列，其中五家是外部的。</strong>字节自己造模型，但内置清单里的大多数不是自家的。<mark class="key">这印证了前面那个进货单的类比——面馆同时跟好几家面粉厂进货。</mark>而对你来说，这意味着换模型的成本被压到了一个下拉菜单。</p>
+  <p><strong>观察二：智谱有三个版本同时在列（GLM-5.2、5.1、5）。</strong>为什么不只留最新的？因为<strong>不同版本的行为不一样，有人的工作流已经调好了配 5.1，换成 5.2 反而不顺手。</strong><strong>相当于</strong>面馆同时备着新面粉和老面粉，因为有老客人就爱老那口。<strong>说白了：在工具层，稳定性有时比先进性更值钱。</strong></p>
+  <p><strong>观察三：这份清单里的型号名比 §12.3 更新。</strong>对比一下：§12.3 讲智谱时官方文档给的是 GLM-4.6，这里已经到 GLM-5.2；§12.3 讲 Kimi 时是 K2.5，这里已经到 K3 与 K2.7-Code。<mark class="key">这说明「查一个模型的最新型号，有时在集成它的第三方平台上能看到更新的」。</mark>但请注意——这不能反过来当成厂商官方型号的依据（下面讲 Copilot 时会详细说这个道理）。</p>
+  <p><strong>除了内置模型，官方还说明支持自定义模型：</strong>「除内置模型外，TRAE 还支持接入自定义模型」，分「模型服务商」与「自定义配置」两种方式，后者需要配置<strong>API 格式、请求地址、模型 ID 和鉴权信息</strong>。</p>
+  <p><strong>这四项要配的东西，正好对应 §12.2、§12.3 里我们抄下来的那些数据：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">API 格式</span><span class="v">OpenAI 格式还是 Anthropic 格式。<mark class="key">回忆 §12.3 里 DeepSeek 给了两个 Base URL 分别对应这两种格式</mark>——现在你知道那个设计是给谁用的了。</span></li>
+    <li><span class="k">请求地址</span><span class="v">就是 §12.3 那些 Base URL，比如 <code>https://api.deepseek.com</code>。</span></li>
+    <li><span class="k">模型 ID</span><span class="v">§12.2 那套六步法的第三步就是「抄下模型 ID 而不是产品名」——<strong>这里填的就是 ID。</strong></span></li>
+    <li><span class="k">鉴权信息</span><span class="v">你的 API 密钥。<strong>相当于</strong>进小区要刷的那张<strong>钥匙</strong>卡。</span></li>
+  </ul>
+  <p><strong>看到这里，前面几节那些看似枯燥的对照表就有了实际用途</strong>——<mark class="key">它们不是给你背的，是给你填表单用的。</mark></p>
+  <p><strong>另外两项官方目录级证据（出处 <code>docs.trae.cn/llms.txt</code>）：</strong>文档目录中包含「工具与插件 / 模型上下文协议(MCP) / MCP 概览」与「添加 MCP Server」，以及「AI 编程核心 / 技能（Skill）」。官方对技能的描述是：技能「通过 <code>SKILL.md</code> 定义管理，具有<strong>结构化、按需加载</strong>特点」。</p>
+  <p><strong>MCP 就是 §11.6 讲过的那个「工具界的 USB-C」。</strong>它出现在 TRAE 官方文档目录里，意味着你可以按 §11.6 讲的那套办法给它接外部工具。<strong>而「按需加载」这个描述值得留意</strong>——<mark class="key">它说的是技能不会一直占着上下文，用到才加载。</mark><strong>相当于</strong>厨房里的调料不全摊在案板上，需要哪个再从架子上取哪个（回忆 §11.6 关于上下文预算的讨论）。</p>
+  <p>这两项的可靠度标注为<strong>目录级证据</strong>——<strong>说白了：我们确认了官方文档里有这些章节，但没有逐页读完正文。</strong>所以只写「有这个能力」，不写具体用法细节。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · TraeCode CLI 未取得官方文档正文</span>
+    <p><strong>TraeCode CLI</strong>（命令行版本）本该在这一节占一席之地，但<mark class="key">我们没有取得任何官方文档正文，所以它的形态、安装方式、能力一律标「未取得」。</mark></p>
+    <p>尝试过的地址与结果，全部列出供你复核：</p>
+    <ul class="keylist">
+      <li><span class="k">中文站</span><span class="v"><code>docs.trae.cn/cli</code>、<code>/cli_overview.md</code>、<code>/cli_what-is-trae-code-cli.md</code>、<code>/cli/what-is-trae-code-cli</code> —— 返回「页面不存在或已移动」或 <code>Document Not Found</code></span></li>
+      <li><span class="k">英文站</span><span class="v"><code>docs.trae.ai/cli/quickstart</code>、<code>/cli/overview</code>、<code>/cli/what-is-trae-code-cli</code> —— <strong>全部重定向到 TraeWork 公告页</strong></span></li>
+      <li><span class="k">官方索引</span><span class="v"><code>docs.trae.cn/llms.txt</code> 当日的索引<mark class="key">未列出任何 cli 章节</mark></span></li>
+    </ul>
+    <p><strong>这一条特别值得说明我们没做什么：</strong>关于 TraeCode CLI，网上有不少 CSDN、头条这类自媒体的介绍文章。<strong>本节一律不采用。</strong>理由很简单——<strong>相当于</strong>你想知道一家餐厅今天有没有营业，<mark class="key">最可靠的做法是打电话问店里，而不是看别人三个月前发的探店笔记。</mark></p>
+    <p><strong>如果你需要 CLI 的信息，最可靠的做法是直接去 <code>docs.trae.cn</code> 站内搜索，或看官方发布公告。</strong>它很可能存在、很可能已经能用，我们只是当天没查到官方文档正文。</p>
+  </div>
+
+  <h3>TraeCode Plugin：另一种形态</h3>
+  <p>除了独立的 IDE，TRAE 还有一个插件形态的产品。官方产品页（<code>trae.cn/plugin</code>）原文：<strong>「TRAE 旗下新一代 AI 开发编程助手（原 MarsCode 编程助手），灵活集成于你的本地 IDE 中」</strong>，并称<strong>「支持 100 多种编程语言且兼容 VSCode 及 JetBrains 主流编辑器」</strong>。</p>
+  <p><strong>「原 MarsCode」这个括注值得留意</strong>——它说明这是一个改过名的产品。<mark class="key">查资料时遇到改名的产品要特别小心：搜旧名字会找到一堆过时内容，搜新名字又可能漏掉早期的资料。</mark><strong>相当于</strong>一条街改了名，导航能找到新名字，但老住户的通讯录上还写着旧名字。</p>
+  <p>官方列出的能力：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>官方描述</th><th>大白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Builder 模式</strong>（官方标 New）</td><td>「快速从 0 到 1，自主拆解需求并自动完成多轮编码任务」</td><td><mark class="key">「自主拆解 + 多轮」这两个词，正是 §11.1 定义 Agent 的核心特征</mark>——这是插件里的 Agent 形态</td></tr>
+        <tr><td><strong>多模型切换</strong></td><td>—</td><td>就是前面那份内置模型清单的用法</td></tr>
+        <tr><td><strong>代码补全 / 补全 Pro</strong></td><td>—</td><td>你打字它猜下一段。<strong>相当于</strong>输入法的联想，只是猜的是代码</td></tr>
+        <tr><td><strong>代码解释</strong></td><td>—</td><td>圈一段代码问「这在干什么」</td></tr>
+        <tr><td><strong>注释生成</strong></td><td>—</td><td>自动补说明文字</td></tr>
+        <tr><td><strong>单测生成</strong></td><td>—</td><td>自动写测试用例</td></tr>
+        <tr><td><strong>AI 智能问答</strong></td><td>—</td><td>就是在编辑器里聊天</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>「独立 IDE」和「插件」这两种形态的区别，用装修的比方最清楚：</strong>前者<strong>相当于</strong>把整个厨房重新装一遍——布局更合理，但你得适应新格局；后者<strong>相当于</strong>在原来的厨房里加一台新电器——不动格局，但受原有空间限制。<mark class="key">选哪个取决于你对现有工作流的依赖有多深。</mark></p>
+
+  <h3>Cursor：一个「不给数字」的定价页</h3>
+  <p>Cursor 是另一款广泛使用的 AI 编辑器。它的官方定价页（<code>cursor.com/pricing</code>，截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>档位</th><th>价格</th><th>官方标注的内容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Hobby</strong></td><td>Free</td><td>「No credit card required」「Limited Agent requests」「Access to Composer」</td></tr>
+        <tr><td><strong>Individual</strong></td><td>$20/mo.</td><td>分 Pro / Pro+ / Ultra 三级。Pro+ 标「3x Pro limits on Agent」，Ultra 标「20x Pro limits on Agent」「Priority access to new features」</td></tr>
+        <tr><td><strong>Teams</strong></td><td>$40/user/mo.</td><td>分 Standard / Premium。Premium 标「5x Standard limits on Agent」</td></tr>
+        <tr><td><strong>Enterprise</strong></td><td>Custom</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这张表最值得说的是它「没说」的部分。</strong>官方那个 $20 对应的是 Individual 这张卡片，而<mark class="key">Pro+ 和 Ultra 的具体价格，该页没有以数字形式列出</mark>——只给了倍数（3x、20x）。</p>
+  <p><strong>所以本节不给 Cursor 的 Pro+ / Ultra 价格数字。</strong>不是漏了，是官方页面上没有。<strong>相当于</strong>菜单上写着「加大份加价」，但没写加多少钱——<em>你得问服务员</em>。</p>
+  <p><strong>用倍数而不用绝对值来标注额度，是这一层普遍的做法，值得单独说一句为什么。</strong>因为「Agent requests」这个东西本身不好用绝对数说明——<mark class="key">一次请求消耗多少，取决于用哪个模型、任务多复杂、要跑几轮。</mark><strong>说白了：</strong>官方自己也没法承诺「你能跑 500 次」，所以只能说「是 Pro 的三倍」。<strong>相当于</strong>汽车的续航标「比上一代多 30%」而不标绝对公里数——因为绝对值取决于你怎么开。</p>
+  <p>官方 FAQ 里还有一句解释了额度用完之后的规则：</p>
+  <pre><code>"Every plan includes a set amount of model usage. On-demand usage
+allows you to continue using models after your included amount is
+consumed, billed in arrears."</code></pre>
+  <p>翻译：<em>「每个套餐都含一定量的模型用量。<strong>On-demand usage</strong>（按需用量）允许你在含量用完之后继续使用，<strong>按后付费方式计账</strong>。」</em></p>
+  <p><strong>「billed in arrears」（后付费 / 欠账结算）这个词组要当场翻译清楚，因为它涉及钱。</strong><mark class="key">意思是：你先用，账后结。</mark><strong>相当于</strong>手机套餐的流量超了不断网，而是按超出量算钱，下个月账单上体现。<strong>好处是不会突然干不了活，风险是账单可能超出预期。</strong></p>
+  <p>另外官方还有一条防伪声明值得抄下来：</p>
+  <pre><code>"Cursor subscriptions are only sold directly through cursor.com.
+We do not authorize any resellers or third-party sellers."</code></pre>
+  <p>翻译：<em>「Cursor 订阅仅通过 cursor.com 直接销售。我们不授权任何转售商或第三方销售者。」</em></p>
+  <p><mark class="key">一个官方页面专门写这句话，通常说明外面确实有人在转卖。</mark><strong>这条信息对读者是有实际价值的：看到第三方渠道的低价订阅，按官方口径那是未经授权的。</strong><strong>相当于</strong>演唱会官网写着「本场票务仅通过官方平台发售，不设代理」——<em>这句话本身就是一条提醒。</em></p>
+
+  <h3>★ 本章第三处官方不一致：Copilot 列的型号比厂商官方更新</h3>
+  <p>这一处最微妙，也最值得学，因为它涉及的两个信源<strong>都是官方，但身份不同。</strong></p>
+  <p>先看 GitHub Copilot 官方定价页（<code>github.com/features/copilot/plans</code>，For individuals，截至 2026 年 8 月 8 日）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>档位</th><th>价格</th><th>官方标注的关键内容</th><th>Flex allotment</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Free</strong></td><td>$0</td><td>「2,000 completions per month」「Access to Haiku 4.5, GPT-5 mini, and more」「Copilot CLI」「No credit card required」</td><td>无</td></tr>
+        <tr><td><strong>Pro</strong></td><td>$10/user/月</td><td>「$15 monthly total credits for Pro」「Unlimited code completion and next edit suggestions」<mark class="key">「Access to 3rd party agents (Claude Code and Codex)」</mark></td><td>$5/月</td></tr>
+        <tr><td><strong>Pro+</strong></td><td>$39/user/月</td><td>「Access to premium models, including Opus」「4x+ included usage than Pro」「$70 monthly total credits」</td><td>$31/月</td></tr>
+        <tr><td><strong>Max</strong></td><td>$100/user/月</td><td>「Priority access to new models and features」「2.9x+ included usage than Pro+」「$200 monthly total credits」</td><td>$100/月</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>先说三个细节：</strong></p>
+  <p><strong>细节一：Pro 档「Access to 3rd party agents (Claude Code and Codex)」。</strong>这意味着 Copilot 的套餐里能用到<strong>竞争对手的智能体</strong>。<mark class="key">这跟 §12.3 火山方舟挂着 DeepSeek 和 Kimi 是同一个逻辑</mark>——<strong>说白了：在工具层，「你能不能在我这里用到一切」比「我的东西是不是最好」更重要。</strong></p>
+  <p><strong>细节二：「credits」和「Flex allotment」是两笔账。</strong>前者是套餐含的额度（Pro $15、Pro+ $70、Max $200），后者是另一份可弹性使用的配额（Pro $5、Pro+ $31、Max $100）。<strong>相当于</strong>手机套餐里的「套餐内流量」和「加油包」，是分开算的两个池子。</p>
+  <p><strong>细节三：官方有一条注意事项：</strong>「We're gradually enabling new sign-ups. If you're unable to sign up right now, please check back soon.」——<em>我们正在逐步开放新注册，如果你现在无法注册，请稍后再来。</em><mark class="key">这说明付费档虽然已发布，但并非所有人立即可注册。</mark><strong>「已发布」和「你能用上」是两件事</strong>，这个区别和 §12.2 里 Anthropic 那个 generally available 的限定词是同一类。</p>
+  <p><strong>现在看那份可用模型清单（官方标注各档相同）：</strong></p>
+  <pre><code>Claude Fable 5、Haiku 4.5、Sonnet 4/4.5/4.6、
+Opus 4.5/4.6/4.7/4.8、Opus 4.8 (fast mode)(Preview)、
+GPT-5 mini、GPT-5.2、GPT-5.2-Codex、GPT-5.3-Codex、
+GPT-5.4、GPT-5.4 mini、GPT-5.5、
+Gemini 2.5 Pro、Gemini 3 Flash (Preview)、
+Gemini 3.1 Pro (Preview)、Gemini 3.5 Flash、
+Raptor mini (Preview)</code></pre>
+  <p><mark class="key">★ 请注意这份清单里的 Claude Opus 4.8。</mark>而 §12.2 里 Anthropic 自家官方模型总览当天列出的最高只到 <strong>Opus 4.7</strong>（而且官方明确说 4.7 是「our most capable generally available model」）。</p>
+  <p><strong>把这个差异摆到表里：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>GitHub Copilot 套餐页</th><th>Anthropic 官方模型总览</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>列出的最高 Opus</strong></td><td><mark class="key">Opus 4.8</mark>（另有 4.8 fast mode Preview）</td><td><mark class="key">Opus 4.7</mark></td></tr>
+        <tr><td><strong>页面性质</strong></td><td><strong>第三方平台</strong>的可用模型清单</td><td><strong>厂商自己</strong>的官方文档</td></tr>
+        <tr><td><strong>这份清单回答的问题</strong></td><td>「在我这个平台上你能用到哪些」</td><td>「我们家有哪些模型、参数与价格是多少」</td></tr>
+        <tr><td><strong>能不能替代对方</strong></td><td colspan="2"><mark class="key">不能，两者身份不同，用途不同</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>这个差异怎么理解？先说清楚：两个都是官方页面，但它们的「官方」不是一个意思。</strong></p>
+  <p><strong>用超市和厂家的关系打比方，这件事就非常清楚了。</strong>某个牌子的酸奶出了新口味，<strong>超市的货架上摆出来了</strong>，而<strong>厂家官网的产品页还没更新</strong>。这两件事都是真的，也都不奇怪——<mark class="key">因为货架的更新速度和官网文案的更新速度本来就不同步。</mark></p>
+  <p>但这里有个更要紧的道理：<strong>如果你想知道「这款酸奶的配料表和保质期」，你必须看厂家的说明，不能看超市的价签。</strong>反过来，<strong>如果你想知道「今天在这家超市能买到哪些口味」，那超市的货架才是权威，厂家官网帮不了你。</strong></p>
+  <p><strong>所以正确的引用规则很清晰：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">要引用模型规格、上下文、官方定价</span><span class="v">必须看<strong>厂商官方文档</strong>。Copilot 的清单里没有这些信息，也不该有。</span></li>
+    <li><span class="k">要说明「在某平台上能用到哪些模型」</span><span class="v">必须看<strong>那个平台的官方页面</strong>。厂商文档不会告诉你 Copilot 里有什么。</span></li>
+    <li><span class="k">两者出现型号差异时</span><span class="v"><mark class="key">如实并列，标明各自出处与日期，不合并成一句话。</mark>本节就是这么做的。</span></li>
+    <li><span class="k">绝对不能做的事</span><span class="v">拿 Copilot 的清单当依据说「Anthropic 已发布 Opus 4.8」。<strong>说白了：超市摆了新口味，不等于你可以替厂家宣布产品上市。</strong>这中间隔着一层，跨过去就是编造。</span></li>
+  </ul>
+  <p><strong>顺带说一个同类现象：</strong>前面 TRAE 内置模型清单里 GLM 已到 5.2、Kimi 已到 K3，而 §12.3 引用的厂商官方文档只到 GLM-4.6 和 K2.5。<mark class="key">这是完全同一类型的差异，处理办法也完全一样。</mark></p>
+
+  <h3>Midjourney：一个把「版本更替」写得极清楚的例子</h3>
+  <p>换个方向，看一个图像生成产品。<strong>Midjourney 的官方版本文档（<code>docs.midjourney.com/hc/en-us/articles/32199405667853-Version</code>）是本章遇到的写得最清楚的一份版本记录，值得单独学。</strong></p>
+  <p>官方原文（截至 2026 年 8 月 8 日）：</p>
+  <pre><code>"The current default Midjourney version is V8.2."
+
+"V8.2 released as the default version on July 24, 2026. V8.2 is an
+update focused on aesthetics, image quality, and Personalization."
+
+"V8.1 released on April 14, 2026, and was the default version from
+June 10 to July 23, 2026."
+
+"V8.0 was an early access alpha version that launched on March 17,
+2026 and was available on the Midjourney Alpha website until
+July 24, 2026. Images generated in V8.0 are still available in your
+website gallery, but the version is no longer available for use."</code></pre>
+  <p><strong>这段文档为什么是范本？因为它把四件事都交代清楚了：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>它交代的事</th><th>具体内容</th><th>为什么重要</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>当前默认是哪个</strong></td><td>V8.2</td><td>直接回答了最常见的那个问题，不用你猜</td></tr>
+        <tr><td><strong>每个版本的发布日</strong></td><td>V8.2 是 2026-07-24；V8.1 是 2026-04-14；V8.0 是 2026-03-17</td><td><mark class="key">精确到日</mark>，你能自己判断新鲜度</td></tr>
+        <tr><td><strong>「担任默认版本」的起止区间</strong></td><td>V8.1 从 2026-06-10 到 2026-07-23 是默认</td><td><strong>这一条最难得</strong>——它说明「发布日」和「成为默认」是两个不同的日期，中间隔了近两个月</td></tr>
+        <tr><td><strong>下线之后旧内容怎么办</strong></td><td>V8.0 生成的图仍在你的画廊里，但该版本本身不再可用</td><td><mark class="key">明确区分了「不能再用它生成」和「以前生成的还在」</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>第三行那个细节值得多说一句，因为它是这一层产品的通用规律。</strong>V8.1 在 4 月 14 日发布，但要到 6 月 10 日才成为默认版本。<strong>用餐厅上新菜打比方：</strong>新菜 4 月就能点了（写在「新品试吃」那一页），<mark class="key">但要到 6 月才被印到正式菜单第一页、成为服务员默认推荐的那道。</mark><strong>说白了：「能用了」和「成了默认」是两个阶段。</strong></p>
+  <p>另外还有一条关于成本的官方说明（V8.1 的 HD 特性，HD 为 2048px）：</p>
+  <pre><code>"HD costs 1.3 minutes of GPU time, compared to SD which costs 0.8
+minutes of GPU time."</code></pre>
+  <p>翻译：<em>「HD 消耗 1.3 分钟的 GPU 时间，相比之下 SD 消耗 0.8 分钟。」</em></p>
+  <p><strong>注意它的计价单位——不是「张」，是「GPU 时间」。</strong>这个设计非常诚实地反映了成本本质：<mark class="key">生成一张图真正花的是机器时间，而不是「一张」这个抽象单位。</mark></p>
+  <p><strong>用打印店打比方：</strong>老板不按「几张」收钱，而按「机器转了几分钟」收钱——<em>因为一张密密麻麻的图纸和一张只有几行字的纸，机器耗的时间差很多。</em><strong>而 1.3 除以 0.8 约等于 1.6，也就是说出 HD 图的成本大约是 SD 的一倍半多。</strong>这个比例你可以直接拿来估算自己的用量。</p>
+  <p>版本切换的参数官方给的是 <code>--version</code> 或简写 <code>--v</code>。</p>
+  <div class="callout">
+    <span class="tag">诚实声明 · Midjourney 与 Perplexity 定价均未取得</span>
+    <p><strong>Midjourney 定价未取得。</strong>访问 <code>midjourney.com/plans</code> 时返回的是人机验证页面「正在进行安全验证」，<mark class="key">没有取得任何价格数字。</mark>所以本节只写版本信息和 GPU 时间的相对比例，<strong>不给任何月费数字</strong>。</p>
+    <p><strong>Perplexity 定价整条未取得。</strong>Perplexity 是一款广为使用的 AI 搜索产品，本该在这一节出现。我们尝试了五个官方地址：<code>docs.perplexity.ai/getting-started/pricing</code>、<code>docs.perplexity.ai/models</code>、<code>perplexity.ai/pro</code>、<code>perplexity.ai/hub/faq/what-is-perplexity-pro</code>、<code>perplexity.ai/help-center/en/articles/10352901</code>——<strong>全部失败。</strong></p>
+    <p>所以本节<mark class="key">关于 Perplexity 的定价与型号，一个字都不写。</mark>它的知名度不构成写它的理由；能不能查到官方出处才是。</p>
+    <p><strong>顺带说明一个查资料时的常见障碍：人机验证页。</strong>它不是网站在拒绝你，是在拦自动化访问。<strong>相当于</strong>小区大门在下班高峰装了闸机——住户刷卡能进，但送外卖的机器人进不去。<mark class="key">遇到这种情况，正确处理是标注「未取得」，而不是转而去引用自媒体的二手数字。</mark></p>
+  </div>
+
+  <h3>把三处「官方不一致」放在一起看</h3>
+  <p>本章从头到尾出现了三处官方内部不一致，全部在这一节收拢一遍。<strong>因为它们虽然长得不一样，但可以归成两种类型，而这两种类型的处理办法不同。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>矛盾双方</th><th>差异内容</th><th>类型</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>第一处 · §12.2</strong></td><td>OpenAI 的 platform 域 / developers 域 / 定价页</td><td>flagship 一个说 gpt-5.5、一个说 GPT-5.6 Sol；定价页未列 5.6</td><td><mark class="key">同一主体内部</mark></td></tr>
+        <tr><td><strong>第二处 · §12.5</strong></td><td>TRAE 中文站 / 英文站</td><td>模式数三种 vs 两种；<strong>计费体系一套积分制、一套 Dollar Usage 制</strong></td><td><mark class="key">同一主体内部</mark></td></tr>
+        <tr><td><strong>第三处 · §12.5</strong></td><td>GitHub Copilot 套餐页 / Anthropic 官方总览</td><td>Copilot 列 Opus 4.8，Anthropic 官方最高 4.7</td><td><mark class="key">不同主体之间</mark></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>前两处是「同一主体内部不一致」，处理办法是：</strong>并列双边原文、标出各自入口与日期、<mark class="key">明确指出这是同一家公司的不同页面</mark>。不挑一个当真相，因为你没有依据挑。</p>
+  <p><strong>第三处是「不同主体之间不一致」，处理办法不同：</strong>要先<strong>分清两个信源各自的身份和职责范围</strong>，然后按「谁该回答这个问题」来定用哪个。<strong>说白了：</strong>问配料表看厂家，问今天有什么货看超市。<mark class="key">这不是矛盾，是分工。</mark></p>
+  <p><strong>还有一类现象本章也遇到多次，虽然不算「矛盾」，但同属新鲜度问题：</strong></p>
+  <ul class="keylist">
+    <li><span class="k">过期公告仍在挂着</span><span class="v">DeepSeek 那条「2026 年 7 月 24 日弃用」的脚注，在 8 月 8 日已经过期（§12.3）</span></li>
+    <li><span class="k">官方自承文档过期</span><span class="v">Kimi 直接写「This documentation is outdated」（§12.3）</span></li>
+    <li><span class="k">清单滞后大半年</span><span class="v">火山方舟那份清单自标 2025.12.10（§12.3）</span></li>
+    <li><span class="k">未标更新日期</span><span class="v">Qwen 文档站那一页（§12.3）</span></li>
+    <li><span class="k">发布了但不是所有人能用</span><span class="v">Copilot 的「We're gradually enabling new sign-ups」；Anthropic 的 Claude Mythos Preview 仅限受邀（§12.2）</span></li>
+    <li><span class="k">已发布但已关停</span><span class="v">Google 官方页面上 Gemini 3 Pro Preview 标 (Shut down)（§12.2）</span></li>
+  </ul>
+  <p><strong>把这一整份清单摆出来，你会得到本章最实用的一个判断：</strong><mark class="key">在这个行业里，「官方文档完全准确且内部一致」是特例，不是常态。</mark></p>
+  <p><strong>用一个开会的场景收这个道理：</strong>一家几千人的公司开全员大会，各部门的汇报里总会有几处对不上——不是有人撒谎，是<em>信息在不同部门里以不同速度流动</em>。<strong>本质上就是</strong>：组织越大、迭代越快，对外说法的不同步就越难避免。<strong>你能做的不是指望它们一致，而是养成「至少看两个入口 + 记查询日期」的习惯。</strong></p>
+
+  <h3>常见误解澄清</h3>
+  <p><strong>误解一：「这些 AI 编程工具都差不多，选便宜的就行。」</strong></p>
+  <p>价格没法这么比，因为<mark class="key">它们的计量单位根本不同</mark>：TRAE 中国站用积分、TRAE 国际站用 Dollar Usage、Cursor 用 requests 倍数、Copilot 用 credits 加 Flex allotment。<strong>说白了：四把不同的尺子，量出来的数没法放在一起排序。</strong>能比的只有一件事——<em>照你自己的实际用量，各家一个月扣完之后你还剩多少。</em></p>
+  <p><strong>误解二：「工具用的什么模型不重要，反正都能写代码。」</strong></p>
+  <p>它确实不像你想的那么重要（因为大多支持切换），<strong>但也不是完全不重要。</strong>回看 TRAE 中国站那条 Seed 系列 2.5 折的福利、Copilot Pro+ 才「Access to premium models, including Opus」、TRAE 内置清单里两个 Doubao-Seed-2.1 型号「仅限优速通 Express 和速通 Ultra 用户」——<mark class="key">这三条都说明：你能用哪些模型，是跟档位绑定的。</mark></p>
+  <p><strong>误解三：「Copilot 的清单里有 Opus 4.8，所以 Anthropic 已经发布了 4.8。」</strong></p>
+  <p>这是本节最想纠正的一条。<strong>第三方平台的清单不能当厂商官方发布的依据。</strong><mark class="key">超市摆了新口味，不等于你可以替厂家宣布产品上市。</mark>正确的说法是：「截至 2026 年 8 月 8 日，GitHub Copilot 套餐页列出了 Claude Opus 4.8；而 Anthropic 官方模型总览当天最高列到 Opus 4.7。」<strong>两句话都说，都标日期。</strong></p>
+  <p><strong>误解四：「TRAE 中文站说三种模式，英文站说两种，肯定有一边写错了。」</strong></p>
+  <p>「有一边写错」是一种可能，但不是唯一可能——<strong>功能分区域上线、文案更新有先后、两地产品策略本就不同，都能解释这个差异。</strong><mark class="key">而本节能确认的只有「两边写得不一样」这一件事，其余全是推断。</mark>把推断当结论写出去，是这一节反复在防的那个错误。</p>
+  <p><strong>误解五：「工具层技术含量低，就是套个壳。」</strong></p>
+  <p>这个说法忽略了前面进货单类比里的第三件事：<strong>把「按 token 的成本」换算成「按月的定价」，而且不能亏本、又不能贵到没人买。</strong>另外还有上下文管理、多轮任务的规划、变更的追踪与回滚——<mark class="key">§11.1 讲过的那句「errors compound（错误会累积）」，正是这一层每天要对付的问题。</mark><strong>相当于</strong>说面馆「就是把面煮一煮」——技术上没错，但没解释为什么有的店排队有的店关门。</p>
+  <p><strong>误解六：「查不到 Perplexity 和 Midjourney 的价格，说明这本书不够全。」</strong></p>
+  <p>这个批评本节接受一半。<strong>不全是事实</strong>——本章明确列出了 8 处未取得。<mark class="key">但「不全」和「编造」之间，我们选择不全。</mark>Midjourney 定价页返回人机验证页、Perplexity 五个官方地址全部失败，这些都在正文里写明了地址与结果，你可以自己去补。<strong>说白了：一份研究能被人接着查下去，比它看起来完整更重要。</strong></p>
+
+  <div class="lab" data-lab="quiz"
+       data-q="截至 2026 年 8 月 8 日，GitHub Copilot 套餐页的可用模型清单里有 <strong>Claude Opus 4.8</strong>，而 Anthropic 官方模型总览当天最高只列到 <strong>Opus 4.7</strong>。这两个都是官方页面。最恰当的处理是？"
+       data-opts="以 Copilot 为准，写「Anthropic 已发布 Opus 4.8」，因为平台清单更新更快|以 Anthropic 为准，判定 Copilot 页面有误、清单不可信|分清两者身份：Copilot 页面权威地说明「在该平台能用到什么」，Anthropic 文档权威地说明「厂商有哪些模型及其规格」，两处并列写出并标注日期|两处都不引用，等厂商澄清后再写"
+       data-answer="2"
+       data-explain="这是「不同主体之间的不一致」，和 OpenAI 那种「同一主体内部不一致」处理办法不同：这里的关键不是挑一个更可信的，而是分清各自的职责范围。第三方平台清单权威回答「在我这里你能用到哪些」，厂商文档权威回答「我们有哪些模型、规格与价格是多少」——问配料表看厂家，问今天有什么货看超市，这不是矛盾而是分工。选项一最危险：它拿超市货架当依据替厂家宣布产品上市，跨过了信源身份这一层。选项二把一个本来准确的页面判成错误。选项四则丢掉了两条本来都可核实的事实。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 这一节收束</span>
+    <p><strong>一、工具层的位置与商业逻辑。</strong>它们大多不自己造模型，价值在「把模型接进你的工作流」，而所有计费复杂性都来自同一个矛盾——<mark class="key">上游按 token 计量，下游希望包月。</mark>进货单类比：同时跟多家面粉厂进货、按菜品挑面粉、把按斤的成本换算成按碗的价。</p>
+    <p><strong>二、★ TRAE 的两套计费绝不能混用。</strong>中国站是<strong>积分制人民币</strong>（Lite ¥49 / Pro ¥99 / Pro+ ¥239 / Ultra ¥699，对应 2000 / 4000 / 12000 / 40000 积分，有效期均为 31 自然日，Seed-2.1-Turbo 与 Seed-Code 计费 2.5 折）；国际站是<strong>Dollar Usage 制美元</strong>（Free / Lite $3 / Pro $10 / Pro+ $30 / Ultra $100，含用量 $5 / $20 / $90 / $400）。<mark class="key">官方未公布积分与美元的换算率，任何换算都是自己编的。</mark>另注意中国站 Lite 的积分是「Work 专属」，不能用于 Code。</p>
+    <p><strong>三、★ 中英文站的模式数不一致。</strong>中文站：「Work、Code 与 Design <strong>三种</strong>模式」；英文站：「two modes—Work and Code」。<strong>差异本身可靠度高（双边原文同日抄录），成因则一律是推断，官方未做说明。</strong></p>
+    <p><strong>四、★ 第三方平台清单 ≠ 厂商官方文档。</strong>Copilot 列 Opus 4.8，Anthropic 官方最高 4.7；TRAE 内置清单已到 GLM-5.2、Kimi-K3，而 §12.3 的厂商文档只到 GLM-4.6、K2.5。<mark class="key">问规格看厂家，问「这里有什么货」看平台——这不是矛盾，是分工。</mark></p>
+    <p><strong>五、几个值得学的官方措辞。</strong>Cursor 的「billed in arrears」（后付费，先用后结）与「不授权任何转售商」；Copilot 的「We're gradually enabling new sign-ups」（已发布不等于你能注册）；Midjourney 把「发布日」与「成为默认的起止区间」分开写，并说明 V8.0 下线后旧图仍在画廊。<strong>Midjourney 的计价单位是 GPU 时间而非张数（HD 1.3 分钟 vs SD 0.8 分钟，约一倍半）。</strong></p>
+    <p><strong>六、本节的留白清单（诚实交代）：</strong><strong>TraeCode CLI 的形态、安装方式与能力全部未取得</strong>（中英文站七个地址全部失败，官方 llms.txt 索引当日未列 cli 章节；自媒体内容一律不采用）；<strong>Cursor 的 Pro+ / Ultra 具体价格未取得</strong>（官方页只给倍数不给数字）；<strong>Midjourney 定价未取得</strong>（返回人机验证页）；<strong>Perplexity 的定价与型号整条未取得</strong>（五个官方地址全部失败，故一字不写）；TRAE 的 MCP 与 Skill 仅有<strong>目录级证据</strong>，未读正文细节。所有内容的查询日期为<strong>截至 2026 年 8 月 8 日</strong>。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./12-4-opensource.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 12.4 · 开源生态</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled" href="#">
+      <span class="dir">下一章 →</span>
+      <span class="title">第 13 章 · 局限与风险（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 智能篇 · § 12.5</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-33"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-33"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-33"></script>
+</body>
+</html>
