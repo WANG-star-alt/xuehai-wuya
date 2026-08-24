@@ -235,14 +235,16 @@
       ),
       createNode('net-05', '第 5 章 · 网络设备',
         '路由器、交换机、网关、防火墙、光猫——机房里的角色。',
-        '待撰写',
+        '约 5.3 万字',
         [
           createNode('net-05-1', '§ 5.1 · 交换机 Switch', '二层设备——靠 MAC 地址在局域网内转发数据帧。', '10816 字', [], { href: 'chapters/network/05-1-switch.html', spec: 'pass'}),
           createNode('net-05-2', '§ 5.2 · 路由器 Router', '三层设备——靠 IP 和路由表在不同网络间寻路。', '10841 字', [], { href: 'chapters/network/05-2-router.html', spec: 'pass'}),
-          createNode('net-05-3', '§ 5.3 · 网关与光猫', '网关 = 出口关卡；光猫 = 光信号与电信号的翻译官。', '待撰写', []),
-          createNode('net-05-4', '§ 5.4 · 防火墙 Firewall', '包过滤、状态检测、下一代防火墙——谁能进谁不能。', '待撰写', []),
-          createNode('net-05-5', '§ 5.5 · 负载均衡 LB', '四层 vs 七层、轮询/最少连接/一致性哈希。', '待撰写', [])
-        ]),
+          createNode('net-05-3', '§ 5.3 · 网关与光猫', '网关 = 出口关卡；光猫 = 光信号与电信号的翻译官。', '10127 字', [], { href: 'chapters/network/05-3-gateway-ont.html', spec: 'pass'}),
+          createNode('net-05-4', '§ 5.4 · 防火墙 Firewall', '包过滤、状态检测、下一代防火墙——谁能进谁不能。', '10634 字', [], { href: 'chapters/network/05-4-firewall.html', spec: 'pass'}),
+          createNode('net-05-5', '§ 5.5 · 负载均衡 LB', '四层 vs 七层、轮询/最少连接/一致性哈希。', '10967 字', [], { href: 'chapters/network/05-5-load-balancer.html', spec: 'pass'})
+        ],
+        { href: 'chapters/network/05-1-switch.html' }
+      ),
       createNode('net-06', '第 6 章 · 无线与移动',
         'WiFi、蓝牙、4G/5G、卫星互联网——切断电缆的自由。',
         '待撰写',
