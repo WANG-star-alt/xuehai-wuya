@@ -22,3 +22,4 @@ desktop.ini
 
 # Node（如果以后加构建工具会用到）
 node_modules/
+__pycache__/
