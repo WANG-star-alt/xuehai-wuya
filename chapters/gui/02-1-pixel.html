@@ -220,7 +220,8 @@ console.log(window.innerWidth * window.devicePixelRatio);  // 例如 1179（物�
   .logo { background-image: url(logo@2x.png); background-size: 100px 100px; }
 }</code></pre>
 
-  <p>同样的道理也适用于 <code>&lt;canvas&gt;</code>。画布的默认物理像素数等于 CSS 尺寸，在 Retina 屏上画出来的东西是糊的，必须手动把画布的实际像素放大 DPR 倍，再把绘图坐标系缩放回来：</p>
+  <h3>画布 canvas 也要做高清适配</h3>
+  <p>上面讲的 @2x / @3x 思路，同样适用于 <code>&lt;canvas&gt;</code>。画布的默认物理像素数等于 CSS 尺寸，在 Retina 屏上画出来的东西是糊的，必须手动把画布的实际像素放大 DPR 倍，再把绘图坐标系缩放回来：</p>
   <pre><code>// Canvas 高清适配：三行标准操作
 const dpr = window.devicePixelRatio || 1;
 canvas.width  = cssWidth  * dpr;     // 实际像素放大

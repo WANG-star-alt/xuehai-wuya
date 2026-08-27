@@ -185,6 +185,7 @@ el.addEventListener('transitionend', () => {
     </div>
   </div>
 
+  <h3>几个同样隐蔽的卡顿来源：被动与字体</h3>
   <p>还有几个容易忽略的隐形杀手：滚动事件里没加 <code>passive: true</code>（导致浏览器必须等你的回调执行完才敢滚动）；用 <code>setInterval</code> 而不是 <code>requestAnimationFrame</code> 驱动动画（节奏和屏幕刷新不同步，必然抖动）；以及在动画进行中触发了字体加载（字体一到就整页回流重排）。</p>
   <p>这三个里最隐蔽的是第一个，值得翻译一下。<strong>没加 <code>passive: true</code> 的滚动监听，相当于电梯门口站了一个人说"等我说完你再关门"</strong>——浏览器必须先跑完你的回调，确认你没有调用 <code>preventDefault()</code> 阻止滚动，才敢真的滚。你的回调哪怕只花 3 毫秒，也已经吃掉了这一帧三分之一的预算。加上 <code>passive: true</code> 就等于提前声明"我不会拦门，你直接关"，浏览器可以立刻滚动，回调稍后再跑。</p>
   <p>第三个也有个很日常的对应：<strong>字体加载完成会引发整页回流，好比一场会议进行到一半，突然换了一批不同尺寸的椅子——所有人都得重新坐一遍，桌子的间距也得重排。</strong>这就是所谓的"字体闪动"。解法是用 <code>font-display: swap</code> 先用系统字体顶着，或者干脆把首屏字体预加载。</p>

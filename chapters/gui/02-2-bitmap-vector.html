@@ -89,6 +89,7 @@
     <li><span class="k">GIF · 历史包袱</span><span class="v">只能存 256 种颜色，透明只有"透"和"不透"两档（所以边缘常有难看的白毛边），动图体积却比同等视频大好几倍。它今天唯一的价值是兼容性和文化惯性——技术上应当被 WebP 动图或 <code>&lt;video&gt;</code> 取代。</span></li>
   </ul>
 
+  <h3>用 <code>picture</code> 元素，让浏览器自己挑格式</h3>
   <p>网页里最推荐的做法是让浏览器自己挑它能吃的那一种，前面的格式优先，不支持就往后退：</p>
 <pre><code>&lt;picture&gt;
   &lt;source srcset="hero.avif" type="image/avif"&gt;
