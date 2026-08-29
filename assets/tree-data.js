@@ -304,7 +304,7 @@
           createNode('net-10-3', '§ 10.3 · IPv6 全面部署', '地址耗尽、双栈过渡、为什么推了二十年还没完。', '8640 字', [], { href: 'chapters/network/10-3-ipv6.html', spec: 'pass' }),
           createNode('net-10-4', '§ 10.4 · 加密 DNS', 'DoH / DoT / DoQ——DNS 查询也要加密。', '9436 字', [], { href: 'chapters/network/10-4-encrypted-dns.html', spec: 'pass' }),
           createNode('net-10-5', '§ 10.5 · BBR 拥塞控制', 'Google 的新算法——测带宽而不是等丢包。', '9384 字', [], { href: 'chapters/network/10-5-bbr.html', spec: 'pass' })
-        ], { href: 'chapters/network/10-1-http2-http3.html' })
+        ], { href: 'chapters/network/10-evolution.html' })
     ],
     { color: '#556b3d' }
   );

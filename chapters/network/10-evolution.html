@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 10 章 · 现代协议演进 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./09-toolbox.html">网络篇 · 第 9 章</a>
+      <span class="sep">›</span>
+      <span>第 10 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Network · Chapter 10</div>
+    <h1>第 10 章 · 现代协议演进</h1>
+    <div class="cn">The Evolving Protocols · Renovating the Internet Without Closing It</div>
+  </header>
+
+  <p class="lead">
+    第 9 章合上工具箱时说：接下来去看网络协议的"将来时"。这一章兑现承诺——但先坦白一件事：<mark class="key">这些"新协议"早已不是将来时，你此刻打开的每个主流网站，半数以上跑的就是这一章的主角。</mark>HTTP/2 与 HTTP/3 重修了应用层的柜台，QUIC 在 UDP 的壳里重造了传输层的地基，IPv6 给全城换了门牌系统，加密 DNS 给四十年的明文问路穿上了盔甲，BBR 给所有数据的油门装上了传感器。五节连起来读，你会发现它们不是五件孤立的新鲜事，而是<strong>同一场大翻修的五个工地</strong>——而这场翻修最了不起的地方在于：<strong>营业中的互联网，一天都没停过业。</strong>旧的 HTTP/1.1、旧的 IPv4、旧的明文 DNS，此刻仍与新协议并肩跑在同一条路上。这既是工程奇迹，也是所有麻烦的来源。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏨 营业中的百年酒店大翻修</div>
+    <p>一家开了四十年的老字号酒店，要整体翻新：换电梯、改布线、翻新全部 500 个房间。<br/>
+    方案一：关门一年，推倒重来——快是快，但 200 名员工失业、会员全部流失、对面酒店笑醒。<strong>方案二（互联网的选择）：边营业边翻修。</strong>每天只翻两间房，翻好的挂新招牌，没翻的照常接待；新电梯装好一部的当天就启用，另一部留着跑老客的习惯；新旧两套房卡系统并行三年，直到最后一位老客换卡。<br/><br/>
+    施工队还有一条铁律：所有新材料必须<strong>长得像旧材料</strong>——新电线走旧线槽、新管道接旧接口、新门卡刷旧读卡器。<br/><br/>
+    <mark class="key">这家酒店就是互联网：房间是协议，房卡是兼容性，"长得像旧材料"就是本章五节反复出现的那招——借壳（QUIC 借 UDP 的壳、DoH 借 HTTPS 的壳、隧道借 IPv4 的壳）。而"边营业边施工"的代价，则化作每一节都要交的那笔账：双栈、过渡、共存、迁移——没有一节是爽文，全是工程的真实重量。</mark></p>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>说白了，这一章要回答的总问题是：<strong>"互联网这台四十年高龄的机器，是怎么在不停机的前提下完成大修的？"</strong>拆开来是五个小问题，正好对应五节：</p>
+  <ul class="keylist">
+    <li><strong>"网页越来越重，老柜台怎么扛住的？"——翻修应用层。</strong>从一条队到百路并发，从文本协议到二进制分帧。这是 <strong>§ 10.1 · HTTP/2 与 HTTP/3</strong>。</li>
+    <li><strong>"地基 TCP 动不了，怎么办？"——在旁边重打一块。</strong>握手合并、连接迁移、流间不株连——QUIC 的身份革命。这是 <strong>§ 10.2 · QUIC 协议</strong>。</li>
+    <li><strong>"门牌用完了，全城怎么换？"——史上最慢的一次换牌。</strong>128 位地址、双栈过渡、三十年死锁怎么破。这是 <strong>§ 10.3 · IPv6 全面部署</strong>。</li>
+    <li><strong>"内容加密了，问路还裸奔？"——给 DNS 穿盔甲。</strong>DoT / DoH / DoQ、ECH、以及隐私与管控的十年暗战。这是 <strong>§ 10.4 · 加密 DNS</strong>。</li>
+    <li><strong>"车速调度还靠撞墙？"——给油门装传感器。</strong>不猜拥堵、去测容量：BBR 换掉的不是参数，是认识论。这是 <strong>§ 10.5 · BBR 拥塞控制</strong>。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <strong>把这一章想成"翻修工程的五张施工图"</strong><br/>
+    <strong>第一张图（§ 10.1）改门厅：</strong>前台从"一个窗口一条队"改成"一个窗口百样业务"——客人（请求）不再排队，但发现墙里的旧水管（TCP）会卡住所有窗口的出餐。于是有了第二张图。<br/><br/>
+    <strong>第二张图（§ 10.2）换地基：</strong>不动承重墙（TCP 改不动），在楼旁起新楼（QUIC），还用旧楼的门牌样式（借 UDP 的壳）骗过挑剔的物业（中间设备）。新楼里，住户换房间不断网（连接迁移），进门和办卡一次办完（握手合并）。<br/><br/>
+    <strong>第三张图（§ 10.3）换全城门牌：</strong>四位数门牌用完了，改成八位数——听起来一夜的事，干成了三十年：家家双门牌（双栈）、旧信封寄新信（隧道）、前台两个窗口都开（Happy Eyeballs）。<br/><br/>
+    <strong>第四张图（§ 10.4）给问询台装密语：</strong>客人问"某某房间在哪"喊了四十年，大堂里全是记账的闲人——现在改传纸条（DoH），连进门自报家门都改暗号（ECH）。馆长、家长、警察都要求旧规矩不能全废，谈判至今。<br/><br/>
+    <strong>第五张图（§ 10.5）重写车速调度：</strong>酒店的车队跑了三十年，规矩是"看到事故报告才减速"——新调度中心（BBR）说：装仪表，测路况，不猜。车队快了，还得学会跟守旧规矩的车公平共处。<br/><br/>
+    <mark class="key">五张图纸贴在同一个工地上，写着同一条总纲：不关门、不推倒、新件长得像旧件——每一步都得给还没搬进新世界的用户留一条回家的路。互联网的演进从来不是革命，是连续的、可回退的、永远留后门的重构。</mark>
+  </div>
+
+  <h3>本章的行进地图</h3>
+  <p>先看地图再上路。五节覆盖协议栈自上而下的五处工地——你恰好可以把这一章当作全篇的"总复习"：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>小节</th><th>解决的问题</th><th>核心比喻</th><th>一句话记忆</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>§ 10.1 HTTP/2 与 HTTP/3</td><td>应用层排队：队头阻塞</td><td>奶茶店两次升级</td><td>多路复用治了应用层，治不了 TCP 层</td></tr>
+        <tr><td>2</td><td>§ 10.2 QUIC 协议</td><td>地基僵化：握手慢、换网断</td><td>会员卡认人，不认门牌</td><td>快和稳都是身份革命的副产品</td></tr>
+        <tr><td>3</td><td>§ 10.3 IPv6 全面部署</td><td>地址耗尽与 NAT 的代价</td><td>全城换门牌</td><td>推不动的从来不是技术，是互补博弈</td></tr>
+        <tr><td>4</td><td>§ 10.4 加密 DNS</td><td>问路明文裸奔四十年</td><td>问询台改传纸条</td><td>每一次加密，都是一次权力再分配</td></tr>
+        <tr><td>5</td><td>§ 10.5 BBR 拥塞控制</td><td>丢包误诊与开不满的路</td><td>仪表盘代替事故报告</td><td>换掉的不是参数，是认识论</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>读表提示：五节正好压着协议栈的五层往下走——应用（HTTP/3）、传输（QUIC）、网络（IPv6）、名字系统（DNS）、发送策略（BBR）。<mark class="key">第 2 章说"分层是网络的设计哲学"，第 10 章补上最生动的一课：分层还决定了翻修的施工顺序——每层各翻各的、互不阻塞，才有了"四十年不停机"的可能。分层不是教科书里的表格，是互联网能活到今天的免疫系统。</mark></p>
+
+  <h3>本章的五节</h3>
+  <div class="cards">
+    <a class="card" href="./10-1-http2-http3.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 10.1</div>
+      <h4>HTTP/2 与 HTTP/3</h4>
+      <p>三宗罪、二进制分帧、多路复用、头部压缩、TCP 层队头阻塞、Alt-Svc 协商、三代总账。</p>
+    </a>
+    <a class="card" href="./10-2-quic.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 10.2</div>
+      <h4>QUIC 协议</h4>
+      <p>RTT 账本、握手合并、0-RTT 与重放、Connection ID 连接迁移、NAT 隐形房管、用户态红利。</p>
+    </a>
+    <a class="card" href="./10-3-ipv6.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 10.3</div>
+      <h4>IPv6 全面部署</h4>
+      <p>地址耗尽三放大器、NAT 续命账单、/64 世界观、CGNAT 两难、双栈排错、三十年死锁的钥匙。</p>
+    </a>
+    <a class="card" href="./10-4-encrypted-dns.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 10.4</div>
+      <h4>加密 DNS</h4>
+      <p>五个旁听席、行为自传、DoT/DoH/DoQ 三路线、DNSSEC 分工、ECH、解析器集中化、密语时代排错。</p>
+    </a>
+    <a class="card" href="./10-5-bbr.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 10.5</div>
+      <h4>BBR 拥塞控制</h4>
+      <p>锯齿一生、无线误诊、长肥管道、Bufferbloat、测容量换问、Pacing、公平性谈判、三代进化。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <p>这一章术语密度高、时间跨度大，但<strong>三条母题串起了全部五节</strong>——记住母题，细节忘了也能自己推回来：</p>
+  <ul class="keylist">
+    <li><strong>母题一：借壳是第一兵法。</strong>QUIC 借 UDP、DoH 借 HTTPS、隧道借 IPv4——新协议想在被旧设备层层盘查的互联网上活下来，先学会打扮成最普通的老流量。<strong>本质上就是</strong>一句话：当特立独行会被围剿，就混进人海。本章三次应验，次次精彩。</li>
+    <li><strong>母题二：互联网从不删旧枝。</strong>HTTP/1.1 还在服役、IPv4 与 IPv6 双栈并行、明文 DNS 仍是兜底默认、CUBIC 仍是 Linux 默认——新协议从不是旧协议的"替代品"，而是"并行的第三条车道"。<strong>相当于</strong>城市修新桥从不拆旧桥：旧桥慢，但它认识所有的老司机。</li>
+    <li><strong>母题三：每次升级都是一次权力再分配。</strong>QUIC 把权力从内核挪到应用、IPv6 把运营商从"地址倒爷"变回"管道工"、加密 DNS 把"看得见你去哪"从运营商手里移交给解析器、BBR 把公平的定义权重新摆上谈判桌。<strong>说白了</strong>，技术只是把"谁看得见、谁说了算、谁付成本"这个问题摆上桌——答案，永远由所有人一起写。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一章是网络篇的<mark class="key">收官章</mark>——前九章修好的路、编好的号、上好的锁，在第十章看着它们被逐件翻新。<br/>
+    五节一线：<strong>翻柜台（HTTP/2→3）→ 换地基（QUIC）→ 换门牌（IPv6）→ 穿盔甲（加密 DNS）→ 换调度（BBR）</strong>。<br/>
+    读完这一章，你应该获得一种新的眼光：再看到任何"新版协议发布"的新闻，你的第一反应不再是"又出新东西了"，而是三个问题——<strong>它借了谁的壳？它给旧用户留了哪条后路？它动了谁的奶酪？</strong>这三个问题，就是这一章教你的"协议演进嗅觉"。</p>
+    <p>网络篇至此十章完结。下一篇，我们调转镜头，从看不见的管道望向看得见的皮肤——<strong>界面篇</strong>：GUI 是什么，像素从哪里来，你的一次点击如何变成屏幕上的回应。网络的尽头，是人机之间的那扇窗。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./09-6-wireshark.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 9.6 · Wireshark 抓包</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./10-1-http2-http3.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 10.1 · HTTP/2 与 HTTP/3</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · Chapter 10</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
