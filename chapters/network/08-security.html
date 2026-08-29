@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 8 章 · 网络安全 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./07-cloud-edge.html">网络篇 · 第 7 章</a>
+      <span class="sep">›</span>
+      <span>第 8 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Network · Chapter 08</div>
+    <h1>第 8 章 · 网络安全</h1>
+    <div class="cn">The Shield · From Locks and Seals to Zero Trust</div>
+  </header>
+
+  <p class="lead">
+    前七章讲的都是怎么把网"修通"：协议是语言、地址是门牌、路由是路网、无线是自由、云是住法。这一章换一个完全相反的视角——<mark class="key">假设这座修得四通八达的城市里，有人要偷、要骗、要堵门、要冒充，你怎么办？</mark>网络安全就是这座城市的治安学：它研究的不是"网怎么工作"，而是"网怎么在有人使坏的世界里继续工作"。这一章六节，恰好排成三条战线：<strong>先修密码学的地基</strong>（加密、证书），<strong>再打应用与资源的攻防战</strong>（Web 四板斧、DDoS），<strong>最后收束于通道与章法</strong>（VPN 与代理、零信任）。读完这一章，你刷到任何一条安全新闻，都能说出它属于哪个战场、防的是哪一环。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏙️ 一座城市的年度治安年报</div>
+    <p>翻开这座网络之城今年的案卷，案子大致这么几类：有人在主干道上拦信拆包（<strong>窃听</strong>）；有人开了家假公证处，专发假公章（<strong>钓鱼与假证书</strong>）；有骗子往商场的公共留言墙上贴"会自己动手的小偷贴纸"（<strong>XSS</strong>）；有商家被雇来的三百人"排队团伙"堵了整整一天门（<strong>DDoS</strong>）；也有人借住户自己的门禁卡刷开了闸机（<strong>CSRF</strong>）。<br/><br/>
+    最有意思的是年底：物业没有继续加高围墙，而是启动了一场大改革——<strong>拆掉"进门就是自己人"的旧规矩，改成每栋每户单独刷卡、访客限时授权、行为可疑随时复查</strong>（<strong>零信任</strong>）。<br/><br/>
+    <mark class="key">市长在年报扉页只写了一句话："这一年的教训不是城墙不够高，而是案子一件件都出在我们自己发的证件、自己开的门、自己请的跑腿身上。"——这句话，就是整章的钥匙。</mark></p>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>说白了，这一章要回答的总问题是：<strong>"有人在使坏的世界里，网还能不能好好工作？"</strong>拆开来是六个小问题，正好对应六节：</p>
+  <ul class="keylist">
+    <li><strong>路上的信谁都能拆，怎么让只有收件人读得懂？</strong>——把信装进保险箱：对称加密一把钥匙，非对称加密一对钥匙。这是 <strong>§ 8.1</strong>。</li>
+    <li><strong>信封锁好了，可"对面递钥匙的人"是不是骗子？</strong>——给公钥配身份证：数字证书，加上全互联网的公证处体系。这是 <strong>§ 8.2</strong>。</li>
+    <li><strong>坏人不撬锁，专走正门怎么办？</strong>——认清四板斧：SQL 注入夹暗语、XSS 贴贴纸、CSRF 借卡、SSRF 指使跑腿。这是 <strong>§ 8.3</strong>。</li>
+    <li><strong>不偷不骗，就是喊一百万人堵你家门怎么办？</strong>——摊薄、甄别、节流、兜底四板防御。这是 <strong>§ 8.4</strong>。</li>
+    <li><strong>人不在公司、又不想露面，流量怎么绕路？</strong>——跑腿（代理）与地下隧道（VPN）。这是 <strong>§ 8.5</strong>。</li>
+    <li><strong>当"进了门就是自己人"彻底失效，安全靠什么？</strong>——永不信任、始终验证：零信任架构。这是 <strong>§ 8.6</strong>。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <strong>把这一章想成"一座城市的治安体系"</strong><br/>
+    最初的城市不设防，路修到哪、人到哪——直到有人开始使坏。<br/><br/>
+    <strong>第一步，信件上锁（§ 8.1 加密）</strong>——所有信件装进保险箱，寄件收件各持钥匙；保险箱本身再由公证处登记造册，钥匙丢了立即作废换新。<br/><br/>
+    <strong>第二步，公章防伪（§ 8.2 证书）</strong>——光有锁不够，锁可能是骗子递来的。于是全城建立公证处体系：谁家的锁、谁家的公章，层层担保、当众可查——你在门上看到的那个小锁标志，就是"这家的公章经过了公证"。<br/><br/>
+    <strong>第三步，街面反诈（§ 8.3 Web 攻击）</strong>——骗子不撬锁了，改成在点菜单里夹暗语、在留言墙上贴贴纸、借你的门禁卡刷闸机、指使你的跑腿进档案室。反诈的口诀只有一条：别人的字，永远只能当字看，不能当指令执行。<br/><br/>
+    <strong>第四步，应对围堵（§ 8.4 DDoS）</strong>——团伙直接雇三百人堵门。应对是四板：把一家店开成一万分店（摊薄）、路口设体检站（甄别）、进门取号（节流）、最坏时关店保街（兜底）。<br/><br/>
+    <strong>第五步，修地下通道（§ 8.5 VPN 与代理）</strong>——住得远的员工要办公、不想露面的人要办事：雇跑腿（正向代理）、请前台（反向代理）、修加密隧道（VPN）——同一条技术，正邪两用。<br/><br/>
+    <strong>最后，物业大改革（§ 8.6 零信任）</strong>——年底复盘发现：高墙挡不住自己人使坏。于是围墙作废，改行"每扇门单独授权、每次刷卡现场验证、行为可疑随时复查"——安全从一堵墙，变成一千道随身的门。<br/><br/>
+    <mark class="key">这座城市的治安进化史，方向只有一条：从"防外面的贼"，走到"管好自己发的每一份信任"。</mark>
+  </div>
+
+  <h3>本章的行进地图</h3>
+  <p>先看地图再上路。六节的关系不是并列六块，而是一条严丝合缝的推理链——<strong>每一节都在回答上一节留下的问题：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>小节</th><th>解决的问题</th><th>核心比喻</th><th>一句话记忆</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>§ 8.1 加密</td><td>路上的信谁都能拆——怎么保密</td><td>保险箱 / 一把钥匙 vs 一对钥匙</td><td>一对钥匙换信，一把钥匙看家</td></tr>
+        <tr><td>2</td><td>§ 8.2 证书</td><td>公钥会被调包——对面到底是谁</td><td>房产证 / 公证处</td><td>加密保路上，证书保对面</td></tr>
+        <tr><td>3</td><td>§ 8.3 Web 攻击</td><td>不撬锁走正门——代码怎么被打</td><td>点菜单夹暗语 / 留言墙贴纸</td><td>数据只许被看，不许被执行</td></tr>
+        <tr><td>4</td><td>§ 8.4 DDoS</td><td>不偷不骗只堵门——资源被占满</td><td>排队团伙 / 人海围城</td><td>攻击的是账本，不是漏洞</td></tr>
+        <tr><td>5</td><td>§ 8.5 VPN 与代理</td><td>够不着、不想露面——流量绕路</td><td>跑腿与前台 / 地下隧道</td><td>正向藏客户，反向藏店家</td></tr>
+        <tr><td>6</td><td>§ 8.6 零信任</td><td>进了门就是自己人？——信任崩塌</td><td>水密舱 / 小区改造</td><td>位置不是通行证</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最值得先记住的一条暗线：<mark class="key">六节其实是同一个母题的六次变奏——每一节都在管"信任"这件事：加密管密钥的信任，证书管身份的信任，四板斧管数据的信任，DDoS 管资源的信任，隧道管通道的信任，零信任统管信任的发放规则。所谓网络安全，说到底是信任的工程学。</mark></p>
+
+  <h3>本章的六节</h3>
+  <div class="cards">
+    <a class="card" href="./08-1-encryption.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 8.1</div>
+      <h4>对称与非对称加密</h4>
+      <p>AES 与 RSA、密钥分发难题、哈希与加盐、数字签名、混合加密——HTTPS 的两把锁。</p>
+    </a>
+    <a class="card" href="./08-2-certificates.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 8.2</div>
+      <h4>数字证书与 CA</h4>
+      <p>中间人调包、CA 公证处、证书链、DV/OV/EV 三档、有效期与吊销、透明日志。</p>
+    </a>
+    <a class="card" href="./08-3-web-attacks.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 8.3</div>
+      <h4>Web 攻击</h4>
+      <p>SQL 注入、XSS、CSRF、SSRF 四板斧的原理与防法、四大真实战例、纵深防御三道防线。</p>
+    </a>
+    <a class="card" href="./08-4-ddos.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 8.4</div>
+      <h4>DDoS 与防护</h4>
+      <p>三本资源账、SYN Flood、反射放大、CC 攻击、僵尸网络、防御四板、黑洞路由。</p>
+    </a>
+    <a class="card" href="./08-5-vpn-proxy.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 8.5</div>
+      <h4>VPN 与代理</h4>
+      <p>正向与反向代理、HTTP 与 SOCKS5、隧道=封装+加密、隧道工艺家谱、隐私真相、Tor。</p>
+    </a>
+    <a class="card" href="./08-6-zero-trust.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 8.6</div>
+      <h4>零信任架构</h4>
+      <p>边界模型的崩塌、三大原则、身份即边界、微分段、策略引擎、ZTNA 接棒 VPN。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <p>这一章是全篇"敌情"最重的一章，术语和攻防套路都很密——但<strong>四条骨架撑起了全部内容</strong>，先记住它们，六节读起来会轻一半：</p>
+  <ul class="keylist">
+    <li><strong>骨架一：安全是链条，强度取决于最弱一环。</strong>加密再强，密码是 123456 也白搭；证书再严，用户点了"忽略警告"也破功。<strong>说白了</strong>，攻击者永远挑最软的地方下手——所以防御者必须盯着自己的短板，而不是炫耀长板。</li>
+    <li><strong>骨架二：攻击走正门。</strong>翻遍这一章你会发现：真正得手的攻击没有几个在"破墙"——夹暗语、贴贴纸、借门卡、指使跑腿、雇人排队，<strong>全是让系统自己开门</strong>。理解了这一点，你就不会再把安全想象成"黑客 vs 防火墙"的对轰。</li>
+    <li><strong>骨架三：防御是组合拳与限额。</strong>纵深防御（层层设防、层层兜底）+ 失守止损（最小权限、短命凭证、降级预案）——成熟的防御从不赌"永不失守"，只设计"失守之后死不了"。<strong>相当于</strong>给家里装保险柜的同时，也接受"可能被偷"，只把损失封顶在保险柜之外。</li>
+    <li><strong>骨架四：所有攻击，偷的都是信任。</strong>偷密码偷的是身份信任，假证书伪造的是机构信任，CSRF 挪用的是会话信任，钓鱼骗的是你本人的配合，零信任管的正是信任的发放规则。<strong>本质上就是</strong>：安全史就是一部信任管理史——把这条线从头穿到尾，六节就缝成了一件衣服。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一章是网络篇的<mark class="key">"守护"章</mark>——前七章修路架桥，这一章给全城上锁配警。<br/>
+    六节一线：<strong>信件上锁（加密）→ 公章防伪（证书）→ 街面反诈（四板斧）→ 应对围堵（DDoS）→ 修地下通道（VPN 与代理）→ 物业大改革（零信任）</strong>。<br/>
+    读完这一章，你应该能做到三件很实用的事：<strong>看懂任何一条安全新闻的"案发地点"</strong>（密码学案、应用案、资源案还是架构案）；<strong>给自己的数字生活上三道锁</strong>（重要账户 MFA、密码分级、权限按需授予）；<strong>听懂企业安全讨论在吵什么</strong>（十有八九，是在吵"信任的边界画在哪"）。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./07-5-serverless-edge.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 7.5 · Serverless 与边缘计算</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./08-1-encryption.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 8.1 · 对称与非对称加密</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · Chapter 08</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
