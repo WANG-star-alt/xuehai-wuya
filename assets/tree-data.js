@@ -297,12 +297,12 @@
       ),
       createNode('net-10', '第 10 章 · 现代协议演进',
         'HTTP/3、IPv6、DoH、BBR——网络协议的最新进化。',
-        '更新中 · 已上线 § 10.3',
+        '更新中 · 已上线 § 10.4',
         [
           createNode('net-10-1', '§ 10.1 · HTTP/2 与 HTTP/3', '多路复用、头部压缩、QUIC 基于 UDP 重造可靠传输。', '9598 字', [], { href: 'chapters/network/10-1-http2-http3.html', spec: 'pass' }),
           createNode('net-10-2', '§ 10.2 · QUIC 协议', '0-RTT 握手、连接迁移——为什么抛弃 TCP。', '9113 字', [], { href: 'chapters/network/10-2-quic.html', spec: 'pass' }),
           createNode('net-10-3', '§ 10.3 · IPv6 全面部署', '地址耗尽、双栈过渡、为什么推了二十年还没完。', '8640 字', [], { href: 'chapters/network/10-3-ipv6.html', spec: 'pass' }),
-          createNode('net-10-4', '§ 10.4 · 加密 DNS', 'DoH / DoT / DoQ——DNS 查询也要加密。', '待撰写', []),
+          createNode('net-10-4', '§ 10.4 · 加密 DNS', 'DoH / DoT / DoQ——DNS 查询也要加密。', '9436 字', [], { href: 'chapters/network/10-4-encrypted-dns.html', spec: 'pass' }),
           createNode('net-10-5', '§ 10.5 · BBR 拥塞控制', 'Google 的新算法——测带宽而不是等丢包。', '待撰写', [])
         ])
     ],
