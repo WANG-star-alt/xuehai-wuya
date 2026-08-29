@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 4.2 · 冒泡与捕获 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 4 章</span>
+      <span class="sep">›</span>
+      <span>§ 4.2</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.2 · Section</div>
+    <h1>冒泡与捕获</h1>
+    <div class="cn">Bubbling &amp; Capturing · The Round Trip of One Click</div>
+  </header>
+
+  <p class="lead">
+    上一节我们跟着一次点击走到了任务队列门口；这一节跟着它走完<strong>最后一段路</strong>：从队列里被取出、派发给元素之前，浏览器还有一道工序——<mark class="key">这个点击要沿着 DOM 树走一个来回：先从树根下行到被点的元素（捕获），再从元素上行回树根（冒泡）</mark>。这一上一下，是 DOM 事件体系的地基，也是无数「为什么我的监听器没触发」「为什么它触发了两次」类问题的总答案。§ 1.5 用「公文层层下发再层层上报」带你看过一眼三阶段的存在；这一节把它解剖到底：监听器挂在下行还是上行、<code>target</code> 和 <code>currentTarget</code> 谁是谁、拦截和拒绝有什么区别、事件委托凭什么以一当百（以及它在真实工程里的标准姿势 data-action）、被动监听器为什么能让滚动更快；再上两层楼看大局：React 这类框架的「总收发室」怎么组织合成事件、Web Components 的 Shadow DOM 海关怎么给事件换护照；最后复盘一场一行 stopPropagation 造成的线上事故，并去原生世界认亲——Android 的拦截分发和 iOS 的响应链，跟 DOM 冒泡是同一个思想的不同方言。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏢 集团的一纸公文，要走完一个来回</div>
+    <p>一家大集团，从集团总部到一线员工隔着好几层：总部 → 华北分公司 → 北京事业部 → 市场部 → 员工小王。<br/><br/>
+    现在，集团要发一份紧急通知（<strong>事件发生了</strong>，比如小王桌上的一个按钮被点击）。这份公文不是凭空出现在小王桌上——它先从<strong>总部出发层层下行</strong>：总部签发 → 分公司转呈 → 事业部转发 → 市场部收发 → 落到小王手里。这段<strong>下行</strong>就是<strong>捕获</strong>（capturing）。<br/>
+    小王签收之后，回执还要<strong>层层上报</strong>：市场部登记 → 事业部汇总 → 分公司备案 → 回到总部归档。这段<strong>上行</strong>就是<strong>冒泡</strong>（bubbling）。<br/><br/>
+    每一层的<strong>收发室</strong>就是 <code>addEventListener</code>——你可以把监听器挂在总部（document），也可以挂在市场部（div），还可以挂在小王本人（button）：<strong>挂在哪一级，公文路过哪一级时你的收发室就经手一次</strong>。关键设定是：每层的收发室可以选择在<strong>下行时</strong>经手（捕获监听），也可以选择在<strong>上行时</strong>经手（冒泡监听，默认）。<mark class="key">一次点击从来不只是「点了一个按钮」——它是一份从树根出发、到按钮为止、再返回树根的公文，沿途每一层都有机会读它、拦它、甚至改它。</mark></p>
+  </div>
+
+  <h3>术语对照：先把这一节的行话翻译成人话</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>集团公文里的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>捕获阶段（capture）</td><td>事件从树根下行到目标的经过</td><td>公文从总部层层下发的路</td></tr>
+        <tr><td>目标阶段（target）</td><td>事件到达被点元素本身</td><td>公文落到小王手里</td></tr>
+        <tr><td>冒泡阶段（bubble）</td><td>事件从目标上行回树根的经过</td><td>回执层层上报的路</td></tr>
+        <tr><td>e.target</td><td>事件真正发生在谁身上（封面收件人）</td><td>公文封面写的小王</td></tr>
+        <tr><td>e.currentTarget</td><td>此刻正在经手的是哪一级</td><td>当前这个收发室所在的楼层</td></tr>
+        <tr><td>stopPropagation()</td><td>拦下公文，不让它再往下传</td><td>某层收发室把公文扣下</td></tr>
+        <tr><td>preventDefault()</td><td>拒绝执行这份公文的默认要求</td><td>回复「此事不办」，但公文照走</td></tr>
+        <tr><td>事件委托（delegation）</td><td>只在一层挂监听，替全体下级代收</td><td>总部一个总收发室管全集团</td></tr>
+        <tr><td>被动监听器（passive）</td><td>承诺「绝不拦默认行为」，换取滚动不等</td><td>免检通道：声明不带违禁品就走快速口</td></tr>
+        <tr><td>CustomEvent</td><td>自己发一份定制公文</td><td>部门自己起草的红头文件</td></tr>
+        <tr><td>响应链（responder chain）</td><td>iOS 版的冒泡：没人接就往上交</td><td>苹果分公司的同款上报制度</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>为什么要设计一个来回：一道选择题的历史</h3>
+  <p>先替古人操一次心：点击发生在按钮上，直接调用按钮的监听器不就完了，为什么非要沿着树跑一个来回？答案是<strong>两边都要照顾</strong>。设想两个真实需求：需求 A，市场部想知道「凡是发给我们部门的公文，不管最终给谁，都先给我看一眼」——如果事件直奔小王，市场部永远不知道有这回事；需求 B，集团安全部想「任何公文在下发途中先过安检」——这必须发生在下行路上。反过来，市场部也常想「小王处理完的事，我汇总一下」。只下行或只上行，都只能满足一半。<br/><br/>
+  历史上这道题真吵过架：网景的方案是<strong>先捕获</strong>（事件从树根往里走），IE 的方案是<strong>只冒泡</strong>（事件从目标往外走）。W3C 定标准时各打五十大板，合成一个来回：<strong>先从树根下行到目标（捕获），再从目标上行回树根（冒泡）</strong>——两家的需求全装下了。这就是著名的 DOM Level 2 事件模型，也是今天所有浏览器统一执行的版本。<strong>说白了</strong>，这个来回不是技术炫技，是「既要让上级有知情权（冒泡），又要让全局有拦截权（捕获）」的组织设计——跟现实机构里「文件必须走流程」是同一个道理。</p>
+
+  <h3>三幕剧全解剖：捕获、目标、冒泡</h3>
+  <p>把来回落成代码。页面的结构是 <code>document → body → div → button</code>，四个监听器分别挂在下行路和上行路：</p>
+  <pre><code>document.addEventListener('click', () =&gt; log('1 总部·下行'), true);   // 第三个参数 true = 捕获
+div.addEventListener('click',      () =&gt; log('3 市场部·下行'), true);
+div.addEventListener('click',      () =&gt; log('4 市场部·上行'));          // 不写 = 冒泡（默认）
+document.addEventListener('click', () =&gt; log('5 总部·上行'));
+button.addEventListener('click',   () =&gt; log('2 小王本人'));</code></pre>
+  <p>点击按钮，打印顺序是：<code>1 → 2 → 3 → 4 → 5</code>。对照着读一遍回环：总部下行（1）→ 一路到达小王，目标阶段的监听器执行（2）→ 回程路过市场部，先走它挂的捕获监听器（3）再走冒泡监听器（4）→ 最后回到总部上行（5）。三个知识点一次拎清：其一，<strong>第三个参数就是「挂在哪条路上」</strong>——true 是下行（捕获），不写或 false 是上行（冒泡）；其二，<strong>目标元素自己的监听器在目标阶段执行</strong>，捕获冒泡之争与它无关；其三，<strong>同一条路上的多个监听器按注册顺序执行</strong>，一层可以挂不止一个。<br/><br/>
+  事件对象上有个字段 <code>event.eventPhase</code>，用数字 1、2、3 标记此刻走在哪一幕（捕获、目标、冒泡），需要调试时可随时打印。动手玩一下最直观——下面这张实验台可以点击任意一层，亲眼看着事件沿树走一个来回：</p>
+  <div class="lab" data-lab="event-flow"></div>
+
+  <h3>target 与 currentTarget：封面收件人 vs 经手楼层</h3>
+  <p>事件对象里最容易混、也最值钱的一对字段。<code>e.target</code> 是<strong>事件真正发生在谁身上</strong>——公文的封面收件人，从头到尾不变：本节例子里永远是 button（小王）。<code>e.currentTarget</code> 是<strong>此刻正在执行的这个监听器挂在谁身上</strong>——当前经手的楼层：监听器挂在 div，那这一趟里 currentTarget 就是 div；同一个事件流到 document 那一站，currentTarget 就变成了 document。<strong>简单说</strong>：target 是「事件的主角」，currentTarget 是「正在看戏的这层楼」——主角全程同一人，看戏的楼层一路在换。<br/><br/>
+  为什么要分得这么清？因为<strong>事件委托整个建立在这对区别上</strong>：你把监听器挂在大楼（列表容器），来的一封封公文 target 各不相同（各个子项），但 currentTarget 永远是大楼——大楼替全楼代收，再按封面收件人分发。分不清这两个字段，委托代码必然写错；写对了，它们会替你干最多的活。</p>
+
+  <h3>stopPropagation：把公文扣在本层</h3>
+  <p><code>e.stopPropagation()</code> 的作用一句话：<strong>本层之后的路程全部取消</strong>。捕获路上调用，公文下不去了，目标元素的监听器永远不会执行；冒泡路上调用，上层从此装作无事发生。它还有个更狠的兄弟 <code>stopImmediatePropagation()</code>：连本层排在自己后面的其他监听器也一并取消——「不但公文不给别层，连本层后排在后面的同事也别看了」。<br/><br/>
+  这个能力很顺手，也很危险——危险在于<strong>你拦掉的不只是自己的问题</strong>。你在一个小组件里 stopPropagation，图的是「别让弹窗点关闭时触发了背景的处理」，但同一棵树上可能还挂着别人的监听器：埋点系统靠 document 层的监听统计全站点击，你的一个拦截就让某类点击从报表里消失了。所以业内的共识是：<strong>stopPropagation 是手术刀，不是常规工具</strong>——能用「精确判断」解决的事（后面 contains 一节），不要用「一刀切断」。这就好比公司里某部门私自扣下公文：本意是省一道流程，坏的是整个集团的信息流。</p>
+
+  <h3>preventDefault：拒绝办理，但公文照走</h3>
+  <p>另一位最容易跟 stopPropagation 搞混的角色。<code>e.preventDefault()</code> 不影响事件的行程——公文照样走完全程，各级照常经手；它拒绝的是<strong>这份公文的「默认要求」</strong>。点击 a 标签的默认要求是「跳转页面」，preventDefault 之后跳转取消、但监听器照常收到事件；表单 submit 的默认要求是「提交并刷新」，取消之后你就能用 JavaScript 自己接管提交逻辑；checkbox 的默认要求是「勾选状态翻转」，取消之后你完全控制开关。<br/><br/>
+  两兄弟的区别一表看清：<strong>stopPropagation 管路线，preventDefault 管动作；一个裁流程，一个否内容</strong>。它们互不干涉，可以同时用。还有一个常见误会是 preventDefault 不能叫停「已经发生的事」——事件已经发生了才轮到你的代码，你能取消的从来只有「浏览器接下来打算顺手做的默认动作」。<strong>好比</strong>签收公文后批复「此项不办」：公文本身已经送达、回执照常上报（事件走完），只是公文里要求执行的那件事被你否了——流程与内容，两条线各自独立。</p>
+
+  <h3>事件委托：总部一间总收发室管全集团</h3>
+  <p>三阶段的知识攒够了，兑换成本节最大的一笔红利——<strong>事件委托</strong>（event delegation）。§ 1.5 提过它一眼（「一个楼长收全楼的快递」），现在补上完整的账本和暗坑。思路：既然事件必然冒泡、必然路过祖先，那就不给每个子元素挂监听器，<strong>只在容器挂一个，靠 e.target 判断来的是哪家的件</strong>：</p>
+  <pre><code>ul.addEventListener('click', (e) =&gt; {
+  const li = e.target.closest('li');      // 从封面收件人向上找最近的列表项
+  if (!li || !ul.contains(li)) return;    // 点的是空白处，不是任何一项
+  console.log('用户点了：', li.dataset.id); // 正常办理
+});</code></pre>
+  <p>委托的收益是三本账。第一本，<strong>内存账</strong>：一千个列表项从「一千个监听器」变成「一个监听器」——监听器不免费，每个都占内存、都在注册时耗时间，大列表尤其明显。第二本，<strong>动态账</strong>：往列表里<strong>新增</strong>子项，不需要任何注册动作——新来的员工自动被总收发室覆盖，因为他发的任何公文必然路过你这层。动态加载的评论区、聊天消息流、购物车列表，全靠这一条活着；没有委托的年代，每插一条消息都要手动 addEventListener 一次，漏一次就是「这条消息点不动」的 bug。第三本，<strong>卸载账</strong>：移除子元素时不用担心「忘了解绑监听器」导致的内存泄漏——监听器根本不在子元素身上。<br/><br/>
+  <strong>说白了</strong>，事件委托是「不逐个订阅，而在上游代收」——把 N 个监听问题折叠成 1 个。它的成立条件只有一个：你要监听的事件<strong>必须冒泡</strong>（click、input、keydown 都冒泡）。这就引出下面这个必须单独立案的暗坑。</p>
+
+  <h3>委托的两大翻车现场：closest 判断与不冒泡的事件</h3>
+  <p>翻车一：<strong>e.target 不是你以为的那个元素</strong>。列表项里通常不止文字，还有图标、加粗标签、span——用户点中的往往是 li 内部的某个小元素。拿 e.target 直接当列表项用，点在图标上就会错判。上面的代码用 <code>closest('li')</code> 解决：从实际命中的元素<strong>向上找最近的 li 祖先</strong>——不管封面收件人写得多细，都能归档到正确的部门。委托代码的标准姿势就是这一句：先 closest 归位，再 contains 验明正身（防止点到容器外挂的、恰好不是列表项的东西）。<br/><br/>
+  翻车二：<strong>有些事件根本不冒泡</strong>，委托无从谈起。最常坑人的三组：focus 和 blur 不冒泡（想代收要用会冒泡的孪生兄弟 focusin / focusout）；mouseenter 和 mouseleave 不冒泡（用 mouseover / mouseout 替代，但注意它们进出子元素也会触发，要加判断）；load、error 这类资源事件也不冒泡。设计上它们不冒泡有理由——「鼠标进入子元素」也会触发 mouseover 这种细碎事，冒泡一路上去全是噪音；但写委托之前必须先确认这趟班车存在，否则你守在祖先层，永远等不来那趟不存在的车。<strong>好比</strong>有些公文是「直达件」，中途任何收发室都无权拆看——想代收这类件，得用它们家会走流程的兄弟版本。常用事件的「班车时刻表」本节末尾附了一张速查表，先记住最常踩的三组即可。</p>
+
+  <h3>data-action 命令令牌：委托的工程化标准姿势</h3>
+  <p>「一个 ul 一堆 li」是教学用的干净样本，真实界面脏得多：一个列表项里可能同时长着「点赞按钮、删除按钮、展开箭头」，按钮里还嵌着图标和加粗文字。按元素类型归位（closest('li')）很快就不够用——用户点在删除按钮上，你到底算点 li（打开详情）还是点 button（删除）？拿 class 名做判断更是越写越碎，图标改个名，逻辑就瞎。</p>
+  <p>工程界沉淀出的标准答案，是给「能被点的角色」盖一枚<strong>行动命令章</strong>——<code>data-action</code> 属性。谁承担什么职责，谁身上盖章；容器上只挂一个监听器，以命中点向上<strong>最近的一枚章</strong>为准：</p>
+  <pre><code>&lt;li data-action="open-detail" data-id="42"&gt;
+    &lt;span&gt;订单 #42&lt;/span&gt;
+    &lt;button data-action="delete"&gt;删除&lt;/button&gt;
+    &lt;button data-action="share"&gt;分享&lt;/button&gt;
+  &lt;/li&gt;
+
+  list.addEventListener('click', (e) =&gt; {
+    const hit = e.target.closest('[data-action]');   // 从命中点向上找最近的一枚章
+    if (!hit || !list.contains(hit)) return;
+    const dispatch = {
+      'open-detail': () =&gt; openDetail(hit.dataset.id),
+      'delete':      () =&gt; deleteItem(hit.closest('li')),
+      'share':       () =&gt; shareItem(hit.closest('li')),
+    };
+    dispatch[hit.dataset.action]?.();                 // 按章上的命令派活
+  });</code></pre>
+  <p>妙处有三层。第一，<strong>命中谁听谁</strong>：点在删除按钮的图标上，closest 从图标向上第一枚章是按钮的 delete——嵌套多深都不会归错位，也不需要给图标单独挂任何东西。第二，<strong>新增动作零注册</strong>：明天产品要加「置顶」，HTML 盖章 data-action="pin"，JS 的分发表添一行，容器上那个监听器一个字都不用动。第三，<strong>结构与逻辑解耦</strong>：HTML 只声明「我是干这个的」，分发表决定「这个活派给谁」——这正是设计模式里「命令模式」的小型民用版，日常列表、工具栏、菜单栏全适用。<br/><br/>
+  <strong>这就好比</strong>餐厅点菜：服务员不需要认识每道菜怎么做、灶台在哪——客人指哪道，她把菜名报到后厨窗口就完事；后厨窗口（分发表）按菜名派给对应的灶台。菜单明天上新菜，服务员照旧只管报菜名，培训成本为零；客人哪怕指到菜谱上那道菜的配图（嵌套再深），服务员报的仍是那道菜的名字。</p>
+
+  <h3>事件班车时刻表：常用事件冒泡速查</h3>
+  <p>把「这趟车过不过我家站」整理成一张表，写委托前扫一眼：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>事件</th><th>冒泡？</th><th>想在祖先代收怎么办</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>click / dblclick</td><td>✓</td><td>直接委托，最经典班车</td></tr>
+        <tr><td>input / change</td><td>✓</td><td>直接委托（输入类的主力车）</td></tr>
+        <tr><td>keydown / keyup</td><td>✓</td><td>直接委托（全局快捷键常客）</td></tr>
+        <tr><td>submit</td><td>✓</td><td>表单级委托全靠它</td></tr>
+        <tr><td>mouseover / mouseout</td><td>✓</td><td>用它替代不冒泡的 mouseenter / mouseleave</td></tr>
+        <tr><td>focusin / focusout</td><td>✓</td><td>用它替代不冒泡的 focus / blur（唯一正解）</td></tr>
+        <tr><td>pointerdown / pointermove / pointerup</td><td>✓</td><td>§ 4.3 的主角，天生可委托</td></tr>
+        <tr><td>focus / blur</td><td>✗</td><td>换 focusin / focusout</td></tr>
+        <tr><td>mouseenter / mouseleave</td><td>✗</td><td>换 mouseover / mouseout（进出子元素也触发，需判断）</td></tr>
+        <tr><td>load / error（资源类）</td><td>✗</td><td>在祖先上用<strong>捕获路</strong>监听——公文下行必经祖先，直达件也躲不过安检口</td></tr>
+        <tr><td>scroll（元素自身滚动）</td><td>✗</td><td>直接挂在滚动容器上；document 滚动则到 window，同一个名字两套脾气</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>表里藏着一个前面埋过的伏笔：load、error 不冒泡，为什么捕获路就能监听？因为<strong>不冒泡只取消上行，不取消下行</strong>——捕获是公文从树根出发的必经之路，任何事件（哪怕不冒泡的直达件）下行时都要路过各级祖先的捕获监听器。想全站监控「哪张图片加载失败」，在 window 的捕获路挂一个 error 监听器即可，一张网罩住全页图片。这是捕获权力的又一个正统用场，也再次解释了为什么埋点、监控这类「全局哨卡」都爱挂在捕获路上。<strong>就像</strong>看公交时刻表：出发前先查这趟车过不过你家站——不看表就守在站牌下，等一辆本来就不走这条线的车，站到天黑也是白等；而查表发现没班车，还可以改搭另一条线的同款车（换冒泡版本），或者干脆去总站守着（捕获）。</p>
+
+  <h3>捕获的用武之地：安检口要设在下行路上</h3>
+  <p>日常代码 95% 的监听器都挂在冒泡路上（默认值），但有三类需求<strong>必须</strong>或最好用捕获——共同点是它们都要「抢在目标处理之前」出手。第一类，<strong>全局拦截</strong>：做「按住 Ctrl 才允许某种操作」的全局快捷键系统，你希望无论用户点到哪个角落都先过你的检查站——检查站设在 document 的捕获路上，任何事件下行时必经，谁也绕不过。第二类，<strong>抢先记录</strong>：埋点系统想在所有业务监听器执行之前先记录一份原始事件（业务代码可能改状态、甚至 stopPropagation），捕获路上的监听器天然排在所有冒泡监听器前面。第三类，<strong>「点击外部关闭」</strong>——这是捕获最有名的主场，值得单独一节，马上展开。<br/><br/>
+  <strong>不妨这样想</strong>：冒泡监听是「回执汇总」，人畜无害；捕获监听是「下发安检」，权力在前。默认用冒泡，需要权力的时候才用捕获——这个分寸跟现实组织一模一样：日常事务走正常上报，只有安全检查才需要「文件先过我手」的特权。</p>
+
+  <h3>点击外部关闭弹窗：一个需求的三种写法</h3>
+  <p>几乎每个写过弹窗的人都撞过这个需求：点弹窗外面任意处，关闭弹窗。它看起来人畜无害，实则是个精妙的圈套。写法一，直觉版：给 document 挂一个 click 监听器，点任何地方都检查「点的不是弹窗就关」。问题出在<strong>打开弹窗的那次点击</strong>——它自己也会冒泡到 document：「打开」的回执刚到总部，「关闭」的检查就触发了，弹窗闪一下立刻消失。写法二，流行的偏方：给打开按钮的处理器加 <code>e.stopPropagation()</code>，把「打开」那封公文拦在半路，document 收不到。能跑，但违背了前面立的军规——为了自己家的需求去切断全树的信息流，代价是那次点击从埋点报表里蒸发。写法三，正解：<strong>把关闭检查挂在 document 的捕获路上，再用 contains 精确判断</strong>：</p>
+  <pre><code>document.addEventListener('click', (e) =&gt; {
+  if (!弹窗开着的) return;
+  if (弹窗元素.contains(e.target)) return;   // 点在弹窗内部：不管
+  if (打开按钮.contains(e.target)) return;   // 点的是打开按钮：不管（它自己会开）
+  关闭弹窗();                                  // 其余一律视为「点外部」
+}, true);                                     // 捕获：抢在任何人 stopPropagation 之前</code></pre>
+  <p>两个细节各有讲究。用 <code>contains()</code> 查 ancestry 而不是比较 e.target ——用户可能点中弹窗里的某个深层小元素，只要它在弹窗子树里就不算「外部」；挂捕获路的理由更隐蔽：弹窗内部某个组件可能调用了 stopPropagation，它的公文到不了 document 的冒泡监听器——挂捕获路，公文下行时就先过你的检查站，谁也拦不住你。<strong>好比</strong>集团要查「今天所有没送到的公文」，靠各部门层层上报（冒泡）一定有被半路拦截的漏网之鱼；把检查放在发文系统里（捕获），每一份公文出总部时就被记录在案——查源头，永远比查回执可靠。</p>
+
+  <h3>被动监听器 passive：先滚起来再处理</h3>
+  <p>接着上一节的主线程经济学，讲一个三阶段模型的性能附件。浏览器处理触摸滚动时有个顺序难题：你的 touchstart 监听器里<strong>可能</strong>调用 preventDefault（取消滚动的默认行为，比如游戏里用滑动控制角色），所以在开始滚动之前，浏览器必须<strong>先等你的监听器跑完</strong>，确认你到底拦不拦——监听器一慢，滚动就迟滞，手指划了半天页面才动。监听器自己没罪，是「等它表态」这个流程拖慢了所有人。<br/><br/>
+  解药是让你<strong>提前表态</strong>：<code>addEventListener('touchstart', fn, { passive: true })</code>——向浏览器承诺「我绝不调 preventDefault」。承诺一旦给出，浏览器就不用等你了：手指一落，滚动立刻开始，你的监听器在后面慢慢跑。这就是<strong>被动监听器</strong>。代价也直白：passive 的监听器里调 preventDefault 会被浏览器忽略并警告——免检通道里不能临时喊「开箱检查」。Chrome 甚至直接把页面级 touch / wheel 监听器默认设为 passive（2017 年起），就是为了保住滚动的手感。<strong>好比</strong>景区快速通道：声明不带违禁品的游客直接过安检门，队伍不再堵成一锅粥——声明了就得认，真带了违禁品被查到，只能没收（preventDefault 失效）。</p>
+
+  <h3>once 与 signal：监听器的退场管理</h3>
+  <p>监听器的第三个小机制群，管「退场」。选项 <code>{ once: true }</code>：触发一次后自动解绑——弹层的关闭按钮只该被点一次，点了就该退场，用 once 省掉手工 removeEventListener 的样板代码，也杜绝「忘了解绑」这一最经典的内存泄漏。选项 <code>{ signal }</code>：给监听器拴一根绳，绳的另一头是 AbortController——需要批量退场时，一个 <code>controller.abort()</code> 把拴在同一根绳上的监听器全部解绑。单页应用里组件销毁时批量清理自己注册的一堆监听器，signal 是目前最优雅的姿势。<br/><br/>
+  为什么「解绑」值得单独立案？因为监听器泄漏是<strong>慢性病</strong>：每次进页面注册一批、离开时不解绑，内存里积攒的全是「引用着已死 DOM 的活监听器」——被引用的元素回收不了，越积越多，页面越用越卡，而 Performance 面板里它从不以「长任务」的形态出现，极难察觉。纪律就一句：<strong>注册必配退场——要么 once，要么 signal，要么手工三件套成对写</strong>。这跟租场地的道理一样：进场签了合同，散场就要销约，不然场租月月扣。</p>
+
+  <h3>自定义事件：部门自己发红头文件</h3>
+  <p>事件系统不只是「接收用户操作」的收件通道，你还能<strong>自己发电报</strong>：<code>CustomEvent</code> 造一份定制公文，<code>dispatchEvent</code> 派发出去。它的威力和规矩都在「走标准流程」四个字上：派发出的自定义事件和用户点击享受完全同等的待遇——同样走捕获、目标、冒泡三幕剧，同样路过各级监听器，同样可以被 stopPropagation。组件对外通信用它最干净：日历组件不用暴露一堆回调函数，而是派发一个 <code>date-chosen</code> 事件，外部想在哪儿听就在哪儿听，耦合度归零：</p>
+  <pre><code>calendar.dispatchEvent(new CustomEvent('date-chosen', {
+  detail: { date: '2026-08-29' },   // detail：随公文附带的附件袋
+  bubbles: true                      // 允许冒泡，祖先层也能听
+}));
+// 任何一层都可以：element.addEventListener('date-chosen', e =&gt; log(e.detail.date))</code></pre>
+  <p>一个容易忽略的细节：<strong>dispatchEvent 是同步执行的</strong>——不像真实点击要先走任务队列排队，你一派发，各级监听器当场依序跑完，dispatchEvent 那一行才返回。这个设定偶尔有用（确定性强），也偶尔是坑（派发点在同步长代码里，监听器就陪你一起卡）。原生框架那边这是标配思想：Android 的 EventBus、iOS 的 NotificationCenter，全是「自定义事件 + 层级派发」的变体——自己发电报，各层标准流程收。</p>
+
+  <h3>框架层的总收发室：React 合成事件</h3>
+  <p>用 React / Vue 这类框架的读者此刻应该有个疑问：我写 <code>onClick</code>，框架底层到底干了什么？以 React 为例，它<strong>并没有</strong>给你 JSX 里的每个按钮都挂一个原生监听器——它把本节的「总收发室」思想直接做成了框架地基：应用挂载时，React 在<strong>根容器</strong>上集中挂一小批原生监听器，组件树里所有元素的点击，都由这间总收发室代收，再对照内部登记簿「哪个组件注册过 onClick」，翻译成一次<strong>合成事件</strong>（SyntheticEvent）回调派给对应组件。</p>
+  <p>框架为什么非要抢收发权？三笔账。第一笔，<strong>统一外壳</strong>：早年各浏览器的事件对象字段五花八门（滚轮增量、键位代码各写各的），SyntheticEvent 包一层，所有平台同一副面孔，业务代码不写兼容分支。第二笔，<strong>配合调度</strong>：React 18 的自动批处理要「攒一波再更新」——事件回调里连续 setState 十次只重渲染一次，前提是所有回调都从它家大门进出，它才能在门口数完人头统一发车。第三笔，<strong>省监听器</strong>：页面上一万个可点击组件，原生监听器还是挂根容器那几十个，注册成本与组件数量脱钩——这正是事件委托三本账（内存、动态、卸载）在框架尺度的复刻。<br/><br/>
+  有一个版本变迁值得记：React 17 之前，总收发室挂在 document 上；两个 React 应用同页嵌套（主应用 + 微前端子应用）时会互相串门、抢着派发。React 17 起改挂<strong>各自根容器</strong>，各管各家——这次迁移堪称「事件委托进了教科书」的官方盖章。<br/><br/>
+  真正的暗坑在<strong>两层门禁的关系</strong>上。原生层（根容器上的原生监听器）和合成层（React 内部的组件树传播）是两道闸：你在一个 React 回调里调 <code>e.stopPropagation()</code>，它会连带把原生公文也扣住——根容器之外的原生冒泡监听器（比如直接挂在 document 上的）就收不到了；但反过来，挂在 document <strong>捕获路</strong>上的原生监听器，永远先于所有 React 回调执行，React 代码无论如何都拦不住它——公文下行到根容器之前，早就路过那道哨卡了。<strong>这就好比</strong>一栋写字楼：物业前台（React 根容器）统一代收全楼快递再分送到户，住户在房间里说「别再往上送了」（合成层 stopPropagation），楼外快递公司的揽收记录（document 层监听）就断了；但快递进楼前在街口监控（捕获哨卡）里留下的画面，住户说什么都抹不掉。两道门禁，各管一段，谁的权力都到不了对方辖区。</p>
+
+  <h3>Shadow DOM 的海关：事件出境要换护照</h3>
+  <p>再往深处走一步。Web Components 有个配套机制叫 Shadow DOM——组件内部的 DOM 树藏在一道「海关边界」里：外面的 CSS 选不进来，里面的结构外面也看不见。那事件呢？click 发生在海关内部深处的一个 span 上，它还能冒泡到外面的 document 吗？组件还能正常对外通信吗？</p>
+  <p>答案是「看证件」。事件天生分两种：带 <code>composed: true</code> 通行证的（click、keydown、pointerdown、touchstart 这些绝大多数 UI 事件），<strong>可以穿越海关边界继续冒泡</strong>——否则组件就成了信息孤岛，按钮点了没人知道；不带通行证的（focus、blur、load、error 等少数派），到海关就止步。但出境要过一道<strong>护照替换</strong>：带通行证的事件冒泡到外层时，外面看到的 <code>e.target</code> 已经被换成<strong>宿主元素</strong>（那个自定义组件标签本身），内部的真实细节对外保密——这个机制叫<strong>事件重定向</strong>（event retargeting）。<br/><br/>
+  设计意图很清楚：组件要能对外广播「我被点了」，但不能把内部构造图也交出去。<strong>打个比方</strong>，这就是公司的新闻发言人制度：对外发言统一以公司名义、统一口径（宿主元素），记者想知道发言人本人是谁、稿件是内部哪个部门起草的，拿不到——对外只露一个接口，内部分工保密。需要看完整路径的时候也有钥匙：<code>e.composedPath()</code> 返回事件走过的全程站点，海关内外一览无余，调试组件时极好用。分诊一下你的症状：监听器收到了事件、target 却「不对劲」，多半就是哪个自定义组件在海关里做了重定向——先查 composedPath，再下结论。</p>
+
+  <h3>原生那边：Android 的拦截分发与 iOS 的响应链</h3>
+  <p>三幕剧不是 Web 独有的剧本，去两大原生平台认亲。<strong>Android</strong> 的分发链条长这样：触摸从根视图一路调用 <code>dispatchTouchEvent</code> 下行，途经的每个 ViewGroup 都有一次 <code>onInterceptTouchEvent</code> 的机会——<strong>问自己「这单我要不要劫下来自己处理」</strong>：拦截（返回 true），事件从此归它，子视图不再收到；不拦，继续下发给子级。事件到达最深的视图后，若没人消费（onTouchEvent 返回 false），它又<strong>逐级上浮</strong>给各级自己消化——典型的「先下行分发、再上行冒泡」，onInterceptTouchEvent 就是捕获阶段「中途截胡」的官方 API。经典的「列表里放滑块」之争（手指落在滑块上，列表该不该跟着滚？）就是一场拦截权谈判：滑块拦，列表就不滚；列表拦，滑块就拖不动。<br/><br/>
+  <strong>iOS</strong> 的对应制度叫<strong>响应链</strong>（responder chain）：每个 UIView 都连着一个 nextResponder（下一响应者）——默认是它的父视图，一路通到 UIWindow 和 AppDelegate。一个触摸事件（touchesBegan 一族）先命中测试选出最深的视图，它若不处理，就沿着响应链<strong>逐级上交</strong>，父视图不接交爷爷，直到有人接或者事件沉底。这几乎是 DOM 冒泡的血亲——区别只在 iOS 默认「子优先、不接才上交」，且提供 UIGestureRecognizer（手势识别器）这套「挂在链上的观察哨」，与 DOM 的监听器神似。<strong>说白了</strong>，三个平台在「事件怎么找到处理者」这道题上，交的是同一份答卷：<strong>先从树外往树内找（捕获 / dispatch / 命中测试），再从树内往树外让（冒泡 / 上浮 / 响应链）</strong>——一个来回，谁也不落下。</p>
+
+  <h3>一次线上事故复盘：一行 stopPropagation 的蝴蝶效应</h3>
+  <p>把前面立的「手术刀军规」落成一个有形状的事故，胜过十遍口头警告。这是工程现场常见的剧本（细节做了典型化处理，但每一步都真实发生过的类型）。</p>
+  <p>某电商项目，商品列表上方有个筛选下拉框组件。某次迭代，组件作者想实现「点组件内部任意处都不该把自己关掉」，图省事在组件根元素上加了 <code>e.stopPropagation()</code>——下拉框的点击到此为止，不上报。本地测试：下拉框一切正常，验收通过，上线。三天后，数据组发现「列表区点击率」埋点掉了将近一半，运营开始怀疑是不是推荐算法出了问题——没人想到祸根在一个下拉框里。</p>
+  <p>排查过程本身就是一门分诊学，值得整段背下来。第一步，<strong>先疑常见病</strong>：埋点监听器挂在 document 冒泡路上，先怀疑它自己掉线了——DevTools 里执行 <code>getEventListeners(document)</code>，监听器健在，排除。第二步，<strong>挂探针</strong>：在 document 的<strong>捕获路</strong>上加一个只打印日志的探针监听器，点一下下拉框——探针响了，说明公文确实从总部发出了，问题出在半路。第三步，<strong>对称探针</strong>：再在 document 的<strong>冒泡路</strong>挂一个探针，同样点击——没响。结论出炉：公文在中间某层被扣，回执没能回到总部。第四步，<strong>二分定位</strong>：把探针从外往里一层层挪（body → 列表容器 → 下拉框的父级），最终锁定——下拉框根元素，正是那次 stopPropagation。四步下来，没有任何猜测，全是证据。<br/><br/>
+  修复方案不是「删掉那行然后各回各家」——那行 stopPropagation 本来想解决的「点内部不关闭」还是个真实需求。正解是回到本节写法三：下拉框改用「document 捕获 + contains 豁免」实现点外部关闭，stopPropagation 彻底移除，全树信息流恢复畅通，埋点回归正常。组件功能没少一样，全站却因此回了血。<br/><br/>
+  这场事故的教训可以提炼成一条军规：<strong>组件和第三方库的作者，无权替整棵树决定信息流</strong>——你永远不知道树上还挂着谁的监听器：埋点、无障碍工具、A/B 测试、热力图。管住自己的需求，用精确判断（contains / closest）划定边界，而不是一刀切断公共信道。<strong>这就像</strong>小区门口的保安：他可以帮业主登记快递，但无权替整栋楼的住户签收或退件——收不收、谁来收，得每户自己说了算；保安一旦越权「代办」，楼上住户等的那份录取通知就永远停在了门卫室。</p>
+
+  <h3>排错手册：事件三案</h3>
+  <ul class="keylist">
+    <li><strong>案情一：监听器根本没触发。</strong>三查：事件冒泡吗（focus / mouseenter 不冒泡，换 focusin / mouseover）？被哪层 stopPropagation 扣了吗（在 document 捕获路挂一个探针监听器，看事件走到哪一层消失）？元素是后来动态插入的吗（监听器注册时它还不存在——改用事件委托）？</li>
+    <li><strong>案情二：一次点击触发了两次（或 N 次）。</strong>多半是重复注册：在 react/vue 组件的更新钩子里反复 addEventListener，每次渲染都多挂一个。用 once、signal 或保证注册-解绑成对；DevTools 的 getEventListeners(元素) 能直接看挂了几个。</li>
+    <li><strong>案情三：点弹窗外部关不掉，或打开就闪关。</strong>关不掉：弹窗内部有 stopPropagation，把检查挂到 document 的捕获路。闪关：打开的那次点击冒到了关闭检查，用 contains 精确豁免打开按钮。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <strong>把这一节想成「集团公文的完整旅程」</strong><br/>
+    一份公文（点击事件）从来不是直达件：它从总部签发，经分公司、事业部、市场部层层<strong>下行</strong>（捕获），落到封面收件人小王手里（目标）；小王签收后的回执再沿原路层层<strong>上报</strong>（冒泡），直到总部归档。每一层的收发室（监听器）自选经手时机：下行时看（捕获，{ capture: true }），或上行时看（默认）。<br/><br/>
+    读懂公文的关键是分清两个名字：封面收件人（e.target，全程不变的主角）和当前经手的楼层（e.currentTarget，一路在换的值班层）。收发室有两种权力：<strong>扣件</strong>（stopPropagation，此后各层一概不知情——是手术刀，别当常规工具用）和<strong>批复不办</strong>（preventDefault，流程照走，只是公文要求的默认动作被否）——一个管路线，一个管内容，互不干涉。<br/><br/>
+    最高效的组织是<strong>总部一间总收发室管全集团</strong>（事件委托）：子项不必各自注册，公文必然上报路过，收发室看一眼封面（e.target.closest 归位）就知道派给谁——一千个监听器折成一个，新员工入职自动覆盖，离职也无须销约。真实工程里再给「能被点的角色」盖<strong>行动命令章</strong>（data-action）：收发室按最近的一枚章派活，服务员只管报菜名，后厨窗口自有人认领。但有直达件要当心（focus / mouseenter 不冒泡，资源类 load / error 想全站监控就守捕获哨卡），点外部关弹窗这种全局检查要设在发文口（document 捕获 + contains）。<br/>
+    被动监听器是免检声明（passive：我不拦默认行为，让滚动先走），once 和 signal 管收发室的编制纪律（该退场就退场，防慢性泄漏），CustomEvent 让部门也能发自己的红头文件（bubbles: true 时同样层层走流程）。放大到框架尺度，React 干脆自办<strong>集团总收发室</strong>（合成事件：根容器代收、统一外壳、批量发车）；Web Components 则在部门外面修了一道<strong>海关</strong>（Shadow DOM：带通行证的事件可以出境，但护照换成宿主元素的名义——对外统一口径，对内构造保密）。<br/>
+    <mark class="key">最后抬头看看全集团——Android 的 dispatchTouchEvent / onInterceptTouchEvent、iOS 的响应链，是这套公文制度的两个分公司版本：先从树外往里派发，再从树内往外让渡。一次点击，一个来回，三块平台，同一份流程图。</mark>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Checklist · 自检</span>
+    <p>写事件监听前过一遍：</p>
+    <p>① 这个事件冒泡吗？打算委托的话，先确认班车存在（focus 换 focusin、mouseenter 换 mouseover）；<br/>
+    ② 委托里用 closest + contains 归位了吗？别拿 e.target 直接当列表项用；<br/>
+    ③ e.target 和 e.currentTarget 分清了吗——封面收件人 vs 经手楼层；<br/>
+    ④ stopPropagation 只在不得已时用？埋点和全局监听的知情权考虑到了吗；<br/>
+    ⑤ 「点外部关闭」用的是 document 捕获 + contains 吗？stopPropagation 偏方拆掉了吗；<br/>
+    ⑥ touch / wheel 监听器声明 passive 了吗（不需要 preventDefault 的都该声明）；<br/>
+    ⑦ 注册和解绑成对了吗（once / signal / 手工三件套）？动态组件尤其查泄漏；<br/>
+    ⑧ 组件间通信用 CustomEvent 了吗——比一堆回调参数干净，比全局变量安全。</p>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="监听器挂在列表容器上做事件委托。用户点中了某个列表项里的小图标，e.target 会是谁？" data-opts="列表容器本身（监听器挂在谁身上 target 就是谁）|那个被点中的小图标——target 是事件真正发生的元素，不管监听器挂在哪|列表项 li|事件对象里根本没有 target 这个字段" data-answer="1" data-explain="e.target 永远是「封面收件人」——事件真正发生的那个元素，与本事件流无关，与监听器挂在哪一层也无关；监听器挂在容器上只决定 e.currentTarget 是谁。正因如此，委托代码必须用 e.target.closest('li') 从实际命中元素向上归位到列表项，否则点在图标、加粗文字上就会错判。口诀：target 是主角，currentTarget 是看戏的这层楼。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="点击一个 a 标签后想「不跳转、但用自己的逻辑处理」。同时希望埋点监听器（挂在 document 上）照常收到这次点击。该怎么做？" data-opts="调用 e.stopPropagation()，跳转和上报一起拦掉|调用 e.preventDefault()：取消默认的跳转动作，但事件继续冒泡，document 上的埋点监听器照常收到|两个都调用，双保险|什么都不做，跳转无法取消" data-answer="1" data-explain="preventDefault 管动作（取消跳转这个默认行为），stopPropagation 管路线（切断后续传播）。这里要的是「内容否决、流程照走」：preventDefault 之后事件照样走完捕获-目标-冒泡全程，document 上的埋点监听器照常收到点击。若错用 stopPropagation，跳转可能拦不住（它不是靠传播完成的），埋点反而瞎了。口诀：一个裁流程，一个否内容。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="一个动态增长的消息列表（不断插入新消息），想监听每条消息的点击。最省心且不怕漏注册的写法？" data-opts="每次插入新消息后，立刻给新消息元素 addEventListener|在列表容器上挂一个委托监听器，用 e.target.closest 判断点的是哪条|每条消息内联 onclick 属性|轮询定时检查有没有新消息需要绑定" data-answer="1" data-explain="事件必然冒泡经过容器，所以容器上的一个监听器天然覆盖所有子项——包括它挂上之后才出生的新消息。这是委托「动态账」的精髓：新增子项零注册成本、零遗漏风险，移除子项也无须解绑。逐个绑定是它要治的病，内联 onclick 混结构又难维护，轮询更是下策。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="实现「点击弹窗外部关闭弹窗」。弹窗内部某些组件会调用 e.stopPropagation()。你的关闭检查监听器应该挂在哪里？" data-opts="挂在 document 的冒泡阶段——事件最后总会到那里|挂在 document 的捕获阶段——公文下行时先过检查站，内部的 stopPropagation 拦不到它|挂在弹窗的父元素上|挂在 body 的冒泡阶段" data-answer="1" data-explain="冒泡路上的监听器有一个致命弱点：任何中间层一个 stopPropagation 就能让事件到不了 document——弹窗内部组件一拦截，你的检查就失明，「点外部关闭」变成「点外部没反应」。捕获路上的监听器在事件下行时执行，天然排在所有目标层和冒泡层的代码之前，谁也拦不住。再配 contains(e.target) 判断点的是不是弹窗内部/打开按钮，就是这套需求的标准答案。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="页面滚动被吐槽「手指划了半天才动」。检查发现某个 touchstart 监听器耗时 80 毫秒且从不调用 preventDefault。最对症的药？" data-opts="把监听器代码删掉一半|给监听器加 { passive: true }——承诺不拦默认行为，浏览器不必等它跑完就能开始滚动|把 touchstart 换成 touchmove|加 stopPropagation" data-answer="1" data-explain="浏览器不知道你会不会在监听器里调 preventDefault（取消滚动），所以必须先等它跑完才能放心滚动——监听器再慢，滚动就得等多久。passive: true 是提前表态「我绝不拦」，浏览器随即不等它、先滚为敬，监听器在后台慢慢跑。代价是这种监听器里的 preventDefault 会被忽略。Chrome 甚至把页面级 touch/wheel 监听器默认设成了 passive，就是为保住滚动手感。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="想让组件派发一个「日期已选」事件给外部，且外层容器也能监听到。正确姿势？" data-opts="new CustomEvent('date-chosen', { detail: {...}, bubbles: true }) 然后 dispatchEvent|用全局变量存选中结果，外部轮询读取|直接调用外部传入的回调函数，层层传参|派发后同步循环调用所有可能的监听者" data-answer="0" data-explain="CustomEvent 造一份「定制公文」，detail 字段是随事件附带的附件袋；bubbles: true 让它像真实点击一样冒泡，外层容器在哪儿都能听。好处是组件与外界彻底解耦：组件只管广播，不认识任何听众。要注意 dispatchEvent 是同步派发——监听器当场执行完才返回，别在长任务里随手派发。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="列表项里同时有「打开详情」和「删除」按钮，删除按钮里还嵌着图标。容器上挂了一个委托监听器。下列哪种写法能保证点图标算删除、点整行算打开详情？" data-opts="给图标单独 addEventListener 一个 click|给 li 和 button 分别挂监听器，靠注册顺序区分|给可点的角色盖 data-action 章，委托里用 e.target.closest('[data-action]') 找最近的一枚章按命令分发|判断 e.target.tagName 是不是 BUTTON" data-answer="2" data-explain="按「最近的命令章」归位：点在图标上，closest 向上先碰到删除按钮的章，执行 delete；点在行内空白，先碰到 li 的章，执行 open-detail——嵌套多深都不会错位。给图标单独挂监听器治标不治本（图标换成 span 又瞎了）；按 tagName 判断脆弱不堪，改个标签就翻车。这就是委托在真实工程里的标准姿势：结构盖章声明职责，分发表决定派活。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="埋点团队的监听器直接用原生 addEventListener 挂在 document 上，业务全用 React。某天业务同学在自己组件的 onClick 里调了 e.stopPropagation()，想让「这批点击不上报」。结果会怎样？" data-opts="如愿以偿：document 上的埋点监听器再也收不到这些点击|大概率拦不住：如果埋点挂在 document 的捕获路上，公文下行时先过它，React 的 stopPropagation 晚了一步|React 会报错，两个系统不能混用|stopPropagation 会连带注销埋点监听器" data-answer="1" data-explain="顺序决定一切：捕获监听器在事件下行阶段执行，React 的回调发生在事件到达根容器之后——公文路过哨卡在前，React 扣件在后，哨卡的画面已经拍下了。反过来，React 回调里的 stopPropagation 确实会拦住根容器之外的原生冒泡监听器。两层门禁各管一段：想在原生层不被拦，就挂捕获；想在 React 外面拦截 React，也得用原生捕获。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>冒泡与捕获一句话：<mark class="key">事件不是直达件，是公文——先从树根下行到目标（捕获），再从目标上行回树根（冒泡），沿途每层的监听室都有机会经手、拦截或批注。</mark>三幕剧是网景与 IE 之争的合流：下行给全局拦截权，上行给祖先知情权；第三参数 true 挂下行、默认挂上行。target 是封面收件人（全程不变），currentTarget 是经手楼层（一路在换）——事件委托全靠这对区别在容器层以一当百，closest + contains 归位是标准姿势，真实工程里再盖上 data-action 命令章，让结构声明职责、分发表派活；focus、mouseenter 这些直达件不冒泡，换 focusin、mouseover 才有班车，load / error 想全站监控就守捕获哨卡。stopPropagation 裁流程（手术刀慎用，组件作者无权替整棵树切断信息流——那场埋点掉一半的事故就是前车之鉴），preventDefault 否内容（流程照走）——「点外部关闭」的正解是 document 捕获 + contains；passive 提前表态保滚动，once / signal 管监听器退场防泄漏，CustomEvent 让组件发电报广播解耦。放大看大局：React 把总收发室做成了框架地基（合成事件：根容器代收、统一外壳、批量发车，两层门禁各管一段），Shadow DOM 给组件修了海关（composed 通行证出境、retargeting 换护照、composedPath 查全程）；Android 的 dispatchTouchEvent + onInterceptTouchEvent、iOS 的响应链，则是同一份流程图的原生方言——先往里派发、再往外让渡。下一节把镜头从「事件怎么走」拉到「事件从哪来」：鼠标、键盘、触摸、笔、手柄——五种输入设备的事件模型，和它们之间那场著名的「统一战争」。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-1-event-loop.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 4.1 · 事件循环</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-3-input-devices.html">
+      <span class="dir">下一节</span>
+      <span class="title">§ 4.3 · 输入设备</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 4.2</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>

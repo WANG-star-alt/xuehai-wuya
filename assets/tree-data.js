@@ -19,10 +19,10 @@
     [
       createNode('ai-01', '第 1 章 · AI 是什么',
         'ANI / AGI / ASI 三种 AI 层级 + AI 的四种核心能力。',
-        '约 3.5 万字',
+        '约 3.6 万字',
         [
-          createNode('ai-01-1', '§ 1.1 · 弱 AI · ANI', '狭义人工智能——今天所有能用的 AI 都属于这一类。', '8885 字', [], { href: 'chapters/ai/01-1-ani.html', spec: 'pass'}),
-          createNode('ai-01-2', '§ 1.2 · 通用 AI · AGI', '像人类一样能做任何智力任务的 AI，尚未实现。', '8983 字', [], { href: 'chapters/ai/01-2-agi.html', spec: 'pass'}),
+          createNode('ai-01-1', '§ 1.1 · 弱 AI · ANI', '狭义人工智能——今天所有能用的 AI 都属于这一类。', '9299 字', [], { href: 'chapters/ai/01-1-ani.html', spec: 'pass'}),
+          createNode('ai-01-2', '§ 1.2 · 通用 AI · AGI', '像人类一样能做任何智力任务的 AI，尚未实现。', '9750 字', [], { href: 'chapters/ai/01-2-agi.html', spec: 'pass'}),
           createNode('ai-01-3', '§ 1.3 · 超级 AI · ASI', '在所有领域全面超越人类的假想 AI。', '8293 字', [], { href: 'chapters/ai/01-3-asi.html', spec: 'pass'}),
           createNode('ai-01-4', '§ 1.4 · AI 的四种能力', '感知 / 理解 / 决策 / 生成——AI 做的事都可以归到这四类。', '8599 字', [], { href: 'chapters/ai/01-4-abilities.html', spec: 'pass'})
         ],
@@ -30,13 +30,13 @@
       ),
       createNode('ai-02', '第 2 章 · 三个圈',
         'AI / ML / DL / GenAI / LLM——五个概念的包含关系。',
-        '约 4.1 万字',
+        '约 4.2 万字',
         [
           createNode('ai-02-1', '§ 2.1 · 人工智能 · AI', '最外圈——所有让机器有智能行为的技术总称。', '7603 字', [], { href: 'chapters/ai/02-1-ai.html', spec: 'pass'}),
           createNode('ai-02-2', '§ 2.2 · 机器学习 · ML', '让机器从数据里学规律的方法集合。', '8089 字', [], { href: 'chapters/ai/02-2-ml.html', spec: 'pass'}),
           createNode('ai-02-3', '§ 2.3 · 深度学习 · DL', '用多层神经网络的机器学习——是 ML 的子集。', '8054 字', [], { href: 'chapters/ai/02-3-dl.html', spec: 'pass'}),
           createNode('ai-02-4', '§ 2.4 · 生成式 AI · GenAI', '专门"造"内容的 AI——文字、图片、视频。', '7946 字', [], { href: 'chapters/ai/02-4-genai.html', spec: 'pass'}),
-          createNode('ai-02-5', '§ 2.5 · 大语言模型 · LLM', '基于 Transformer 的巨型语言模型——ChatGPT 的核心。', '9361 字', [], { href: 'chapters/ai/02-5-llm.html', spec: 'pass'})
+          createNode('ai-02-5', '§ 2.5 · 大语言模型 · LLM', '基于 Transformer 的巨型语言模型——ChatGPT 的核心。', '10189 字', [], { href: 'chapters/ai/02-5-llm.html', spec: 'pass'})
         ],
         { href: 'chapters/ai/02-three-circles.html' }
       ),
@@ -66,9 +66,9 @@
       ),
       createNode('ai-05', '第 5 章 · 神经网络',
         '神经元、权重、CNN、RNN、GAN、Diffusion——深度学习的心脏。',
-        '约 7.0 万字',
+        '约 7.1 万字',
         [
-          createNode('ai-05-1', '§ 5.1 · 神经元', '加权求和 + 激活函数——一个"人工神经元"的全部。', '6524 字', [], { href: 'chapters/ai/05-1-neuron.html', spec: 'pass'}),
+          createNode('ai-05-1', '§ 5.1 · 神经元', '加权求和 + 激活函数——一个"人工神经元"的全部。', '7053 字', [], { href: 'chapters/ai/05-1-neuron.html', spec: 'pass'}),
           createNode('ai-05-2', '§ 5.2 · 前向 & 反向传播', '数据怎么流动、错误怎么反传——学习的引擎。', '10230 字', [], { href: 'chapters/ai/05-2-propagation.html', spec: 'pass'}),
           createNode('ai-05-3', '§ 5.3 · CNN 卷积网络', '图像专家——从 AlexNet 到 YOLO，看图靠它。', '11237 字', [], { href: 'chapters/ai/05-3-cnn.html', spec: 'pass'}),
           createNode('ai-05-4', '§ 5.4 · RNN / LSTM', '序列专家——2017 前的 NLP 主力，被 Transformer 取代。', '12005 字', [], { href: 'chapters/ai/05-4-rnn.html', spec: 'pass'}),
@@ -91,30 +91,30 @@
       ),
       createNode('ai-07', '第 7 章 · Transformer',
         'Attention、QKV、多头、Encoder/Decoder、MoE——现代 AI 的基石。',
-        '约 4.2 万字',
+        '约 4.5 万字',
         [
-          createNode('ai-07-1', '§ 7.1 · Attention 注意力', '每个词都能"看到"其他所有词——图书馆式加权。', '4042 字', [], { href: 'chapters/ai/07-1-attention.html', spec: 'pass'}),
+          createNode('ai-07-1', '§ 7.1 · Attention 注意力', '每个词都能"看到"其他所有词——图书馆式加权。', '7020 字', [], { href: 'chapters/ai/07-1-attention.html', spec: 'pass'}),
           createNode('ai-07-2', '§ 7.2 · QKV 三兄弟', '打分 → Softmax → 加权求和——Attention 完整公式。', '9037 字', [], { href: 'chapters/ai/07-2-qkv.html', spec: 'pass'}),
           createNode('ai-07-3', '§ 7.3 · Multi-head 多头', '多组 QKV 并行——像多个专家同时会诊。', '9022 字', [], { href: 'chapters/ai/07-3-multihead.html', spec: 'pass'}),
           createNode('ai-07-4', '§ 7.4 · Encoder / Decoder 派系', 'BERT（懂）vs GPT（写）vs T5（翻）——三种主流架构。', '9910 字', [], { href: 'chapters/ai/07-4-variants.html', spec: 'pass'}),
-          createNode('ai-07-5', '§ 7.5 · MoE 专家混合', '万亿参数只激活一小部分——DeepSeek 的降本秘籍。', '10489 字', [], { href: 'chapters/ai/07-5-moe.html', spec: 'pass'})
+          createNode('ai-07-5', '§ 7.5 · MoE 专家混合', '万亿参数只激活一小部分——DeepSeek 的降本秘籍。', '10490 字', [], { href: 'chapters/ai/07-5-moe.html', spec: 'pass'})
         ],
         { href: 'chapters/ai/07-transformer.html' }
       ),
       createNode('ai-08', '第 8 章 · 大语言模型 LLM',
         'Token、上下文窗口、Temperature、CoT、推理模型 o1/R1。',
-        '约 4.0 万字',
+        '约 4.3 万字',
         [
           createNode('ai-08-1', '§ 8.1 · Token 与分词', '模型眼里没有汉字，只有 token——为什么按 token 计费。', '7013 字', [], { href: 'chapters/ai/08-1-token.html', spec: 'pass'}),
-          createNode('ai-08-2', '§ 8.2 · 自回归生成', '一个字一个字往后猜——生成的本质就是接话。', '6582 字', [], { href: 'chapters/ai/08-2-autoregressive.html', spec: 'pass'}),
-          createNode('ai-08-3', '§ 8.3 · 上下文窗口', '从 4K 到 100 万 token——记忆边界与"失忆"现象。', '6638 字', [], { href: 'chapters/ai/08-3-context.html', spec: 'pass'}),
-          createNode('ai-08-4', '§ 8.4 · 采样参数', 'Temperature、Top-p、Top-k——控制"发散还是保守"。', '6637 字', [], { href: 'chapters/ai/08-4-sampling.html', spec: 'pass'}),
-          createNode('ai-08-5', '§ 8.5 · 思维链 CoT', '"让我们一步一步想"——为什么加这句话正确率会涨。', '6530 字', [], { href: 'chapters/ai/08-5-cot.html', spec: 'pass'}),
-          createNode('ai-08-6', '§ 8.6 · 推理模型', 'o1 / R1 / DeepSeek——先想很久再答的新一代模型。', '6535 字', [], { href: 'chapters/ai/08-6-reasoning.html', spec: 'pass'})
+          createNode('ai-08-2', '§ 8.2 · 自回归生成', '一个字一个字往后猜——生成的本质就是接话。', '7110 字', [], { href: 'chapters/ai/08-2-autoregressive.html', spec: 'pass'}),
+          createNode('ai-08-3', '§ 8.3 · 上下文窗口', '从 4K 到 100 万 token——记忆边界与"失忆"现象。', '7219 字', [], { href: 'chapters/ai/08-3-context.html', spec: 'pass'}),
+          createNode('ai-08-4', '§ 8.4 · 采样参数', 'Temperature、Top-p、Top-k——控制"发散还是保守"。', '7082 字', [], { href: 'chapters/ai/08-4-sampling.html', spec: 'pass'}),
+          createNode('ai-08-5', '§ 8.5 · 思维链 CoT', '"让我们一步一步想"——为什么加这句话正确率会涨。', '7159 字', [], { href: 'chapters/ai/08-5-cot.html', spec: 'pass'}),
+          createNode('ai-08-6', '§ 8.6 · 推理模型', 'o1 / R1 / DeepSeek——先想很久再答的新一代模型。', '7141 字', [], { href: 'chapters/ai/08-6-reasoning.html', spec: 'pass'})
         ], { href: 'chapters/ai/08-llm.html' }),
       createNode('ai-09', '第 9 章 · 多模态',
         '文/图/视频/语音——AI 打破单一模态边界。',
-        '约 5.0 万字',
+        '约 4.8 万字',
         [
           createNode('ai-09-1', '§ 9.1 · 什么是多模态', '文字、图像、音频、视频——模态之间怎么打通。', '7748 字', [], { href: 'chapters/ai/09-1-what-is-multimodal.html', spec: 'pass'}),
           createNode('ai-09-2', '§ 9.2 · Embedding 向量', '把万物变成一串数字——语义搜索的底层原理。', '9937 字', [], { href: 'chapters/ai/09-2-embedding.html', spec: 'pass'}),
@@ -124,7 +124,7 @@
         ], { href: 'chapters/ai/09-multimodal.html' }),
       createNode('ai-10', '第 10 章 · 提示词工程',
         '角色、任务、Few-shot、CoT——怎么问 AI 才能拿到好答案。',
-        '约 4.7 万字',
+        '约 4.4 万字',
         [
           createNode('ai-10-1', '§ 10.1 · 提示词四要素', '角色 + 任务 + 上下文 + 输出格式——万能模板。', '8812 字', [], { href: 'chapters/ai/10-1-four-elements.html', spec: 'pass'}),
           createNode('ai-10-2', '§ 10.2 · Few-shot 示例', '给两三个例子，比写一千字说明更有效。', '7084 字', [], { href: 'chapters/ai/10-2-fewshot.html', spec: 'pass'}),
@@ -134,44 +134,44 @@
         ], { href: 'chapters/ai/10-prompt.html' }),
       createNode('ai-11', '第 11 章 · AI 智能体 Agent',
         '大脑+记忆+工具+循环——AI 从"答题"到"办事"。',
-        '约 6.1 万字',
+        '约 5.8 万字',
         [
           createNode('ai-11-1', '§ 11.1 · Agent 是什么', '从"回答问题"到"自己干完一件事"的跨越。', '8208 字', [], { href: 'chapters/ai/11-1-what-is-agent.html', spec: 'pass'}),
           createNode('ai-11-2', '§ 11.2 · 工具调用', 'Function Calling——让模型学会用计算器和搜索。', '10113 字', [], { href: 'chapters/ai/11-2-tool-calling.html', spec: 'pass'}),
-          createNode('ai-11-3', '§ 11.3 · 记忆系统', '短期上下文 + 长期向量库——Agent 怎么"记事"。', '10469 字', [], { href: 'chapters/ai/11-3-memory.html', spec: 'pass'}),
+          createNode('ai-11-3', '§ 11.3 · 记忆系统', '短期上下文 + 长期向量库——Agent 怎么"记事"。', '10706 字', [], { href: 'chapters/ai/11-3-memory.html', spec: 'pass'}),
           createNode('ai-11-4', '§ 11.4 · RAG 检索增强', '先查资料再回答——治幻觉最实用的一招。', '10303 字', [], { href: 'chapters/ai/11-4-rag.html', spec: 'pass'}),
           createNode('ai-11-5', '§ 11.5 · ReAct 与规划', '想 → 做 → 观察 → 再想——Agent 的执行循环。', '8852 字', [], { href: 'chapters/ai/11-5-react.html', spec: 'pass'}),
-          createNode('ai-11-6', '§ 11.6 · MCP 与多 Agent', '标准化工具协议 + 多个 Agent 分工协作。', '10288 字', [], { href: 'chapters/ai/11-6-mcp.html', spec: 'pass'})
+          createNode('ai-11-6', '§ 11.6 · MCP 与多 Agent', '标准化工具协议 + 多个 Agent 分工协作。', '10285 字', [], { href: 'chapters/ai/11-6-mcp.html', spec: 'pass'})
         ], { href: 'chapters/ai/11-agent.html' }),
       createNode('ai-12', '第 12 章 · 生态地图',
         'OpenAI、Anthropic、DeepSeek、Qwen——2026 年的玩家地图。',
-        '约 5.0 万字',
+        '约 4.7 万字',
         [
           createNode('ai-12-1', '§ 12.1 · 芯片与算力', 'NVIDIA、华为昇腾、TPU——AI 的石油与发电厂。', '10123 字', [], { href: 'chapters/ai/12-1-chips.html', spec: 'pass'}),
           createNode('ai-12-2', '§ 12.2 · 海外基础模型', 'OpenAI、Anthropic、Google、Meta——第一梯队格局。', '8722 字', [], { href: 'chapters/ai/12-2-foreign-models.html', spec: 'pass'}),
           createNode('ai-12-3', '§ 12.3 · 中国阵营', 'DeepSeek、Qwen、豆包、Kimi、GLM——本土玩家。', '8727 字', [], { href: 'chapters/ai/12-3-china-models.html', spec: 'pass'}),
           createNode('ai-12-4', '§ 12.4 · 开源生态', 'Llama、Mistral、Hugging Face、Ollama——自己也能跑。', '9456 字', [], { href: 'chapters/ai/12-4-opensource.html', spec: 'pass'}),
-          createNode('ai-12-5', '§ 12.5 · 应用与工具层', 'Cursor、TRAE、Perplexity、Midjourney——落地产品。', '9863 字', [], { href: 'chapters/ai/12-5-apps.html', spec: 'pass'})
+          createNode('ai-12-5', '§ 12.5 · 应用与工具层', 'Cursor、TRAE、Perplexity、Midjourney——落地产品。', '9860 字', [], { href: 'chapters/ai/12-5-apps.html', spec: 'pass'})
         ], { href: 'chapters/ai/12-landscape.html' }),
       createNode('ai-13', '第 13 章 · 局限与风险',
         '幻觉、偏见、版权、深度伪造、Prompt 注入——AI 的暗面。',
-        '约 4.9 万字',
+        '约 4.8 万字',
         [
           createNode('ai-13-1', '§ 13.1 · 幻觉', '它不是在骗你，它是在"合理地猜"——原理与缓解。', '9195 字', [], { href: 'chapters/ai/13-1-hallucination.html', spec: 'pass'}),
           createNode('ai-13-2', '§ 13.2 · 偏见与公平性', '训练数据里的偏见会被模型放大。', '9793 字', [], { href: 'chapters/ai/13-2-bias.html', spec: 'pass'}),
-          createNode('ai-13-3', '§ 13.3 · 隐私与版权', '你输入的内容去哪了、生成物归谁。', '9887 字', [], { href: 'chapters/ai/13-3-privacy-copyright.html', spec: 'pass'}),
-          createNode('ai-13-4', '§ 13.4 · 深度伪造', '换脸、拟声、假视频——如何识别与防范。', '8499 字', [], { href: 'chapters/ai/13-4-deepfake.html', spec: 'pass'}),
-          createNode('ai-13-5', '§ 13.5 · Prompt 注入与安全', '越狱、间接注入——大模型时代的新攻击面。', '8844 字', [], { href: 'chapters/ai/13-5-prompt-injection.html', spec: 'pass'})
+          createNode('ai-13-3', '§ 13.3 · 隐私与版权', '你输入的内容去哪了、生成物归谁。', '10303 字', [], { href: 'chapters/ai/13-3-privacy-copyright.html', spec: 'pass'}),
+          createNode('ai-13-4', '§ 13.4 · 深度伪造', '换脸、拟声、假视频——如何识别与防范。', '8863 字', [], { href: 'chapters/ai/13-4-deepfake.html', spec: 'pass'}),
+          createNode('ai-13-5', '§ 13.5 · Prompt 注入与安全', '越狱、间接注入——大模型时代的新攻击面。', '9618 字', [], { href: 'chapters/ai/13-5-prompt-injection.html', spec: 'pass'})
         ], { href: 'chapters/ai/13-limits.html' }),
       createNode('ai-14', '第 14 章 · 与 AI 共处',
         '把 AI 当学习助手、写作伙伴、编程搭档——但保留人类判断。',
-        '约 5.0 万字',
+        '约 4.9 万字',
         [
           createNode('ai-14-1', '§ 14.1 · AI 当学习助手', '费曼式提问、生成练习、讲不清就是没懂。', '9671 字', [], { href: 'chapters/ai/14-1-learning.html', spec: 'pass'}),
-          createNode('ai-14-2', '§ 14.2 · AI 当写作与研究伙伴', '大纲、改写、找反例——但结论要自己下。', '9651 字', [], { href: 'chapters/ai/14-2-writing.html', spec: 'pass'}),
-          createNode('ai-14-3', '§ 14.3 · AI 当编程搭档', 'Vibe Coding 与代码审查——效率与风险并存。', '9489 字', [], { href: 'chapters/ai/14-3-coding.html', spec: 'pass'}),
-          createNode('ai-14-4', '§ 14.4 · 批判性思维', '怎么判断 AI 在胡说——三步验证法。', '9270 字', [], { href: 'chapters/ai/14-4-critical-thinking.html', spec: 'pass'}),
-          createNode('ai-14-5', '§ 14.5 · 保留人类判断', '哪些决定永远不该外包给 AI。', '9314 字', [], { href: 'chapters/ai/14-5-human-judgment.html', spec: 'pass'})
+          createNode('ai-14-2', '§ 14.2 · AI 当写作与研究伙伴', '大纲、改写、找反例——但结论要自己下。', '9852 字', [], { href: 'chapters/ai/14-2-writing.html', spec: 'pass'}),
+          createNode('ai-14-3', '§ 14.3 · AI 当编程搭档', 'Vibe Coding 与代码审查——效率与风险并存。', '10266 字', [], { href: 'chapters/ai/14-3-coding.html', spec: 'pass'}),
+          createNode('ai-14-4', '§ 14.4 · 批判性思维', '怎么判断 AI 在胡说——三步验证法。', '9303 字', [], { href: 'chapters/ai/14-4-critical-thinking.html', spec: 'pass'}),
+          createNode('ai-14-5', '§ 14.5 · 保留人类判断', '哪些决定永远不该外包给 AI。', '9974 字', [], { href: 'chapters/ai/14-5-human-judgment.html', spec: 'pass'})
         ], { href: 'chapters/ai/14-living-with-ai.html' })
     ],
     { color: '#4a6d8c' }
@@ -209,7 +209,7 @@
       ),
       createNode('net-03', '第 3 章 · 关键协议',
         'HTTP、TCP、UDP、DNS、IP——你天天在用的六个协议。',
-        '约 8.8 万字',
+        '约 8.7 万字',
         [
           createNode('net-03-1', '§ 3.1 · HTTP / HTTPS', '浏览网页的协议——请求响应、状态码、Cookie、加密。', '14158 字', [], { href: 'chapters/network/03-1-http.html', spec: 'pass'}),
           createNode('net-03-2', '§ 3.2 · TCP', '可靠传输——三次握手、四次挥手、流量控制。', '15764 字', [], { href: 'chapters/network/03-2-tcp.html', spec: 'pass'}),
@@ -222,14 +222,14 @@
       ),
       createNode('net-04', '第 4 章 · 一次访问的旅程',
         '输入网址到网页显示——完整数据流走一遍。',
-        '约 6.5 万字',
+        '约 6.3 万字',
         [
           createNode('net-04-1', '§ 4.1 · 输入网址与 URL 解析', 'URL 的七个部分 + 浏览器先干了什么。', '10981 字', [], { href: 'chapters/network/04-1-url.html', spec: 'pass'}),
           createNode('net-04-2', '§ 4.2 · DNS 查询', '本地缓存 → hosts → 递归解析 → 拿到 IP。', '10465 字', [], { href: 'chapters/network/04-2-dns-lookup.html', spec: 'pass'}),
           createNode('net-04-3', '§ 4.3 · 建立 TCP 连接', '三次握手 + 端口分配——通道打通的瞬间。', '10225 字', [], { href: 'chapters/network/04-3-tcp-connect.html', spec: 'pass'}),
           createNode('net-04-4', '§ 4.4 · TLS 握手', '证书验证、密钥协商——HTTPS 加密怎么建立。', '10542 字', [], { href: 'chapters/network/04-4-tls.html', spec: 'pass'}),
           createNode('net-04-5', '§ 4.5 · 发送请求与服务器响应', '请求行、请求头、服务器处理、返回 HTML。', '10162 字', [], { href: 'chapters/network/04-5-request-response.html', spec: 'pass'}),
-          createNode('net-04-6', '§ 4.6 · 浏览器渲染', '解析 HTML/CSS → 构建 DOM/CSSOM → 布局 → 绘制。', '10658 字', [], { href: 'chapters/network/04-6-rendering.html', spec: 'pass'})
+          createNode('net-04-6', '§ 4.6 · 浏览器渲染', '解析 HTML/CSS → 构建 DOM/CSSOM → 布局 → 绘制。', '10652 字', [], { href: 'chapters/network/04-6-rendering.html', spec: 'pass'})
         ],
         { href: 'chapters/network/04-journey.html' }
       ),
@@ -238,10 +238,10 @@
         '约 5.3 万字',
         [
           createNode('net-05-1', '§ 5.1 · 交换机 Switch', '二层设备——靠 MAC 地址在局域网内转发数据帧。', '10816 字', [], { href: 'chapters/network/05-1-switch.html', spec: 'pass'}),
-          createNode('net-05-2', '§ 5.2 · 路由器 Router', '三层设备——靠 IP 和路由表在不同网络间寻路。', '10841 字', [], { href: 'chapters/network/05-2-router.html', spec: 'pass'}),
-          createNode('net-05-3', '§ 5.3 · 网关与光猫', '网关 = 出口关卡；光猫 = 光信号与电信号的翻译官。', '10127 字', [], { href: 'chapters/network/05-3-gateway-ont.html', spec: 'pass'}),
-          createNode('net-05-4', '§ 5.4 · 防火墙 Firewall', '包过滤、状态检测、下一代防火墙——谁能进谁不能。', '10634 字', [], { href: 'chapters/network/05-4-firewall.html', spec: 'pass'}),
-          createNode('net-05-5', '§ 5.5 · 负载均衡 LB', '四层 vs 七层、轮询/最少连接/一致性哈希。', '10967 字', [], { href: 'chapters/network/05-5-load-balancer.html', spec: 'pass'})
+          createNode('net-05-2', '§ 5.2 · 路由器 Router', '三层设备——靠 IP 和路由表在不同网络间寻路。', '10838 字', [], { href: 'chapters/network/05-2-router.html', spec: 'pass'}),
+          createNode('net-05-3', '§ 5.3 · 网关与光猫', '网关 = 出口关卡；光猫 = 光信号与电信号的翻译官。', '10124 字', [], { href: 'chapters/network/05-3-gateway-ont.html', spec: 'pass'}),
+          createNode('net-05-4', '§ 5.4 · 防火墙 Firewall', '包过滤、状态检测、下一代防火墙——谁能进谁不能。', '10631 字', [], { href: 'chapters/network/05-4-firewall.html', spec: 'pass'}),
+          createNode('net-05-5', '§ 5.5 · 负载均衡 LB', '四层 vs 七层、轮询/最少连接/一致性哈希。', '10974 字', [], { href: 'chapters/network/05-5-load-balancer.html', spec: 'pass'})
         ],
         { href: 'chapters/network/05-1-switch.html' }
       ),
@@ -253,7 +253,7 @@
           createNode('net-06-2', '§ 6.2 · 蓝牙与近场', '蓝牙、BLE 低功耗、NFC——短距离通信三兄弟。', '7002 字', [], { href: 'chapters/network/06-2-bluetooth-nfc.html', spec: 'pass'}),
           createNode('net-06-3', '§ 6.3 · 移动蜂窝网络', '基站、小区切换、2G 到 5G 的演进逻辑。', '7397 字', [], { href: 'chapters/network/06-3-cellular.html', spec: 'pass'}),
           createNode('net-06-4', '§ 6.4 · 5G 与 6G 展望', '大带宽、低时延、海量连接——切片与边缘计算。', '7054 字', [], { href: 'chapters/network/06-4-5g-6g.html', spec: 'pass'}),
-          createNode('net-06-5', '§ 6.5 · 卫星互联网', 'Starlink、低轨星座——把网络铺到没有基站的地方。', '7185 字', [], { href: 'chapters/network/06-5-satellite.html', spec: 'pass'})
+          createNode('net-06-5', '§ 6.5 · 卫星互联网', 'Starlink、低轨星座——把网络铺到没有基站的地方。', '7184 字', [], { href: 'chapters/network/06-5-satellite.html', spec: 'pass'})
         ],
         { href: 'chapters/network/06-1-wifi.html' }
       ),
@@ -261,11 +261,11 @@
         'CDN、VPC、边缘节点、K8s、Serverless——现代云网络。',
         '约 4.0 万字',
         [
-          createNode('net-07-1', '§ 7.1 · CDN 内容分发', '把内容缓存到离用户最近的节点——为什么视频不卡。', '7382 字', [], { href: 'chapters/network/07-1-cdn.html', spec: 'pass'}),
-          createNode('net-07-2', '§ 7.2 · 云网络 VPC', '虚拟私有云、子网、安全组、路由表——云上的机房。', '9441 字', [], { href: 'chapters/network/07-2-vpc.html', spec: 'pass'}),
-          createNode('net-07-3', '§ 7.3 · 容器网络', 'Docker 网络模式、K8s Service 与 Ingress。', '8053 字', [], { href: 'chapters/network/07-3-container-network.html', spec: 'pass'}),
-          createNode('net-07-4', '§ 7.4 · 服务网格', 'Istio / Envoy——微服务之间的流量治理层。', '7828 字', [], { href: 'chapters/network/07-4-service-mesh.html', spec: 'pass'}),
-          createNode('net-07-5', '§ 7.5 · Serverless 与边缘计算', 'Cloudflare Workers、边缘函数——代码跑在离用户 10ms 的地方。', '7150 字', [], { href: 'chapters/network/07-5-serverless-edge.html', spec: 'pass'}),
+          createNode('net-07-1', '§ 7.1 · CDN 内容分发', '把内容缓存到离用户最近的节点——为什么视频不卡。', '7381 字', [], { href: 'chapters/network/07-1-cdn.html', spec: 'pass'}),
+          createNode('net-07-2', '§ 7.2 · 云网络 VPC', '虚拟私有云、子网、安全组、路由表——云上的机房。', '9438 字', [], { href: 'chapters/network/07-2-vpc.html', spec: 'pass'}),
+          createNode('net-07-3', '§ 7.3 · 容器网络', 'Docker 网络模式、K8s Service 与 Ingress。', '8050 字', [], { href: 'chapters/network/07-3-container-network.html', spec: 'pass'}),
+          createNode('net-07-4', '§ 7.4 · 服务网格', 'Istio / Envoy——微服务之间的流量治理层。', '7825 字', [], { href: 'chapters/network/07-4-service-mesh.html', spec: 'pass'}),
+          createNode('net-07-5', '§ 7.5 · Serverless 与边缘计算', 'Cloudflare Workers、边缘函数——代码跑在离用户 10ms 的地方。', '7147 字', [], { href: 'chapters/network/07-5-serverless-edge.html', spec: 'pass'}),
         ],
         { href: 'chapters/network/07-cloud-edge.html' }
       ),
@@ -278,7 +278,7 @@
           createNode('net-08-3', '§ 8.3 · Web 攻击', 'XSS、CSRF、SQL 注入、SSRF——最常见的四种打法。', '8390 字', [], { href: 'chapters/network/08-3-web-attacks.html', spec: 'pass'}),
           createNode('net-08-4', '§ 8.4 · DDoS 与防护', '流量型 vs 应用型攻击、清洗中心、限流策略。', '9789 字', [], { href: 'chapters/network/08-4-ddos.html', spec: 'pass'}),
           createNode('net-08-5', '§ 8.5 · VPN 与代理', 'VPN、正向/反向代理、隧道协议——流量怎么绕路。', '9679 字', [], { href: 'chapters/network/08-5-vpn-proxy.html', spec: 'pass'}),
-          createNode('net-08-6', '§ 8.6 · 零信任架构', '"默认不信任、始终验证"——边界安全模型的终结。', '9340 字', [], { href: 'chapters/network/08-6-zero-trust.html', spec: 'pass'})
+          createNode('net-08-6', '§ 8.6 · 零信任架构', '"默认不信任、始终验证"——边界安全模型的终结。', '9337 字', [], { href: 'chapters/network/08-6-zero-trust.html', spec: 'pass'})
         ],
         { href: 'chapters/network/08-security.html' }
       ),
@@ -286,12 +286,12 @@
         'ping、traceroute、curl、Wireshark——工程师的诊断工具。',
         '约 4.8 万字',
         [
-          createNode('net-09-1', '§ 9.1 · ping 与 ICMP', '通不通、延迟多少、丢包多少——第一诊断命令。', '8306 字', [], { href: 'chapters/network/09-1-ping.html', spec: 'pass'}),
-          createNode('net-09-2', '§ 9.2 · traceroute 路径追踪', '数据包走了哪几跳、卡在哪一跳。', '7115 字', [], { href: 'chapters/network/09-2-traceroute.html', spec: 'pass'}),
-          createNode('net-09-3', '§ 9.3 · nslookup / dig', 'DNS 解析结果排查——域名到底指向哪。', '8051 字', [], { href: 'chapters/network/09-3-nslookup-dig.html', spec: 'pass'}),
-          createNode('net-09-4', '§ 9.4 · curl / wget', '命令行发 HTTP 请求——看原始响应头和状态码。', '8046 字', [], { href: 'chapters/network/09-4-curl-wget.html', spec: 'pass'}),
-          createNode('net-09-5', '§ 9.5 · netstat / ss', '本机端口占用、连接状态——谁在监听、谁连着谁。', '7722 字', [], { href: 'chapters/network/09-5-netstat-ss.html', spec: 'pass'}),
-          createNode('net-09-6', '§ 9.6 · Wireshark 抓包', '逐包分析——网络排错的终极武器。', '8682 字', [], { href: 'chapters/network/09-6-wireshark.html', spec: 'pass'})
+          createNode('net-09-1', '§ 9.1 · ping 与 ICMP', '通不通、延迟多少、丢包多少——第一诊断命令。', '8303 字', [], { href: 'chapters/network/09-1-ping.html', spec: 'pass'}),
+          createNode('net-09-2', '§ 9.2 · traceroute 路径追踪', '数据包走了哪几跳、卡在哪一跳。', '7112 字', [], { href: 'chapters/network/09-2-traceroute.html', spec: 'pass'}),
+          createNode('net-09-3', '§ 9.3 · nslookup / dig', 'DNS 解析结果排查——域名到底指向哪。', '8048 字', [], { href: 'chapters/network/09-3-nslookup-dig.html', spec: 'pass'}),
+          createNode('net-09-4', '§ 9.4 · curl / wget', '命令行发 HTTP 请求——看原始响应头和状态码。', '8043 字', [], { href: 'chapters/network/09-4-curl-wget.html', spec: 'pass'}),
+          createNode('net-09-5', '§ 9.5 · netstat / ss', '本机端口占用、连接状态——谁在监听、谁连着谁。', '7719 字', [], { href: 'chapters/network/09-5-netstat-ss.html', spec: 'pass'}),
+          createNode('net-09-6', '§ 9.6 · Wireshark 抓包', '逐包分析——网络排错的终极武器。', '8679 字', [], { href: 'chapters/network/09-6-wireshark.html', spec: 'pass'})
         ],
         { href: 'chapters/network/09-toolbox.html' }
       ),
@@ -299,10 +299,10 @@
         'HTTP/3、IPv6、DoH、BBR——网络协议的最新进化。',
         '约 4.6 万字',
         [
-          createNode('net-10-1', '§ 10.1 · HTTP/2 与 HTTP/3', '多路复用、头部压缩、QUIC 基于 UDP 重造可靠传输。', '9598 字', [], { href: 'chapters/network/10-1-http2-http3.html', spec: 'pass'}),
-          createNode('net-10-2', '§ 10.2 · QUIC 协议', '0-RTT 握手、连接迁移——为什么抛弃 TCP。', '9113 字', [], { href: 'chapters/network/10-2-quic.html', spec: 'pass'}),
-          createNode('net-10-3', '§ 10.3 · IPv6 全面部署', '地址耗尽、双栈过渡、为什么推了二十年还没完。', '8640 字', [], { href: 'chapters/network/10-3-ipv6.html', spec: 'pass'}),
-          createNode('net-10-4', '§ 10.4 · 加密 DNS', 'DoH / DoT / DoQ——DNS 查询也要加密。', '9436 字', [], { href: 'chapters/network/10-4-encrypted-dns.html', spec: 'pass'}),
+          createNode('net-10-1', '§ 10.1 · HTTP/2 与 HTTP/3', '多路复用、头部压缩、QUIC 基于 UDP 重造可靠传输。', '9595 字', [], { href: 'chapters/network/10-1-http2-http3.html', spec: 'pass'}),
+          createNode('net-10-2', '§ 10.2 · QUIC 协议', '0-RTT 握手、连接迁移——为什么抛弃 TCP。', '9110 字', [], { href: 'chapters/network/10-2-quic.html', spec: 'pass'}),
+          createNode('net-10-3', '§ 10.3 · IPv6 全面部署', '地址耗尽、双栈过渡、为什么推了二十年还没完。', '8637 字', [], { href: 'chapters/network/10-3-ipv6.html', spec: 'pass'}),
+          createNode('net-10-4', '§ 10.4 · 加密 DNS', 'DoH / DoT / DoQ——DNS 查询也要加密。', '9433 字', [], { href: 'chapters/network/10-4-encrypted-dns.html', spec: 'pass'}),
           createNode('net-10-5', '§ 10.5 · BBR 拥塞控制', 'Google 的新算法——测带宽而不是等丢包。', '9384 字', [], { href: 'chapters/network/10-5-bbr.html', spec: 'pass'})
         ], { href: 'chapters/network/10-evolution.html' })
     ],
@@ -329,13 +329,13 @@
         { href: 'chapters/gui/01-what-is-gui.html' }),
       createNode('gui-02', '第 2 章 · 界面是怎么画出来的',
         '像素、位图与矢量、渲染管线、GPU 合成——一帧画面的诞生过程。',
-        '约 3.6 万字',
+        '约 3.7 万字',
         [
-          createNode('gui-02-1', '§ 2.1 · 像素与分辨率', '像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。', '7539 字', [], { href: 'chapters/gui/02-1-pixel.html', spec: 'pass'}),
-          createNode('gui-02-2', '§ 2.2 · 位图 vs 矢量', 'PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。', '7189 字', [], { href: 'chapters/gui/02-2-bitmap-vector.html', spec: 'pass'}),
-          createNode('gui-02-3', '§ 2.3 · 颜色与色彩空间', 'RGB、HSL、sRGB vs P3、透明度与混色。', '7421 字', [], { href: 'chapters/gui/02-3-color.html', spec: 'pass'}),
-          createNode('gui-02-4', '§ 2.4 · 渲染管线', '解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。', '6895 字', [], { href: 'chapters/gui/02-4-render-pipeline.html', spec: 'pass'}),
-          createNode('gui-02-5', '§ 2.5 · GPU 合成与 60fps', '为什么动画会卡、为什么 transform 比 top 快。', '7245 字', [], { href: 'chapters/gui/02-5-gpu-60fps.html', spec: 'pass'})
+          createNode('gui-02-1', '§ 2.1 · 像素与分辨率', '像素、DPI、逻辑像素 vs 物理像素、@2x 图为什么存在。', '7550 字', [], { href: 'chapters/gui/02-1-pixel.html', spec: 'pass'}),
+          createNode('gui-02-2', '§ 2.2 · 位图 vs 矢量', 'PNG/JPG 放大就糊，SVG 无限放大不糊——差在哪。', '7201 字', [], { href: 'chapters/gui/02-2-bitmap-vector.html', spec: 'pass'}),
+          createNode('gui-02-3', '§ 2.3 · 颜色与色彩空间', 'RGB、HSL、sRGB vs P3、透明度与混色。', '7442 字', [], { href: 'chapters/gui/02-3-color.html', spec: 'pass'}),
+          createNode('gui-02-4', '§ 2.4 · 渲染管线', '解析 → 布局 → 绘制 → 合成——一帧画面的四步流水线。', '7134 字', [], { href: 'chapters/gui/02-4-render-pipeline.html', spec: 'pass'}),
+          createNode('gui-02-5', '§ 2.5 · GPU 合成与 60fps', '为什么动画会卡、为什么 transform 比 top 快。', '7258 字', [], { href: 'chapters/gui/02-5-gpu-60fps.html', spec: 'pass'})
         ],
         { href: 'chapters/gui/02-how-pixels-happen.html' }),
       createNode('gui-03', '第 3 章 · 布局与排版',
@@ -352,12 +352,12 @@
         { href: 'chapters/gui/03-layout.html' }),
       createNode('gui-04', '第 4 章 · 事件与交互',
         '事件循环、冒泡与捕获、手势、焦点与无障碍——点击背后发生了什么。',
-        '待撰写',
+        '约 3.8 万字',
         [
-          createNode('gui-04-1', '§ 4.1 · 事件循环 Event Loop', '主线程、任务队列、微任务——界面为什么会"卡死"。', '待撰写', []),
-          createNode('gui-04-2', '§ 4.2 · 冒泡与捕获', '事件的三个阶段 + 事件委托为什么能提升性能。', '待撰写', []),
-          createNode('gui-04-3', '§ 4.3 · 输入设备', '鼠标、键盘、触摸、笔、手柄——不同设备的事件模型。', '待撰写', []),
-          createNode('gui-04-4', '§ 4.4 · 手势识别', '点击、长按、拖拽、双指缩放——手势冲突怎么解。', '待撰写', []),
+          createNode('gui-04-1', '§ 4.1 · 事件循环 Event Loop', '主线程、任务队列、微任务——界面为什么会"卡死"。', '9702 字', [], { href: 'chapters/gui/04-1-event-loop.html', spec: 'pass'}),
+          createNode('gui-04-2', '§ 4.2 · 冒泡与捕获', '事件的三个阶段 + 事件委托为什么能提升性能。', '9716 字', [], { href: 'chapters/gui/04-2-bubble-capture.html', spec: 'pass'}),
+          createNode('gui-04-3', '§ 4.3 · 输入设备', '鼠标、键盘、触摸、笔、手柄——不同设备的事件模型。', '9106 字', [], { href: 'chapters/gui/04-3-input-devices.html', spec: 'pass'}),
+          createNode('gui-04-4', '§ 4.4 · 手势识别', '点击、长按、拖拽、双指缩放——手势冲突怎么解。', '8976 字', [], { href: 'chapters/gui/04-4-gestures.html', spec: 'pass'}),
           createNode('gui-04-5', '§ 4.5 · 焦点与键盘导航', 'Tab 顺序、焦点陷阱、快捷键——不用鼠标也能用。', '待撰写', []),
           createNode('gui-04-6', '§ 4.6 · 无障碍 A11y', 'ARIA、屏幕阅读器、对比度——让所有人都能用。', '待撰写', [])
         ]),
@@ -440,8 +440,8 @@
           createNode('elec-01-1', '§ 1.1 · 电为什么会电到人', '电流穿过身体才危险，几毫安开始麻、多少毫安要命。', '7423 字', [], { href: 'chapters/elec/01-1-why-shock.html', spec: 'pass'}),
           createNode('elec-01-2', '§ 1.2 · 火线、零线、地线', '三根线各干什么，为什么只碰零线通常不电人。', '7613 字', [], { href: 'chapters/elec/01-2-three-wires.html', spec: 'pass'}),
           createNode('elec-01-3', '§ 1.3 · 动手前的断电三步', '关对闸、验电、告知家人，确认真没电才伸手。', '7426 字', [], { href: 'chapters/elec/01-3-power-off.html', spec: 'pass'}),
-          createNode('elec-01-4', '§ 1.4 · 验电笔怎么用', '试电笔的正确握法、误报场景，两点交叉复验法。', '8189 字', [], { href: 'chapters/elec/01-4-test-pen.html', spec: 'pass'}),
-          createNode('elec-01-5', '§ 1.5 · 触电与电火灾急救', '先断电再救人、绝缘物分离、电火灾绝不能泼水。', '8787 字', [], { href: 'chapters/elec/01-5-first-aid.html', spec: 'pass'}),
+          createNode('elec-01-4', '§ 1.4 · 验电笔怎么用', '试电笔的正确握法、误报场景，两点交叉复验法。', '8335 字', [], { href: 'chapters/elec/01-4-test-pen.html', spec: 'pass'}),
+          createNode('elec-01-5', '§ 1.5 · 触电与电火灾急救', '先断电再救人、绝缘物分离、电火灾绝不能泼水。', '8817 字', [], { href: 'chapters/elec/01-5-first-aid.html', spec: 'pass'}),
           createNode('elec-01-6', '§ 1.6 · 红线清单：绝不自己碰', '进户线、电表、总闸上游、渗水墙体——直接叫电工。', '7762 字', [], { href: 'chapters/elec/01-6-red-lines.html', spec: 'pass'})
         ]
       , { href: 'chapters/elec/01-safety-first.html' }),

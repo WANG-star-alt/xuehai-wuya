@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 4.3 · 输入设备 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 4 章</span>
+      <span class="sep">›</span>
+      <span>§ 4.3</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.3 · Section</div>
+    <h1>输入设备</h1>
+    <div class="cn">Input Devices · Five Dialects, One Language</div>
+  </header>
+
+  <p class="lead">
+    前两节解决的是「事件在程序内部怎么流转」，这一节把镜头掉转 180 度，看<strong>事件从哪里来</strong>。<mark class="key">鼠标、键盘、触摸屏、手写笔、游戏手柄——五种设备各说各的方言，浏览器干的第一件大事，就是当同声传译：把五花八门的物理动作，统一翻译成「事件」这门通用语。</mark>这门翻译学里全是经典问题的答案：为什么移动端点击曾经有 300 毫秒延迟？为什么中文输入法打字时 keydown 会收到一个神秘的 229？为什么拖拽时鼠标滑快了元素就「跟丢」？以及这场旷日持久的<strong>「统一战争」</strong>终局——Pointer Events 怎么用一套事件收编五种设备。<strong>说白了</strong>，学完这一节，你听到的不再是「点了一下」，而是「哪位客人、用哪种方言、说了哪句话」。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🏨 前台一位，客人五种</div>
+    <p>一家老饭店的前台，一天要接待五种客人：说普通话的（<strong>鼠标</strong>——精确定位、能悬停、左中右三键）打手势的（<strong>触摸屏</strong>——直来直去、可以多指齐下、指头粗误差大）写字条的（<strong>键盘</strong>——不出声、只有内容没有位置）自带钢笔签名的（<strong>手写笔</strong>——精细、有轻重缓急、还带倾斜角度）和坐在大堂沙发上只按呼叫铃的（<strong>游戏手柄</strong>——不报位置，只报「哪个键按下/弹起」，而且根本不喊话，得前台自己定时去看灯亮没亮）。<br/><br/>
+    前台小姐姐的工作不是学五种语言学到精通——是<strong>把所有表达统一登记成同一张单子</strong>：几号客人、什么时候、要什么。管你说的是粤语还是手语，登记簿上只有标准条目。这张统一登记簿，就是浏览器的事件系统；那套「不管什么方言都往一张表上记」的方法，就是本节的高潮 Pointer Events。而登记之前的第一道工序，是把客人的诉求<strong>定位到房间</strong>——前台得知道这位客人说的是 302 房的事还是 508 房的事，这叫<strong>命中测试</strong>。<mark class="key">一个动作的完整旅程是：设备说出方言 → 系统翻译成事件 → 命中测试找到目标元素 → 事件沿 DOM 树走上一节学的那个来回。</mark></p>
+  </div>
+
+  <h3>术语对照：先把这一节的行话翻译成人话</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>前台里的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>命中测试（hit testing）</td><td>拿坐标反查「点中了哪个元素」</td><td>按门牌号找到房间</td></tr>
+        <tr><td>e.key / e.code</td><td>按键产生的字符 / 键帽的物理身份</td><td>写出来的是什么字 vs 键帽上刻的什么</td></tr>
+        <tr><td>输入法组合（composition）</td><td>拼音还没选完字的临时状态</td><td>草稿未定稿，别急着登记</td></tr>
+        <tr><td>合成点击（synthesized click）</td><td>触摸结束后浏览器补发的鼠标事件</td><td>写字条的客人走后，前台补录成标准单据</td></tr>
+        <tr><td>Pointer Events</td><td>统一五种设备的事件抽象层</td><td>那套通用速记法</td></tr>
+        <tr><td>pointerId</td><td>每根手指/每支笔的独立编号</td><td>同时接待多位客人时的取号牌</td></tr>
+        <tr><td>指针捕获（pointer capture）</td><td>把某个指针锁给某个元素专管</td><td>一对一专属客服，跟人到门口</td></tr>
+        <tr><td>touch-action</td><td>CSS 声明「这块区域允许哪些默认手势」</td><td>商场分区指示牌：此区可试吃、禁止奔跑</td></tr>
+        <tr><td>轮询（polling）</td><td>每帧主动去读设备当前状态</td><td>护士定时查房，而非等病人按铃</td></tr>
+        <tr><td>isComposing</td><td>这次按键属于输入法组词过程</td><td>客人还在拼拼音，别抢着上菜</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>五种方言：先认清各位主角</h3>
+  <p>把五种设备的「性格差异」压进一张表，后面所有故事都是从这张表里长出来的：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>能力</th><th>鼠标</th><th>触摸</th><th>键盘</th><th>手写笔</th><th>手柄</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>有精确坐标？</td><td>✓ 像手术刀</td><td>✓ 但指头粗，误差以 9 毫米计</td><td>✗ 没有位置概念</td><td>✓ 最精细</td><td>✗ 只有摇杆方向量</td></tr>
+        <tr><td>能悬停（hover）？</td><td>✓ 鼠标本命技能</td><td>✗ 指头碰上去才算数</td><td>—</td><td>✓ 笔尖悬空几毫米也能感知</td><td>—</td></tr>
+        <tr><td>能多点同时？</td><td>✗ 一只鼠标一个点</td><td>✓ 十指齐上</td><td>✓ 组合键</td><td>✓ 双笔少见但规范支持</td><td>✓ 双摇杆+按键群</td></tr>
+        <tr><td>压力感应？</td><td>✗ 按了就是按了</td><td>✓ 有按压面积可估</td><td>✗</td><td>✓ 几千级压感</td><td>✓ 扳机键有模拟量</td></tr>
+        <tr><td>事件还是轮询？</td><td>事件</td><td>事件</td><td>事件</td><td>事件</td><td><strong>轮询</strong>（不走事件）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三行差异日后都会变成真实的产品问题：<strong>触摸没有 hover</strong>，所以手机上一切「鼠标悬停才显示」的菜单设计都是死刑；<strong>手指误差大</strong>，所以移动端按钮的最小可点区域推荐 44×44 像素起（苹果的人机界面指南给的数字）；<strong>键盘没有坐标</strong>，所以「当前按哪个键作用于哪个元素」必须靠另一套机制——焦点——来补位，这是 § 4.5 的主场。而「手柄靠轮询」这一行，藏着事件与轮询两种模型的世界观分野，本节后半段展开。</p>
+
+  <h3>鼠标的完整家谱与事件时序</h3>
+  <p>鼠标事件是最古老、最庞大的一族：mousedown / mouseup / click / dblclick / mousemove / mouseover / mouseout / mouseenter / mouseleave / wheel / contextmenu。看着多，其实记一张时序图就全通了。一次完整的单击，浏览器按固定顺序派发：</p>
+  <pre><code>mousedown   ← 手指按下
+mouseup     ← 手指抬起
+click       ← 同一元素上「按下+抬起」完成后结算</code></pre>
+  <p>click 不是「按下」的别名，是一次<strong>结算</strong>：按下和抬起必须发生在同一个元素上，click 才派发给它——按在按钮上、拖出去松手，按钮收不到 click（但 mousedown 收到了）。双击则是一整串：down → up → click → down → up → click → dblclick，dblclick 永远最后一个到。这套时序直接决定了交互设计里的基本盘：<strong>mousedown 适合「立即反应」</strong>（按下就高亮），<strong>click 适合「确认执行」</strong>（防拖拽误触），选错语义就会出现「按下没反应，抬手才亮」或反过来的怪手感。<br/><br/>
+  另外两位常被混为一谈的亲戚：mouseover / mouseout <strong>会冒泡</strong>，进出子元素也各触发一次（§ 4.2 讲过，这对「纯进出」判断是噪音）；mouseenter / mouseleave <strong>不冒泡</strong>且只在真正进出元素边界时触发一次。菜单 hover 效果用后者，事件委托用前者——同一对需求，两套工具各就各位。最后是 contextmenu（右键菜单）和 wheel（滚轮），前者可以 preventDefault 后自定义右键菜单（在线表格、设计工具的标配），后者与上一节的 passive 直接连着：wheel 监听不声明 passive，浏览器就得先等你的代码表态「拦不拦滚动」，滚动手感立刻变肉。</p>
+
+  <h3>滚轮的方言：deltaY 为什么每家不一样</h3>
+  <p>滚轮看着人畜无害，实则是鼠标家族里方言最重的一支。同样一格滚动，Windows 鼠标一格报 100 像素上下，Linux 报「三行」，Firefox 老版本报「一页」——因为事件对象里除了 deltaY 数值，还有个 <code>deltaMode</code> 字段声明这个数的<strong>单位</strong>：0 是像素、1 是行、2 是页。只拿 deltaY 当像素用，跨平台就会「有的机器滚得飞起、有的机器纹丝不动」。稳妥写法是一份换算表：行乘以约 40 像素（line-height 估算），页乘以视口高度。另一个现代现象是<strong>触控板惯性滚动</strong>：手指在触控板上轻甩一下，抬起后系统会连续补发几十个幅度递减的 wheel 事件——你的「滚轮防抖」若只按「事件次数」计数，会把一次惯性滚动当成几十次滚动意图，滚动一卡一顿的老毛病多半出在这。顺带一个冷知识：鼠标按住 Shift 滚滚轮，多数系统会把它翻译成<strong>横向滚动</strong>（deltaX）——图表、表格组件别忘了这个入口。<strong>好比</strong>菜市场里几家摊贩都用「斤」报价，但有的摊是市斤、有的是公斤——不看单位只听数字，买菜必然买错量。deltaMode 就是那个写在秤上的单位铭牌。</p>
+
+  <h3>触控板的黑话：捏合缩放为什么变成了 Ctrl+滚轮</h3>
+  <p>滚轮方言还没讲完，触控板还有一句更隐蔽的黑话。<strong>在触控板上双指捏合/张开，网页收到的既不是 pointer 事件，也不是什么 zoom 事件——是一个带 <code>ctrlKey: true</code> 的 wheel 事件。</strong>这不是 bug，是一条刻意设计的通路：键盘上 Ctrl+滚轮本来就是「页面整体缩放」，触控板捏合是同一个意图的另一种手势，系统就让它俩走同一条管线进网页。代价是第一次见到的人满脸问号：我明明一个键都没按，ctrlKey 怎么是 true？<br/><br/>
+  这句黑话是设计工具的必修课。Figma、Excalidraw 这类画布应用要做「捏合缩放画布」，监听的就是 wheel 且 e.ctrlKey 为 true 的那一路（同时 preventDefault 掉浏览器自己的页面缩放，否则画布没放大、整页先糊了）；而普通滚轮、双指滚动走不带 ctrlKey 的另一路，做画布平移。一套手势两副面孔，全靠 ctrlKey 这个暗号分流。顺带一提，Safari 还有一组非标准的 gesturestart / gesturechange / gestureend 事件（带 scale 字段）处理捏合——同一件事在WebKit 生态有自己的方言，跨浏览器设计工具得两套都接。<strong>想象一下</strong>快递站的黑话：熟客喊「老规矩」，前台就知道是「三号柜、到付、发顺丰」——外人听的一头雾水，站内人秒懂。触控板手势进网页，说的全是这种「老规矩」：你以为它在做新手势，其实系统早就把它翻译成了老事件加一个暗号。读懂暗号（ctrlKey），黑话就成了明话。</p>
+
+  <h3>命中测试：坐标是怎么变成元素的</h3>
+  <p>鼠标给了你一个 (x, y) 坐标，可 DOM 树上并没有「坐标」这个字段——从坐标到元素，靠<strong>命中测试</strong>（hit testing）：浏览器拿着坐标，从最上层图层往下问「这个点落在谁身上」。规则不复杂：<strong>后绘制的在上、z-index 高的在上、谁在上谁先被命中；命中一个后，如果它不是 pointer-events: none，任务结束</strong>；是 none 则继续往下问——这就是「让元素对点击透明」的标准做法。调试时有个直查工具：<code>document.elementFromPoint(x, y)</code>，输入坐标立刻返回命中的元素，命中测试的现场版。<br/><br/>
+  两个工程上天天用的场景。其一，<strong>点击穿透</strong>：自定义 tooltip / 浮层盖在按钮上，想「鼠标事件穿过去只留显示效果」，浮层加 pointer-events: none 即可——它看得见，但挡不住路。其二，<strong>拖拽影子</strong>：拖动时跟随鼠标的那个半透明影子，若不加 pointer-events: none，影子会一直挡在鼠标底下，导致 mousemove 的 target 永远是影子自己、目标元素反而收不到事件——「拖不动、一拖就飘」的老 bug，八成是它。<strong>好比</strong>超市里的促销堆头：货堆得再高，收银台扫码扫的仍是商品条码，不扫码就不能说「买了」；而 pointer-events: none 是把堆头做成全息投影——看得见，伸手过去摸个空。iOS 原生那边的同名工序叫 hitTest(_:with:)，§ 4.2 认亲时见过：响应链选「最深命中视图」，就是 DOM 命中测试的血亲。</p>
+
+  <h3>键盘：e.key、e.code 与那串废弃的 keyCode</h3>
+  <p>键盘事件只有 keydown 和 keyup 两个，真正的学问全在事件对象里——同一个按键，有三个「名字」字段，各有各的用途：</p>
+  <pre><code>addEventListener('keydown', (e) =&gt; {
+  e.key    // 'a' / 'A' / 'ArrowLeft' / 'Process' —— 这个键「打出来是什么」
+  e.code   // 'KeyA' / 'ArrowLeft' —— 这个键「键帽上刻的是什么」（物理位置）
+  e.keyCode // 65（已废弃）—— 老编码，别在新代码里用
+});</code></pre>
+  <p>区分 key 与 code 的经典场景是<strong>快捷键</strong>。你做「按 W 前进」，应该用哪个？用 e.key 吗？法式键盘的 W 在别处，中文输入法开着时 key 可能根本不是 'w'——全世界玩家一起翻车。<strong>正解是 e.code === 'KeyW'</strong>：认物理键位，不管布局、不管输入法，键盘上刻着什么就是什么。反过来，<strong>文本编辑</strong>该看 e.key——用户按 Shift+3 想要的是「#」这个字符（或他键盘布局上的那个字符），不是「3 号键」。一句话军规：<strong>快捷键认 code，文本认 key，keyCode 谁都不认</strong>。修饰键另有专门字段：e.ctrlKey / e.shiftKey / e.altKey / e.metaKey，按键本身在它们按下时也为 true——做「Ctrl+S 保存」就是 keydown 里查 e.code==='KeyS' &amp;&amp; e.ctrlKey，然后 preventDefault() 拦掉浏览器自己的保存行为（上一节的内容在这克试手）。<br/><br/>
+  键盘还有个常被忽略的特性：<strong>按住不放会自动重复</strong>。系统每几十毫秒补发一次 keydown（-repeat 事件带 e.repeat === true），游戏里「按住方向键移动」全靠它——但也要记得过滤：弹幕游戏的「按住 Z 连发」若不过滤 repeat，松手后还会多出几颗子弹。</p>
+
+  <h3>没有坐标的投递难题：键盘事件该寄给谁</h3>
+  <p>鼠标事件自带地址（坐标 → 命中测试 → 元素），键盘事件却是个<strong>没有地址的信封</strong>——「W 键按下了」，寄给谁？全页面上千个元素，凭什么游戏画布收到 W 是「前进」、聊天框收到 W 是打字？答案是操作系统和界面体系统一维护的另一本账：<strong>焦点</strong>（focus）。整个屏幕同一时刻只有一个「当前接收键盘输入的对象」：操作系统层面，前台应用的窗口持有焦点（所以你切到别的软件，游戏立刻收不到按键）；应用内部，焦点再细分到某个输入框、某个控件——键盘事件永远寄给焦点所在，与鼠标位置无关（鼠标只是「点哪儿把焦点搬到哪儿」的搬运工）。<br/><br/>
+  这本账解释了一批日常现象：为什么打游戏要「先点一下游戏画面」才能操作（把焦点从浏览器地址栏搬进画布）；为什么按 Tab 会在控件之间跳（焦点搬家，§ 4.5 详解）；为什么输入框获得焦点时边框会亮（系统在告诉你「现在键盘归它」）。<strong>就像</strong>银行的叫号系统：大厅里坐着几十位顾客（页面上千个元素），但柜台窗口同一时刻只服务一个号（焦点唯一）——喊到的号（键盘事件）只有那位顾客应答；你想办业务，先取号（点击把焦点搬过来）。焦点是键盘世界的「坐标替身」，它自己的完整生态——Tab 顺序、焦点陷阱、快捷键分发——§ 4.5 整节展开。</p>
+
+  <h3>输入法：229 号谜案与 composition 三部曲</h3>
+  <p>中文用户天天在触发一个「灵异事件」：开着拼音输入法打字，keydown 收到的 keyCode 是个奇怪的 <strong>229</strong>，e.key 也不是你按的字母——「我的键盘坏了？」没有，键盘好得很，这是<strong>输入法组合</strong>（IME composition）状态：你按的键正被输入法截留去拼拼音候选，浏览器如实上报「这键被输入法接管了」，229 就是「接管中」的暗号。整个过程有专门的三部曲事件：</p>
+  <pre><code>compositionstart   // 开始组词：输入法接管，进入「草稿态」
+compositionupdate  // 拼音串变化：n → ni → nin → 你
+compositionend     // 选字定稿：草稿转正文，一次上屏</code></pre>
+  <p>工程上要处理的两件事。第一，<strong>快捷键别误伤</strong>：用户在拼音候选框里按的方向键、回车、Esc，全都带着 keydown 事件——必须查 <code>e.isComposing</code>（或 keyCode === 229）过滤，否则「按 Esc 清空输入框」会把人家正在选的拼音清掉。第二，<strong>搜索框联想别抢跑</strong>：监听 input 事件做「边打边搜」，拼音还没选字就会拿「nihaoma」去请求接口——input 事件在组词期间同样会触发（带 isComposing: true），要等 compositionend 或过滤组词期的 input 再发请求。<strong>打个比方</strong>，composition 就是餐厅的「先别上菜」手势：客人在拼拼音（改口重说），服务员（你的代码）应该等他说完这句（compositionend）再下单——抢着把半截话当完整需求处理，上桌的只能是一盘原料。</p>
+
+  <h3>触摸：三张名单与合成点击</h3>
+  <p>触摸事件一家四口：touchstart / touchmove / touchend / touchcancel（最后这个是「系统抢走了」——来电、通知、浏览器接管滚动时，你的 touch 流程被强制中断，记住这个货色，§ 4.4 手势还会跟他打照面）。真正的坑在事件对象里的<strong>三张名单</strong>：</p>
+  <pre><code>touches          // 屏幕上目前所有手指（全局名单）
+targetTouches    // 按在这个元素身上的手指（本店名单）
+changedTouches   // 这次事件中「发生变化」的手指（本次当事人）</code></pre>
+  <p>做双指缩放时要盯 touches（两只都得在视野里），做单指拖拽要看 changedTouches（touchend 时 touches 里已经查无此指——手指走了，全局名单划掉了他，当事人名单里才有遗像）。三张名单不分清，缩放手势的代码必错。<br/><br/>
+  然后是移动端开发的百年悬案材料：<strong>合成点击</strong>。手机上没有鼠标，可十年前的网页全是为鼠标写的——浏览器为了让这些网页活着，在 touchend 之后约 10 毫秒，<strong>补发一套鼠标事件</strong>：mousedown → mouseup → click。所以移动端一次轻点，完整序列是 touchstart → touchend → mousedown → mouseup → click，五个事件五份回调全数到账。写代码时若 touch 和 click 各绑一套逻辑，「点一次触发两遍」就是这么来的——移动端要么只绑 touch、要么只绑 click，别两套都上。</p>
+
+  <h3>300 毫秒冤案：点击延迟的来龙去脉</h3>
+  <p>有了合成点击，下一个问题自然浮出水面：为什么老手机网页上，点一下要等小半秒才有反应？这桩「300 毫秒延迟」冤案值得完整讲一遍，因为它的平反过程改变了整个移动 Web。<strong>案发</strong>：初代 iPhone 的网页默认可以「双击缩放」——双指捏合是缩放，快速双击也是缩放。于是浏览器收到你的第一次 tap 后，不敢立刻派发 click：<strong>万一 10 毫秒后又来一下（双击）呢？</strong>它必须等 300 毫秒确认「这是一击不是双击」，才敢把 click 发出去。你点下的瞬间界面毫无反应，300 毫秒后人眼已判定「卡了」。这不是性能问题，是<strong>浏览器在等你收回成命</strong>。<br/><br/>
+  <strong>平反</strong>分两步。第一步：页面声明 <code>&lt;meta name="viewport" content="width=device-width"&gt;</code> 后，浏览器认定「此页已按手机宽度适配，双击缩放没必要」，延迟自动取消——今天几乎所有网页都带着这行 meta，所以你感觉不到延迟。第二步：CSS 属性 <code>touch-action</code> 出现，允许<strong>逐元素</strong>声明「此地允许哪些默认手势」——按钮上写 touch-action: manipulation（允许点按和双指缩放、禁双击缩放），延迟在哪儿都不复存在。这个属性的价值远不止平反一桩冤案：它是<strong>手势管辖权的分界线</strong>，§ 4.4 讲手势冲突时它是主角。<strong>说白了</strong>，300 毫秒延迟的本质是「歧义等待」——跟日常生活里「对方刚说了一句什么？哦没下文了，那我回应吧」的尴尬一模一样：不是你反应慢，是你在等对方把话说完。</p>
+
+  <h3>Pointer Events：统一战争的终局</h3>
+  <p>现在把主角请上台。触摸时代来临后，开发者面对的现实是：为鼠标写一套 mousedown，为触摸写一套 touchstart，为笔再写一套——同一段拖拽逻辑，三种方言各抄一遍，还要互相打补丁（移动端合成点击又来掺和）。W3C 的答案是一次大一统：<strong>Pointer Events</strong>——一套事件（pointerdown / pointermove / pointerup / pointercancel / pointerover / pointerout / pointerenter / pointerleave），覆盖所有带坐标的输入设备：</p>
+  <pre><code>element.addEventListener('pointerdown', (e) =&gt; {
+  e.pointerType   // 'mouse' | 'touch' | 'pen' —— 哪种方言
+  e.pointerId     // 每根手指/每支笔的独立编号（多点触控的钥匙）
+  e.pressure      // 0.0～1.0 压力（鼠标恒 0.5，笔有真值）
+  e.clientX / e.clientY   // 统一坐标系
+});
+// 鼠标按下的地方：pointerdown 先到，兼容的 mousedown 随后——一套代码全兼容</code></pre>
+  <p>Pointer Events 的设计哲学一句话：<strong>「共同点先行，差异点挂标签」</strong>。位置、按下、抬起、移动，五种设备全都有——抽成统一事件；悬停只有鼠标和笔有、压力只有笔有、多点只有触摸和笔有——全部降级成事件对象上的字段，代码按需取用。这跟现实里「通用登记簿」的思路一模一样：登记项（时间、编号、诉求）人人都有，备注栏（说的什么方言、带没带行李）按客人实际情况填。<br/><br/>
+  三件配套兵器让它不只是「换了名字的鼠标事件」。<strong>其一 pointerId</strong>：多点触控时代，每根手指一个编号，从 pointerdown 到 pointerup 一以贯之——双指缩放不再靠三张名单对暗号，各跟各的 pointerId 就行。<strong>其二 pointercancel</strong>：手指按到一半、浏览器决定接管滚动时，你会收到 pointercancel（而不是杳无音讯）——状态机有了明确的「异常出口」，至少知道该收摊了。<strong>其三 touch-action</strong>：在哪块区域上「滚动/缩放」这类浏览器原生手势归浏览器、其他归你的代码，CSS 里一行声明清楚，浏览器提前知道「这单要不要等你的代码表态」，上一节 passive 那种「等表态」的拉锯战从根上化解。<br/><br/>
+  <strong>不妨这样想</strong>：Pointer Events 之于输入设备，就像普通话之于方言区——没有普通话之前，跨省生意要请五个翻译；有了普通话，大家带着口音（pointerType、pressure）也能同桌开会。今天写任何新的交互代码，起点都该是 pointerdown 而不是 mousedown——前者是通用语，后者只是方言里的一种。</p>
+
+  <h3>指针捕获：专属客服解决拖拽丢事件</h3>
+  <p>统一战争赢了，还剩最后一个著名残敌：<strong>拖拽跟丢</strong>。拖动一个滑块，鼠标移快一点、指针一瞬冲出滑块边界——你的 mousemove 监听器挂在滑块上，指针都跑了，事件全派发给了路过的其他元素，滑块停在半空。老一辈的解法是把 mousemove 挂到 window 上（监听器搬家，永远跟得上指针），自己再管松手判断——能用，但代码碎一地。Pointer Events 给了正规军：<strong>指针捕获</strong>。</p>
+  <pre><code>slider.addEventListener('pointerdown', (e) =&gt; {
+  slider.setPointerCapture(e.pointerId);   // 这根指针从此专属本元素
+});
+// 此后无论指针跑到哪：move / up 事件统统仍派发给 slider
+// 松手时浏览器自动释放，或手动 releasePointerCapture(e.pointerId)</code></pre>
+  <p>语义上是「<strong>一对一专属客服</strong>」：客人（指针）在柜台按下呼叫铃（pointerdown）的那一刻，值班经理把这位客人锁定给 8 号柜员——客人接下来在商场里逛到天涯海角，事务仍由 8 号柜员全程跟进，直到办结（pointerup）自动解除。事件不再看「指针此刻在哪」，而看「指针归谁管」——管辖权一旦在按下时确定，位置就不再是问题。绘图应用、滑块、拖拽排序列表，凡是「按住不放」的交互都该用它；连 iOS 原生都有对应概念（触摸默认就归属按下时命中的视图，苹果管这叫 touch 的「视图锁定」——你看，平台之间又一次异曲同工）。</p>
+
+  <h3>双指缩放手把手：多点触控的完整账本</h3>
+  <p>把 pointerId、指针捕获、pointercancel 三件兵器凑齐，就能打一场完整的多点触控仗——双指缩放。这是最有教学价值的一个例子，因为它同时用到「每根手指独立编号」和「异常出口」两套机制。核心账本是一张 Map，登记「当前按在本元素上的所有指针」：</p>
+  <pre><code>const fingers = new Map();          // pointerId → 坐标
+let startDist = 0, startScale = 1;
+
+el.addEventListener('pointerdown', (e) =&gt; {
+  el.setPointerCapture(e.pointerId);   // 每根手指都锁定管辖权
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (fingers.size === 2) {            // 第二根手指到齐，记基准
+    const [a, b] = [...fingers.values()];
+    startDist = Math.hypot(a.x - b.x, a.y - b.y);
+    startScale = 当前缩放;
+  }
+});
+
+el.addEventListener('pointermove', (e) =&gt; {
+  if (!fingers.has(e.pointerId)) return;
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (fingers.size !== 2) return;
+  const [a, b] = [...fingers.values()];
+  const dist = Math.hypot(a.x - b.x, a.y - b.y);
+  设置缩放(startScale * dist / startDist);   // 比例缩放
+});
+
+function 收摊(e) {                        // pointerup 和 pointercancel 共用
+  fingers.delete(e.pointerId);
+  if (fingers.size &lt; 2) startDist = 0;   // 只剩一根，基准作废
+}
+el.addEventListener('pointerup', 收摊);
+el.addEventListener('pointercancel', 收摊);  // 系统抢走手指：从容收摊，不留悬账</code></pre>
+  <p>逐条读出设计意图。第一，<strong>每根手指一条独立记录</strong>：Map 以 pointerId 为键，两根手指各自更新各自的坐标，互不干扰——这是「编号」制度的价值，换 touch 事件的年代要用三张名单反复对暗号。第二，<strong>基准在第二根手指落下时定</strong>：缩放是比例游戏，必须有一个「起跑时刻」，从两指距离变成当前距离的比值，乘上起跑时的缩放。第三，也是最容易被漏掉的一条：<strong>pointercancel 与 pointerup 走同一个收摊函数</strong>——来电、下拉通知栏、浏览器接管滚动，任何一种「手指被系统征用」都会以 pointercancel 结束这段手指的旅程；不处理它，fingers 里就留着一条永远等不到 pointerup 的幽灵记录，下次缩放直接算错。状态机的一条铁律：每个入口都要有出口，异常出口（cancel）和正常出口（up）一样金贵。<strong>说白了</strong>，多点触控编程就是「开台记账、离台销账」的柜台生意——两位客人同时办理（两根手指），每人一个档案袋（pointerId），中途被警察带走（pointercancel）也得正经销案，档案袋不能烂在柜台上。</p>
+
+  <h3>笔与压感：绘画应用的最小知识集</h3>
+  <p>手写笔（stylus）在事件体系里最像「高配版手指」，但有几个专属字段构成了绘画类应用的地基：<strong>pressure</strong>（0.0～1.0 的压感，笔是真实值，笔尖悬空为 0）、<strong>tiltX / tiltY</strong>（笔杆倾斜角，画「侧锋」笔刷靠它）、<strong>twist</strong>（旋转，马克笔类笔刷用）。写一个最简笔刷引擎的核心循环就三步：pointerdown 记起点、pointermove 连线（线宽 = 压力 × 最大宽）、pointerup 收笔。<br/><br/>
+  两个进阶问题暴露笔的特殊身份。其一，<strong>防手掌误触</strong>（palm rejection）：手写时手掌自然搭在屏幕上，绘画应用必须区分「笔的事件」与「掌的事件」——事件对象里的 pointerType 就是判决书：type 为 pen 的收，type 为 touch 的（且笔在悬停 proximity 内时）一律无视。硬件层与系统层也有各自的过滤，但应用层这道闸永远要自己装。其二，<strong>笔迹平滑</strong>：事件坐标是离散采样点，快速运笔时点与点之间隔得远，直接连线就是折线——要做贝塞尔平滑，或预测性采样（拿上一段的速度方向预估中间点）。这些属于绘画领域的深水区，本节点到为止；但「压感影响线宽、倾斜影响笔形」这两条，值得每个做过界面的人知道——手写笔不只是「更细的手指」，它把<strong>力度和姿态</strong>两整个维度带进了事件系统。</p>
+
+  <h3>一帧里的三次移动：事件合并与 getCoalescedEvents</h3>
+  <p>还有一个隐藏在时间维度的坑。游戏鼠标的回报率可以到 1000Hz——每秒报一千次位置；可屏幕刷新只有 60～120 次/秒，主线程还要分神干活。事件比帧多，怎么办？浏览器会把一帧之内收到的多次 pointermove <strong>合并成一次</strong>派发给页面（帧率的节流阀）。对「跟着鼠标走」的 UI 这正合适——中间位置反正画不出来；但对<strong>绘画和签名</strong>是灾难：快速画一笔，浏览器只给你三四个稀疏的拐点，连出来是折线，笔迹的细节全被合并掉了。<br/><br/>
+  解药是 PointerEvent 上的 <code>e.getCoalescedEvents()</code>：它返回这次合并事件背后的<strong>全部原始采样点</strong>——一帧三次移动，一个事件，三份坐标。绘画应用在 pointermove 里先展开合并点、逐点连线，再落笔上屏，笔迹立刻顺滑如初。配套的还有 <code>e.getPredictedEvents()</code>（部分浏览器支持）：按运动趋势<strong>预测</strong>出未来几个点，画出来先垫着，真实事件到了再校正——这就是专业绘画应用「笔跟手」手感的最后一块拼图。<strong>说白了</strong>，这是快递行业的「合单派送」：一天到货一千件（1000Hz 采样），快递车一天只发三班（帧率），每车装一摞；普通收货人拿车次就行（UI 跟随），但仓库管理员要的是每一件的签收底单（绘画笔迹）——getCoalescedEvents 就是那张让你查到底单的回执联。</p>
+
+  <h3>手柄与轮询：为什么它不走事件</h3>
+  <p>最后一位主角最叛逆：游戏手柄压根不走事件系统。Gamepad API 的用法是这样的——你得自己在每一帧里<strong>主动去读</strong>它的当前状态：</p>
+  <pre><code>function 每帧() {
+  const [pad] = navigator.getGamepads();   // 主动取当前快照
+  if (!pad) return;
+  const x = pad.axes[0];                   // 左摇杆横向：-1.0 ～ 1.0 连续值
+  const 加速 = pad.buttons[7].value;        // 扳机键：模拟量，不只 0/1
+  // 用这些值直接更新画面
+  requestAnimationFrame(每帧);
+}</code></pre>
+  <p>为什么手柄独走一条路？两个原因。其一，<strong>频率</strong>：摇杆和扳机是连续量，一秒钟状态变化几百次，若每次都发事件，事件队列直接被灌成洪峰——主线程（§ 4.1 那位一次只能办一单的柜员）会被活活淹死。轮询把节奏权交给应用：「我每帧来取一次」，取的是<strong>最新快照</strong>，中间变化了几百次？不要紧，我只要现在的值。其二，<strong>延迟</strong>：游戏对输入的要求是「这一帧按的键，这一帧画面就得响应」——等事件排队、等回调被叫号，黄花菜都凉了；轮询跟渲染节奏（requestAnimationFrame）锁死，取完就用，零排队。<br/><br/>
+  <strong>这就像</strong>医院里两种护理模式：普通病房是<strong>呼叫铃模式</strong>（事件驱动）——病人按铃，护士来一趟，安静省力；ICU 是<strong>查房模式</strong>（轮询）——护士定时主动巡视，生命体征连续盯梢，一刻不落。事件适合低频离散的事（点了一下、按了一个键），轮询适合高频连续的事（摇杆角度、传感器读数）。这条分界线穿过整个交互工程：陀螺仪、VR 头显位姿、触觉反馈，全都站在轮询这边。顺带一提，手柄也并非完全没有事件——插拔手柄有 gamepadconnected / gamepaddisconnected 通知你，但注意：浏览器规定玩家<strong>按过一次按键之后</strong>才允许页面读到他的手柄（隐私保护，防止网页指纹你的外设）——连「谁在场」都要先敲门，这个设计细节颇有人情味。</p>
+
+  <h3>输入延迟的物理账：从指尖到像素</h3>
+  <p>收尾前算一笔物理账，把这一节和 § 4.1 的账本接上。你按下按钮到界面变色，中间是一整条流水线：<strong>硬件采样</strong>（触摸屏控制器以 120Hz 扫描）→ <strong>系统分发</strong>（OS 把输入事件路由给浏览器）→ <strong>事件排队</strong>（进任务队列等主线程空）→ <strong>你的回调执行</strong>（改状态）→ <strong>渲染管线</strong>（布局→绘制→合成，§ 2.4 那四道工序）→ <strong>下一帧上屏</strong>。每一环都有成本，串起来就是你手感上的「跟手不跟手」。行业里把这条总账叫<strong>输入延迟</strong>（input latency），它是「网页流畅感」三大指标（CLS、INP 之外加上延迟手感）的底层物理。<br/><br/>
+  能省的环节清单，全部对应前面学过的知识：回调里别干重活（§ 4.1 长任务经济学）；touch / wheel 监听器声明 passive（§ 4.2，别让浏览器等你表态）；高频 move 事件合并处理（一帧内只算最后一次位置——浏览器其实也常这么合并派发）；动画用 transform 走合成器（§ 2.5，跳过布局重算）。还有一条反直觉的：操作系统和浏览器会做<strong>输入预测</strong>——在手指真正落下前，按运动轨迹预判落点，先把界面「预滚」一点点，等真实事件到了再校正。你的手指还没到，页面已经在动了——现代设备「跟手感」的最后一口气，是预测算法吹出来的。<strong>好比</strong>外卖平台给你看的「骑手还有 3 分钟到达」：那是按轨迹算出来的预估，不是实测——但只要你晚高峰饿着肚子，这个预估就是体验的全部。</p>
+
+  <h3>排错手册：输入三案</h3>
+  <ul class="keylist">
+    <li><strong>案情一：移动端点一下，函数跑了两遍。</strong>查事件序列：touchstart → touchend 之后还有合成 click。两套逻辑（touch 一套 + click 一套）都绑了？留一套。或者指针时代直接只绑 pointerdown / click 其一。</li>
+    <li><strong>案情二：中文输入法打字，快捷键和联想全乱套。</strong>两处都查 isComposing：keydown 里不过滤，候选框里的方向键回车全被你的快捷键吃掉；input 里不过滤，拼音串被当成搜索词发请求。compositionend 才是「一句话说完」的信号。</li>
+    <li><strong>案情三：拖拽滑块，鼠标一快就跟丢。</strong>指针冲出元素边界了。解药按新潮程度排：pointerdown 里 setPointerCapture（正解）；或把 move/up 监听器挂 window（老办法）；再或者给拖拽影子加 pointer-events: none（如果问题是影子挡路）。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <strong>把这一节想成「前台的一间同声传译总机」</strong><br/>
+    五种客人各说方言：鼠标精确还能悬停，触摸粗放但十指齐下，键盘只递字条没有坐标，手写笔带力度和姿态，手柄干脆不出声只亮灯（要轮询查房）。前台（浏览器）的第一职责是<strong>统一登记</strong>：什么设备（pointerType）、几号客人（pointerId）、说了什么（位置/键值/压力）——Pointer Events 就是那本通用登记簿，共同点做成固定栏目，差异点填进备注栏。<br/><br/>
+    登记之前先<strong>定位到房</strong>（命中测试）：坐标交给 elementFromPoint 那套规则，谁在上面谁接单；pointer-events: none 是全息投影堆头，看得见摸不着。键盘客人特别要照顾两件事：他递的字条可能用不同键盘布局写就（快捷键认 e.code 键帽、文本认 e.key 内容），也可能正在被翻译公司（输入法）截留改稿（composition 草稿态，isComposing 期间别抢着上菜）。<br/><br/>
+    触摸客人自带历史包袱：前台为照顾十年前的老登记系统，会在他走后补录一份鼠标公文（合成点击），偶尔还因「等他确认是不是双击」迟疑 300 毫秒（touch-action 已根治）。笔客人要单独开窗口：压感、倾斜是他的身份证，手掌搭上桌的杂音要靠 pointerType 过滤。手柄客人的房间在 ICU——护士（requestAnimationFrame 循环）定时查房取快照，呼叫铃（事件）在这间房里反而误事。<br/>
+    <mark class="key">最后把镜头拉远：一条动作从指尖到像素要走六站（采样→分发→排队→回调→渲染→上屏），每一站都收过路费——passive、transform、事件合并、输入预测，全是给这条流水线省钱的招。前台听得懂五种方言，账本算得清六站过路费，这一节就算学透了。</mark>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Checklist · 自检</span>
+    <p>写输入相关代码前过一遍：</p>
+    <p>① 新交互从 pointerdown 起步，别从 mousedown 起步——通用语优先，方言按需查 pointerType；<br/>
+    ② 快捷键判 e.code、文本处理判 e.key、组词期判 e.isComposing——三个字段三种用途，别混；<br/>
+    ③ 「按住不放」的交互用 setPointerCapture 锁定管辖权，move/up 挂 window 是上一代写法；<br/>
+    ④ touch / wheel 监听器声明 passive；禁默认手势优先用 CSS 的 touch-action，而不是 JS 里 preventDefault 拉锯；<br/>
+    ⑤ 移动端交互只绑一套（pointer 或 click），防合成点击双触发；<br/>
+    ⑥ 浮层、拖拽影子记得 pointer-events: none，别挡了真目标的命中测试；<br/>
+    ⑦ 连续量（摇杆、传感器、位姿）走轮询 + requestAnimationFrame，离散量（点击、按键）走事件——别用错模型；<br/>
+    ⑧ 悬停类设计同时想想触摸用户：没有 hover 的世界，菜单得有备用入口；<br/>
+    ⑨ 滚轮逻辑先看 deltaMode 单位，防抖要扛得住触控板惯性滚动的几十连发；设计工具的「捏合缩放」认准 ctrlKey 暗号；<br/>
+    ⑩ 绘画、签名类应用用 getCoalescedEvents() 展开合并采样点，别让帧率节流阀吃掉笔迹细节；<br/>
+    ⑪ 多点触控的状态机：pointerup 与 pointercancel 共用一个收摊出口，幽灵记录是缩放算错的第一嫌疑人。</p>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="做一款网页游戏的快捷键：按 W 键前进，要兼容法语键盘、俄语键盘用户。判断「按的是 W」应该用哪个字段？" data-opts="e.key —— 它给出按键产生的字符|e.code —— 它给出键帽的物理位置，与键盘布局无关|e.keyCode —— 数字编码最稳定|e.charCode —— 字符编码专用" data-answer="1" data-explain="e.key 跟着布局走：法式键盘的 W 键位置不同，俄语布局下同一物理键打出的还是西里尔字母——按 e.key==='w' 判断，全世界玩家一起翻车。e.code 认的是「键帽上刻的什么」（物理键位），KeyW 永远是那一颗键，布局、输入法都改变不了它。军规：快捷键认 code，文本认 key。keyCode/charCode 是已废弃的历史遗产，新代码别碰。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="用户开着拼音输入法，在搜索框输入「你好」，做「边打边搜」联想。下面哪个时机发请求最靠谱？" data-opts="每次 keydown 都发——响应最快|每次 input 都发——输入框内容变了就搜|过滤掉 isComposing 为 true 的 input，或等 compositionend 之后再发|每秒定时发一次，不看事件" data-answer="2" data-explain="组词期间 input 事件照样触发，但此刻输入框里躺着的（或候选框里拼着的）是拼音串 ni/ni-hao，拿它当搜索词只会查出一堆原料。isComposing 标记「这次变化属于输入法组词过程」，等 compositionend（选字定稿）或过滤掉组词期的 input，才是「一句话说完了再下单」。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="拖拽滑块时鼠标移动太快，指针冲出了滑块范围，滑块停在半路。最对症的药？" data-opts="把滑块做大一点，让指针跑不出去|在 pointerdown 里调 setPointerCapture(e.pointerId)，此后 move/up 无论指针在哪都派发给滑块|给整个页面挂 pointermove，手动算相对位置|把监听器改成 mousemove 并挂到滑块的父元素上" data-answer="1" data-explain="跟丢的根源是「事件按指针当前位置派发」，指针一出门事件就归了别人。指针捕获把管辖权钉死：按下那一刻这根指针专属本元素，之后无论指针逛到天涯海角，move/up 仍派发给它，松手自动释放。这是 Pointer Events 时代拖拽交互的标准答案；把监听器挂到 window 是它的上一代变体，能用但状态管理更繁琐。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="移动端网页上，用户轻点一次按钮。下面哪个事件序列最接近浏览器的实际派发？" data-opts="click 一个，触摸不产生别的|touchstart → touchend → mousedown → mouseup → click|pointerdown → click → touchstart → mouseup|touchstart → touchmove → click" data-answer="1" data-explain="手机上没有鼠标，但老网页全是为鼠标写的——浏览器在 touchend 后约 10 毫秒补发一整套鼠标事件「翻译」给老代码，click 是这场翻译的最后一步。这也解释了「点一次跑两遍」的经典 bug：touch 和 click 各绑一套逻辑，五份事件两套账。Pointer Events 时代的新代码绑 pointer 系或 click 其一即可，别两套都上。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="为什么游戏手柄的摇杆不走事件系统，而要每帧轮询 navigator.getGamepads()？" data-opts="因为浏览器忘了给手柄实现事件|因为轮询的代码更短|摇杆是高频连续量：事件模式会把队列灌成洪峰，且事件排队有延迟；轮询跟渲染帧率锁定，取最新快照即取即用|因为手柄厂商不同意" data-answer="2" data-explain="两个理由缺一不可：其一频率——摇杆每秒状态变化几百次，全发事件等于给主线程灌洪峰；其二延迟——游戏要求「这一帧的输入这一帧生效」，事件要排队等回调，轮询跟 requestAnimationFrame 锁死、零排队。分界线：低频离散的动作用事件（呼叫铃），高频连续的量用轮询（ICU 查房）。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="做双指缩放图片：两根手指先后按下。touchend 时想读「刚抬起的这根手指」的坐标，该查哪张名单？" data-opts="touches——所有在屏手指|targetTouches——按在本元素上的手指|changedTouches——本次事件中发生变化的那几根|三张名单随便哪张都一样" data-answer="2" data-explain="手指一抬，touches 和 targetTouches 里就已经查无此指（名单是「现在还在场的」），只有 changedTouches 记录着「这次事件的主角」——他的遗像就在里面。反过来，双指都在屏上时算中心点要读 touches（全局在场名单）。三张名单三种语义：全局在场、本店在场、本次当事人，缩放手势的代码全靠分清它们才写得对。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>输入设备一句话：<mark class="key">五种设备各说方言，浏览器是同声传译总机——统一登记成事件，再靠命中测试把坐标落到元素头上。</mark>鼠标家族记时序（down → up → click 结算制，click 要求起落同门），滚轮另有方言（deltaMode 三种单位、触控板惯性几十连发、捏合缩放是带 ctrlKey 暗号的 wheel）；命中测试是「谁在上面谁接单」，pointer-events: none 让浮层与拖拽影子对点击透明；键盘是「没有地址的信封」，靠焦点这本账决定寄给谁——快捷键认 e.code（物理键位，布局无关）、文本认 e.key、keyCode 已废弃、按住带 e.repeat；中文输入法是最大暗坑：229 与 isComposing 标记「组词草稿态」，compositionend 才算一句话说完。触摸有三张名单（touches / targetTouches / changedTouches），touchend 之后还有合成点击（移动端点一次、五份事件两套账的病根），300 毫秒延迟是「等双击的歧义等待」，touch-action 已根治。Pointer Events 是统一战争的终局：共同点做成事件、差异点挂字段（pointerType / pointerId / pressure），指针捕获把「按住不放」的管辖权钉死在按下处；双指缩放是多点触控的完整教学样本——每指一档、基准起跑、pointercancel 与 up 共用收摊出口；触控板黑话（ctrlKey 暗号）与事件合并（getCoalescedEvents 展开底单）是进阶两课；手写笔带来压力与倾斜两整个维度，手柄与传感器站在轮询那边（高频连续量不排队）。最后一笔物理账：从指尖到像素六站流水线，passive、transform、合并、预测都是省钱招。下一节把这些原始事件组装成人类语言——点击、长按、拖拽、双指缩放这些「手势」是怎么从一串 pointer 事件里被识别出来的，以及两个手势抢一个手指时，裁判权归谁。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-2-bubble-capture.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 4.2 · 冒泡与捕获</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-4-gestures.html">
+      <span class="dir">下一节</span>
+      <span class="title">§ 4.4 · 手势识别</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 4.3</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
