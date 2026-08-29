@@ -346,7 +346,7 @@
           createNode('gui-03-2', '§ 3.2 · 流式与定位', '文档流、浮动、absolute / fixed / sticky 的取舍。', '8822 字', [], { href: 'chapters/gui/03-2-flow-position.html', spec: 'pass'}),
           createNode('gui-03-3', '§ 3.3 · Flexbox', '一维弹性布局——主轴、交叉轴、伸缩与对齐。', '9581 字', [], { href: 'chapters/gui/03-3-flexbox.html', spec: 'pass'}),
           createNode('gui-03-4', '§ 3.4 · Grid 网格', '二维网格布局——真正的"报纸排版"能力。', '10054 字', [], { href: 'chapters/gui/03-4-grid.html', spec: 'pass'}),
-          createNode('gui-03-5', '§ 3.5 · 约束布局', '原生 App 的另一套思路——AutoLayout / ConstraintLayout。', '待撰写', []),
+          createNode('gui-03-5', '§ 3.5 · 约束布局', '原生 App 的另一套思路——AutoLayout / ConstraintLayout。', '9510 字', [], { href: 'chapters/gui/03-5-constraint.html', spec: 'pass'}),
           createNode('gui-03-6', '§ 3.6 · 响应式与自适应', '媒体查询、断点、容器查询——一套界面适配所有屏幕。', '待撰写', [])
         ]),
       createNode('gui-04', '第 4 章 · 事件与交互',
