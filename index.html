@@ -444,7 +444,7 @@
       --shadow: 0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.38);
     }
   </style>
-  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-41" />
+  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-42" />
 </head>
 <body>
   <article class="page">
@@ -496,6 +496,10 @@
       <div class="kmap-head">
         <div class="title">学海 · 认知知识树</div>
         <div class="sub">Cognition Tree · 数据驱动 · SVG 自绘</div>
+        <div class="kmap-actions">
+          <button type="button" id="btn-export-progress" title="把学习标记备份为 JSON 文件（换电脑 / 换浏览器时用）">⬇ 备份标记</button>
+          <button type="button" id="btn-import-progress" title="从 JSON 文件恢复学习标记（与现有标记合并）">⬆ 导入标记</button>
+        </div>
       </div>
 
       <div class="tree-toolbar">
@@ -522,11 +526,6 @@
           <button type="button" id="btn-zoom-in" title="放大">＋</button>
           <button type="button" id="btn-zoom-out" title="缩小">−</button>
           <button type="button" id="btn-fit" title="适应画布">⟳ 适应</button>
-        </div>
-        <div class="btn-group-sep"></div>
-        <div class="btn-group">
-          <button type="button" id="btn-export-progress" title="把学习标记备份为 JSON 文件（换电脑 / 换浏览器时用）">⬇ 备份标记</button>
-          <button type="button" id="btn-import-progress" title="从 JSON 文件恢复学习标记（与现有标记合并）">⬆ 导入标记</button>
         </div>
       </div>
 
@@ -1003,9 +1002,9 @@
 
   </article>
 
-  <script src="./_shared/js/progress.js?v=ct-41"></script>
-  <script src="./assets/tree-data.js?v=ct-41"></script>
-  <script src="./assets/cognition-tree.js?v=ct-41"></script>
-  <script src="./_shared/js/theme-toggle.js?v=ct-41"></script>
+  <script src="./_shared/js/progress.js?v=ct-42"></script>
+  <script src="./assets/tree-data.js?v=ct-42"></script>
+  <script src="./assets/cognition-tree.js?v=ct-42"></script>
+  <script src="./_shared/js/theme-toggle.js?v=ct-42"></script>
 </body>
 </html>
