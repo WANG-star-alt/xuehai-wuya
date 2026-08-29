@@ -8,10 +8,11 @@
   'use strict';
 
   // ============ 常量配置 ============
-  const NODE_W_DEFAULT = 184;
+  const NODE_W_DEFAULT = 224;
   const NODE_W_MIN = 120;
   const NODE_W_MAX = 420;
-  const NODE_H = 54;
+  const NODE_H_BASE = 54;   // 单行小字时的节点高度
+  const META_LH = 12;       // 小字每多一行增加的高度（10px 等宽字体的行高）
   const COL_GAP = 80;      // 列间距（额外距离）
   const ROW_GAP = 22;      // 行间距
   const PAD_LEFT = 40;
@@ -62,23 +63,26 @@
   }
 
   // ============ 布局计算 ============
-  // 返回 { positions: Map<id, {x,y}>, worldW, worldH }
+  // 返回 { positions: Map<id, {x,y}>, heights: Map<id, h>, worldW, worldH }
+  // y 一律指节点顶部；小字换行多的节点更高，行距随各自高度累加
   function layout(visibleRoot) {
     const positions = new Map();
-    let leafIndex = 0;
+    const heights = new Map();
+    let cursorY = PAD_TOP;
 
-    // 先计算叶子节点 y
     function assignY(node) {
+      const real = nodeIndex.get(node.id);
+      const h = real ? nodeHeight(real) : NODE_H_BASE;
+      heights.set(node.id, h);
       if (!node.children.length) {
-        const y = PAD_TOP + leafIndex * (NODE_H + ROW_GAP);
-        positions.set(node.id, { x: 0, y });
-        leafIndex++;
-        return y;
+        positions.set(node.id, { x: 0, y: cursorY });
+        cursorY += h + ROW_GAP;
+        return cursorY - ROW_GAP - h / 2;   // 返回节点垂直中心
       }
-      const childYs = node.children.map(assignY);
-      const avg = childYs.reduce((a, b) => a + b, 0) / childYs.length;
-      positions.set(node.id, { x: 0, y: avg });
-      return avg;
+      const childCenters = node.children.map(assignY);
+      const center = childCenters.reduce((a, b) => a + b, 0) / childCenters.length;
+      positions.set(node.id, { x: 0, y: center - h / 2 });
+      return center;
     }
     assignY(visibleRoot);
 
@@ -91,15 +95,13 @@
     assignX(visibleRoot, 0);
 
     // 计算世界尺寸
-    let maxX = 0, maxY = 0;
-    positions.forEach(p => {
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
-    });
+    let maxX = 0;
+    positions.forEach(p => { if (p.x > maxX) maxX = p.x; });
     return {
       positions,
+      heights,
       worldW: maxX + NODE_W + PAD_RIGHT,
-      worldH: maxY + NODE_H + PAD_BOTTOM
+      worldH: Math.max(NODE_H_BASE, cursorY - ROW_GAP) + PAD_BOTTOM
     };
   }
 
@@ -107,6 +109,62 @@
   function truncate(text, max) {
     if (!text) return '';
     return text.length > max ? text.slice(0, max - 1) + '…' : text;
+  }
+
+  // ============ 工具：小字（meta）按框宽自动换行 ============
+  // 估宽系数按真实渲染标定（10px JetBrains Mono + CJK 回退）：
+  // CJK/全角=10px；「·」「–」「—」等由 CJK 回退字体渲染，同为 10px；
+  // 数字、字母、空格、半角标点 = 5px。逐字符求和比整串实测略宽，安全方向。
+  const WIDE_CHARS = new Set(['·', '–', '—', '～', '×', '→', '§', '℃', '％']);
+  function estTextW(s) {
+    let w = 0;
+    for (const ch of String(s)) {
+      const code = ch.codePointAt(0);
+      if (code >= 0x2E80 || WIDE_CHARS.has(ch)) w += 10;
+      else w += 5;
+    }
+    return w;
+  }
+
+  // 先按「 · 」分段，段装不下再整段换行；单段仍超宽则按字符硬折
+  function wrapMeta(text, availW) {
+    if (!text) return [];
+    const segs = String(text).split(' · ');
+    const lines = [];
+    let cur = '';
+    segs.forEach(seg => {
+      if (estTextW(seg) > availW) {
+        if (cur) { lines.push(cur); cur = ''; }
+        let piece = '';
+        for (const ch of seg) {
+          if (estTextW(piece + ch) > availW && piece) { lines.push(piece); piece = ch; }
+          else piece += ch;
+        }
+        cur = piece;
+        return;
+      }
+      const tryLine = cur ? cur + ' · ' + seg : seg;
+      if (!cur || estTextW(tryLine) <= availW) cur = tryLine;
+      else { lines.push(cur); cur = seg; }
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  // 节点小字的行数组（依赖当前 NODE_W，滑块拖动时随 render 重算）
+  function metaLinesOf(realNode) {
+    const hasChildren = realNode.children && realNode.children.length > 0;
+    const nodeWords = realNode.words || realNode.time || '';
+    const text = hasChildren
+      ? nodeWords + ' · ' + realNode.children.length + ' 项'
+      : nodeWords;
+    return wrapMeta(text, NODE_W - 28 - 8);
+  }
+
+  // 节点高度 = 基础高度 + 小字额外行数 × 行高
+  function nodeHeight(realNode) {
+    const n = metaLinesOf(realNode).length;
+    return NODE_H_BASE + Math.max(0, n - 1) * META_LH;
   }
 
   // ============ 工具：SVG 命名空间元素创建 ============
@@ -123,7 +181,7 @@
     if (!root) return;
 
     const visible = createVisibleTree(root);
-    const { positions, worldW, worldH } = layout(visible);
+    const { positions, heights, worldW, worldH } = layout(visible);
 
     // 找到画布元素
     const edgesG = document.getElementById('tree-edges');
@@ -139,16 +197,18 @@
     function drawNode(vnode) {
       const pos = positions.get(vnode.id);
       const realNode = nodeIndex.get(vnode.id);
+      const H = heights.get(vnode.id) || NODE_H_BASE;
       const branch = branchIndex.get(vnode.id);
       const branchColor = branch && branch.color ? branch.color : '#8a8579';
 
       // 先画到子节点的连线
       vnode.children.forEach(child => {
         const cpos = positions.get(child.id);
+        const cH = heights.get(child.id) || NODE_H_BASE;
         const startX = pos.x + NODE_W;
-        const startY = pos.y + NODE_H / 2;
+        const startY = pos.y + H / 2;
         const endX = cpos.x;
-        const endY = cpos.y + NODE_H / 2;
+        const endY = cpos.y + cH / 2;
         const midX = (startX + endX) / 2;
         const path = svg('path', {
           class: 'edge',
@@ -172,11 +232,11 @@
         'aria-label': realNode.label
       });
 
-      // 背景圆角矩形
+      // 背景圆角矩形（高度随小字行数自适应）
       g.appendChild(svg('rect', {
         class: 'node-bg',
         width: NODE_W,
-        height: NODE_H,
+        height: H,
         rx: 10,
         ry: 10
       }));
@@ -190,7 +250,7 @@
       g.appendChild(svg('circle', {
         class: dotClass,
         cx: 14,
-        cy: NODE_H / 2,
+        cy: H / 2,
         r: 6
       }));
 
@@ -198,25 +258,24 @@
       const title = svg('text', {
         class: 'node-title',
         x: 28,
-        y: NODE_H / 2 - 3,
+        y: 24,
         'dominant-baseline': 'middle'
       });
       title.textContent = truncate(realNode.label, NODE_LABEL_MAX);
       g.appendChild(title);
 
-      // 元信息（时间 / 子节点数）
-      const meta = svg('text', {
-        class: 'node-meta',
-        x: 28,
-        y: NODE_H / 2 + 14,
-        'dominant-baseline': 'middle'
+      // 元信息（时间 / 子节点数）——按框宽自动换行，多行时节点加高
+      const metaLines = metaLinesOf(realNode);
+      metaLines.forEach((line, i) => {
+        const meta = svg('text', {
+          class: 'node-meta',
+          x: 28,
+          y: 41 + i * META_LH,
+          'dominant-baseline': 'middle'
+        });
+        meta.textContent = line;
+        g.appendChild(meta);
       });
-      const nodeWords = realNode.words || realNode.time || '';
-      const metaText = hasChildren
-        ? `${nodeWords} · ${realNode.children.length} 项`
-        : nodeWords;
-      meta.textContent = metaText;
-      g.appendChild(meta);
 
       // 改造状态标记（右侧竖直居中的小圆点）——只对有正文的节点显示
       // spec: 'pass' 已达标（绿） / 'todo' 待改造（橙） / 未定义则不显示
@@ -225,7 +284,7 @@
         const dot = svg('circle', {
           class: 'spec-dot ' + (isPass ? 'pass' : 'todo'),
           cx: NODE_W - 11,
-          cy: NODE_H / 2,
+          cy: H / 2,
           r: 4
         });
         // 悬停提示
@@ -262,7 +321,7 @@
         const st = markStats(realNode);
         if (st.done > 0 || st.improve > 0) {
           const bw = NODE_W - 20;
-          const bg = svg('rect', { class: 'markbar-bg', x: 10, y: NODE_H - 6, width: bw, height: 3, rx: 1.5 });
+          const bg = svg('rect', { class: 'markbar-bg', x: 10, y: H - 6, width: bw, height: 3, rx: 1.5 });
           const btip = svg('title', {});
           btip.textContent = '学习进度：已学 ' + st.done + ' / ' + st.total
             + (st.improve ? ' · 待改进 ' + st.improve : '');
@@ -271,14 +330,14 @@
           if (st.done > 0) {
             g.appendChild(svg('rect', {
               class: 'markbar-done',
-              x: 10, y: NODE_H - 6,
+              x: 10, y: H - 6,
               width: bw * st.done / st.total, height: 3, rx: 1.5
             }));
           }
           if (st.improve > 0) {
             g.appendChild(svg('rect', {
               class: 'markbar-improve',
-              x: 10 + bw * st.done / st.total, y: NODE_H - 6,
+              x: 10 + bw * st.done / st.total, y: H - 6,
               width: bw * st.improve / st.total, height: 3, rx: 1.5
             }));
           }
