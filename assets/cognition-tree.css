@@ -775,3 +775,219 @@
   border-color: rgba(130, 145, 115, .3);
   color: #dfe4d5;
 }
+
+/* ============================================================
+   学习进度标记（progress.js 联动）
+   右上角徽章：✓ 已学完（绿）/ ! 待改进（朱红）
+   节点底部双色进度条：绿=已学占比 / 朱红=待改进占比
+   ============================================================ */
+.node .mark-badge circle {
+  fill: #5b9c6d;
+}
+.node .mark-badge.improve circle {
+  fill: #c2563a;
+}
+.node .mark-badge .mark-glyph {
+  fill: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  pointer-events: none;
+}
+.node .mark-badge {
+  cursor: pointer;
+}
+.node:hover .mark-badge.done circle {
+  fill: #4a8a5c;
+}
+.node:hover .mark-badge.improve circle {
+  fill: #a8452c;
+}
+
+.node .markbar-bg {
+  fill: rgba(138, 133, 121, 0.22);
+}
+.node .markbar-done {
+  fill: #5b9c6d;
+}
+.node .markbar-improve {
+  fill: #c2563a;
+}
+
+/* 详情面板 · 我的学习状态 */
+.detail-mark {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(226, 220, 207, 0.9);
+}
+.mark-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+.mark-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.mark-chip.none {
+  color: #8a8579;
+  background: rgba(138, 133, 121, 0.14);
+}
+.mark-chip.done {
+  color: #fff;
+  background: #5b9c6d;
+}
+.mark-chip.improve {
+  color: #fff;
+  background: #c2563a;
+}
+.mark-counts {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #6b665c;
+  margin-top: 4px;
+}
+.mark-note {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #4a4842;
+  background: rgba(242, 237, 228, 0.7);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 6px;
+}
+.mark-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.mark-toggle {
+  font-size: 12px;
+  padding: 7px 13px;
+}
+.mark-toggle.done.active {
+  background: #5b9c6d;
+  border-color: #5b9c6d;
+  color: #fff;
+}
+.mark-toggle.done.active:hover {
+  background: #4a8a5c;
+  border-color: #4a8a5c;
+  color: #fff;
+}
+.mark-toggle.improve.active {
+  background: #c2563a;
+  border-color: #c2563a;
+  color: #fff;
+}
+.mark-toggle.improve.active:hover {
+  background: #a8452c;
+  border-color: #a8452c;
+  color: #fff;
+}
+.mark-note-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 8px 11px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #2b2a26;
+  background: rgba(242, 237, 228, 0.7);
+  border: 1px dashed rgba(216, 209, 194, 0.9);
+  border-radius: 6px;
+  outline: none;
+}
+.mark-note-input:focus {
+  border-color: #c2563a;
+  border-style: solid;
+}
+
+/* 图例：学习标记 */
+.tree-legend .legend-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  color: #fff;
+}
+.tree-legend .legend-mark.done {
+  background: #5b9c6d;
+}
+.tree-legend .legend-mark.improve {
+  background: #c2563a;
+}
+
+/* 暗色模式 · 学习标记 */
+[data-theme="dark"] .node .mark-badge circle {
+  fill: #6fae7e;
+}
+[data-theme="dark"] .node .mark-badge.improve circle {
+  fill: #d97a5e;
+}
+[data-theme="dark"] .node .markbar-bg {
+  fill: rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .node .markbar-done {
+  fill: #6fae7e;
+}
+[data-theme="dark"] .node .markbar-improve {
+  fill: #d97a5e;
+}
+[data-theme="dark"] .detail-mark {
+  border-top-color: rgba(130, 145, 115, 0.3);
+}
+[data-theme="dark"] .mark-chip.none {
+  color: #9aa48c;
+  background: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .mark-chip.done {
+  background: #6fae7e;
+  color: #1f2618;
+}
+[data-theme="dark"] .mark-chip.improve {
+  background: #d97a5e;
+  color: #2a1712;
+}
+[data-theme="dark"] .mark-counts {
+  color: #9aa48c;
+}
+[data-theme="dark"] .mark-note {
+  color: #dfe4d5;
+  background: rgba(52, 58, 48, 0.9);
+}
+[data-theme="dark"] .mark-toggle.done.active {
+  background: #6fae7e;
+  border-color: #6fae7e;
+  color: #1f2618;
+}
+[data-theme="dark"] .mark-toggle.improve.active {
+  background: #d97a5e;
+  border-color: #d97a5e;
+  color: #2a1712;
+}
+[data-theme="dark"] .mark-note-input {
+  color: #dfe4d5;
+  background: rgba(52, 58, 48, 0.9);
+  border-color: rgba(130, 145, 115, 0.3);
+}
+[data-theme="dark"] .tree-legend .legend-mark.done {
+  background: #6fae7e;
+  color: #1f2618;
+}
+[data-theme="dark"] .tree-legend .legend-mark.improve {
+  background: #d97a5e;
+  color: #2a1712;
+}

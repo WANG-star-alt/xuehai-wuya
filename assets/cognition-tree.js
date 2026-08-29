@@ -235,6 +235,56 @@
         g.appendChild(dot);
       }
 
+      // 学习标记徽章：右上角 ✓ 已学完（绿）/ ! 待改进（朱红）——读者自己打的标记
+      const mark = getMark(vnode.id);
+      if (mark) {
+        const mg = svg('g', { class: 'mark-badge ' + mark.status });
+        mg.appendChild(svg('circle', { cx: NODE_W - 13, cy: 13, r: 9 }));
+        const glyph = svg('text', {
+          class: 'mark-glyph',
+          x: NODE_W - 13,
+          y: 13.8,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle'
+        });
+        glyph.textContent = mark.status === 'done' ? '✓' : '!';
+        mg.appendChild(glyph);
+        const mtip = svg('title', {});
+        mtip.textContent = (mark.status === 'done' ? '已学完' : '待改进')
+          + ' · ' + fmtMarkDate(mark.ts)
+          + (mark.note ? ' · 备注：' + mark.note : '');
+        mg.appendChild(mtip);
+        g.appendChild(mg);
+      }
+
+      // 学习进度条：节点底部双色细条（绿=已学占比 / 朱红=待改进占比）
+      if (hasChildren && window.XHY_PROGRESS) {
+        const st = markStats(realNode);
+        if (st.done > 0 || st.improve > 0) {
+          const bw = NODE_W - 20;
+          const bg = svg('rect', { class: 'markbar-bg', x: 10, y: NODE_H - 6, width: bw, height: 3, rx: 1.5 });
+          const btip = svg('title', {});
+          btip.textContent = '学习进度：已学 ' + st.done + ' / ' + st.total
+            + (st.improve ? ' · 待改进 ' + st.improve : '');
+          bg.appendChild(btip);
+          g.appendChild(bg);
+          if (st.done > 0) {
+            g.appendChild(svg('rect', {
+              class: 'markbar-done',
+              x: 10, y: NODE_H - 6,
+              width: bw * st.done / st.total, height: 3, rx: 1.5
+            }));
+          }
+          if (st.improve > 0) {
+            g.appendChild(svg('rect', {
+              class: 'markbar-improve',
+              x: 10 + bw * st.done / st.total, y: NODE_H - 6,
+              width: bw * st.improve / st.total, height: 3, rx: 1.5
+            }));
+          }
+        }
+      }
+
       // 后面不再显示状态圆点（前面的圆点已经区分了）
 
       // 事件
@@ -331,6 +381,34 @@
       buttons += `<button class="detail-btn accent" data-action="open">打开完整学习章节 →</button>`;
     }
 
+    // 我的学习状态块（progress.js 存在时才显示）
+    let markBlock = '';
+    if (window.XHY_PROGRESS) {
+      const mk = getMark(id);
+      const st = hasChildren ? markStats(node) : null;
+      const statusHtml = !mk
+        ? '<span class="mark-chip none">未标记</span>'
+        : mk.status === 'done'
+          ? '<span class="mark-chip done">已学完 · ' + fmtMarkDate(mk.ts) + '</span>'
+          : '<span class="mark-chip improve">待改进 · ' + fmtMarkDate(mk.ts) + '</span>';
+      markBlock = `
+        <div class="detail-mark">
+          <div class="meta-label">我的学习状态</div>
+          <div class="mark-status-row">${statusHtml}</div>
+          ${st && (st.done > 0 || st.improve > 0)
+            ? `<div class="mark-counts">包含小节：已学 ${st.done} / ${st.total}` + (st.improve > 0 ? ` · 待改进 ${st.improve}` : '') + '</div>'
+            : ''}
+          ${mk && mk.note ? `<div class="mark-note">备注：${escapeHtml(mk.note)}</div>` : ''}
+          <div class="mark-actions">
+            <button class="detail-btn mark-toggle done${mk && mk.status === 'done' ? ' active' : ''}" data-action="mark" data-status="done">✓ 标记已学完</button>
+            <button class="detail-btn mark-toggle improve${mk && mk.status === 'improve' ? ' active' : ''}" data-action="mark" data-status="improve">⚠ 标记待改进</button>
+          </div>
+          ${mk && mk.status === 'improve'
+            ? `<input type="text" class="mark-note-input" maxlength="300" placeholder="记一笔：哪里需要改进？（可选）" value="${escapeHtml(mk.note || '')}">`
+            : ''}
+        </div>`;
+    }
+
     panel.innerHTML = `
       <div class="detail-header" style="border-left-color:${branchColor}">
         <div class="detail-depth">第 ${depth} 层</div>
@@ -343,6 +421,7 @@
           <div class="meta-item"><span class="meta-label">子节点</span><span class="meta-value">${hasChildren ? node.children.length + ' 项' : '叶子节点'}</span></div>
           ${node.spec ? `<div class="meta-item"><span class="meta-label">规范状态</span><span class="meta-value spec-${node.spec}">${node.spec === 'pass' ? '已达标' : '待改造'}</span></div>` : ''}
         </div>
+        ${markBlock}
         <div class="detail-path">
           <div class="path-label">完整路径</div>
           <div class="path-value">${escapeHtml(pathText)}</div>
@@ -357,14 +436,50 @@
         const action = btn.getAttribute('data-action');
         if (action === 'toggle') toggleNode(id);
         else if (action === 'open' && node.href) window.location.href = node.href;
+        else if (action === 'mark' && window.XHY_PROGRESS) {
+          const status = btn.getAttribute('data-status');
+          const cur = window.XHY_PROGRESS.get(id);
+          window.XHY_PROGRESS.mark(id, cur && cur.status === status ? null : status);
+          render();
+        }
       });
     });
+
+    // 备注输入框（仅待改进状态显示）
+    const noteInput = panel.querySelector('.mark-note-input');
+    if (noteInput) {
+      noteInput.addEventListener('change', () => {
+        window.XHY_PROGRESS.setNote(id, noteInput.value);
+        updateDetailPanel();
+      });
+    }
   }
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
     );
+  }
+
+  // ============ 学习进度标记（progress.js 提供 window.XHY_PROGRESS） ============
+  function getMark(id) {
+    return window.XHY_PROGRESS ? window.XHY_PROGRESS.get(id) : null;
+  }
+
+  // 统计节点所有叶子后代的学习标记（章节进度 = 小节进度的合计）
+  function markStats(node) {
+    const ids = [];
+    (function walk(n) {
+      if (!n.children || !n.children.length) { ids.push(n.id); return; }
+      n.children.forEach(walk);
+    })(node);
+    const c = window.XHY_PROGRESS ? window.XHY_PROGRESS.counts(ids) : { done: 0, improve: 0 };
+    return { done: c.done, improve: c.improve, total: ids.length };
+  }
+
+  function fmtMarkDate(ts) {
+    const d = new Date(ts);
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
   }
 
   // ============ 缩放/拖动 ============
@@ -669,16 +784,23 @@
       const el = document.getElementById('legend-stat');
       if (!el) return;
       let pass = 0, todo = 0, none = 0;
+      const leafIds = [];
       nodeIndex.forEach(node => {
         const isLeaf = !node.children || !node.children.length;
         if (!isLeaf) return;
+        leafIds.push(node.id);
         if (node.spec === 'pass') pass++;
         else if (node.spec === 'todo') todo++;
         else none++;
       });
       const written = pass + todo;
       const pct = written ? Math.round(pass / written * 100) : 0;
-      el.textContent = `已达标 ${pass} / 已撰写 ${written}（${pct}%）· 未撰写 ${none}`;
+      let text = `已达标 ${pass} / 已撰写 ${written}（${pct}%）· 未撰写 ${none}`;
+      if (window.XHY_PROGRESS) {
+        const c = window.XHY_PROGRESS.counts(leafIds);
+        text += ` · 已学 ${c.done}/${leafIds.length}` + (c.improve > 0 ? ` · 待改进 ${c.improve}` : '');
+      }
+      el.textContent = text;
     })();
 
     // 默认收起所有 depth >= 2 的分支
@@ -690,6 +812,10 @@
     });
 
     bindEvents();
+    // 学习标记变化时整树重绘（含跨标签页 storage 事件触发的场景）
+    if (window.XHY_PROGRESS) {
+      window.XHY_PROGRESS.onChange(() => render());
+    }
     // 同步滑块显示值
     const wOut = document.getElementById('node-width-value');
     if (wOut) wOut.textContent = NODE_W + 'px';
