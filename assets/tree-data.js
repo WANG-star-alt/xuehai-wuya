@@ -271,9 +271,9 @@
       ),
       createNode('net-08', '第 8 章 · 网络安全',
         '加密、证书、XSS、CSRF、DDoS、零信任——防御网络攻击。',
-        '待撰写',
+        '更新中 · 已上线 § 8.1',
         [
-          createNode('net-08-1', '§ 8.1 · 对称与非对称加密', 'AES vs RSA——一把钥匙 vs 一对钥匙。', '待撰写', []),
+          createNode('net-08-1', '§ 8.1 · 对称与非对称加密', 'AES vs RSA——一把钥匙 vs 一对钥匙。', '9275 字', [], { href: 'chapters/network/08-1-encryption.html', spec: 'pass'}),
           createNode('net-08-2', '§ 8.2 · 数字证书与 CA', '证书链、根证书、自签名——凭什么信任一个网站。', '待撰写', []),
           createNode('net-08-3', '§ 8.3 · Web 攻击', 'XSS、CSRF、SQL 注入、SSRF——最常见的四种打法。', '待撰写', []),
           createNode('net-08-4', '§ 8.4 · DDoS 与防护', '流量型 vs 应用型攻击、清洗中心、限流策略。', '待撰写', []),
