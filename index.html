@@ -302,6 +302,7 @@
       background: var(--bg2);
     }
     .ch-card.ready .badge { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
+    .ch-card.updating .badge { color: var(--accent2); border-color: rgba(160,90,44,.25); background: rgba(160,90,44,.08); }
 
     /* === Volume divider (小分卷) === */
     .vol-divider {
@@ -443,7 +444,7 @@
       --shadow: 0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.38);
     }
   </style>
-  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-39" />
+  <link rel="stylesheet" href="./assets/cognition-tree.css?v=ct-40" />
 </head>
 <body>
   <article class="page">
@@ -742,15 +743,15 @@
 
     <div class="vol-divider">卷三 · 现代 · Modern &amp; Wireless</div>
     <div class="chapters">
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card ready" href="./chapters/network/06-1-wifi.html">
+        <span class="badge">已上线</span>
         <div class="no">CH · 06</div>
         <h3>无线与移动</h3>
         <div class="en">Wireless</div>
         <p>WiFi 6/7、蓝牙、4G / 5G / 6G、卫星互联网。</p>
       </a>
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card ready" href="./chapters/network/07-cloud-edge.html">
+        <span class="badge">已上线</span>
         <div class="no">CH · 07</div>
         <h3>云与边缘</h3>
         <div class="en">Cloud &amp; Edge</div>
@@ -760,22 +761,22 @@
 
     <div class="vol-divider">卷四 · 安全与排错 · Security &amp; Ops</div>
     <div class="chapters">
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card ready" href="./chapters/network/08-security.html">
+        <span class="badge">已上线</span>
         <div class="no">CH · 08</div>
         <h3>网络安全</h3>
         <div class="en">Security</div>
         <p>加密、证书、常见威胁、VPN、零信任。</p>
       </a>
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card ready" href="./chapters/network/09-toolbox.html">
+        <span class="badge">已上线</span>
         <div class="no">CH · 09</div>
         <h3>排错工具箱</h3>
         <div class="en">Troubleshooting</div>
         <p>ping / traceroute / dig / curl / Wireshark——五个救急命令。</p>
       </a>
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card ready" href="./chapters/network/10-evolution.html">
+        <span class="badge">已上线</span>
         <div class="no">CH · 10</div>
         <h3>现代协议演进</h3>
         <div class="en">Modern Protocols</div>
@@ -816,15 +817,15 @@
 
     <div class="vol-divider">卷二 · 骨架 · Layout &amp; Events</div>
     <div class="chapters">
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card ready" href="./chapters/gui/03-layout.html">
+        <span class="badge">已上线</span>
         <div class="no">CH · 03</div>
         <h3>布局与排版</h3>
         <div class="en">Layout Systems</div>
         <p>盒模型、Flex / Grid、约束布局、响应式——元素为什么待在那个位置。</p>
       </a>
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card ready" href="./chapters/gui/04-interaction.html">
+        <span class="badge">已上线</span>
         <div class="no">CH · 04</div>
         <h3>事件与交互</h3>
         <div class="en">Events &amp; Interaction</div>
@@ -834,12 +835,12 @@
 
     <div class="vol-divider">卷三 · 平台 · Frameworks</div>
     <div class="chapters">
-      <a class="ch-card wip" href="#">
-        <span class="badge">建设中</span>
+      <a class="ch-card updating" href="./chapters/gui/05-1-choice-map.html">
+        <span class="badge">更新中</span>
         <div class="no">CH · 05</div>
         <h3>桌面 GUI 工具箱</h3>
-        <div class="en">Desktop GUI Toolbox · 14 Sections</div>
-        <p>Tkinter / PySide6 / Flet / NiceGUI / Dear PyGui / WPF / Avalonia / Electron / Tauri——14 种工具选型与实战。</p>
+        <div class="en">Desktop GUI Toolbox · 6 Sections</div>
+        <p>按"你要做什么"组织：选型地图、Tkinter 小工具、Qt 正经应用、数据面板、Electron / Tauri、打包分发。</p>
       </a>
       <a class="ch-card wip" href="#">
         <span class="badge">建设中</span>
@@ -995,8 +996,8 @@
 
   </article>
 
-  <script src="./assets/tree-data.js?v=ct-39"></script>
-  <script src="./assets/cognition-tree.js?v=ct-39"></script>
-  <script src="./_shared/js/theme-toggle.js?v=ct-39"></script>
+  <script src="./assets/tree-data.js?v=ct-40"></script>
+  <script src="./assets/cognition-tree.js?v=ct-40"></script>
+  <script src="./_shared/js/theme-toggle.js?v=ct-40"></script>
 </body>
 </html>
