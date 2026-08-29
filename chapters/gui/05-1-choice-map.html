@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 5.1 · 选型地图：先想清楚要做什么 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 5 章</span>
+      <span class="sep">›</span>
+      <span>§ 5.1</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 5.1 · Section</div>
+    <h1>选型地图：先想清楚要做什么</h1>
+    <div class="cn">The Selection Map · Choose the Tool After You Know the Job</div>
+  </header>
+
+  <p class="lead">
+    前四章是一场原理的远征：像素怎么画（第 2 章）、版面怎么摆（第 3 章）、点击背后发生了什么（第 4 章）。现在原理弹药带够了，第 5 章换挡，从「懂了」走向「做出来」。但动手写第一行代码之前，横着一个小白必栽的坑：<strong>工具选什么？</strong>Tkinter、PySide6、Streamlit、Electron、Tauri、Avalonia……名字比概念还多，论坛上人人都有自己的心头好，吵得不可开交。<mark class="key">本节的论点只有一句话：先想清楚要做什么，再决定用什么做——顺序反了，就是拿着锤子满世界找钉子。</mark>这一节把整个桌面界面开发的世界画成一张地图：先教你用五个问题把「我想做个东西」翻译成清楚的需求，再把五大技术栈各自的看家本领和致命短板讲明白，最后给出一张决策树、一张对比总表、三类典型人群的答案卷。读完你未必立刻会写界面，但你一定知道自己该往哪条路走——<strong>选型选对了，后面五节的路程至少省一半力气。</strong>
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧰 老陈不带徒弟去买那套德国工具</div>
+    <p>厂里干了三十年维修的老陈，工具间整整一面墙的家什。徒弟小林入职第一天就想刷一套德国进口的 108 件工具——「一步到位，省得以后再买」。老陈没接话，先问了一句：<strong>「你明天要干的第一个活是什么？」</strong>「给车间的配电柜换个螺丝。」「那你今天只需要一把十字螺丝刀，仓库领，不要钱。」<br/><br/>
+    小林不服气。一个月跟下来，他发现自己腰带上只有五件家什——一把螺丝刀、一支电笔、一把尖嘴钳、一卷绝缘胶带、一支手电——但每一件都天天在用，那套想象中的 108 件从头到尾没派上过用场。老陈说：<strong>「工具是拿来干活的，不是拿来收藏的。先有活，后有工具。」</strong><br/><br/>
+    小林后来又发现一个细节：五金城从来不按品牌分区——没有「博世区」「得伟区」，只有「钻孔区」「水电区」「木工区」。你要打孔，就直奔钻区比较几款钻；而不是先决定「我这一生只用博世」，再琢磨拿它干点啥。<mark class="key">第 5 章就是界面开发的五金城：六大节按「你要做什么」分区，不按框架品牌分区——而本节，是门口那张导购图。</mark></p>
+  </div>
+
+  <h3>术语对照：先把这一节的行话翻译成人话</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>生活里的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>技术栈（tech stack）</td><td>从语言、框架到打包工具的一整套家伙</td><td>整套工具腰带，不是单件</td></tr>
+        <tr><td>GUI 框架 / 工具箱（toolkit）</td><td>帮你画窗口、画按钮、管点击的标准件库</td><td>预制板和脚手架</td></tr>
+        <tr><td>原生控件（native widgets）</td><td>操作系统亲生的按钮、窗口，长哪样像哪样</td><td>本地老字号，祖传配方</td></tr>
+        <tr><td>自绘控件（custom-drawn）</td><td>框架自己画的控件，跨平台长得一样</td><td>连锁店统一装修</td></tr>
+        <tr><td>保留模式（retained mode）</td><td>框架养着一棵控件树，你改它重画</td><td>小区物业托管绿化</td></tr>
+        <tr><td>即时模式（immediate mode）</td><td>没有控件树，每帧你的代码亲手把界面画一遍</td><td>每天现做现卖的路边摊</td></tr>
+        <tr><td>WebView</td><td>嵌在程序里的浏览器内核，专门用来显示网页界面</td><td>店里隔出来的展示橱窗</td></tr>
+        <tr><td>C/S 与 B/S</td><td>装在电脑上的客户端 / 借浏览器当界面的服务端</td><td>堂食 vs 外卖</td></tr>
+        <tr><td>打包（packaging）</td><td>把程序连同运行环境塞成一个双击就能跑的文件</td><td>出厂前的整箱封装</td></tr>
+        <tr><td>信号槽（signal-slot）</td><td>Qt 的事件对接头：一个信号发出，多个槽响应</td><td>对讲机频道</td></tr>
+        <tr><td>XAML</td><td>.NET 系用 XML 语法描述界面的语言</td><td>装修施工图</td></tr>
+        <tr><td>决策树（decision tree）</td><td>一串是/否问题，答到底就落到答案上</td><td>医院分诊台的问诊流程</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>选型为什么是第一课：先有活，后有工具</h3>
+  <p>新手教程惯常的顺序是「先学工具，再做项目」：第一章装环境，第二章写 Hello World，第十章才轮到你想要的东西。这个顺序对学语言没问题，对选框架却是灾难——因为你连自己要做什么都没说清，凭什么决定用哪个工具？<strong>说白了</strong>，框架之争吵不出胜负的根本原因是：争论双方做的根本不是同一件事。做三天小工具的人说 Tkinter 真香，做工业软件的人说 Qt 才是正经路，写前端出身的人说 Electron 生态无敌——<strong>他们都没说错，因为他们手里的「活」不一样。</strong><br/><br/>
+    选错工具的代价分三层，一层比一层贵：<strong>学不会</strong>（工具与你的语言背景错位，入门就卡死）、<strong>做不完</strong>（工具的短板恰好撞在你的需求上，比如用纯 Tkinter 硬撑多窗口复杂交互）、<strong>养不起</strong>（东西做出来了，但打包 200MB、用户装不上、每次更新要重发）。第三层最隐蔽也最致命——它在你「做完」之后才发作。<br/><br/>
+    所以本节的任务不是「告诉你哪个框架最好」——世界上没有最好的框架，只有最合适的框架——而是给你一套<strong>把需求翻译成技术条件</strong>的方法。翻译做完，答案往往是显然的；翻译没做，看再多对比文章也是越看越糊涂。打个比方：相亲不先想清楚自己要过什么日子，条件列表再长也挑不出人。
+  </p>
+
+  <h3>第一问：给谁用——受众决定一切成本</h3>
+  <p>五个问题里，「给谁用」排在第一，因为<strong>它决定你后面所有成本的大小</strong>。受众分三档，一档比一档贵：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>受众</th><th>部署成本</th><th>典型场景</th><th>生活对照</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>只有自己</td><td>零——装好环境就能跑，界面丑都无所谓</td><td>批量改文件名、爬虫结果查看</td><td>在家做饭，穿着围裙随便吃</td></tr>
+        <tr><td>同事 / 小圈子</td><td>中——对方电脑可能没装 Python，得打包成 exe</td><td>部门内部查库存、生成报表</td><td>食堂做饭，得保证人人能吃</td></tr>
+        <tr><td>陌生公众</td><td>高——安装包、代码签名、自动更新、多平台，一样不能少</td><td>上架分发的正经产品</td><td>开餐厅，消防卫生执照齐全</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>同一道菜，自家吃和开餐厅卖，要求天差地别：自家吃不用管卖相，餐厅要管食材溯源、出餐速度、顾客投诉。<strong>界面开发一模一样</strong>：给自己用，Tkinter 默认那副九十年代外观完全不影响；发给陌生用户，启动慢两秒、安装包大 100MB，都会被直接卸载。很多人选型翻车，就是<strong>用第一档的需求，操第三档的心</strong>——明明是给自己用的脚本加壳，却纠结「这个框架打包出来不够专业」。反过来也一样：要做正经产品，就不能只图「写起来快」。<br/><br/>
+    判断受众还有个隐藏问题：<strong>用户的电脑环境你控制不了</strong>。同事的电脑可能是五年前的 Win7，陌生用户里有人用 4K 屏、有人用 13 寸笔记本——这些都会反过来影响选型（详见 § 5.6 打包与分发）。
+  </p>
+
+  <h3>第二问和第三问：要不要联网、你最顺手哪门语言</h3>
+  <p><strong>第二问：要不要联网、要不要多端？</strong>如果答案是「要」——比如希望手机上也能打开、或者界面要给别人远程看——那你的最佳路线大概率是 B/S 架构：程序在你电脑或服务器上跑，界面借浏览器显示。这样一来，Win/Mac/手机三端全通，用户什么都不用装，只要有个浏览器。Streamlit、Gradio、NiceGUI（§ 5.4）走的就是这条路，本质上就是<strong>「外卖模式」：厨房在你家，菜送到任何人的浏览器窗口</strong>。反过来，如果答案是「不要」——工具就该离线跑、数据不出本机——那就走 C/S 纯桌面路线，本节地图上的另外四个阵营。<br/><br/>
+    <strong>第三问：你最顺手的语言是什么？</strong>这一问经常被新手忽略，却是杀伤力最大的一问。<strong>「学一门新语言 + 学一个新框架」双线作战，是新手翻车的头号原因。</strong>界面框架只是语言之上的皮：你顺 Python，那 Tkinter、PySide6、Streamlit 全在你的一亩三分地里；你是前端出身，Electron 和 Tauri 让你丝滑复用全部手艺；你写 C#，.NET 全家和 Avalonia 敞开大门。语言的语法、调试、生态你都要现学，再叠加一个框架的事件模型、布局系统——<strong>说白了，就是同时扛两座山。</strong>除非有硬理由，否则永远选你已有语言覆盖的路线：先会做东西，再谈换语言。
+  </p>
+
+  <h3>五大技术栈全景图：一张地图看全界面世界</h3>
+  <p>三个问题答完，可以摊开地图了。整个「给程序做界面」的世界，主流路线恰好聚成五大阵营——不是按品牌分，是按「用什么换什么」分：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>阵营</th><th>代表框架</th><th>一句话定位</th><th>用什么换什么</th><th>详见</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>① 自带瑞士军刀</td><td>Tkinter / CustomTkinter</td><td>Python 标准库自带，装完 Python 就有</td><td>用「外观与上限」换「零成本启动」</td><td>§ 5.2</td></tr>
+        <tr><td>② 工业重装备</td><td>PySide6 / PyQt6（Qt）</td><td>三十年老牌跨平台 C++ 框架的 Python 通道</td><td>用「学习曲线与体积」换「专业级能力」</td><td>§ 5.3</td></tr>
+        <tr><td>③ 借浏览器当脸面</td><td>Streamlit / Gradio / NiceGUI</td><td>本地跑逻辑，浏览器当界面</td><td>用「桌面感」换「零前端知识 + 天然跨端」</td><td>§ 5.4</td></tr>
+        <tr><td>④ 背浏览器的桌面</td><td>Electron / Tauri</td><td>用网页技术写桌面软件</td><td>用「体积与内存」换「整个前端生态」</td><td>§ 5.5</td></tr>
+        <tr><td>⑤ 操作系统的亲儿子</td><td>Win32 / WinForms / WPF / WinUI / Avalonia</td><td>微软原生路线与 C# 跨平台双雄</td><td>用「只此一家的深度」换「原生性能与脸面」</td><td>§ 5.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看地图要提醒一句：<strong>地图不是领土。</strong>这张表说的是每个阵营的「人设」，真实项目里阵营之间有大量交叉——Qt 里能嵌网页，Electron 应用可以调本地接口，Streamlit 的界面本质也是网页（第 6 章讲的三件套就在浏览器里跑）。但作为选型的第一张地图，先认人设再谈交叉，条理最清楚。接下来把五个阵营挨个走一遍，每个只讲三件事：<strong>它凭什么立身、它擅长什么活、它的死穴在哪。</strong>细节留给后面四节，这里先把「脸」认全。
+  </p>
+
+  <h3>阵营一：Python 自带的瑞士军刀——Tkinter 与 CustomTkinter</h3>
+  <p>Tkinter 的立身之本只有四个字：<strong>标准库自带</strong>。只要装了 Python，Tkinter 就躺在里面，一行 import 就能用，不装任何第三方包。它的底层是 Tcl/Tk——一套 1991 年就问世的老牌界面库，三十年风吹雨打，稳定得像块砖。用 Python 写小工具的人几乎都绕不开它：<strong>批量重命名、Excel 合并器、定时提醒、给爬虫脚本加个「开始/停止」按钮</strong>——这类「表单级」的小活，Tkinter 从想法到能跑，常常不超过一小时。<br/><br/>
+    CustomTkinter 则是给这把军刀换了个刀柄：同一套控件、同一套写法，但换上现代化的圆角、深色模式、扁平外观——Tkinter 默认那张九十年代的脸，被它整容成了当代审美。学 Tkinter 的成本几乎原封不动地继承过来。<br/><br/>
+    它的死穴也摆在明面上：<strong>复杂界面代码量爆炸</strong>。三五个输入框的小窗口是它的主场；一旦要多窗口嵌套、复杂列表、专业表格编辑，代码会以肉眼可见的速度失控——没有拖拽设计器，每个控件都要手写位置和样式。就像骑自行车去隔壁小区，方便；骑它去外地，就是自讨苦吃。给谁用、做多复杂的判断在这里立竿见影：自己用的小工具，它是命中注定的答案；正经产品，它撑不起门面。施工细节见 § 5.2。</p>
+  <p>体量有多小？一个能点按钮、弹提示框的完整窗口，六行搞定：</p>
+  <pre><code>import tkinter as tk
+from tkinter import messagebox
+
+root = tk.Tk()                                # 主窗口
+tk.Button(root, text='点我',
+          command=lambda: messagebox.showinfo('你好', '就这么快')).pack()
+root.mainloop()                               # 事件循环：窗口的发动机</code></pre>
+  <p>这就是它三十年不倒的底气：<strong>说白了，门槛低到几乎没有</strong>——别的阵营还在装依赖、配环境，你的窗口已经弹出来了。注意最后一行的 mainloop()，它是这套代码里唯一的「玄学」：窗口明明死循环等着，界面却照样能点——这正是第 4.1 节讲的事件循环，本节末尾「跨阵营通用法则」还会回收这个伏笔。
+  </p>
+
+  <h3>阵营二：工业级重装备——PySide6 / PyQt6 与 Qt</h3>
+  <p>Qt 是 1995 年从挪威起家的 C++ 跨平台框架，三十年攒下一身肌肉：WPS Office、VirtualBox、OBS Studio、Autodesk Maya 的界面都是它。Python 想借用这套肌肉，有两条官方通道：<strong>PyQt6</strong>（Riverbank 公司维护，GPL 或付费商业双授权）和 <strong>PySide6</strong>（Qt 官方亲维护，LGPL 授权更宽松，商用更省心）。两者 API 几乎是镜像的，教程互相通用——新人闭眼选 PySide6 即可。<br/><br/>
+    它的立身本领是<strong>「正经应用」四个字全包</strong>：多窗口、菜单栏、状态栏、停靠面板、表格树形列表、多线程任务、数据库接口，工业软件需要的能力清单它几乎都打了勾。两件招牌工具尤其值钱：<strong>信号槽机制</strong>——界面事件和业务逻辑之间的对接头，比直接绑回调函数干净一个量级（它就是 Qt 版的事件系统，原理上与 § 4.2 讲的监听器同宗）；<strong>Qt Designer 拖拽设计器</strong>——控件拖进画布、对齐、保存成 .ui 文件，一行布局代码都不用写。<br/><br/>
+    死穴是两个字：<strong>重</strong>。学习曲线陡——信号槽、布局管理器、模型/视图架构，每一层都要交学费；打包体积大，一个空窗口出来就是几十 MB；概念密度高，新手从 Tkinter 直接跳过来，常见「每行代码都懂、合起来不知道在干嘛」的失重感。它像一辆家用轿车：全能主力，但考驾照、养车、加油，样样都是成本。施工细节见 § 5.3。</p>
+  <p>同一个「点我改标题」的窗口，Qt 版长这样——行数多了些，但每一行都能对上一个正经概念：</p>
+  <pre><code>from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton
+
+app = QApplication([])              # 第一个对象永远是「应用」本身
+win = QMainWindow()                 # 主窗口
+btn = QPushButton('点我', win)      # 按钮放进窗口
+btn.clicked.connect(lambda: win.setWindowTitle('被点过了'))   # 信号接槽
+win.show()                          # Qt 的窗口默认不显示，要喊一嗓子
+app.exec()                          # 进入事件循环——§ 4.1 那口心脏</code></pre>
+  <p>两段代码并排看，阵营间的「信息密度差」一目了然：Tkinter 版没有一个概念超出 Python 常识，Qt 版却塞进了应用对象、主窗口、信号槽、显式 show——<strong>多出来的每一行，都是为「正经软件」这个目标预付的成本。</strong>
+  </p>
+
+  <h3>阵营三：借浏览器当脸面——Streamlit / Gradio / NiceGUI</h3>
+  <p>这一阵营的思路最讨巧：<strong>干脆不自己画界面，把画界面的活外包给浏览器。</strong>程序在你本地（或服务器）起一个小型 Web 服务，逻辑全在 Python 里跑，界面则是一个自动生成的网页——用户开个浏览器标签页就能用，手机、平板、别人的电脑，全都直接访问。<strong>这就是前面说的「外卖模式」：厨房还是你家厨房（Python 环境），菜却可以送到任何一间办公室。</strong><br/><br/>
+    三件代表产品各有侧重：<strong>Streamlit</strong>（2019 年）主打「脚本即应用」——你写一段顺序执行的 Python，它自动变成带按钮、滑块、图表的交互页面，每点一下就把脚本重跑一遍，数据科学圈的主力装备；<strong>Gradio</strong> 被 Hugging Face 收进门下，专做 AI 模型演示——上传图片、返回识别结果，十几行代码一个演示页，机器学习领域的标配；<strong>NiceGUI</strong> 则更接近「用 Python 写网页」，布局自由度最高，适合要长得像正经网站的内部系统。<br/><br/>
+    它的甜蜜点是<strong>数据面板、AI 演示、内部看板</strong>：周五下午开始写，周一早上老板在浏览器里就能看。死穴也来自同一个设计：<strong>桌面感弱</strong>——它终究是个网页：离线使用别扭、窗口系统集成（系统托盘、全局快捷键）基本没有、复杂交互要绕着框架脾气走。想要「双击桌面图标、打开一个独立窗口」的正经软件感，还得看后面两个阵营。施工细节见 § 5.4。</p>
+  <p>它的体量同样夸张——一个带标题和折线图的页面，三行：</p>
+  <pre><code>import streamlit as st
+st.title('销售月报')
+st.line_chart(月度数据)          # pandas 算好什么，页面就长什么样</code></pre>
+  <p>命令行敲一句 streamlit run，浏览器自动弹出页面；把地址栏的链接发给同事，他手机点开就能看——<strong>不妨这样想：传统桌面软件是「请顾客来店里」，这一阵营是「中央厨房直接出餐」</strong>，界面根本不归你管，你只管把菜（数据）做好。
+  </p>
+
+  <h3>阵营四：背一个浏览器的桌面应用——Electron 与 Tauri</h3>
+  <p>2013 年，GitHub 团队给自己的代码编辑器 Atom 找出路，想出了界面开发史上最豪横的一招：<strong>干脆把整个 Chromium 浏览器打进安装包里</strong>，界面用 HTML/CSS/JavaScript 写，本地能力用 Node.js 补——这就是 Electron。此后十年它攻城略地：VS Code、Slack、Discord、飞书桌面版，一大票你天天在用的软件都是它。立身本领一句话：<strong>整个前端生态随便用</strong>——npm 上百万个包、成熟的组件库、你已会的每一分前端手艺，原封不动搬进桌面软件。<br/><br/>
+    豪横的代价也直白：<strong>每个 Electron 应用都背着一整个浏览器。</strong>安装包 100MB 起步，开三个 Electron 应用就等于同时开了三个 Chromium——内存大户名副其实，程序员圈里「不环保应用」的梗说的就是它。<br/><br/>
+    <strong>Tauri</strong>（2022 年出 1.0）是针对这个软肋的正面回答：浏览器内核不带了，<strong>用操作系统自带的 WebView</strong>（Windows 上是 WebView2，macOS 上是 WKWebView），后端换成以省内存著称的 Rust。安装包从 100MB 级掉到几 MB 级，内存占用砍掉一大截。代价是两笔：各系统的 WebView 内核并不完全一致，兼容性要自己多留心；后端逻辑要碰 Rust，学习曲线是道真实的门槛。想象一下两种搬家方式：Electron 是<strong>把整套房连家具带厨房全搬来</strong>——换个城市也过得跟原来一模一样，就是搬家公司账单吓人；Tauri 是<strong>轻装上路，借房东现成的厨卫</strong>——又快又省，代价是每家房东的灶台脾气略有不同（各系统 WebView 内核差异）。施工细节见 § 5.5。
+  </p>
+
+  <h3>阵营五：操作系统的亲儿子——Win32 与 .NET 系</h3>
+  <p>最老的一条路，也是最根上的一条路：<strong>Win32 API</strong>，1995 年随 Windows 95 定型，C/C++ 语言直接调用。你在第 4 章事件循环里学过的那套「取消息—分发—处理」的循环，就是从 Win32 的消息循环一脉相承下来的——<strong>所有 Windows 界面框架的底下，坐着的都是它</strong>。今天手写 Win32 的人不多（产量低、样板代码多），但系统自带的小工具、安全软件的驱动级界面里它仍在服役——好比手排挡老式机械：一般人开不动，工匠拿它做极致可控的活。<br/><br/>
+    更多的人走的是微软在上面盖的四层楼：<strong>WinForms</strong>（2002 年，拖控件的最快出活路线，内部封装的就是 Win32）；<strong>WPF</strong>（2006 年，XAML 界面描述 + 数据绑定 + DirectX 硬件加速，Windows 桌面应用的经典重炮）；<strong>WinUI 3</strong>（2021 年，微软当代主推的现代化 Fluent 界面）；以及跨平台的 <strong>MAUI</strong>。这条线一门 C# 语言通吃，性能和原生脸面都是亲儿子级待遇。<br/><br/>
+    阵营里还有一位非微软编制的猛将：<strong>Avalonia</strong>——C# 写的跨平台 XAML 框架，一套代码跑 Win/macOS/Linux/移动端，控件全部自绘（Skia 渲染）不依赖系统，堪称「WPF 的跨平台精神续作」，在国外桌面工具圈相当活跃。这条阵营的死穴就一条：<strong>出了 Windows，WinForms/WPF/WinUI 们立刻水土不服</strong>——想跨平台，要么 Avalonia，要么 MAUI，要么换阵营。施工细节见 § 5.5。
+  </p>
+
+  <h3>一张决策树：五问走到答案</h3>
+  <p>地图认完了，把五个问题串成一棵树。决策树的用法像医院分诊台：从第一问进，每一层回答都把你引向下一问或直接送到答案，<strong>答到底，答案自己浮出来</strong>。医院分诊台其实就是这棵树的原型：护士从不问你「你喜欢哪个科室」，只问「哪里不舒服」——问题永远顺着病情走，不顺着科室名气走；选型同理，问题顺着需求走，不顺着框架热度走：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>层次</th><th>问题</th><th>答案 A 走向</th><th>答案 B 走向</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>第 1 层</td><td>要联网或多端访问吗？</td><td>要 → 直接去阵营③（B/S 路线）</td><td>不要 → 进第 2 层</td></tr>
+        <tr><td>第 2 层</td><td>给谁用？</td><td>自己/小圈子 → 进第 3 层</td><td>陌生公众 → 同样进第 3 层，但记牢分发成本（§ 5.6）</td></tr>
+        <tr><td>第 3 层</td><td>你顺手的语言？</td><td>Python → 进第 4 层</td><td>JS/C# → 直接落位阵营④/⑤</td></tr>
+        <tr><td>第 4 层</td><td>界面复杂到什么程度？</td><td>表单级小工具 → Tkinter（§ 5.2）</td><td>多窗口/正经软件 → PySide6（§ 5.3）</td></tr>
+        <tr><td>第 5 层</td><td>对体积/内存敏感吗？</td><td>敏感 → Tauri / Avalonia / 原生</td><td>不敏感 → Electron，生态优先</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="lab" data-lab="stack-picker"></div>
+  <p>注意这棵树的顺序本身就是排序：<strong>「要联网」压过一切</strong>（它直接改变架构），「给谁用」压过「语言顺不顺手」——因为给陌生人分发时，框架的打包与更新能力比你的学习成本更要命。新手最常犯的错，是从第 5 层（听说 Electron 很火）开始倒着爬树：先定了工具，再回头找理由。
+  </p>
+
+  <h3>对比总表：十个维度横向打分</h3>
+  <p>决策树给路线，这张表给细度。五个阵营拉到十个维度上比一遍。简单说，这张表的正确读法不是「找总分最高的」，而是「找你最在乎的那几行、看谁不及格」——<strong>打分带主观，门槛因人而异，请把它当体检报告看，别当排行榜看：</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>① Tkinter 系</th><th>② PySide6</th><th>③ 浏览器当脸面</th><th>④ Electron/Tauri</th><th>⑤ .NET / Avalonia</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>主力语言</td><td>Python</td><td>Python</td><td>Python</td><td>JavaScript（+Rust）</td><td>C#</td></tr>
+        <tr><td>上手难度</td><td>★☆☆☆☆ 最缓</td><td>★★★☆☆ 较陡</td><td>★★☆☆☆ 缓</td><td>★★★☆☆ 看底子</td><td>★★★☆☆ 较陡</td></tr>
+        <tr><td>安装包体积</td><td>10–20MB</td><td>40–80MB</td><td>0（免安装）</td><td>Electron 100MB+ / Tauri 几 MB</td><td>50–150MB</td></tr>
+        <tr><td>内存占用</td><td>低</td><td>中</td><td>浏览器说了算</td><td>Electron 高 / Tauri 低</td><td>低到中</td></tr>
+        <tr><td>原生观感</td><td>老派（CustomTkinter 可救）</td><td>自绘，各家一个样</td><td>网页观感</td><td>网页观感</td><td>Windows 上原生脸</td></tr>
+        <tr><td>拖拽设计器</td><td>无</td><td>有（Qt Designer）</td><td>无</td><td>无（有无数网页工具）</td><td>WinForms/WPF 有</td></tr>
+        <tr><td>复杂界面承载力</td><td>弱</td><td>强</td><td>中</td><td>强（= 网页承载力）</td><td>强</td></tr>
+        <tr><td>跨平台</td><td>可</td><td>强项</td><td>天然全端</td><td>强项</td><td>Avalonia/MAUI 可</td></tr>
+        <tr><td>中文资料</td><td>多</td><td>多</td><td>多（AI 圈尤甚）</td><td>海量</td><td>中</td></tr>
+        <tr><td>甜点场景</td><td>自用小工具</td><td>正经桌面软件</td><td>数据面板/AI 演示</td><td>网页手艺做桌面</td><td>Windows 深度集成</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>表里藏着几个容易被误读的点，提前拆掉：<strong>「体积 0」</strong>是阵营③最大的隐藏优势——它根本不需要安装这个动作，发个链接就能用；<strong>「内存浏览器说了算」</strong>则是它最大的不稳定项——同一个页面，Chrome 和 Safari 的表现可能差出一截。<strong>「上手难度看底子」</strong>说的是阵营④：前端老手一小时上手，纯新手却要同时啃 HTML/CSS/JS 三门课。这就是为什么第三问「你顺手的语言」在树里位置那么靠前。
+  </p>
+
+  <h3>地图上的孤勇者：Flet、Dear PyGui 与 Avalonia</h3>
+  <p>主流五阵营之外，地图边缘还有几位路线独特的选手。把它们画进地图，不是为了赶时髦，而是它们各自代表一种<strong>「换一条轴」的解题思路</strong>，某天你的需求恰好落在那条轴上，它们就是唯一解。<br/><br/>
+    <strong>Flet</strong>（2022 年）：Python 直接写 Flutter 界面。Flutter 是 Google 那套自绘 UI 引擎（Material Design 外观），本来要用 Dart 语言写；Flet 在中间架了桥，让你用纯 Python 就能拿到那副现代、顺滑、跟手机一个审美的界面，而且<strong>同一份代码能编译成手机 App</strong>——「Python 写一次、电脑手机都能跑」是它的独门卖点，适合既想快速出活又想多端的 Python 人。<br/><br/>
+    <strong>Dear PyGui</strong>：GPU 即时模式渲染——其实就是把第 2 章渲染管线里讲的那些显卡本事，直接借来画界面。它不走「框架养一棵控件树」的保留模式，而是<strong>每一帧由你的代码亲手把整个界面重新画一遍</strong>（即时模式）。好处是实时刷新快得惊人、上万数据点不眨眼，游戏调试工具、工程实时监视面板这类「每秒都在变」的场景是它的主场；代价是外观自成一路、不像任何系统的亲儿子，表单类常规应用反而不占便宜。<br/><br/>
+    <strong>Avalonia</strong> 前面提过，单独再点名一次是因为它在地图上位置微妙：论血缘它属于 .NET 阵营，论跨平台哲学它更像 Qt（自绘、不依赖系统控件），论语言生态又是 C# 独享。<strong>「C# 出身、要跨平台、嫌 MAUI 不够稳」</strong>——满足这三条的人，地图上就剩它一个答案。三位孤勇者共同的启示：<strong>边缘选项不是给追新的人准备的，是给需求恰好特殊的人准备的</strong>——需求不特殊，就别为它们绕路。
+  </p>
+
+  <h3>选型三大陷阱：追新、大炮打蚊子、以框架学编程</h3>
+  <p>地图和树都给了，最后讲三个反复坑人的陷阱——它们坑的不是知识，是心态。<br/><br/>
+    <strong>陷阱一：追新。</strong>GitHub 上星标涨得快、社区里讨论度高的新框架总显得格外性感，但<strong>框架成熟的标志从来不是新，而是「你将遇到的每个坑，都有人提前踩过并写了帖子」</strong>。新框架文档不全、API 三个月一变、搜报错搜不到答案——这些隐性成本不会出现在任何对比表里。判断方法很土但有效：把你打算写的第一段代码遇到的第一个报错，原样丢进搜索引擎——能搜出三条以上有效答案的框架，才值得新手入场。<br/><br/>
+    <strong>陷阱二：大炮打蚊子。</strong>给同事做个查库存的小窗口，上了 Electron：安装包 150MB，同事电脑开一个窗占半 G 内存，你还得研究怎么打包更新。<strong>杀鸡用了航母，鸡没杀死，先把港口修炸了。</strong>自检口诀：受众是自己和小圈子、界面是表单级、三天内要交差——三条中两条，你就该在阵营①③里选，别往下看。<br/><br/>
+    <strong>陷阱三：以框架学编程。</strong>「我想学 PySide6，帮我找个项目练手」——这句话的语序就是病根。通俗地说，它把因果讲反了：<strong>工具成了目的，项目成了手段，本末倒置。</strong>正确的顺序永远是「我想做 X，X 需要界面，所以学某个框架」。为了学而找的项目，通常撑不过三周热情；为了做而学的框架，每个知识点都有地方安放。学海无涯，但求学的方法论不能是「先买那套 108 件德国工具，再琢磨修什么」。
+  </p>
+
+  <h3>选错了怎么办：迁移成本与沉没成本</h3>
+  <p>就算五问都答对了，选错仍然可能发生——需求会变、认知会变。这时候要算的账只有一本：<strong>迁移成本</strong>，而决定这本账厚薄的，是你<strong>当初有没有把业务逻辑和界面代码分开写</strong>。<br/><br/>
+    界面层的代码——布局、控件、事件绑定——换个框架基本全部作废，这没得救；但真正的核心资产是<strong>界面底下那层业务逻辑</strong>：解析文件的函数、算数的引擎、访问数据库的代码。当初若把它们老老实实写成不依赖任何框架的独立模块，换框架就只是「换皮不换芯」：Tkinter 的皮换成 PySide6 的皮，芯原样搬过去。反过来，如果当年图省事把逻辑写死在按钮的回调函数里，那换框架就是连根重写。<strong>这就是选型之外最重要的架构保险：皮和芯永远分开放。</strong>落到工程上，它就是文件夹里两个互不打扰的模块：<br/><br/>
+  </p>
+  <pre><code>my_tool/
+├── core/              # 芯：纯业务逻辑，一行界面代码都不 import
+│   ├── parse.py       #   解析文件、算数、读写数据库……
+│   └── calc.py        #   这些函数换个框架照样能用
+└── ui/                # 皮：只管摆控件、转发事件
+    └── main.py        #   import core，按钮一点就调用它</code></pre>
+  <p>验收标准只有一条：<strong>把 ui 文件夹整个删掉，core 里的代码照样能跑、能被单元测试直接调用</strong>——满足这一条，将来无论换哪张皮，芯都原封不动。打个比方，这就是餐厅的「后厨与餐厅分离」：装修可以翻新，菜谱和厨师不必动。<br/><br/>
+    关于沉没成本只提醒一句：「我已经学了三周了」不是继续走错的理由，三周沉没对比半年错路，止损永远划算。但换之前先做痛感评估：<strong>能忍（只是不顺手）→ 继续做完；真痛（需求撞上框架死穴）→ 尽早换；已经崩（做一半发现走不通）→ 先停下来画清楚需求再动，别在慌乱中跳进第二个错误选择。</strong>
+  </p>
+
+  <h3>三类人的三张答案卷：课设、看板、独立产品</h3>
+  <p>方法讲完，给三张已经答完的卷子做参照。这三张卷子相当于三种最常见的身份，每一张都完整走过一遍五问，你可以把自己的答案对进去：<br/><br/>
+    <strong>大学生做课程设计。</strong>需求：两周内交、答辩现场要能跑、评委看功能不看框架、自己电脑开发自己电脑演示。<strong>答案：Tkinter。</strong>理由极其现实：环境零风险（标准库自带，答辩教室的电脑装个 Python 就能跑）、不可能因为依赖问题当场翻车。课设的本质是一场考试，考试的第一原则不是漂亮，是不出事故。想要现代观感再套一层 CustomTkinter。<br/><br/>
+    <strong>数据分析师周一要汇报。</strong>需求：周五下午才拿到数据，周一早上给全部门看图表，同事们电脑里什么都没装，有人要用手机看。<strong>答案：Streamlit（阵营③）。</strong>理由：pandas 画好的图直接进页面、免安装发链接即看、手机浏览器天然兼容——为一次汇报去学 Qt 的信号槽，是把杀鸡的时间花在了磨航母上。<br/><br/>
+    <strong>独立开发者做正经产品。</strong>需求：要发布给陌生用户、双击安装、体积体面、支持自动更新、未来可能上多平台。<strong>答案：先按语言分流——</strong>Python 出身选 PySide6（生态成熟、打包链路齐全）；前端出身选 Electron（快速）或 Tauri（体面）；C# 出身选 Avalonia。且无论选谁，<strong>§ 5.6 的打包、签名、自动更新三关都必须提前规划</strong>——独立产品死于「做完了却发不出去」的，远多于死于功能不足的。
+  </p>
+
+  <h3>跨阵营通用法则：无论选谁，这四件事都一样</h3>
+  <p>地图分了五大阵营，但它们地底下埋着同一套地基。这也是整个界面篇最划算的一笔账：<strong>你在第 1 到 4 章辛苦学的原理，一条都不会浪费</strong>——换个框架只是换语法，思路原样继承。<br/><br/>
+    <strong>法则一：每个框架地下都埋着同一个事件循环。</strong>Tkinter 叫 mainloop()，Qt 叫 app.exec()，Win32 里是 GetMessage 消息循环，浏览器里叫 event loop（§ 4.1）——名字不同，干的活儿一模一样：等事件、取事件、分发、处理，无限循环。由它直接推出一条铁律：<strong>耗时操作永远别写在按钮的回调里</strong>——循环被重活堵住，界面就「未响应」。每个阵营都备有各自的后台线程方案，治的是同一种病。<br/><br/>
+    <strong>法则二：布局永远是那三种思路。</strong>绝对定位（坐标写死）、流式（一个挨一个排）、网格（按行列摆）——第 3 章在网页里学的三套布局哲学，在 Tkinter 的 place/pack/grid、Qt 的布局管理器、WPF 的面板系统里全部原样重逢。学一次，用到哪都在。<br/><br/>
+    <strong>法则三：保留模式框架都养着一棵树。</strong>浏览器养 DOM，Qt 养 QObject 树，WPF 养可视树——树上的事件查找、父子关系、命中定位，原理与 § 4.2 讲的 e.target 和冒泡完全同宗；而即时模式的 Dear PyGui 没有树，因为界面每帧重画。有没有这棵树，正是两大模式的分界线。<br/><br/>
+    <strong>法则四：所有框架画的都是同一批标准件。</strong>按钮、输入框、下拉框、列表、对话框——第 1 章讲过，这套「控件词汇表」是几十年沉淀下来的通用语，各框架只是口音不同。标准件不够用、要自绘时，每个阵营都明码标价收「定制费」：越底层的框架自由度越高、工时也越贵。<mark class="key">这四条法则就是选型的定心丸：地图上五条路条条通山顶，因为山只有一座。</mark>
+  </p>
+
+  <div class="callout analogy">
+    <strong>把五大技术栈想成「出门选交通工具」</strong><br/>
+    出门第一件事从来不是选车，是<strong>想清楚去哪、带谁、赶不赶时间</strong>——这就是本节的五问。然后才轮到挑车：<br/><br/>
+    <strong>Tkinter 是步行加共享单车</strong>——零成本随取随用，楼下买瓶酱油它最快；你要骑着它去外地，是自己选错了。<br/><br/>
+    <strong>CustomTkinter 是电动车</strong>——还是那双腿（同一套 API），代步体验升级一截，行程半径没变。<br/><br/>
+    <strong>PySide6 是家用轿车</strong>——全能主力，近可买菜远可自驾；代价是要考驾照（学习曲线）、要养车（体积与复杂度）。<br/><br/>
+    <strong>阵营③（Streamlit 们）是外卖</strong>——厨房在你家电脑，菜能送到任何人的手机；但你永远失去了「坐在店里」的桌面感。<br/><br/>
+    <strong>Electron 是房车</strong>——卧室厨房浴室全带上（整个 Chromium），走到哪住到哪；费油、占地，光启动就够喝一壶。<br/><br/>
+    <strong>Tauri 是轻装折叠车</strong>——借房东家的厨卫（系统 WebView），自己只带行李，又快又省；代价是每家装潢略有不同，要留心兼容。<br/><br/>
+    <strong>Win32 是手排挡老式机械</strong>——工匠专属，别人开不动，开得动的人能榨出极致控制力。<br/><br/>
+    <strong>.NET / Avalonia 是厂商正规车队</strong>——Windows 大道上是嫡系待遇，Avalonia 还能开出省（跨平台）。<br/><br/>
+    <mark class="key">交通工具没有最好，只有最合适——先看你去哪（需求），再看开什么（工具）。反过来选，再贵的车也只是堵在错的路上的铁盒子。</mark>
+  </div>
+
+  <div class="checklist">
+    <div class="checklist-title">✅ 选型自检清单——动手前逐条打勾</div>
+    <ul>
+      <li>我能用一句话说清「做给谁用、他要完成什么」</li>
+      <li>受众三档（自己 / 同事 / 陌生公众）我已对号，分发成本心里有数</li>
+      <li>「要不要联网、多端」已经回答——它决定走 B/S 还是纯桌面</li>
+      <li>选的框架落在我<strong>已有语言</strong>的覆盖范围内，没在双线作战</li>
+      <li>界面复杂度已估级：表单级 → ①③；多窗口正经软件 → ②④⑤</li>
+      <li>体积 / 内存敏感度已过秤（Electron 的 100MB 我确认过能接受或不接受）</li>
+      <li>搜过这个框架的中文报错资料，确信踩坑有人接</li>
+      <li>业务逻辑已决定与界面代码分模块写——给未来留「换皮」的退路</li>
+      <li>如果发给别人用：§ 5.6 的打包、签名、更新三关已列入计划</li>
+      <li>我做的是「项目需要的框架」，不是「框架需要的项目」</li>
+    </ul>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="同事请你做个内部小工具：查库存、带几个下拉框和按钮，明天就要，他电脑没装 Python。你会 Python，最省事的选择是？" data-opts="Electron——生态最大|Tkinter，再按 § 5.6 打包成 exe 发他|手写 Win32——原生性能|PySide6 全家桶，一步到位" data-answer="1" data-explain="需求是表单级小工具 + 明天交 + 对方环境空白：Tkinter 启动成本最低，打包成单文件 exe 后对方双击就能跑。Electron 150MB 杀鸡用航母；Win32 是用 C++ 考工匠证；PySide6 学得起但为几个下拉框不值——受众和时限两问就把答案锁死了。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="VS Code、Discord、飞书桌面版的共同点是什么？" data-opts="都是微软出品|都基于 Electron——界面是网页，内核是 Chromium + Node.js|都是用 Qt 写的|都是操作系统原生控件" data-answer="1" data-explain="它们都是 Electron 系：把一个完整 Chromium 浏览器打进安装包，界面用 HTML/CSS/JS 编写，本地能力靠 Node.js。好处是前端生态全量可用、一套代码三大系统；代价就是出了名的体积和内存——每开一个 Electron 应用，就多开了一个浏览器。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="Tauri 的安装包能做到 Electron 的十分之一，根本原因是什么？" data-opts="Rust 语言天生就小|去掉了所有图形功能，只留文字界面|不捆绑浏览器内核，直接用操作系统自带的 WebView|压缩算法更先进" data-answer="2" data-explain="Electron 胖在「自带一整个 Chromium」；Tauri 改用系统现成的 WebView（Windows 的 WebView2、macOS 的 WKWebView），浏览器那几十上百 MB 直接不用带了，后端再换 Rust 省内存。代价是各系统 WebView 内核有差异，兼容性要自己多担待。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="Dear PyGui 宣传的「即时模式」是什么意思？" data-opts="启动速度特别快，瞬间打开|界面渲染走 GPU 硬件加速|没有控件树，每帧由你的代码把整个界面重新画一遍|响应事件不需要写回调" data-answer="2" data-explain="保留模式（Tkinter、Qt、DOM 都是）：框架养着一棵控件树，你改状态它负责重画。即时模式：控件树根本不存在，你的代码每帧亲手把界面画一遍——换来的是实时刷新极快，适合每秒都在变的数据监视场景；代价是外观自成一路，不像任何系统的亲儿子。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="只会 Python 的同学说：「听说 Electron 最火，我直接学它。」这个决定错在哪一步？" data-opts="没错，火就说明好|错在追新：新框架坑多|错在需求还没想清楚，且要从零学 JavaScript——语言和框架双线作战|错在 Electron 快被淘汰了" data-answer="2" data-explain="两个问题叠在一起：一是「先定工具再找需求」——他没说自己要做什么；二是语言错位——Electron 要 JavaScript，等于同时学一门新语言加一个新框架，新手翻车头号姿势。「火不火」只在需求匹配之后才有讨论价值。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="需求：pandas 分析结果做成可交互看板，周一全部门要看，有人用手机。最佳路线？" data-opts="PySide6 写桌面软件，挨个装|Tkinter 窗口截图发群里|Streamlit——浏览器即界面，发链接就能看|手写 Win32 报表程序" data-answer="2" data-explain="要联网分发 + 多端访问 + 数据生态，三个条件全部指向阵营③：Streamlit 脚本即应用，pandas 图表直接进页面，同事手机浏览器打开链接就能看，零安装。为一次汇报让全部门装桌面软件，是典型的把外卖需求做成堂食。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="为什么决策树的第一层是「要不要联网、多端访问」，而不是「哪个框架最流行」？" data-opts="因为联网应用更高级|因为它直接决定架构走 B/S 还是纯桌面，是改动代价最大的岔路口|因为流行的框架都不支持联网|纯属排版习惯" data-answer="1" data-explain="要不要多端是「换架构」级别的分岔：选了 B/S（浏览器当界面），后面是 Streamlit 一族的天下；选了纯桌面，才是五大阵营的厮杀。这种一旦走错就伤筋动骨的问题，必须放在树根——先答它，后面的问题才有意义。流行度从来不该进决策树，它是营销指标，不是需求指标。"></div>
+
+  <h3>本节回顾：一张地图，五个问题，一条纪律</h3>
+  <p>本节没有教你写一行界面代码，但它交付的可能是整个第 5 章最值钱的东西：<strong>一张按「你要做什么」分区的地图，和一套把需求翻译成技术条件的五问。</strong>受众决定成本档位，联网与否决定架构路线，语言熟练度决定阵营归属，复杂度和体积敏感度完成最后收口。五大阵营各自的人设——Tkinter 的零成本、Qt 的工业全包、浏览器阵营的外卖模式、Electron/Tauri 的网页手艺移植、.NET 系的原生嫡系——加上 Flet、Dear PyGui、Avalonia 三位孤勇者，合起来就是当今桌面界面开发的完整版图。而四条跨阵营通用法则——同一个事件循环、同三种布局思路、同一棵控件树、同一批标准件——保证了这张地图上任何一条路，都通向你已经在第 1–4 章爬过的那座原理之山。<br/><br/>
+    而压在所有方法之上的只有一条纪律：<strong>先有活，后有工具。</strong>接下来五节按地图顺序逐阵营进施工：§ 5.2 从 Tkinter 的十分钟小工具起步，§ 5.3 驾驭 Qt 的工业重装备，§ 5.4 借浏览器做数据面板，§ 5.5 打通网页技术与原生路线，最后 § 5.6 学会让别人双击就能用。<mark class="key">选型是地图，施工是行军——地图看完了，该上路了。</mark>
+  </p>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-6-a11y.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 4.6 · 无障碍 A11y</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一节</span>
+      <span class="title">§ 5.2 · 十分钟小工具（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 5.1</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>

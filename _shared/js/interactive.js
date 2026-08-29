@@ -1008,7 +1008,93 @@
     foot(box, '真实浏览器里按 Tab 走的就是这条队列：正数 tabindex 像<strong>插队卡</strong>，持卡人按卡号从小到大先走（E 的 1 号卡、D 的 2 号卡），然后才轮到 tabindex=0 的按 DOM 顺序（A→C→F）；没资格的 DIV B 连队都排不上。<mark class="key">视觉顺序和焦点顺序一旦打架，键盘用户就迷路——纪律是：正数 tabindex 一律别用，顺序交给 DOM。</mark>');
   }
 
-  // ============ 注册表 ============
+  // ============ 组件 20 · 选型决策机 stack-picker ============
+  function buildStackPicker(box) {
+    head(box, 'Try it', '选型决策机 · 三问定路线');
+
+    const steps = [
+      { q: '① 你要做什么？', opts: ['给自己用的小工具', '正经桌面软件', '数据面板 / AI 演示'] },
+      { q: '② 你顺手的语言？', opts: ['Python', '前端 JavaScript', 'C#', '零基础'] },
+      { q: '③ 成品给谁用？', opts: ['只有自己', '同事 / 小圈子', '陌生公众'] }
+    ];
+
+    const answers = [null, null, null];
+    const optRows = [];
+
+    steps.forEach((step, si) => {
+      box.appendChild(el('div', 'lab-sp-q', step.q));
+      const row = el('div', 'lab-sp-opts');
+      step.opts.forEach((opt, oi) => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.addEventListener('click', () => {
+          answers[si] = oi;
+          row.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
+          render();
+        });
+        row.appendChild(btn);
+      });
+      box.appendChild(row);
+      optRows.push(row);
+    });
+
+    const out = el('div', 'lab-sp-result');
+    box.appendChild(out);
+
+    const ctrl = el('div', 'lab-row');
+    ctrl.style.marginTop = '0.8rem';
+    const reset = document.createElement('button');
+    reset.textContent = '重新选择';
+    ctrl.appendChild(reset);
+    box.appendChild(ctrl);
+    reset.addEventListener('click', () => {
+      answers.fill(null);
+      optRows.forEach(r => r.querySelectorAll('button').forEach(b => b.classList.remove('on')));
+      render();
+    });
+
+    function recommend() {
+      const job = answers[0], lang = answers[1], who = answers[2];
+      let r;
+      if (job === 2) {
+        r = { name: 'Streamlit / Gradio / NiceGUI', why: '浏览器即界面：零前端知识、免安装、手机也能看——数据面板与 AI 演示的命定路线。', sec: '§ 5.4' };
+      } else if (job === 0) {
+        if (lang === 0) r = { name: 'Tkinter + CustomTkinter', why: '标准库自带零安装，小工具从想法到能跑，常常不超过一小时。', sec: '§ 5.2' };
+        else if (lang === 1) r = { name: 'Tauri（或直接写网页）', why: '前端手艺原封复用，体积还体面；不需要桌面壳的话，一张网页更省。', sec: '§ 5.5' };
+        else if (lang === 2) r = { name: 'WinForms', why: 'C# 拖控件的最快出活路线，Visual Studio 里二十分钟拖出一个窗体。', sec: '§ 5.5' };
+        else r = { name: 'Tkinter', why: '零基础配 Python 起步坡度最缓——先会做东西，再谈换工具。', sec: '§ 5.2' };
+      } else {
+        if (lang === 0) r = { name: 'PySide6（Qt）', why: 'Python 阵营的工业级全包：多窗口、拖拽设计器、信号槽，正经软件该有的一样不缺。', sec: '§ 5.3' };
+        else if (lang === 1) r = { name: 'Electron 或 Tauri', why: '生态最大 vs 体积最省：内存不敏感选 Electron，讲究体面选 Tauri。', sec: '§ 5.5' };
+        else if (lang === 2) r = { name: 'Avalonia / WinUI 3', why: 'C# 原生嫡系：Windows 深度集成，要跨平台就 Avalonia。', sec: '§ 5.5' };
+        else r = { name: 'Tkinter 起步 → PySide6 进阶', why: '零基础别直接上重装备：先在 § 5.2 站住脚，再迁到 § 5.3——皮和芯分开写，迁移就只是换皮。', sec: '§ 5.2 → § 5.3' };
+      }
+      let note;
+      if (who === 2) note = '受众是陌生公众：§ 5.6 的打包、签名、自动更新三关提前规划——发不出去比功能不全更致命。';
+      else if (who === 1) note = '发同事用：按 § 5.6 打包成单文件 exe，对方双击就能跑，别让他装环境。';
+      else note = '只有自己用：连打包都可以省，环境即部署，界面丑点无妨。';
+      return { r: r, note: note };
+    }
+
+    function render() {
+      if (answers.some(a => a === null)) {
+        out.innerHTML = '<div class="empty">三个问题答完，这里会亮出你的路线。</div>';
+        return;
+      }
+      const m = recommend();
+      out.innerHTML =
+        '<div class="lab-sp-name">推荐路线 → ' + m.r.name + '</div>' +
+        '<div class="lab-sp-why">' + m.r.why + '</div>' +
+        '<div class="lab-sp-note">📍 ' + m.note + '</div>' +
+        '<div class="lab-sp-sec">施工细节见 ' + m.r.sec + '</div>';
+    }
+
+    render();
+
+    foot(box, '这台决策机就是正文那棵决策树的活版：先用途、再语言、后受众。注意「受众」一问不改变路线本身，只决定你在 § 5.6 打包分发上要花多少功夫——<mark class="key">给自己用和发给陌生人，是家常菜和开餐厅的区别，成本天差地别。</mark>');
+  }
+
   const builders = {
     'color-picker': buildColorPicker,
     'contrast': buildContrast,
@@ -1028,7 +1114,8 @@
     'handshake': buildHandshake,
     'latency': buildLatency,
     'status-code': buildStatusCode,
-    'focus-order': buildFocusOrder
+    'focus-order': buildFocusOrder,
+    'stack-picker': buildStackPicker
   };
 
   // ============ 自动初始化 ============

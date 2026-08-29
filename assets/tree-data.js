@@ -364,9 +364,9 @@
         { href: 'chapters/gui/04-interaction.html' }),
       createNode('gui-05', '第 5 章 · 桌面 GUI 工具箱',
         '按"你要做什么"组织：小工具、正经桌面应用、数据面板、网页技术做桌面——五大技术栈的选型与实战。',
-        '待撰写',
+        '更新中 · § 5.1 已上线',
         [
-          createNode('gui-05-1', '§ 5.1 · 选型地图：先想清楚要做什么', '五大技术栈全景图 + 一张决策树帮你选对工具；Flet、Dear PyGui、Avalonia 这些另辟蹊径的选择也在地图上。', '待撰写', []),
+          createNode('gui-05-1', '§ 5.1 · 选型地图：先想清楚要做什么', '五大技术栈全景图 + 一张决策树帮你选对工具；Flet、Dear PyGui、Avalonia 这些另辟蹊径的选择也在地图上。', '9134 字', [], { href: 'chapters/gui/05-1-choice-map.html', spec: 'pass' }),
           createNode('gui-05-2', '§ 5.2 · 十分钟小工具：Tkinter 与 CustomTkinter', 'Python 自带、零依赖——写小工具最快的路，再用 CustomTkinter 换上现代化外观。', '待撰写', []),
           createNode('gui-05-3', '§ 5.3 · 正经桌面应用：PySide6 / PyQt6 与 Qt Designer', '工业级跨平台方案——WPS、VirtualBox 都用它；拖控件生成界面，不写布局代码也能出活。', '待撰写', []),
           createNode('gui-05-4', '§ 5.4 · 数据面板与快速原型：Streamlit / Gradio / NiceGUI', '浏览器当界面、Python 写逻辑——几十行代码出一个数据面板或 AI 演示页。', '待撰写', []),

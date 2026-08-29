@@ -791,6 +791,57 @@
 
 .lab-fo-rank.skip { color: var(--muted, #8a8579); font-weight: 400; }
 
+/* ============ 组件 20 · 选型决策机 stack-picker ============ */
+.lab-sp-q {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  color: var(--ink-soft, #4a4842);
+  margin: 0.7rem 0 0.35rem;
+}
+
+.lab-sp-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.lab button.on {
+  color: #fff;
+  background: var(--accent, #556b3d);
+  border-color: var(--accent, #556b3d);
+}
+
+.lab-sp-result {
+  margin-top: 0.9rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg2, #f2ede4);
+  border: 1px dashed var(--rule, #e2dccf);
+  border-radius: var(--radius, 6px);
+}
+
+.lab-sp-result .empty { color: var(--muted, #8a8579); font-size: 0.8rem; }
+
+.lab-sp-name {
+  font-family: var(--font-serif, serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent, #556b3d);
+  margin-bottom: 0.35rem;
+}
+
+.lab-sp-why { font-size: 0.82rem; line-height: 1.7; color: var(--ink, #2b2a26); }
+
+.lab-sp-note { font-size: 0.78rem; line-height: 1.7; color: var(--ink-soft, #4a4842); margin-top: 0.35rem; }
+
+.lab-sp-sec {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--muted, #8a8579);
+  margin-top: 0.45rem;
+  padding-top: 0.4rem;
+  border-top: 1px dotted var(--rule, #e2dccf);
+}
+
 /* ============ 响应式 ============ */
 @media (max-width: 620px) {
   .lab { padding: 0.9rem 0.9rem 1rem; }
