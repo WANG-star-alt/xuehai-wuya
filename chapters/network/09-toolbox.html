@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 9 章 · 排错工具箱 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="./08-security.html">网络篇 · 第 8 章</a>
+      <span class="sep">›</span>
+      <span>第 9 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Network · Chapter 09</div>
+    <h1>第 9 章 · 排错工具箱</h1>
+    <div class="cn">The Toolbox · From "Is It Alive" to "Show Me the Packets"</div>
+  </header>
+
+  <p class="lead">
+    前八章讲的都是"网怎么工作"：语言怎么定、地址怎么编、路怎么寻、包怎么传、锁怎么上。这一章面对一个更狼狈也更真实的处境——<mark class="key">网坏了。网页转圈、游戏掉线、接口报错、"网络连上了但什么都打不开"。</mark>这时候背概念没用，得动手查。网络排错是这么一门手艺：把"网出了问题"这句空话，一层层拆小，拆到某一层能开口说"是我"。这一章六节，就是六件从粗到细的家什：<strong>ping 问生死</strong>、<strong>traceroute 问路径</strong>、<strong>nslookup 问名字</strong>、<strong>curl 问对方</strong>、<strong>netstat 问自己</strong>、<strong>Wireshark 放录像</strong>——合起来，正好把 TCP/IP 的每一层都盘问一遍。读完这一章，你再遇到"上不了网"，第一反应将不再是重启路由器，而是掏工具。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🔧 老师傅带徒弟上门维修的一天</div>
+    <p>物业里干了三十年的赵师傅，腰上永远挂一串工具。徒弟小周跟了他一天，记满了笔记。<br/>
+    上午 302 报"家里没电"——赵师傅没拆任何东西，先拿电笔在门口插座上试了试："电表那边来的电是通的，问题在屋里。"前后十秒。<strong>下午 501 报"水压小"</strong>——他顺着一楼到六楼的管线逐层听、逐层试压，最后指着三楼一段管子："堵在这儿。"<strong>傍晚 108 报"网断了"</strong>——他先 ping 了一下网关，又 ping 了外网，"楼里通、外面不通，找运营商。"<br/><br/>
+    小周问："师傅，你怎么不进来就拆？"赵师傅敲了敲腰上的工具串：<strong>"先花一分钟的检查，省一小时的拆卸。工具不在多，在于知道先用哪个。"</strong><br/><br/>
+    <mark class="key">这一章就是赵师傅那条工具腰带：六件家什各管一层，先便宜的、后昂贵的，先把范围缩小、再动手拆解——网络排错的全部章法，就缝在这条腰带上。</mark></p>
+  </div>
+
+  <h3>本章要回答什么</h3>
+  <p>说白了，这一章要回答的总问题是：<strong>"网络出了问题，怎么科学地找到病根，而不是瞎猜瞎重启？"</strong>拆开来是六个小问题，正好对应六节：</p>
+  <ul class="keylist">
+    <li><strong>"到底通不通？"——先问生死。</strong>一条命令、半秒出结果：通、断、快、慢、丢多少。这是 <strong>§ 9.1 · ping</strong>。</li>
+    <li><strong>"断，断在哪一站？"——再问路径。</strong>逐跳点名沿途每一台路由器，看包死在第几跳。这是 <strong>§ 9.2 · traceroute</strong>。</li>
+    <li><strong>"名字翻成地址，翻对了吗？"——问查号台。</strong>域名解析的结果对不对、干净不干净。这是 <strong>§ 9.3 · nslookup / dig</strong>。</li>
+    <li><strong>"对面到底回了什么话？"——直接对话。</strong>绕过浏览器外壳，亲手发请求、亲眼看原始回执。这是 <strong>§ 9.4 · curl / wget</strong>。</li>
+    <li><strong>"我自己这台机器，门开了没？"——回家自查。</strong>谁在监听、谁在连接、哪个进程占着端口。这是 <strong>§ 9.5 · netstat / ss</strong>。</li>
+    <li><strong>"各说各话、吵不清了怎么办？"——放原始录像。</strong>逐包拆解，终审对质。这是 <strong>§ 9.6 · Wireshark</strong>。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <strong>把这一章想成"一条分诊流水线"</strong><br/>
+    网络故障是个说不清症状的病人，被送到这条流水线上，一站一站往里送：<br/><br/>
+    <strong>第一站，分诊台（§ 9.1 ping）</strong>——先摸脉：有生命体征吗？快慢如何？多数小病到这就看完了：哦，虚惊一场；哦，确实断了。<br/><br/>
+    <strong>第二站，影像科（§ 9.2 traceroute）</strong>——脉还在但人喊疼？拍张片子看路径：堵在小区门口、城际干道还是对方楼下。<br/><br/>
+    <strong>第三站，挂号处复核（§ 9.3 nslookup）</strong>——确认没挂错科：名字和门牌对得上吗？查号台给的号是真是假？<br/><br/>
+    <strong>第四站，问诊室（§ 9.4 curl）</strong>——和"对方"直接对话：把请求原样递过去，把回执原样拿回来，状态码分诊：<strong>4xx 查自己，5xx 怨对方，3xx 跟着走</strong>。<br/><br/>
+    <strong>第五站，查体室（§ 9.5 netstat）</strong>——镜头掉转对准病人自己：进程起了没、门开了没、谁在偷偷外联。<br/><br/>
+    <strong>第六站，手术室监护仪（§ 9.6 Wireshark）</strong>——疑难杂症终极一站：所有原始波形一屏排开，每一次心跳的搏动都记录在案，谁也赖不掉。<br/><br/>
+    <mark class="key">流水线的规矩只有两条：由近及远（先查自己，再查世界）、由粗到细（先一分钟的检查，后一小时的解剖）——顺序乱了，就是瞎忙。</mark>
+  </div>
+
+  <h3>本章的行进地图</h3>
+  <p>先看地图再上路。六节不是并列的六个命令，而是一支分工明确的小队——每一节都比上一节看得更细：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>小节</th><th>解决的问题</th><th>核心比喻</th><th>一句话记忆</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>§ 9.1 ping</td><td>通不通、快不快、丢多少</td><td>投石问路 / 摸脉</td><td>先问生死，再问快慢</td></tr>
+        <tr><td>2</td><td>§ 9.2 traceroute</td><td>包走到哪一站断了</td><td>查物流轨迹 / 拍片子</td><td>星号不是死刑，去回不同路</td></tr>
+        <tr><td>3</td><td>§ 9.3 nslookup / dig</td><td>域名解析对不对、干不干净</td><td>查号台问址</td><td>两地对比，劫持现形</td></tr>
+        <tr><td>4</td><td>§ 9.4 curl / wget</td><td>对方亲口回了什么</td><td>不穿外壳的浏览器</td><td>状态码首位定分诊</td></tr>
+        <tr><td>5</td><td>§ 9.5 netstat / ss</td><td>本机端口与连接状态</td><td>门卫的登记簿</td><td>TIME_WAIT 是礼貌，CLOSE_WAIT 是事故</td></tr>
+        <tr><td>6</td><td>§ 9.6 Wireshark</td><td>逐包对质，终审裁决</td><td>网卡上的摄像机</td><td>别的工具给怀疑，抓包给判决</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里藏着一条值得先记住的暗线：<mark class="key">六件工具在 TCP/IP 各层上各守一段——本机与端口（netstat）、名字与应用（nslookup、curl）、网络与路径（ping、traceroute）、直到逐字节（Wireshark）。第 2 章说"分层是网络的设计哲学"，这一章补上另一半：分层，也是排错的工作编制表。一层一工具，谁的问题谁认领。</mark></p>
+
+  <h3>本章的六节</h3>
+  <div class="cards">
+    <a class="card" href="./09-1-ping.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 9.1</div>
+      <h4>ping 与 ICMP</h4>
+      <p>回声协议、RTT 与抖动、丢包率、TTL 倒计数、ping 不通的五种可能、平替与局限。</p>
+    </a>
+    <a class="card" href="./09-2-traceroute.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 9.2</div>
+      <h4>traceroute 路径追踪</h4>
+      <p>TTL 钓鱼术、逐跳地图、星号三解、非对称路由、绕路与跨境路径的判读。</p>
+    </a>
+    <a class="card" href="./09-3-nslookup-dig.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 9.3</div>
+      <h4>nslookup / dig</h4>
+      <p>递归与权威、记录类型全解、TTL 与缓存、公共 DNS 盘点、两地对比识劫持。</p>
+    </a>
+    <a class="card" href="./09-4-curl-wget.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 9.4</div>
+      <h4>curl / wget</h4>
+      <p>状态码分诊、-v 回放对话、-w 四段计时、重定向与 POST、脚本化巡检。</p>
+    </a>
+    <a class="card" href="./09-5-netstat-ss.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 9.5</div>
+      <h4>netstat / ss</h4>
+      <p>监听与连接状态、0.0.0.0 与 127.0.0.1、端口占用三步破案、TIME_WAIT 大军、巡楼清单。</p>
+    </a>
+    <a class="card" href="./09-6-wireshark.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 9.6</div>
+      <h4>Wireshark 抓包</h4>
+      <p>三块屏幕、双过滤器、追踪流、HTTPS 时代看信封、四大经典案子、tcpdump 与 pcap。</p>
+    </a>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <p>这一章命令密度全篇最高，但<strong>四条章法撑起了全部内容</strong>——记住章法，命令忘了随时能查回来：</p>
+  <ul class="keylist">
+    <li><strong>章法一：先便宜，后昂贵。</strong>ping 半秒出结果，Wireshark 分析半小时起。老手不是会用的工具多，而是<strong>知道先掏哪件</strong>——一块钱的检查先做，CT 留到最后。动手顺序错了，工具再全也是瞎忙。</li>
+    <li><strong>章法二：由近及远。</strong>查"上不了网"的正规顺序是：本机进程 → 本机端口 → 名字解析 → 出口路径 → 对方服务器。多数人反着来（先怪运营商、后怪路由器），结果折腾半天发现是自己电脑的防火墙。<strong>相当于</strong>找人先看家里，再查小区，再报警——顺序本身就是效率。</li>
+    <li><strong>章法三：单一证据不作数。</strong>ping 不通 ≠ 网断了（可能 ICMP 被禁），curl 404 ≠ 网站挂了（可能只是这个页面没了）。每个工具都有盲区，<strong>交叉验证才是硬道理</strong>：ping 加 curl、本地查加异地查、netstat 加抓包——两路证据指向同一结论，才敢下诊断。</li>
+    <li><strong>章法四：工具缩小范围，判断永远靠人。</strong>所有工具只输出事实（通、慢、404、TIME_WAIT），把事实连成病因的那一步，永远是你脑子里那张分层地图。<strong>本质上就是</strong>：背下七个命令只要一天，养成"先想清这病该在哪一层、再选工具去验证"的习惯，才是这一章真正想教的东西。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一章是网络篇的<mark class="key">"动手"章</mark>——前八章修路架桥上锁，这一章教你桥断了怎么办。<br/>
+    六节一线：<strong>问生死（ping）→ 追路径（traceroute）→ 核名字（nslookup）→ 对对话（curl）→ 查自家（netstat）→ 放录像（Wireshark）</strong>。<br/>
+    读完这一章，你应该能做到三件很实用的事：<strong>遇到网络故障有一套固定的起手式</strong>（先 ping 再逐层缩小）；<strong>看懂工程师的排查话术</strong>（"重传""端口没监听""解析被污染"说的是什么）；<strong>把"重启试试"从第一反应降级为最后一招</strong>——重启前后各查一遍，至少知道重启到底修好了什么。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./08-6-zero-trust.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 8.6 · 零信任架构</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./09-1-ping.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 9.1 · ping 与 ICMP</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · Chapter 09</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>

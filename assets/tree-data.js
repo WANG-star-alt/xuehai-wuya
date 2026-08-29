@@ -284,15 +284,17 @@
       ),
       createNode('net-09', '第 9 章 · 排错工具箱',
         'ping、traceroute、curl、Wireshark——工程师的诊断工具。',
-        '更新中 · 已上线 § 9.4',
+        '约 4.8 万字',
         [
           createNode('net-09-1', '§ 9.1 · ping 与 ICMP', '通不通、延迟多少、丢包多少——第一诊断命令。', '8306 字', [], { href: 'chapters/network/09-1-ping.html', spec: 'pass' }),
           createNode('net-09-2', '§ 9.2 · traceroute 路径追踪', '数据包走了哪几跳、卡在哪一跳。', '7115 字', [], { href: 'chapters/network/09-2-traceroute.html', spec: 'pass' }),
           createNode('net-09-3', '§ 9.3 · nslookup / dig', 'DNS 解析结果排查——域名到底指向哪。', '8051 字', [], { href: 'chapters/network/09-3-nslookup-dig.html', spec: 'pass' }),
           createNode('net-09-4', '§ 9.4 · curl / wget', '命令行发 HTTP 请求——看原始响应头和状态码。', '8046 字', [], { href: 'chapters/network/09-4-curl-wget.html', spec: 'pass' }),
-          createNode('net-09-5', '§ 9.5 · netstat / ss', '本机端口占用、连接状态——谁在监听、谁连着谁。', '待撰写', []),
-          createNode('net-09-6', '§ 9.6 · Wireshark 抓包', '逐包分析——网络排错的终极武器。', '待撰写', [])
-        ]),
+          createNode('net-09-5', '§ 9.5 · netstat / ss', '本机端口占用、连接状态——谁在监听、谁连着谁。', '7722 字', [], { href: 'chapters/network/09-5-netstat-ss.html', spec: 'pass' }),
+          createNode('net-09-6', '§ 9.6 · Wireshark 抓包', '逐包分析——网络排错的终极武器。', '8682 字', [], { href: 'chapters/network/09-6-wireshark.html', spec: 'pass' })
+        ],
+        { href: 'chapters/network/09-toolbox.html' }
+      ),
       createNode('net-10', '第 10 章 · 现代协议演进',
         'HTTP/3、IPv6、DoH、BBR——网络协议的最新进化。',
         '待撰写',
