@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 9.4 · curl / wget · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>网络篇 · 第 9 章</span>
+      <span class="sep">›</span>
+      <span>§ 9.4</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 9.4 · Section</div>
+    <h1>curl / wget</h1>
+    <div class="cn">HTTP Status Codes · Headers · Redirects · POST · Timing</div>
+  </header>
+
+  <p class="lead">
+    前三节的工具都工作在"路"上：ping 管通不通，traceroute 管走哪条路，nslookup 管名字翻成地址。可"网站打不开"还有第四种病灶——<strong>路是通的、地址是对的，但服务器那头到底回了句什么，你根本听不见。</strong>浏览器是个把一切包起来的黑箱：它替你重试、替你跳转、替你管缓存，出了错只给你一句笼统的"无法访问此网站"。本节请出 curl：<mark class="key">它是一个不穿外壳的浏览器——只发请求、收应答，把服务器最原始的回话原样端给你：三位数的状态码、一排响应头、搬家告示式的重定向、精确到毫秒的计时。顺带认识它的老伙计 wget——一个专管搬运文件的下载工。</mark>读完本节，"网站打不开"四种病灶你就凑齐了整套听诊器。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🍜 绕过包间服务员，直奔后厨取餐口</div>
+    <p>你在餐厅点了道菜，二十分钟没动静。问包间服务员，永远一句"马上好"。你将信将疑，却无从对证——<strong>服务员站在你和后厨之间，所有消息都经他的嘴转述。</strong><br/>
+    老江湖的做法是起身绕过服务员，直接走到后厨取餐口。那里有一摞打印出来的小票：你的单子在不在、上面印着什么状态——"备菜中""已出餐""本店今日售完""查无此菜"——<strong>白纸黑字，后厨亲手打的，没有中间人能和稀泥。</strong><br/><br/>
+    <mark class="key">浏览器就是那个把你隔开的包间服务员：服务周到（替你渲染、跳转、缓存），但转述含糊（只报"无法访问"）。curl 让你直接站到取餐口——状态码就是那张小票上的状态章。</mark></p>
+  </div>
+
+  <h3>先把这一节的术语翻译成人话</h3>
+  <p>照例，术语对照表先行。curl 一族的名词听着像黑客工具箱，其实全是餐厅日常：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>换成大白话</th><th>生活原型</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>curl</strong></td><td>说白了就是"能上网说话的瑞士军刀"——发请求、看应答</td><td>直接到后厨取餐口问话</td></tr>
+        <tr><td><strong>wget</strong></td><td>说白了就是"专一的搬运工"——把网上的文件搬到本地</td><td>跑腿取货的快递小哥</td></tr>
+        <tr><td><strong>HTTP 请求</strong></td><td>你发给服务器的话：要什么、怎么给</td><td>递进后厨的点菜单</td></tr>
+        <tr><td><strong>HTTP 响应</strong></td><td>服务器回的话：回执 + 内容</td><td>小票 + 菜</td></tr>
+        <tr><td><strong>状态码</strong></td><td>应答开头的三位数，一句话概括结果</td><td>小票上盖的状态章</td></tr>
+        <tr><td><strong>响应头</strong></td><td>随应答附送的一排说明标签</td><td>包裹外面贴的面单</td></tr>
+        <tr><td><strong>GET / POST</strong></td><td>两种动作：GET 要东西，POST 递东西</td><td>点菜 vs 填表递交</td></tr>
+        <tr><td><strong>User-Agent</strong></td><td>请求里自报家门的"我是谁"</td><td>胸前挂的工牌</td></tr>
+        <tr><td><strong>Cookie</strong></td><td>服务器塞给你的"下次再来凭条"</td><td>餐厅发的会员卡</td></tr>
+        <tr><td><strong>重定向（3xx）</strong></td><td>"这事不归我，请去那边"</td><td>门上贴的搬家告示</td></tr>
+        <tr><td><strong>-v（verbose）</strong></td><td>把和服务器的一来一回逐句打印出来</td><td>整场对话的录音回放</td></tr>
+        <tr><td><strong>计时变量（-w）</strong></td><td>每一段路各花了多少毫秒</td><td>跑腿小哥的行程计时单</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>三十秒复习：一问一答长什么样</h3>
+  <p>第 4 章跟着一个网址走完了整段旅程，其中 § 4.5 讲的就是 HTTP 本身：它是一个<strong>一问一答</strong>的协议。你发过去的东西叫<strong>请求</strong>——第一行是请求行（"GET 这个路径，用 HTTP/1.1"），后面跟着一排请求头（我是谁、我要什么格式、我的会员卡号），最后可以带一个可选的请求体。服务器回过来的东西叫<strong>响应</strong>——第一行是状态行（"HTTP/1.1 200 OK"），后面跟着一排响应头，最后是内容本体（网页的 HTML、图片的字节、JSON 的文本）。</p>
+  <p>通俗地说，就是<strong>"点菜单 → 小票 → 菜"三件套</strong>。第 4 章你是在浏览器背后偷看这场对话；这一节你亲自站到台前——自己开口问、亲耳听回话。不妨这样想：第 4 章是隔着玻璃参观后厨，这一节是把围裙给你系上。</p>
+
+  <h3>第一次出手：把网页的"原材料"拉出来</h3>
+  <p>最简单的用法，命令后面跟一个网址（curl 从 Windows 10 起系统自带，macOS 和 Linux 也都预装，人人都用得起）：</p>
+  <div class="lab" data-lab="cmd-break" data-default="curl https://www.example.com"></div>
+  <p>回车后会哗啦倒出一大坨 HTML——<code>&lt;html&gt;&lt;head&gt;…</code>。注意，这不是你平时看到的那个花花绿绿的页面，而是页面的<strong>原材料</strong>：一堆标签文本。浏览器干的活儿（§ 4.6 讲过的渲染管线）正是把这些原材料加工成画；curl 不管加工，直接把原材料倒在案板上给你看。</p>
+  <p>这一坨原材料的诊断价值有两层。<strong>第一层：能倒出 HTML，说明整条链路全通</strong>——DNS 解析对了（§ 4.2）、TCP 连上了（§ 4.3）、TLS 握手成了（§ 4.4）、服务器应答了（§ 4.5）。如果此时浏览器还是打不开，锅就不在网络和服务器，而在浏览器自己：缓存抽风、扩展拦截、代理设置——排查方向立刻收窄。<strong>第二层：有些故障信息就写在 HTML 里</strong>——不少网站出错时会返回一个"友好"的错误页，正文里写着"系统升级中"。看到这句，你就知道不用查网了，等它升完就好。屏幕刷太快看不过来，加 <code>-o 文件名</code> 存成本地文件慢慢看，或者加 <code>-s</code> 让它安静点。</p>
+  <p>顺带认个亲：这坨东西你在浏览器里也见过——右键"查看网页源代码"，看到的就是同一坨。<strong>浏览器视图是装修好的样板间，源代码是施工图纸</strong>；curl 给你的是图纸原件，一页不少。还有个贴心小开关 <code>--compressed</code>：现代网站几乎都开着传输压缩（服务器把内容压成小包裹再发，路上省流量，第 4 章 § 4.5 讲过的 Accept-Encoding 协商），加上它 curl 会自动声明"我接受压缩货"并帮你解压还原——不加的话，有些网站会发给你一坨没拆包的压缩字节，看着像乱码，其实只是包裹没拆。</p>
+
+  <h3>只看小票不拆货：-I 与响应头</h3>
+  <p>很多时候你并不需要整坨 HTML——就像你只想确认"菜到底做没做"，不需要把菜端过来拆开看。这时候用 <code>-I</code>：</p>
+  <div class="lab" data-lab="cmd-break" data-default="curl -I https://www.example.com"></div>
+  <p>-I 发的是一个 <strong>HEAD 请求</strong>——"只要小票，不要菜"。服务器把状态行和响应头原样给你，内容本体一个字节都不发。返回的那一排标签，值得逐个认识：</p>
+  <ul class="checklist">
+    <li><strong>Server: nginx</strong>——后厨用的是什么灶（服务器软件的字号）；</li>
+    <li><strong>Content-Type: text/html; charset=utf-8</strong>——这是包什么货：网页、图片还是 JSON。浏览器全靠这个标签决定怎么处理收到的字节；</li>
+    <li><strong>Content-Length</strong>——货有多重（多少字节）；</li>
+    <li><strong>Cache-Control / Last-Modified / ETag</strong>——保质期三件套，浏览器缓存的依据（马上在状态码部分讲它们的搭档 304）；</li>
+    <li><strong>Location</strong>——搬家告示上的"新地址"，只在 3xx 重定向时出现；</li>
+    <li><strong>Set-Cookie</strong>——塞给你的会员卡；</li>
+    <li><strong>X-Cache: HIT / MISS</strong>——CDN 的取货记录（第 7 章 § 7.1 的老朋友）：HIT 是从你家门口的货架直接给你，MISS 是货架没货、回总仓现取了一件。</li>
+  </ul>
+  <p>讲一个 Content-Type 的经典病例："打开网页显示一屏源代码""点链接直接下载了个文件"。病根多半就是它——<strong>服务器把 HTML 错标成了 text/plain（纯文本），浏览器就老老实实当纯文本显示；把网页标成了下载类型，浏览器就老实下载。</strong>货没问题，面单贴错了。用 curl -I 一眼就能看到面单，这种"货对单错"的病在浏览器里要翻开发者工具才能查到。</p>
+
+  <h3>状态码家族：三位数的暗语系统</h3>
+  <p>每一张小票开头都有一个三位数——状态码。听着玄，其实就是一套全员统一的暗号本，第一位数字就把话分了类：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>开头</th><th>类别</th><th>人话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>1xx</strong></td><td>接单中</td><td>"收到，正在处理"（平时少见，握手升级时露面）</td></tr>
+        <tr><td><strong>2xx</strong></td><td>成功</td><td>菜好了，请慢用</td></tr>
+        <tr><td><strong>3xx</strong></td><td>指路</td><td>"这事不归我，去那边"——搬家告示</td></tr>
+        <tr><td><strong>4xx</strong></td><td>你这边的毛病</td><td>单子写得有问题：地址错、没资格、太频繁</td></tr>
+        <tr><td><strong>5xx</strong></td><td>它那边的毛病</td><td>后厨出事了：着火、停业、联系不上</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>值得点名认识的常客：<strong>200</strong> 成功；<strong>204</strong> 成功但无内容（事办完了，没有废话）；<strong>301</strong> 永久搬家；<strong>302</strong> 临时改址；<strong>304</strong> 你的缓存还能用（下面单独讲）；<strong>400</strong> 请求本身写得有问题；<strong>401</strong> 没带证件；<strong>403</strong> 带了证件也不让进；<strong>404</strong> 没这道菜；<strong>429</strong> 太频繁了（限流，超市"每人每天限购两件"的电子版）；<strong>500</strong> 后厨内部错误（程序炸了）；<strong>502</strong> 传话人收到坏消息；<strong>503</strong> 暂停营业（过载或维护）；<strong>504</strong> 传话人等不到后厨回话。还有一个 <strong>418</strong>——"我是一个茶壶"，1998 年愚人节的官方彩蛋，正经业务不会返回它，见到多半是工程师的幽默感。</p>
+  <p><strong>404 和 502 的区分是本节最重要的分诊知识。</strong>404 是服务器<strong>亲口</strong>说"我这没有这个地址"——它必须活着、正常收单，才打得出这张回执；502 则是站在服务器前面的传话人（网关、负载均衡，第 5 章 § 5.5 讲过的角色）说"后面那位不回我话"——多半真出事了。一个 404 你可以先检查自己是不是把网址敲错了；一个 502 你就该想"这不是我的问题"了。简单说成一句顺口溜：<strong>4xx 从自己身上找原因，5xx 到对方那边去等消息。</strong></p>
+
+  <h3>谁在回话：面单上的转运签章</h3>
+  <p>有个追问值得展开：你 curl 一个大网站，回话的到底是谁？多数时候不是那台真正干活的机器。现代网站的标配是一串中间人：你的请求先到 CDN（第 7 章 § 7.1），再进网关或负载均衡（第 5 章 § 5.5），最后才落到真正跑程序的后端。你在 curl 里看到的应答，是这条流水线上<strong>最后一个经手人</strong>替全队回的话。</p>
+  <p>好在中间人们会在响应头里留签章，就像快递包裹的面单上，每经一处转运就添一笔：<strong>Via</strong> 头记录"我这条路上过谁的手"；<strong>X-Cache: HIT/MISS</strong> 是 CDN 的取货登记（-I 一节讲过：HIT 是家门口货架直取，MISS 是回总仓现拿）；各家 CDN 还有自己的工号头（Cloudflare 的 CF-Ray、Fastly 的 X-Served-By）。把 -I 的输出从头扫到尾，你就能数出这单包裹经了几道手。<strong>一张应答，读出一整条流水线的名单</strong>——这是响应头比状态码更细的情报价值。</p>
+  <p>这套结构也解释了 502 和 504 的现场。想象后厨着了火：网关一遍遍敲后端的门没人应——它只好转身对顾客说 502"后厨出了坏消息"；要是后端没死、只是炒这道菜要十分钟，超过网关的忍耐上限（比如 30 秒），它就摊手报 504"等不到"。所以收到 5xx，聪明的下一步是<strong>分辨"是门口货架的病，还是后厨的病"</strong>：换个地区再 curl（CDN 的边缘节点各管一片，别处正常则只是本片货架的问题）、或者直接 curl 源站（绕开 CDN 对质，呼应上一节"直问权威档案室"的思路）。同样是 502，这两种病因的处理方式完全不同——<strong>而分清它们，靠的就是把响应头当现场证据来读。</strong></p>
+
+  <h3>304：省流量的暗号</h3>
+  <p>把 304 单独拎出来讲，因为它是"第二次打开网页明显变快"的机关之一。流程是这样的：你第一次访问某网站，服务器在响应头里附一张货物的<strong>版本指纹</strong>（ETag，好比货物的批号，或 Last-Modified 的出厂日期）。你第二次访问时，浏览器会主动问一句："我手里有批号为 XXX 的货，还新鲜吗？"服务器比对一下：批号没变——"还新鲜，304"，一个字节的内容都不重发；批号变了——"旧了，200"，新货整包重发。</p>
+  <p>说白了，这就是超市里的临期检查翻版：<strong>上礼拜买的牛奶还没过保质期，就不用再买一瓶；过期了才重新进货。</strong>浏览器和服务器之间天天在做这种"还新鲜吗"的对暗号，全在你无感知的情况下完成。所以下次在 curl 里看到 304 别慌——它不是错误，恰恰是缓存协商成功的勋章（呼应上一节 TTL 的保质期逻辑：DNS 缓存管"地址的保质期"，304 管"内容的保质期"，两套机制一个思路）。</p>
+
+  <h3>429 与限流：窗口前的排队叫号</h3>
+  <p>状态码里还有一位值得单独认识的成员：<strong>429 Too Many Requests</strong>——"你来得太勤了"。它不是嫌你烦，是服务器在自我保护：窗口就那么几个，单位时间只能伺候那么多单，超了就得请后来的人排队。你几乎一定体验过它的生活版——银行取号的叫号机（一天放号有限）、医院挂号的"今日约满"、超市"每人限购两件"。线上世界一模一样：抢票网站一秒几十万人敲门口，没有限流，第一秒机器就被踩塌了，谁都进不来。</p>
+  <p>429 的回执往往附带一张告示：<strong>Retry-After 头</strong>——"请 X 秒后再来"。这是很体面的失败：人家明说了不是拒绝你，是让你掐着表改天。谁最容易撞上 429？写脚本的人：循环里一顿狂抓，几分钟就把配额烧完。礼貌的做法三件套：<strong>控制节奏</strong>（每秒别超过人家文档写的额度）、<strong>听话</strong>（看到 Retry-After 就真的等）、<strong>别重复问</strong>（拿到的结果先存本地，别同样的数据反复要）。说到底还是那句老话：<strong>把服务器当窗口，把脚本当顾客——顾客可以勤快，但不能插队加塞。</strong>这一点在第 8 章 § 8.4 讲 DDoS 时还会再遇到：恶意的"故意加塞"和善意的"手滑太勤"，服务器视角长得几乎一样，全看意图和数量级。</p>
+
+  <h3>3xx 与 -L：跟着搬家告示走</h3>
+  <p>curl 遇到 301/302 时有个著名的"不合群"行为：<strong>默认不跟随。</strong>它把 302 和 Location 头原样端给你，自己站在原地不动。这就解释了一个高频困惑：curl 显示 301，浏览器打开却一切正常——不是 curl 坏了，是<strong>浏览器自动跟着搬家告示走到了新址，curl 只负责把告示念给你听。</strong></p>
+  <p>想让它跟到底，加 <code>-L</code>：</p>
+  <div class="lab" data-lab="cmd-break" data-default="curl -IL https://example.com"></div>
+  <p>-IL 的组合是排查跳转链的标准姿势：从 http 到 https 的升级跳转、裸域到 www 的规范跳转、短链接的一层层展开——每一站的响应头都列给你，终点站在哪、一共跳了几跳、每跳的服务器是谁，一目了然。第 8 章 § 8.3 讲过的钓鱼站常用的"正规网址跳野路子"把戏，用这招就能当场验明：第一站是正经网站不假，第二站早就拐进沟里了。</p>
+  <p>顺带一句运维常识：301 和 302 一字之差，待遇天差地别。<strong>301 是"永久搬家"，浏览器和搜索引擎都会记进档案</strong>——好比户口本上改了地址，所有档案跟着改，以后直接去新址；302 只是"临时借住"，档案不动。网站搬家要是错用了 301，回头想改回来，得等各家的"户口档案"慢慢更正，急不来。选告示的措辞，是个正经的技术决策。</p>
+
+  <h3>-v：把整场对话逐句打印</h3>
+  <p>到目前你看到的都是"结果"。想看"过程"，用 <code>-v</code>（verbose，啰嗦模式）：</p>
+  <div class="lab" data-lab="cmd-break" data-default="curl -v https://www.example.com"></div>
+  <p>输出按开头符号分三路，各说各的话：</p>
+  <ul class="checklist">
+    <li><strong>* 星号开头——curl 自己的旁白</strong>："正在解析域名…解析到 93.184.216.34""TCP 连接建立""TLS 握手完成，用的 TLS 1.3，证书由 XX 机构签发"。第 4 章那场旅程（DNS → TCP → TLS）的每一步，全在这串旁白里现出原形；</li>
+    <li><strong>&gt; 右尖括号开头——你说的话</strong>：请求行和全部请求头（Host、User-Agent、Accept…），一字不改；</li>
+    <li><strong>&lt; 左尖括号开头——对方说的话</strong>：状态行和全部响应头。</li>
+  </ul>
+  <p>这就好比把整场对话录了音逐句回放：谁先开的口、你说了什么、对方回了什么、中间人有没有转述走样，一句不落。它的诊断价值在于<strong>卡在哪一步，一屏看清</strong>：卡在解析——DNS 的病（回上一节）；TCP 连不上——路由或防火墙的病（回 § 9.2）；TLS 握手失败、报证书过期——第 8 章 § 8.2 的老朋友，浏览器里那声 ERR_CERT_DATE_INVALID 就是同一件事的白话版；请求发出去石沉大海——服务器或中间设备的病。一个命令，把第 4 章的六步旅程从头到尾走一遍给你们看。</p>
+  <p>有个小提醒免得你被输出吓到：现在的网站多已升级 HTTP/2（甚至 HTTP/3）。在这类连接里，请求不再是一行行明文，而是被拆成二进制的"小卡片"（专业说法叫分帧）——你在 -v 里看到的 <code>:method: GET</code>、<code>:path: /</code> 这类带冒号开头的写法，就是 curl 把二进制卡片<strong>翻译回人话</strong>给你看的样子。原理细节是第 10 章 § 10.1 的正餐，这里只需认得：带冒号的行也是请求头，不是乱码，更不是出错。</p>
+
+  <h3>掐表计时：网站到底慢在哪</h3>
+  <p>说完了"通不通"，该治"慢"了。"感觉好慢"是没法报障的——你得回答"慢在哪一段"。curl 的 <code>-w</code> 参数能把整段旅程切成四段分别计时：</p>
+  <pre><code>curl -o /dev/null -s -w 'DNS解析 %{time_namelookup}s | TCP握手 %{time_connect}s | TLS握手 %{time_appconnect}s | 首字节 %{time_starttransfer}s | 总计 %{time_total}s\n' https://www.example.com</code></pre>
+  <p>四个时间点正好对上第 4 章的目录：<strong>time_namelookup</strong> 是查号台排队的耗时（§ 4.2）；<strong>time_connect</strong> 是 TCP 握手完成的时刻（§ 4.3）；<strong>time_appconnect</strong> 是 TLS 握手完成的时刻（§ 4.4）；<strong>time_starttransfer</strong> 是第一个字节回到手里——它减去前面的时间，就是"请求递进去 + 后厨处理 + 路上往返"的合计（§ 4.5）。哪段数字扎眼，病根就在哪段：</p>
+  <ul class="checklist">
+    <li>DNS 一项就占几百毫秒 → 查号台太慢，回 § 9.3 换公共 DNS；</li>
+    <li>TCP 连接慢 → 物理距离远或绕路，可用 § 9.2 的 traceroute 看一眼路；</li>
+    <li>TLS 握手慢 → 距离远叠加握手往返次数（第 10 章 § 10.1 会讲 HTTP/3 怎么治这个）；</li>
+    <li>前三项都快、首字节等了三秒 → 后厨慢：程序卡、数据库慢——网络全无责任，把锅递给服务器端。</li>
+  </ul>
+  <p>本质上就是给"玄学慢"装了四个电表：感觉不可信，数字才作数。每次"网站好卡"的争论，最后都该由这行命令裁决。</p>
+  <p>用这台电表还有一条使用须知：<strong>单次测量会骗人。</strong>第一口请求往往包含冷启动——DNS 缓存还没有、TLS 连接刚建立、服务器的缓存还没热，样样都慢；紧接着的第二口蹭上了所有的热缓存，快得像换了台机器。这就好比刚停车入库的第一把方向总打不准，第二把就顺手了。所以专业的量法是<strong>连测五到十次，看中位数而不是看最快或最慢的那次</strong>——最快的一次是运气，最慢的一次是事故，中间那几个才是网站的真实脾气。同一段路、两种测法、天壤之别的结论——从这也能看出，为什么"我测着挺快的呀"和"我这边慢死了"能同时成立。</p>
+
+  <h3>带上身份：User-Agent 与 Cookie</h3>
+  <p>用 curl 访问某些网站，会吃到闭门羹：或者 403，或者跳到一个验证页——同一网址浏览器里明明好好的。这是怎么回事？因为你的每一份请求里都带着一张"工牌"：<strong>User-Agent</strong>，自报家门的字符串。curl 的默认工牌上就写着 <code>curl/8.x</code>，人家前台一看：不是浏览器，是个脚本——按反爬规则处理，请出去。</p>
+  <p>换个工牌再试：</p>
+  <pre><code>curl -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" https://www.example.com</code></pre>
+  <p>很多情况下，换了工牌立刻放行。这就是第 4 章 § 4.5 埋的伏笔——<strong>请求头就是你说的话，服务器听你说话的腔调决定怎么伺候你。</strong>curl 的价值在于能把"浏览器能开、脚本不能开"的差异逐个头排查：是工牌被认出来了？还是没带会员卡？<strong>Cookie</strong> 就是那张会员卡——服务器第一次见你时用 Set-Cookie 发卡，之后你每次上门要主动出示。浏览器自动替你保管和出示，curl 得手动带：<code>-b "card=xxx"</code>。把浏览器里那张卡的号码抄过来带上，脚本就成了"你本人"。</p>
+  <p>当然，反爬和绕反爬是场永恒的猫鼠游戏，这里学的是"请求头决定待遇"的原理——能换工牌是本事，拿工牌去干坏事儿是另一回事，分寸在自己手里。</p>
+  <p>再送你一件终极大招，专治"浏览器能开、curl 不行"的疑难杂症。浏览器都内置了网络体检台（按 F12 打开开发者工具的 Network 面板）：浏览器发出的每一个请求都列在那里——网址、状态码、耗时、全部请求头。随便点开一条，右键菜单里藏着一个宝贝：<strong>Copy as cURL（复制为 curl 命令）</strong>——把这条真实请求连同它的所有头（工牌、会员卡、语种偏好，一个不落）原样抄写成一条 curl 命令。粘到终端里回车，你就在命令行里<strong>完美复刻了浏览器刚刚那次成功的访问</strong>。接下来做减法：把抄来的头一个个删掉再试，删到哪个头时开始被拒——病根就是它。这套"先全抄、再做减法"的排查思路，和上一节"换台对照"是一对孪生兄弟：<strong>一个换的是回答的人，一个换的是说话的腔调。</strong></p>
+
+  <h3>从"要"到"递"：POST 与接口测试</h3>
+  <p>到目前为止发的都是 GET——"我要看什么"。HTTP 的另一个主力动作是 <strong>POST</strong>："我递给你东西，你处理一下"。填表注册、登录提交、调用接口，都是 POST。curl 里这么写：</p>
+  <pre><code>curl -X POST https://api.example.com/login \
+     -H "Content-Type: application/json" \
+     -d '{"user":"xiaowang","pass":"123456"}'</code></pre>
+  <p>三件套各有分工：<strong>-X POST</strong> 声明这次是递交不是索取；<strong>-H</strong> 说明白递的是什么材料（JSON 格式还是表格格式，服务器得知道怎么拆）；<strong>-d</strong> 就是递进去的内容本身。打个比方：GET 是点菜，POST 是把填好的申请表塞进窗口——表还得按人家要求的格式填，不然窗口看不懂，退回来一个 400。</p>
+  <p>这是程序员每天真实的工作姿势：写完一个接口，先 curl 手动发一次，看服务器怎么答——就像后厨新菜出锅，先自己尝一口再上桌。而对非程序员，它至少帮你解开一层幕布：<strong>手机 App、小程序、网页背后，全是这一问一答</strong>——所谓"前后端分离"，就是屏幕这边管画界面、屏幕那边管算数据，两边靠 HTTP 的请求和响应传话。curl 让你听见没化过妆的原始对话。</p>
+  <p>补两个细节把 GET/POST 的边界画准。其一，<strong>GET 也能带参数</strong>——那些写在网址问号后面的 <code>?id=123&amp;page=2</code>（第 4 章 § 4.1 拆 URL 时见过），就是 GET 递的"纸条"：参数贴在信封外面，谁都能看见，所以只适合放无伤大雅的查询词；POST 把内容装进信封内页（请求体），还顺手把信封口封上（配合 HTTPS 就是路上也看不见）。其二，<strong>格式要跟窗口对上</strong>：老式表单用 <code>application/x-www-form-urlencoded</code>（键值对），现代接口多用 JSON——递错了格式的材料，窗口看不懂，退回一个 400。</p>
+  <p>还有一句安全叮嘱必须说：上面示例里的密码是教学用的假数据。<strong>真实的密码别写在命令行里裸奔</strong>——命令行会进系统的历史记录（上下键翻得出来），屏幕共享时也无处可藏；更要紧的是，递敏感材料的地址必须 https 打头——http 是明信片，一路上谁都看得见（第 8 章 § 8.1 的全部教训）。<strong>材料越贵重，信封越要厚。</strong></p>
+
+  <h3>wget：专一的搬运工</h3>
+  <p>最后把另一位主角请上来。curl 是会说几十种方言（HTTP、FTP、SMTP……）的瑞士军刀，<strong>wget 只会一件事：把网上的文件原样搬到本地</strong>——但这一件事它干得极其扎实：</p>
+  <ul class="checklist">
+    <li><strong>断点续传（-c）</strong>：下载一个几 GB 的文件到 97% 断网了，wget -c 从 97% 处接着搬，不用从头再来——好比搬家搬到一半歇了工，靠谱的搬运工会记着搬到第几箱了；</li>
+    <li><strong>自动重试</strong>：网络抖一下，它自己缓一缓再搬；</li>
+    <li><strong>整站镜像（-m）</strong>：把一个网站整棵搬下来存档——威力大，责任也大，把人家服务器当靶场搬是会吃律师函的，慎用；</li>
+    <li><strong>递归下载（-r）</strong>：顺着链接把一串文件搬回家。</li>
+  </ul>
+  <p>两者的分工口诀：<strong>要"看应答"用 curl，要"搬文件"用 wget。</strong>当然边界没那么死——curl 加 -o 也能存文件，wget 加 -qO- 也能把内容打印到屏幕——但特长分明：curl 是问话的仪器，wget 是搬家的货车。下载大文件、做镜像、断点续传，认准 wget；发请求、看状态码、掐表计时，认准 curl。</p>
+  <p>wget 的几个日常小开关也顺手记下：<strong>-O 新名字</strong>给搬来的文件改名落户口（不然文件名就是网址最后那截，可能是乱码般的随机串）；<strong>-q</strong> 安静模式，进度条都不要（写脚本时清爽）；<strong>--limit-rate=500k</strong> 限速搬家——把带宽留给正事，好比搬家货车主动避开早高峰。至于整站镜像（-m）的正经用途也说一句公道话：离线存档、给文档站做本地副本、抢救即将关站的老资料——这些是搬运工的光荣时刻；但转个身，把人家的服务器搬成靶场，就完全是另一回事了。<strong>工具没有立场，用的人得有。</strong></p>
+
+  <h3>curl 进脚本：从手动问诊到自动值更</h3>
+  <p>最后一块拼图：命令行工具真正的威力，在于能进脚本、能自动化。图形工具教不会电脑"替你盯着"，命令天生就会——这靠的是一个朴素约定：<strong>每个命令干完活，都用"退出码"向系统汇报成败——0 是成功，非 0 是失败</strong>。就像判卷只看及格不及格，不写评语。curl 加上 <code>-f</code>（fail）就接入这套判卷机制：</p>
+  <pre><code>curl -fsS https://www.example.com -o /dev/null &amp;&amp; echo "活着" || echo "出事了"</code></pre>
+  <p>-f 让 curl 遇到 4xx/5xx 时一声不吭地报"失败"（非 0 退出码），-s 安静干活，-S 只在出错时才开口。这一行就是最原始的"健康检查"：网站活着，打印"活着"；挂了，打印"出事了"。</p>
+  <p>把这一行塞进定时任务（每分钟跑一次），挂了就给你发消息——恭喜，你亲手搭出了"网站监控"的雏形。<strong>市面上所有付费监控服务，剥开包装，内核都是这个逻辑</strong>：定时发一个请求、看退出码和耗时、异常了就喊人。区别只在人家从全世界几百个机房同时发请求（呼应第 7 章"边缘节点"的分布思路），还能画出耗时曲线。不妨这样想：你本节的每一次手动 curl，都是在扮演值班更夫敲的那一声梆子——<strong>梆子响，平安无事；梆子停，全员起床。</strong>脚本做的事，不过是让更夫永不瞌睡。</p>
+
+  <h3>排查流：一个回执，一层病灶</h3>
+  <p>把本节的诊断知识收拢成一张分诊台流程。场景还是"网站打不开"，先 curl 一把，按回执分流：</p>
+  <ul class="checklist">
+    <li>报 <strong>Could not resolve host</strong> → DNS 层的病：回 § 9.3，换台查号台、对质权威；</li>
+    <li>报 <strong>Connection refused</strong> → 对面那个门（端口）没开、服务没起来：§ 9.5 的 netstat 马上讲；</li>
+    <li>报 <strong>Connection timed out</strong> → 半路被防火墙拦了或路由不通：§ 9.2 的 traceroute 定位在哪一跳；</li>
+    <li><strong>TLS 握手失败 / 证书报错</strong> → 第 8 章 § 8.2 的领域：证书过期、域名不匹配；</li>
+    <li>拿到 <strong>4xx</strong> → 检查自己：网址拼对没、方法用对没、证件带了没、频率是否太猛；</li>
+    <li>拿到 <strong>5xx</strong> → 服务器侧的事：等修复或报障，报障时报清 502 还是 504，运维的第一反应不一样；</li>
+    <li>能打开但<strong>慢</strong> → -w 掐表，四段计时定位病灶段落。</li>
+  </ul>
+  <p>看这流程的形状：又是"由近及远、逐段夹逼"。ping 一节我们管它叫方法论，现在你已经见到它第四次上岗了——<strong>工具换到第四件，方法论还是那一件。这就叫功力：招式会忘，心法带走。</strong></p>
+
+  <div class="callout analogy">
+    <strong>把 curl 想成"绕过服务员、直奔后厨取餐口"</strong><br/>
+    你点的菜迟迟不来，包间服务员只会说"马上好"。你起身，走到后厨取餐口——从这一刻起，所有消息都是第一手的。<br/><br/>
+    <strong>第一步：先看小票（curl -I）。</strong>取餐口一摞小票，你的那张上盖着状态章：200——菜好了，怪传菜慢；301——本店搬了，告示上写着新址；404——菜单上压根没这道菜，是你点错了；5xx——后厨自己出事了，跟你无关。<br/><br/>
+    <strong>第二步：看见 301，先读告示再动身（-L）。</strong>告示（Location 头）指哪你就跟到哪，一路把每张新告示都读一遍——短链接、钓鱼跳转、升级 https，全在这条告示链上现形。也记住：永久搬家（301）是要进档案的，措辞不能乱写。<br/><br/>
+    <strong>第三步：答复可疑，调录音（-v）。</strong>你和后厨说过的每一句、后厨回的每一句、取餐口有没有人转述走样，逐句回放。卡在哪一句，病灶就在哪一段——查号、敲门、验明正身、递单，四段各有各的病。<br/><br/>
+    <strong>第四步：嫌慢，掐表（-w）。</strong>排号多久（DNS）、走到取餐口多久（TCP/TLS）、后厨炒了多久（首字节）、总共多久——四个数字一出来，"感觉好慢"就成了"后厨炒了三秒"这种能报障的话。<br/><br/>
+    <mark class="key">浏览器是替你挡在前面的包间服务员：服务周到，但转述含糊；curl 让你站到取餐口直接对话。所有"打不开、好慢、显示不对"，到窗口问一句，都能拿到白纸黑字的回执——这就是本节的全部主旨。</mark>
+  </div>
+
+  <h3>动手清单：一次规范的 HTTP 体检</h3>
+  <ul class="checklist">
+    <li>curl https://目标站 —— 能倒出 HTML？链路全通，往浏览器自身查；</li>
+    <li>curl -I 目标站 —— 看状态章和面单：Server、Content-Type、Cache-Control、X-Cache；</li>
+    <li>状态码 3xx → curl -IL 跟到终点，逐跳读告示；</li>
+    <li>curl -v 目标站 —— 全程录音：DNS、TCP、TLS、证书、请求、应答一次看完；</li>
+    <li>慢 → -w 掐表四段计时，定位病灶段落；</li>
+    <li>吃 403 闭门羹 → -A 换工牌、-b 带会员卡；还不行就浏览器 F12 → Copy as cURL 全抄再逐头做减法；</li>
+    <li>调接口 → -X POST + -H + -d 三件套，先手动验一遍再写代码；</li>
+    <li>计时 → 连测五到十次看中位数，别信单次；</li>
+    <li>搬大文件 → wget -c，断点续传保平安。</li>
+  </ul>
+
+  <h3>常见误区</h3>
+  <ul class="keylist">
+    <li><span class="k">误区一："curl 有返回就是网站正常"</span><span class="v">能返回的还有错误页——不少 502/503 页本身就是一段好好的 HTML。先看状态码再下结论：返回 ≠ 200。</span></li>
+    <li><span class="k">误区二："301/302 是报错"</span><span class="v">3xx 是正常指路，不是故障。绝大多数 http→https、裸域→www 的跳转都是它。curl 显示 301 而浏览器正常，是因为浏览器自动跟了，加 -L 你也能跟。</span></li>
+    <li><span class="k">误区三："304 说明服务器没理我"</span><span class="v">恰恰相反，304 是服务器在精打细算："你手里的版本还新鲜，不重发了。"它是缓存协商成功的标志，是省流量的勋章。</span></li>
+    <li><span class="k">误区四："502 就是服务器挂了"</span><span class="v">502 是传话人（网关）说"后端不回话"——后端可能挂了，也可能只是正在重启。504 则是"等太久没等到"。报障时报清这两个码，运维的排查起点完全不同。</span></li>
+    <li><span class="k">误区五："wget -r 镜像整站没风险"</span><span class="v">递归/镜像请求会把对方服务器当靶场，流量成本和封禁风险都是真金白银。小取即用，遵守网站的 robots 规则，这是搬运工的职业操守。</span></li>
+    <li><span class="k">误区六："curl 和 wget 是两个过时命令行"</span><span class="v">恰恰相反，它们是全行业每天都在用的主力仪器：程序员的接口联调、运维的健康检查、CI 流水线的探活，背后全是这两位。图形工具会过时，这两个命令三十年没挪窝。</span></li>
+  </ul>
+
+  <div class="lab" data-lab="quiz"
+       data-q="同事反馈"某活动页打不开"。小陈在自己电脑上 curl 那个活动页：返回 404；再 curl 该网站首页：返回 200，HTML 正常。以下判断哪个最准确？"
+       data-opts="网站服务器整体宕机了，等它恢复就好|那个具体地址不存在——改版删了旧页或链接拼错了；服务器活着，病在内容层，该配跳转或改链接|小陈的 DNS 被劫持了，解析到了假服务器|同事的浏览器坏了，让他清缓存就好"
+       data-answer="1"
+       data-explain="两个关键事实：①404 是服务器亲自打出来的回执——机器必须活着、正常收单，才答得出 404，排除 A；②首页 200 更证明整站在线、链路全通。所以病灶既不在网络也不在服务器，而在"这个地址本身"：改版后旧链接没配 301 跳转、URL 手滑拼错、或活动已下线。专业解法是给旧地址配 301 指向新页（本节的搬家告示），而不是干等恢复。C 的破绽：劫持通常回给你假页面或干脆连不上，不会规规矩矩地回 404；D 的破绽：小陈自己也复现了 404，说明不是同事的单机现象。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>带走三句话。<strong>第一，curl 是不穿外壳的浏览器：</strong>状态码和响应头是服务器亲手打的小票——白纸黑字，没有中间人转述，"打不开"从此有了第一手证据。<strong>第二，状态码是分诊台：</strong>4xx 回自己身上找原因，5xx 到对方那边等消息，3xx 跟着告示走，连接层报错按 DNS/路由/证书分流回前三节——一张三位数，标出病灶在哪一层。<strong>第三，-v 和 -w 是两台仪器：</strong>一台把对话逐句回放，一台把"慢"切成四段计时。<mark class="key">至此你已能在应用层独立取证——下一节回到自家门口：这台电脑上谁在监听端口、谁连着谁？netstat 与 ss，把镜头转向本机。</mark></p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./09-3-nslookup-dig.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 9.3 · nslookup / dig</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 9.5 · netstat / ss（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">Xue Hai Wu Ya · Network · § 9.4 · curl / wget</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
