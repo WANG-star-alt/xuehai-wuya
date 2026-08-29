@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 3.3 · Flexbox · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 3 章</span>
+      <span class="sep">›</span>
+      <span>§ 3.3</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 3.3 · Section</div>
+    <h1>Flexbox 弹性布局</h1>
+    <div class="cn">Flexbox · The One-Dimensional Spring</div>
+  </header>
+
+  <p class="lead">
+    上一节末尾说过，float 时代工程师们靠偏方搭布局，一搭就是十年。2015 年前后，一门新功夫终于在各浏览器全部就位，它叫 <strong>Flexbox</strong>（弹性盒子布局），专治一类问题：<mark class="key">「一排盒子（或一列），怎么又对齐、又均匀、又能屈能伸？」</mark>导航条图标均匀分布、卡片永远等高、按钮组居中对齐、侧栏和主区自动分蛋糕——这些 float 时代的疑难杂症，在 Flexbox 里往往一行属性就痊愈。<strong>说白了</strong>，它把布局从「每个盒子自己为坐标奋斗」变成了「一队盒子听容器统一指挥」：容器宣布方向和队形，队员们按规则伸缩。这一节把指挥体系完整讲一遍——主轴交叉轴怎么定、六大对齐招式、grow/shrink/basis 的伸缩算法——学完你会发现，此前所有靠 margin 硬凑的排列，从此都有正规军的写法。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🚇 早高峰的一节地铁车厢</div>
+    <p>地铁车厢是「一维空间收纳一群人」的绝佳样本。车厢有<strong>一条长轴</strong>（从车头到车尾），乘客们沿这条轴站——这就是 Flexbox 的<strong>主轴</strong>。<br/><br/>
+    人多的时候怎么办？<strong>大家挤一挤，每个人都收缩一点自己占的空间</strong>——这是 flex-shrink（允许收缩）。<br/>
+    人少的时候呢？<strong>空出来的地方大家分着站，或者都往中间凑，或者贴车门站两头空着</strong>——这是 justify-content 的几种队形（flex-start 贴一头、center 聚中间、space-between 两头顶住中间均分）。<br/>
+    乘客的<strong>高矮</strong>是另一回事：所有人不管一米六还是一米九，<strong>都「拉伸」到顶天立地站满车厢高度</strong>（stretch，默认），或者都踮脚站齐一条线，或者都蹲下齐另一条线——这是交叉轴的事，align-items 管。<br/>
+    新到一站，上来一位乘客<strong>优先找空大的地方挤</strong>——这是 flex-grow 按「饥渴程度」分剩余空间。<br/><br/>
+    <mark class="key">一节车厢，一条主轴、一条交叉轴、几种队形、一套伸缩规则——Flexbox 的全部内容，就是这节车厢的乘车守则。</mark></p>
+  </div>
+
+  <h3>术语对照：先把行话翻译成人话</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>地铁车厢里的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>弹性容器（flex container）</td><td>声明「这队归我管」的父盒子</td><td>整节车厢</td></tr>
+        <tr><td>弹性项目（flex item）</td><td>容器里被统一指挥的子盒子</td><td>每位乘客</td></tr>
+        <tr><td>主轴（main axis）</td><td>项目排队的那根轴</td><td>车厢长轴（车头到车尾）</td></tr>
+        <tr><td>交叉轴（cross axis）</td><td>与主轴垂直的那根轴</td><td>车厢高度方向（地板到天花板）</td></tr>
+        <tr><td>justify-content</td><td>主轴上的队形（怎么分布）</td><td>乘客沿车厢怎么站</td></tr>
+        <tr><td>align-items</td><td>交叉轴上的统一站姿</td><td>大家怎么处理高矮（站直/居中/蹲下）</td></tr>
+        <tr><td>flex-grow / shrink</td><td>有剩余空间的分蛋糕 / 空间不够时的让位</td><td>找空地站 / 挤一挤</td></tr>
+        <tr><td>flex-basis</td><td>伸缩之前项目认领的「起跑线尺寸」</td><td>乘客上车前默认占的宽度</td></tr>
+        <tr><td>gap</td><td>项目之间的固定间距</td><td>乘客间保持的一拳距离</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>两套属性各管一方：容器的与项目的</h3>
+  <p>Flexbox 第一个要立的认知是<strong>属性的分工</strong>：一部分属性写在容器上，管「全队的规矩」；另一部分写在项目上，管「我个人的例外」。这个分工贯穿整个体系：</p>
+  <pre><code>.container {
+  display: flex;          /* 一行代码，车厢成立 */
+  justify-content: ...;    /* 容器：全队队形 */
+  align-items: ...;        /* 容器：全队站姿 */
+  gap: 12px;               /* 容器：间隔 */
+}
+.item {
+  flex: 1;                 /* 项目：我的伸缩意愿 */
+  align-self: ...;         /* 项目：我个人另选站姿 */
+}</code></pre>
+  <p><code>display: flex</code> 是入会的唯一仪式：父盒子写上这一行，它就成了弹性容器，所有直接子盒子自动升级为弹性项目——子盒子们不管原来是块级还是行内，在车厢里一律平等（§ 3.1 那些块级行内的户口差异，进车厢后统一洗掉）。<strong>好比</strong>进了地铁就只有「乘客」一种身份，没有人管你在地面上是行长还是学生。</p>
+  <p>顺带交代一个同门兄弟：<code>display: inline-flex</code>。它对内和 flex 一模一样（车厢里那套规则原样生效），区别在<strong>容器自己在外人眼里是谁</strong>——flex 的容器是块级盒子，独占一行；inline-flex 的容器是行内级别的，可以和文字、图标站在同一行。<strong>相当于</strong>一辆挂靠车队的车厢：对乘客（项目）它是完整的一节车厢，对外（父级）它只是车队里的一名成员，要跟别的车排着走。做「文字旁边的迷你按钮排」「行内小标签组」时用它。</p>
+
+  <h3>十年偏方与三行正药：一个导航栏的两代写法</h3>
+  <p>先别急着背属性表，看一场「新旧对决」最提神。需求是界面上最常见的：一条导航栏，logo 靠左、一排菜单靠右、整条栏内容垂直居中。float 时代的答案是一套组合偏方：</p>
+  <pre><code>/* float 时代：每一行都是十年经验的偏方 */
+.nav::after  { content: ""; display: block; clear: both; } /* 清浮动，防父盒子塌陷 */
+.logo        { float: left; }
+.menu        { float: right; }
+.menu li     { float: left; margin: 0 10px; } /* 横排菜单还得给首尾补偿间距 */
+/* 想整条栏垂直居中？对不起，float 没有这味药 */</code></pre>
+  <p>这套代码能跑，但每一行都在还技术债：清浮动是给塌陷善后，margin 补偿是给间距打补丁，而「垂直居中」float 根本无解——只能靠调行高硬凑，凑完换个字号又歪。换成 Flexbox，同一个需求是三行正药：</p>
+  <pre><code>/* flex 时代：意图写在脸上 */
+.nav {
+  display: flex;
+  align-items: center;             /* 全栏垂直居中，白送 */
+  justify-content: space-between;  /* logo 左、菜单右，一步到位 */
+}</code></pre>
+  <p>三行代码，清浮动没了，margin 补偿没了，垂直居中从「无解」变「默认」。但真正值得品的不是行数，是<strong>意图的可读性</strong>：flex 版本一眼能看出「两端对齐 + 垂直居中」这两个设计决策；float 版本得先在脑内模拟一遍浮动流，才能倒推出它在干什么。<strong>说白了</strong>，省下的从来不是打字的力气，而是五年后排查问题（或接手同事代码）时的脑力——<strong>就像</strong>办公室从「每件事都靠口头传话」变成「公告板上写清楚」：省的不是纸，是协调成本。</p>
+  <p>这也回答了 Flexbox 为什么值得单独一节：它不是「多了一种布局选项」，而是把 float 时代那些只存在老师傅脑子里的经验，固化成了十几个语义明确的属性。<mark class="key">偏方的问题是知其然不知其所以然，正药的特点是药名即说明书。</mark>float 偏方当年能统治十年，是因为没有替代品；替代品出现后还抱着偏方，就只剩历史包袱了。</p>
+
+  <h3>语法化石层：为什么老教材里写的是 -webkit-box</h3>
+  <p>既然讲十年偏方，就得交代 Flexbox 自己也有一段「三代同堂」的乱史。它 2009 年出了第一版草案，语法是 <code>display: -webkit-box</code>（配 -webkit-box-orient、-webkit-box-flex 这些带前缀的属性）；2012 年大改一版，中途还用过 <code>display: flexbox</code> 这个过渡名；2015 年前后才是今天这版 <code>display: flex</code> 全面落地。<strong>说白了</strong>，一门标准改了三次名字，教材就留下了三层化石：2009 年的教程教 -webkit-box，2012 年的教 flexbox，新教程才教 flex——三层代码今天都还能在老项目里挖到。</p>
+  <p>认化石有个速判法：看到「box」字辈的属性（box-flex、box-orient、box-pack），就是 2009 层，该升级了——它们不仅名字旧，行为也有实质差异（老语法没有 gap，换行和对齐规则也不是今天这套）。<mark class="key">读旧教程先看 display 那一行：是 box、flexbox 还是 flex——属性表对不上号的，直接换一篇看，别硬学。</mark>这套「看年号辨教材」的功夫，和读旧文档时认 ES5/ES6、认 HTML4/HTML5 是同一种：技术文档没有过期标签，但语法年号就是。</p>
+
+  <h3>主轴与交叉轴：先定方向，再谈对齐</h3>
+  <p>Flexbox 学习路上最大的心魔，是 <code>justify-content</code> 和 <code>align-items</code> 总记混。破掉它的钥匙只有一把：<strong>先问主轴朝哪儿</strong>。容器的 <code>flex-direction</code> 决定主轴方向，默认 <code>row</code>（横排，主轴从左到右）——主轴定了，交叉轴自动垂直于它。<code>justify-content</code> 永远管<strong>主轴</strong>的分布，<code>align-items</code> 永远管<strong>交叉轴</strong>的对齐，与横竖无关。</p>
+  <p>所以横排时：justify 管左右、align 管上下；一旦 <code>flex-direction: column</code>（竖排），主轴换成竖的，justify 立刻改管上下、align 改管左右——属性没变，管的轴换了。<strong>其实说白了</strong>：这两个属性不是「管横向/管纵向」，而是「管排队方向/管垂直于排队方向」。<mark class="key">记混的时候默念：justify 跟着队伍走，align 横着切一刀。</mark>这也是 flex-direction: row-reverse（倒序横排）存在的意义之一：主轴方向反了，「起点」也跟着到右边——某些 RTL（从右到左书写）界面就靠它一行切换。</p>
+
+  <div class="lab" data-lab="flexbox"></div>
+  <p>上面这个演练场里，试着先把方向换成 column，再玩 justify 和 align——你会亲手验证刚才那条铁律：属性不变，轴换了。</p>
+
+  <h3>justify-content：主轴上的六种队形</h3>
+  <p>主轴上的分布规则一共六种主流队形，全列出来对照：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>取值</th><th>队形</th><th>生活画面</th><th>典型用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>flex-start（默认）</td><td>全部挤向起点</td><td>乘客全站在车头</td><td>常规左对齐列表</td></tr>
+        <tr><td>flex-end</td><td>全部挤向终点</td><td>乘客全站在车尾</td><td>右对齐工具条</td></tr>
+        <tr><td>center</td><td>聚到中间</td><td>大家围着扶手聚拢</td><td>居中的按钮组</td></tr>
+        <tr><td>space-between</td><td>两端顶死，中间均分</td><td>头尾贴门，中间等距</td><td>导航栏（两端对齐）</td></tr>
+        <tr><td>space-around</td><td>每个项目两侧等宽留白（首尾留白是中间的一半）</td><td>每人左右各让一拳，两端各半拳</td><td>间距均匀的标签组</td></tr>
+        <tr><td>space-evenly</td><td>所有空隙完全等宽</td><td>所有间隔一模一样</td><td>均匀铺开的底部标签栏</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>其中 <strong>space-between 是界面史上出镜率最高的队形</strong>：顶栏 logo 靠左、菜单靠右，中间自然拉开——float 时代要给菜单塞 float: right 还要清除浮动，现在两行搞定。space-around 和 space-evenly 的区别值得瞪大眼睛看清楚：around 是「每个项目自己的包裹等宽」，首尾的空隙只有中间空隙的一半（两份「半拳」拼在一起才等于一份中间空隙）；evenly 则一刀切，所有空隙严格相等。<strong>打个比方</strong>：around 像每个乘客自带一个等大的气泡，evenly 像车厢画了等距站位线——气泡在两端只露一半，站位线处处一致。</p>
+
+  <h3>align-items：交叉轴上的统一站姿</h3>
+  <p>交叉轴上，全队统一一种「站姿」，五种：</p>
+  <ul class="keylist">
+    <li><strong>stretch（默认）</strong>：个个拉伸到撑满交叉轴——横排的卡片们<strong>自动等高</strong>，上一节 float 时代用 9999px padding 硬凿的等高难题，这里是默认行为；</li>
+    <li><strong>flex-start / flex-end</strong>：统一靠交叉轴起点 / 终点——图标和文字顶端对齐或底端对齐；</li>
+    <li><strong>center</strong>：统一站中间——小图标和大文字垂直居中对齐，按钮内图文混排的标配；</li>
+    <li><strong>baseline</strong>：统一踩文字基线——一行里大小字号混排时，让所有文字的「脚」站在同一条线上（基线的概念 § 3.2 行盒一节讲过）。</li>
+  </ul>
+  <p>个别项目想例外？项目自己写 <code>align-self</code> 单独改站姿——全队 center、某个徽章顶到 start，一属性行。这张牌在「卡片队列里某一个角落标签要贴顶」的场景天天用。<strong>说白了</strong>，align-items 是班规，align-self 是请假条。</p>
+  <p>baseline 值值得多嘱咐两句脾气：它认的是<strong>文字的基线</strong>，可要是某个项目里没有文字（比如一张纯图标），它就拿自己盒子的下边缘充当基线——于是「图标 + 文字」混排用 baseline，图标常常显得偏上或偏下，因为图标的「脚」其实是它的底边，和文字的脚不在一个体系里。实操里图文混排更常用 center（视觉居中往往比基线对齐顺眼），baseline 留给「一行里全是文字、只是字号不同」的场合——各字号的字踩同一根线，才是排版软件里的专业做法。</p>
+
+  <h3>align-content：多行队伍的队形</h3>
+  <p>有个容易和 align-items 弄混的第三个对齐属性，单独立案讲清：<code>align-content</code> 管的是<strong>「行与行」之间</strong>的分布。前提是容器允许换行（下一小节的 flex-wrap）且真的换出了多行——这时整个交叉轴上有多行队伍，行与行之间怎么分布，就是 align-content 的事（取值和 justify-content 一模一样：start、center、space-between……）。<strong>就像</strong>车厢分上下两层铺位：align-items 管每层里乘客的站姿，align-content 管上下层之间怎么隔开。<mark class="key">没换行时 align-content 完全不生效——它只在「多行」这个前提下才有对象可管。</mark></p>
+
+  <h3>gap：项目间距的正规军</h3>
+  <p>Flexbox 带来的一件「顺手但意义重大」的礼物：<code>gap</code>。项目之间的间距，float 时代只能靠每个项目写 margin——而 margin 有 § 3.1 讲过的合并问题，还要处理「首尾项目多出来的 margin」要不要补偿，各种 <code>margin-right</code> 加 <code>:last-child</code> 扣除的偏方。gap 直接写在容器上：「队员之间保持 12px，没了」——没有合并、没有首尾补偿、换行时行与列的间距还能分开写（<code>gap: 12px 8px</code>，行距 12 列距 8）。<strong>不妨这样想</strong>：margin 是每个乘客自己带的一把伞，gap 是车厢统一画的站位间隔——统一画的，不用挨个协调，也永远不会打架。</p>
+  <p>gap 的来历也值得一笔：它最早是 Grid 的属性（当年叫 grid-gap），后来被抽出来放进「盒对齐（Box Alignment）」这套统一规范，Flexbox 和 Grid 才都能用——justify-content、align-items 这些对齐属性同理，两套布局共享同一套对齐词汇。<strong>打个比方</strong>，这是 CSS 排版史上第一次「书同文、车同轨」：过去每门布局自造一套黑话，现在一套对齐词汇两边通用——所以本节学的对齐属性，到下一节 Grid 里至少三分之一已经提前到手。</p>
+
+  <h3>flex-grow：剩余空间的分蛋糕公式</h3>
+  <p>进入伸缩算法部分，先说「分蛋糕」。当主轴上还有剩余空间时，每个项目声明自己「有多饿」：<code>flex-grow</code>（默认 0，饿死不吃）。分配公式是<strong>按声明值的比例分</strong>：三个项目 grow 分别是 1、1、2，剩余 400px——总共 4 份，每份 100px，前两个各得 100px，第三个得 200px。</p>
+  <pre><code>/* 经典三栏：侧栏固定 200px，主区吃掉全部剩余 */
+.sidebar { width: 200px; }        /* 或 flex: 0 0 200px */
+.main    { flex: 1; }              /* grow=1：全部剩余归我 */</code></pre>
+  <p>这段代码是 Flexbox 的招牌菜「固定+弹性」混排：侧栏寸步不让，主区像块海绵吸掉所有剩余空间——窗口拉大它变大，窗口缩小它变小。<strong>其实说白了</strong>，grow 是把「宽度」从写死的数字换成一句活话：「不固定，<strong>比着分</strong>」。另外注意所有 grow 都是 0（默认）时，剩余空间谁也不吃，全部堆在队尾——这就是为什么「盒子们明明没占满容器却不铺开」：不是 bug，是没人声明要吃。</p>
+
+  <h3>flex-basis：伸缩之前的起跑线</h3>
+  <p>grow 讲「剩余空间怎么分」，那「剩余」从哪算起？从每个项目的<strong>起跑线尺寸</strong>算起——这个起跑线就是 <code>flex-basis</code>。它和 width 长得像兄弟，但优先级更高：项目有 basis 时，主轴尺寸以 basis 为准（width 退居二线）；basis 默认值是 auto（「去看我的 width」）。<strong>好比</strong>赛跑前每人先站上一个起跑线：有人站 200px 线（basis: 200px），有人站「按内容」线（auto）——发令枪响（分配剩余空间），大家都从各自起跑线往前跑，跑多远看 grow。<mark class="key">「起跑线 + 饥饿度」合在一起，才是 flex 伸缩算法的完整描述：basis 定起点，grow 定吃多少，shrink 定吐多少。</mark>一个高频细节：想让某个项目严格固定、绝不参与伸缩，写 <code>flex: none</code>（= 0 0 auto），比写 width 更能表达意图。</p>
+
+  <h3>flex-shrink：空间不够时的让位规则</h3>
+  <p>反方向的压力：容器变窄、总起跑线超过容器了，大家就得集体瘦身——<code>flex-shrink</code>（默认 1，人人都让）声明各自的「让位意愿」。瘦身算法同样是加权：shrink 为 2 的项目瘦得比 shrink 为 1 的多一倍。两个实战要点：其一，想让某个项目「打死不缩」，写 <code>flex-shrink: 0</code>（或干脆 flex: none）——侧栏、图标、头像这类元素的标准配置，不然窗口一窄它们先被挤成饼；其二，<strong>shrink 有底线</strong>：项目的自动最小尺寸默认不小于内容的最小宽度（准确说是 min-width: auto 的行为）——一段长文本挤不动时会把容器撑爆而不是缩成零，想要它老实截断省略号，得显式写 <code>min-width: 0</code>。这个细节是「flex 布局里文字溢出不省略」名案的病根，排错手册里还会点名。</p>
+
+  <h3>伸缩算法完整推演：一张能手算的账本</h3>
+  <p>grow、shrink 的规则用一句「按比例分」就能带过，但排查真实布局问题时，你需要的是<strong>能亲手算出每个盒子的最终宽度</strong>。拿一张账本把算法走完整——这道题不难，却值得像考试压轴题一样认真做一遍：弹性布局九成的「宽度不对」事故，都能用这张表查出来。</p>
+  <p><strong>场景一（分蛋糕）：容器 1200px，无 gap，三个项目。</strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>项目</th><th>flex-basis（起跑线）</th><th>flex-grow（饥渴度）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>A</td><td>200px</td><td>1</td></tr>
+        <tr><td>B</td><td>300px</td><td>1</td></tr>
+        <tr><td>C</td><td>500px</td><td>2</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>四步走：① 盘点起跑线：200 + 300 + 500 = 1000px；② 算剩余：1200 − 1000 = 200px 可分；③ 分份：grow 合计 1 + 1 + 2 = 4 份，每份 200 ÷ 4 = 50px；④ 各自加回：A = 250px，B = 350px，C = 500 + 100 = 600px。<strong>其实说白了</strong>，grow 分的是「增量」不是「总量」——起跑线各归各，剩余的才进公池。排查时最容易犯的错就是把增量当总量算，一眼对不上数就先想想是不是这步错了。</p>
+  <p><strong>场景二（让位）：容器收窄到 800px，同一批项目改看 shrink。</strong></p>
+  <p>设 A、B、C 的 shrink 分别为 1、1、2。多数人以为「shrink 为 2 的让两倍」——只对了一半。shrink 的让位权重是 <strong>shrink 值 × basis</strong>（家底厚的多让）：A 权重 1×200 = 200，B 权重 1×300 = 300，C 权重 2×500 = 1000，总权重 1500。缺口 200px 按权重摊：A 让 200×(200/1500) ≈ 27px → 173px；B 让 40px → 260px；C 让 133px → 367px。看结果：C 让出的 133px 远超旁人，既因为它的 shrink 喊得响，更因为它的 basis 家底厚。<mark class="key">「让位看家底」这条规则是 flex 算法里最常被忽略的细节，也是「明明都写了 shrink: 1，怎么它缩得比我多」名案的答案。</mark></p>
+  <p>最后一步是底线：如果 C 的内容最小也要 450px 宽，C 最多让到 450 就止步，剩下的缺口重新摊给 A 和 B——浏览器会做迭代。所以手算结果和真实渲染偶尔差一点，先查是不是 min-content 底线在暗中生效。<strong>就像</strong>银行大厅按业务量给各窗口分摊客流，但每个窗口再忙也得保住办公的最低空间——分摊有底线，不足的部分由别的窗口兜底。把这张账本练熟，弹性布局对你来说就再没有玄学，全是算术。</p>
+
+  <h3>flex 一词三义：缩写的展开表</h3>
+  <p><code>flex</code> 是 grow、shrink、basis 三兄弟的合写，常用组合就四档，直接背下来比现场推导快：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>缩写</th><th>展开</th><th>白话</th><th>典型用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>flex: 1</td><td>1 1 0%</td><td>起跑线归零，能吃能吐</td><td>均分全部空间（等宽卡片）</td></tr>
+        <tr><td>flex: auto</td><td>1 1 auto</td><td>按内容起步，能吃能吐</td><td>按内容分剩余空间</td></tr>
+        <tr><td>flex: none</td><td>0 0 auto</td><td>按内容起步，不吃不吐</td><td>固定不动的图标、头像</td></tr>
+        <tr><td>flex: 0 0 200px</td><td>0 0 200px</td><td>起跑线 200，不吃不吐</td><td>固定宽度侧栏</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>重点品一下 <code>flex: 1</code> 和 <code>flex: auto</code> 的区别：前者把起跑线（basis）压成 0，三个 flex: 1 的项目从同一条线出发，分到<strong>严格相等</strong>的宽度（内容多寡不影响）；后者以各自内容为起跑线，内容多的先占大头、剩余的再按 grow 分——「严格均分」还是「按内容自然分配」，选 flex: 1 还是 flex: auto，一秒钟想清这个区别，布局意图就准确了。顺手破一个流传很广的误区：<code>flex: 1</code> 不等于 <code>flex: 1 1 auto</code>——单值写法会把 basis 重置为 0%，旧教材里「flex: 1 就是 grow: 1」的说法漏掉了这半句，而这半句恰恰是均分成立的原因。</p>
+
+  <h3>把招式拼成真界面：从通讯录学「媒体对象」</h3>
+  <p>单看属性表，justify、align、grow 像一堆零件；拼装成真实界面，它们才活起来。UI 史上最经典的拼装题叫<strong>媒体对象（media object）</strong>——手机通讯录里的每一条都是它：左边一张固定大小的头像，右边一块可长可短的文字区（姓名、电话、备注），最右或许还有个拨号按钮。Twitter 的推文、微信的聊天记录、邮件列表、音乐播放器的歌曲条目，全是这一个模式的变体。</p>
+  <p>用 Flexbox 拆解这条通讯录，每一步都是前面招式的直接应用：</p>
+  <pre><code>.contact   { display: flex; align-items: center; gap: 12px; }
+.avatar    { flex: none; }              /* 头像：不吃不吐，永不被挤变形 */
+.info      { flex: 1; min-width: 0; }   /* 文字区：吃掉剩余空间，且允许截断 */
+.call-btn  { flex: none; }              /* 拨号键：纹丝不动 */</code></pre>
+  <p>逐条读这张处方：头像写 <code>flex: none</code>，因为头像被压成椭圆是通讯录最丑的事故——它不参与伸缩，多宽就多宽；文字区写 <code>flex: 1</code> 吃掉全部剩余空间，同时补 <code>min-width: 0</code> 放行省略号（长名字才会老实截断，正是排错手册的案情二）；拨号键同样 <code>flex: none</code>，要它跟文字垂直居中，align-items: center 已经顺手办了。<strong>不妨这样想</strong>：整个模式像一张快递面单——条形码（头像）尺寸固定不许拉伸，地址栏（文字）写多写少都收在框内，撕拉线（按钮）永远贴在固定位置。三个 flex 声明，各自对应一条真实的设计约束，这就是「属性即意图」。</p>
+  <p>再往深一层：文字区内部往往还套着两行——第一行「姓名 + 时间」，第二行「摘要」。于是 .info 自己又是一个 <code>display: flex; flex-direction: column</code> 的容器。<mark class="key">这就是弹性布局的乐高属性：一个项目的内部，可以原封不动再开一套车厢</mark>——嵌套的门道，马上单独立案。</p>
+
+  <h3>flex-wrap：车厢允许上二层</h3>
+  <p>默认 <code>flex-wrap: nowrap</code>：所有项目挤在一行，空间不够就触发 shrink 集体瘦身，实在不行就溢出。改成 <code>wrap</code>，装不下的项目自动<strong>换行</strong>，像行李箱塞不下的东西去开第二层。换行是弹性布局做「自适应卡片流」的前提：一行放三张卡、窗口窄了自动变两行、再窄变一行——配合 flex-basis 的百分比或 minmax 思路（§ 3.4 细讲），这就是响应式卡片墙的地基。两个配套细节：换行后行与行的高度由该行最高的项目撑起（行内 align-items 各自管各行的站姿）；行与行之间怎么分布，就回到了前面讲的 align-content——它到这时才真正有了用武之地。</p>
+
+  <h3>嵌套弹性：车厢里再开小车厢</h3>
+  <p>媒体对象那一节已经露过一手：弹性项目自己也可以再当弹性容器，于是布局层层往下开——卡片是列，卡片的头部是行，头部里头像和标题又各是一节小车厢。嵌套有三条军规。</p>
+  <p><strong>军规一：每层只管自己的直接乘客。</strong>爷爷容器不会隔层指挥孙子的宽度——每一层的伸缩意愿，要在那一层自己声明。想让卡片头部里标题吃掉头像旁的全部剩余空间，grow 必须写在标题上（它才是头部那一层的项目），写在卡片上没用。<strong>好比</strong>快递分拣中心：大传送带只把包裹整批发给各条小分拣线，至于每条线上怎么摆，是线长的职责，总调度不越级插手。</p>
+  <p><strong>军规二：min-width: 0 要一路放行。</strong>省略号截断需要「从文本元素到顶层容器」这条链上<strong>每一层</strong>都允许缩到内容以下——某一层漏了，就像安检口卡住了一件行李，整条线后面全部堵住。排查「加了 min-width: 0 还是不省略」的案子，答案通常是：你放行的是这一层，堵住的是上一层。逐层检查嵌套链，每层都补上 min-width: 0（或 overflow: hidden），才能全线贯通。</p>
+  <p><strong>军规三：能浅勿深。</strong>嵌套不是免费的：下一节会讲到，弹性布局量尺寸要「从最里层往外量」，层数越深，测量越贵。真实项目里常见的坏味道是「五层 flex 套娃」——每一层当年都有理由，叠在一起就成了重排时最沉的包袱。<mark class="key">嵌套的深度和代码的圈复杂度一样，是一个值得主动控制的指标：超过三四层，就该想想能不能拍平、或把骨架交给 Grid。</mark></p>
+  <p>顺带一条复习联动：flex 容器本身也构成一种新的格式化上下文（§ 3.2 讲 BFC 时的近亲）——弹性项目之间的 margin <strong>不再合并</strong>，§ 3.1 那套合并规则进了车厢就失效。这也是 gap 出现之前，大家在弹性项目上放心用 margin 的原因之一：至少不用担心上下 margin 塌陷成一截。</p>
+
+  <h3>order 与「视觉重排」的边界</h3>
+  <p>项目可以用 <code>order</code> 改变在队里的位置：默认都是 0，order 小的排前面、负数更前。这个能力慎用——它只改<strong>视觉顺序</strong>，DOM 顺序纹丝不动，于是 § 3.2 那笔「无障碍账」又来了：读屏软件按 DOM 朗读、Tab 键按 DOM 走，视觉上被 order 重排过的界面，在键盘用户眼里是「瞬移」的。<strong>通俗地说</strong>，order 是「换座位不换点名册」——点名册（DOM）才是身份的根。<strong>就像</strong>通讯录按拼音排序，改的只是显示顺序，每个人的身份证号纹丝不动——真正要找人的系统，认的永远是身份证号。能用源码顺序解决的排列，永远优先改 HTML；order 留给那些确实「不同屏幕下顺序就该不同」的响应式场景（比如手机上图片想在文字前面、桌面想在旁边），而且用的时候回头检查一遍读屏和 Tab 的体验。</p>
+
+  <h3>margin: auto 的弹性新生</h3>
+  <p>§ 3.1 埋过伏笔：在 Flexbox 里，<code>margin: auto</code> 有了新生命。弹性容器里，auto margin 的含义升级成「<strong>把这个方向上的所有剩余空间都塞进我的外边距里</strong>」。最经典的用法一行流：<code>.logo { margin-right: auto; }</code>——logo 右侧的 auto 吞掉全部剩余空间，后面的按钮组被推到最右端，「logo 左、菜单右」的导航栏不用 space-between 也能成（还能在中间继续塞元素）。同理，单个项目四边 auto 就是完美居中——居中这件事在弹性世界有了三套写法（容器 justify+align 双 center、项目 margin auto、grid 的 place-items），各有适用场合，本质都是「剩余空间的再分配」。<strong>就像</strong>地铁里你往边上让了让，把整块空地都留给了中间那个人——auto margin 让的就是「全部」。</p>
+
+  <h3>编外乘客：绝对定位的子元素不算弹性项目</h3>
+  <p>一个高频疑问：弹性容器里有个子元素写了 <code>position: absolute</code>，它还算弹性项目吗？<strong>不算</strong>——绝对定位的元素跳出了车厢编制：不占座、不参与伸缩、不排队（§ 3.2 的「彻底离队」在这里原样适用）。它以最近的定位祖先是容器时的 padding box 为包含块，去 absolute 的世界里自立门户。</p>
+  <p>但弹性车厢对这位编外乘客留了一条小路：当它一个 inset（top/right/bottom/left）都没写时，它的<strong>静态位置</strong>会按「假设自己是车里唯一的项目」来定——容器的 justify-content、align-items 会影响它默认落在哪。<strong>就像</strong>辞了编制的老员工回单位办事：排班表上没有他，但门卫还是按「他原来那个部门在哪」给他指个默认位置。实操建议很直接：<strong>想把绝对定位的元素钉在容器某个角，就老老实实写 inset</strong>——静态位置这条偏方省下的几个字符，换来的却是跨浏览器年代里的行为差异，不划算。</p>
+
+  <h3>书写方向与逻辑属性：row 的「横」从哪来</h3>
+  <p>一个冷知识能把「row 是横向」这个直觉打碎：<code>flex-direction: row</code> 里的 row，从来不是「屏幕的左右」，而是<strong>当前书写方向的行进轴</strong>（inline 轴）。中文、英文从左往右写，row 的项目就从左排到右；换成阿拉伯语（<code>dir="rtl"</code>），同一个 row 自动从右往左排——起点到了右边，space-between 两头照样顶死，一行 dir 属性让整站镜像。古书那种竖排（<code>writing-mode: vertical-rl</code>）更狠：行进轴变成了竖直方向，row 的项目会<strong>竖着</strong>排队。所以准确的说法是：<strong>row = 顺着文字阅读的方向，column = 换行的方向</strong>，跟屏幕的物理横竖无关。<strong>通俗地说</strong>，row/column 说的是「顺着读」和「往下读」，不是「左右」和「上下」。</p>
+  <p>这套「逻辑方向」思维有一组配套属性，叫<strong>逻辑属性</strong>：margin-left 的逻辑版叫 margin-inline-start（行进方向起点的外边距），padding-top 的逻辑版叫 padding-block-start（块方向的起点）。<strong>就像</strong>门牌号写「从街口数第三家」比「东边第三家」稳——不管你从街的哪头进来，前者永远指对同一家。<mark class="key">物理属性说的是东南西北，逻辑属性说的是前后左右；做多语言界面时，后者才不用返工。</mark>这一节记住概念就够：flex 的方向体系建立在「阅读方向」而非「屏幕物理方向」上——这是 Flexbox 天生对 RTL、竖排、多语言友好的根源，也是它比 float 更「现代」的深层原因之一。</p>
+
+  <h3>渲染视角：为什么弹性布局要「量两遍」</h3>
+  <p>把 § 2.5 的渲染管线接过来，弹性布局在其中的位置值得单独看清。flex-basis 默认 auto 意味着：<strong>浏览器不知道起跑线在哪，得先把每个项目的内容量一遍</strong>（这段文字自然多宽？这张图原始多大？）；量完才知道剩余空间多少，再按 grow/shrink 分账，最后才有每个项目的最终尺寸。<strong>相当于</strong>厨师做定制套餐，得先挨个问清每人的忌口和饭量才敢下锅——问询本身就是成本。</p>
+  <p>对照面是写死的尺寸：basis 是固定值（比如 flex: 0 0 200px）的项目，量都不用量，直接进账本。而「auto + 看内容」的项目越多、嵌套越深，测量就越贵——里层的结果是外层的输入，层层上报。§ 2.5 讲过一帧只有 16.7 毫秒预算，一条五层深的嵌套弹性链在窗口变化时整体重排，开销就可能被放大到肉眼可感。<mark class="key">性能直觉一句话：固定尺寸的布局是先画格子再放东西，弹性布局是先量东西再定格子——后者天然多一遍测量，这是「内容优先」哲学的代价。</mark>这也提前解释了 § 3.4 的 Grid 为什么在「结构优先」的场景里更快：轨道写死，测量免谈。</p>
+
+  <h3>常用件速查：六个一眼就会的模式</h3>
+  <p>招式学完，把界面里最高频的六个弹性模式一次打包。它们像厨房的刀架——常用的家伙全挂在明处，用到时不必现想。每个模式给最小代码加一句为什么：</p>
+  <ul class="keylist">
+    <li><strong>粘底页脚</strong>：页面再短，页脚也贴屏幕底。<code>body { display: flex; flex-direction: column; min-height: 100vh; } main { flex: 1; }</code>——主区吃掉剩余高度，页脚自然沉底。注意 column 方向下 basis/grow 管的是<strong>高度</strong>不是宽度：整页变成一列竖排的车厢，「剩余空间」指的是剩余高度。相当于电梯楼层的减震垫：楼层（内容）再少，垫子（页脚）总在最底下兜着。</li>
+    <li><strong>输入框组</strong>：搜索框 + 按钮无缝相连。<code>input { flex: 1; min-width: 0; } button { flex: none; }</code>——输入框能屈能伸，按钮恒宽，一个间距补偿都不用写。</li>
+    <li><strong>面包屑</strong>：首页 › 分类 › 详情那种路径。<code>ul { display: flex; flex-wrap: wrap; }</code>，分隔符用 <code>li + li::before { content: "›"; margin: 0 8px; }</code>——相邻选择器保证首项前不长分隔符，比手工塞标签干净得多。</li>
+    <li><strong>空状态居中</strong>：加载失败页那种「一屏就一句话」。容器 <code>display: flex; flex-direction: column; justify-content: center; align-items: center;</code> 配 min-height——竖排下 justify 管上下、align 管左右，正好复习「跟着主轴走」的铁律。</li>
+    <li><strong>底部标签栏</strong>：手机 App 那排「首页 / 发现 / 我的」。外层 <code>justify-content: space-around</code> 均分宽度，每个标签自己是竖排小列（图标上、文字下）——模式里自带一层嵌套，呼应上一节。</li>
+    <li><strong>等宽卡片排</strong>：一行几张卡、窄屏自动折行。<code>.card { flex: 1; min-width: 220px; }</code> 配容器 <code>flex-wrap: wrap</code>——宽屏四五张、窄屏两三张，这就是 § 3.6 响应式卡片墙的雏形（完整解法要等 Grid 的 auto-fill 登场）。</li>
+  </ul>
+  <p>六个模式的共同点值得点破：<strong>没有一个用到生僻属性</strong>，全是 justify / align / grow / wrap 的排列组合。<strong>简单说</strong>，Flexbox 的强大不在属性多，而在十几个正交属性像乐高积木一样可拼——这六个模式记熟，日常界面八成的排列需求已经覆盖，剩下的两成，多半本就该交给 Grid。</p>
+
+  <h3>Flexbox 的边界：它不擅长什么</h3>
+  <p>把工具的短板说清楚，才算真正认识它。Flexbox是<strong>一维</strong>布局：它的所有算法都围绕「一根主轴」展开，行是独立的——换行之后，每一行各行其是，<strong>不同行的项目不会互相对齐</strong>。想让第二行的第三张卡和第一行的第三张卡严格对同一根列线？Flexbox 做不到（它的对齐只保证行内）。这类「既要管行、又要管列」的二维需求——仪表盘网格、杂志版面、整体页面骨架——是下一节 Grid 的主场。另外一条边界：Flexbox 是「内容优先」的布局，先看内容多大、再谈怎么分；Grid 是「结构优先」，先把格子画好、再往里放东西——这个「内容优先 vs 结构优先」的分野，是 § 3.4 开篇的主题。记住分工口诀：<strong>一排（一列）用 Flex，一面用 Grid</strong>；真实项目里两者常常嵌套混用：Grid 搭页面骨架，Flex 管每块里的内部排列。</p>
+
+  <h3>工具选择急诊室：这一排盒子该用什么排</h3>
+  <p>学到这里，手上的排列工具已经攒了五种：文档流、float、flex、定位，外加下一节的 grid。新手最常见的病不是不会用，而是「flex 一把梭」——什么排列都套 flex，文档流两行能解决的事写出了五层嵌套。送一张分诊表，见到排列需求先挂号：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>需求特征</th><th>挂号科室</th><th>一句理由</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>普通段落、列表，从上往下排</td><td>文档流（什么都不写）</td><td>默认行为本来就是最优解</td></tr>
+        <tr><td>一行（一列）内的对齐、均匀分布、伸缩</td><td>Flexbox</td><td>一维排列的正主</td></tr>
+        <tr><td>行和列要同时对齐（表格、卡片墙、页面骨架）</td><td>Grid（§ 3.4）</td><td>二维对齐 flex 做不到</td></tr>
+        <tr><td>一个元素要脱离文档流钉在某处</td><td>position（§ 3.2）</td><td>定位解决「钉」，不解决「排」</td></tr>
+        <tr><td>文字环绕图片</td><td>float</td><td>它如今唯一还正当的用途</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>挂号的顺序本身就是答案：<strong>先问文档流够不够，再问一维还是二维，最后才轮到定位和 float</strong>——把这三问变成肌肉记忆，布局代码会干净一大截。<strong>就像</strong>去医院先分诊再看病：直接冲进随便一个科室，多半还得被支回分诊台；代码也一样，用错工具的排列，最后都是推倒重来。分诊表还有个隐藏好处——当你发现需求同时挂了两个科（骨架是二维、局部是一维），那就是 Grid 和 Flex 嵌套混用的信号，正好是下一节的主菜。</p>
+
+  <div class="callout analogy">
+    <strong>把这一节想成「一节智能调度的地铁车厢」</strong><br/>
+    车厢（容器）一声令下「display: flex」，乘客（项目）全部下车重排——地面上谁是块级谁是行内的旧户口，进车厢一律作废。<br/><br/>
+    调度先问<strong>方向</strong>（flex-direction）：车头到车尾横着排，还是地板到天花板竖着站——方向定下主轴，垂直方向自动成为交叉轴。<strong>justify-content</strong> 是车厢广播的队形：都贴车头、都聚中间、两端顶死中间均分、或按站位线均匀铺开。<strong>align-items</strong> 是统一站姿：人人顶天立地（stretch，等高白送）、或统一踮脚、统一半蹲、统一踩文字基线；个别乘客递请假条（align-self）另选姿势。<br/><br/>
+    分配空间的规则写在票上：<strong>flex-basis</strong> 是上车前的起跑线站位；<strong>flex-grow</strong> 是车厢有空地时按饥饿度分的蛋糕——喊 1 的拿一份、喊 2 的拿两份；<strong>flex-shrink</strong> 是高峰期的让位协议——愿意瘦身的按比例缩，写 flex: none 的老弱病残席寸步不让。座位之间的间距由车厢统一画线（gap），再没有乘客自己撑伞打架（margin 合并）。<br/><br/>
+    车厢太挤就开二层（flex-wrap: wrap），两层之间怎么隔是 align-content 的活；想换座位不改点名册可以用 order，但点名册（DOM）永远比座位表（视觉）说话算数。车厢里还能再开小车厢（嵌套），但每节小车厢的调度只管自己的直接乘客；想让一件超长行李（超长文本）通过，安检口（min-width: 0）得一层层都放行。<br/><br/>
+    <mark class="key">这节车厢唯一的规矩边界：它只管一根轴上的事——想让两层乘客对齐同一根柱子，得去下一节的网格车站（Grid）换乘。</mark>
+  </div>
+
+  <h3>排错手册：弹性布局六案</h3>
+  <ul class="keylist">
+    <li><strong>案情一：设了 flex: 1 的盒子没长满。</strong>看看是不是只写了 grow 而它的 basis 是 auto——内容一大就歪。均分场景直接写 flex: 1（basis 归 0），别只写 grow: 1。</li>
+    <li><strong>案情二：flex 布局里的长文本不肯截断省略号。</strong>弹性项目的自动最小尺寸在护着它。药方：给项目写 <code>min-width: 0</code>，再配三件套省略号（§ 3.1 overflow 一节）。</li>
+    <li><strong>案情三：换行之后行内对不齐、间距诡异。</strong>Flexbox 的行各自独立，跨行对齐交给 Grid；间距乱先查是不是用了 margin 而不是 gap。</li>
+    <li><strong>案情四：子项写 height: 100% 没反应。</strong>弹性世界里不用算百分比：容器设了固定高度时，项目默认 stretch 就会撑满交叉轴；单个项目想精确控制，用 align-self，而不是 height: 100%。</li>
+    <li><strong>案情五：图标被挤成饼。</strong>默认 shrink: 1，人人会让。给不该缩的元素写 flex-shrink: 0 或 flex: none。</li>
+    <li><strong>案情六：嵌套层里加了 min-width: 0 还是溢出。</strong>放行必须整条链逐层检查——堵住的往往是上一层。从文本元素到顶层容器，每层嵌套都补 min-width: 0 或 overflow: hidden，才能全线贯通。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Checklist · 自检</span>
+    <p>写弹性布局前过一遍：</p>
+    <p>① 方向想清楚了吗？justify 管主轴、align 管交叉轴，先定 flex-direction；<br/>
+    ② 间距用 gap 而不是逐个 margin 了吗？<br/>
+    ③ 均分用 flex: 1、按内容分配用 flex: auto、固定用 flex: none——意图对号了吗？<br/>
+    ④ 不该缩的元素加 flex-shrink: 0 了吗？<br/>
+    ⑤ 长文本截断加 min-width: 0 了吗？嵌套的话，每层都加了吗？<br/>
+    ⑥ 需要「一端靠左一端靠右」时，margin-right: auto 考虑过了吗？<br/>
+    ⑦ 跨行对齐的需求，是不是该换乘 Grid 了？<br/>
+    ⑧ 嵌套是不是超过三四层了？该拍平的拍平，该交给骨架的交给骨架。</p>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="一个 flex 容器里有三个项目，都没有写宽度和 basis，A、B 写了 flex: 1，C 写了 flex: 2。主轴剩余空间 600px，怎么分？" data-opts="各 200px|A、B 各 120px，C 得 360px|A、B 各 150px，C 得 300px|C 独占 600px" data-answer="2" data-explain="grow 按声明值的比例分蛋糕：1+1+2=4 份，每份 600÷4=150px。A、B 各拿 1 份（各 150px），C 拿 2 份（300px）。注意 grow 分的是「剩余空间」这个增量，不是总宽度本身——各 200px 那个选项错在按人头均分了。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="flex-direction: row 的容器里，想让所有项目在水平方向均匀分布、垂直方向各自拉伸到容器高度，应该写？" data-opts="justify-content: space-evenly + align-items: stretch|align-items: space-evenly + justify-content: stretch|justify-content: stretch + align-content: center|align-content: space-evenly + align-items: stretch" data-answer="0" data-explain="row 方向下主轴是水平的：水平分布归 justify-content（space-evenly 均匀）；垂直是交叉轴，交叉轴对齐归 align-items，stretch 是默认值（项目撑满交叉轴）。align-content 只管多行之间的分布，且 justify-content 没有 stretch 这个取值。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="容器 800px、无 gap，三个项目 basis 分别为 200px / 300px / 500px，flex-shrink 分别为 1 / 1 / 2，内容最小宽度都足够小。空间不够时，谁让出的宽度最多？" data-opts="C，因为它的 shrink 值最大|C，因为让位权重是 shrink × basis，它两项都大|三个项目均摊，各让约 66.7px|A，因为 basis 最小所以最先被压缩" data-answer="1" data-explain="shrink 的让位权重 = shrink 值 × basis：A 是 1×200=200，B 是 1×300=300，C 是 2×500=1000，总权重 1500。缺口 200px 按权重摊：C 让出 200×(1000/1500)≈133px，远超 A 的约 27px 和 B 的 40px。「家底厚的多让」——只看 shrink 值不看 basis，是这道题最常见的错法。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>Flexbox 的世界观一句话：<mark class="key">容器宣布方向（flex-direction 定主轴），广播队形（justify-content 主轴分布、align-items 交叉轴站姿、gap 统一间距），项目亮出伸缩牌（basis 起跑线、grow 分蛋糕、shrink 让位）。</mark>四档 flex 缩写背熟：1 均分、auto 按内容、none 固定、0 0 200px 定宽。伸缩算法能手算：分增量、让位看家底（权重是 shrink × basis）、底线是内容最小宽度。两大经典红利要念着好：子项默认等高（stretch）、margin auto 吞剩余空间。两大边界要记牢：行各自独立、跨行对齐无能为力（去 Grid）；order 只改视觉不改 DOM（无障碍账）。嵌套要浅、min-width: 0 要层层放行，加上 flex-shrink: 0 这张防挤牌，弹性布局的坑就见得差不多了。下一节 § 3.4，换乘网格车站——先把格子画在纸面上，再往里放东西，二维布局的正主登场。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-2-flow-position.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 3.2 · 流式与定位</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一节</span>
+      <span class="title">§ 3.4 · Grid 网格（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 3.3</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>

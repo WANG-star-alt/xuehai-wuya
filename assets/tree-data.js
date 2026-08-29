@@ -342,9 +342,9 @@
         '盒模型、Flex / Grid、约束布局、响应式——元素为什么待在那个位置。',
         '待撰写',
         [
-          createNode('gui-03-1', '§ 3.1 · 盒模型', 'content / padding / border / margin——一切布局的原子。', '待校验', [], { href: 'chapters/gui/03-1-box-model.html', spec: 'pass'}),
-          createNode('gui-03-2', '§ 3.2 · 流式与定位', '文档流、浮动、absolute / fixed / sticky 的取舍。', '待校验', [], { href: 'chapters/gui/03-2-flow-position.html', spec: 'pass'}),
-          createNode('gui-03-3', '§ 3.3 · Flexbox', '一维弹性布局——主轴、交叉轴、伸缩与对齐。', '待撰写', []),
+          createNode('gui-03-1', '§ 3.1 · 盒模型', 'content / padding / border / margin——一切布局的原子。', '9400 字', [], { href: 'chapters/gui/03-1-box-model.html', spec: 'pass'}),
+          createNode('gui-03-2', '§ 3.2 · 流式与定位', '文档流、浮动、absolute / fixed / sticky 的取舍。', '8822 字', [], { href: 'chapters/gui/03-2-flow-position.html', spec: 'pass'}),
+          createNode('gui-03-3', '§ 3.3 · Flexbox', '一维弹性布局——主轴、交叉轴、伸缩与对齐。', '9581 字', [], { href: 'chapters/gui/03-3-flexbox.html', spec: 'pass'}),
           createNode('gui-03-4', '§ 3.4 · Grid 网格', '二维网格布局——真正的"报纸排版"能力。', '待撰写', []),
           createNode('gui-03-5', '§ 3.5 · 约束布局', '原生 App 的另一套思路——AutoLayout / ConstraintLayout。', '待撰写', []),
           createNode('gui-03-6', '§ 3.6 · 响应式与自适应', '媒体查询、断点、容器查询——一套界面适配所有屏幕。', '待撰写', [])
