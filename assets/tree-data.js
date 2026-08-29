@@ -274,7 +274,7 @@
         '约 5.4 万字',
         [
           createNode('net-08-1', '§ 8.1 · 对称与非对称加密', 'AES vs RSA——一把钥匙 vs 一对钥匙。', '9272 字', [], { href: 'chapters/network/08-1-encryption.html', spec: 'pass'}),
-          createNode('net-08-2', '§ 8.2 · 数字证书与 CA', '证书链、根证书、自签名——凭什么信任一个网站。', '8014 字', [], { href: 'chapters/network/08-2-certificates.html', spec: 'pass' }),
+          createNode('net-08-2', '§ 8.2 · 数字证书与 CA', '证书链、根证书、自签名——凭什么信任一个网站。', '8014 字', [], { href: 'chapters/network/08-2-certificates.html', spec: 'pass'}),
           createNode('net-08-3', '§ 8.3 · Web 攻击', 'XSS、CSRF、SQL 注入、SSRF——最常见的四种打法。', '8390 字', [], { href: 'chapters/network/08-3-web-attacks.html', spec: 'pass'}),
           createNode('net-08-4', '§ 8.4 · DDoS 与防护', '流量型 vs 应用型攻击、清洗中心、限流策略。', '9789 字', [], { href: 'chapters/network/08-4-ddos.html', spec: 'pass'}),
           createNode('net-08-5', '§ 8.5 · VPN 与代理', 'VPN、正向/反向代理、隧道协议——流量怎么绕路。', '9679 字', [], { href: 'chapters/network/08-5-vpn-proxy.html', spec: 'pass'}),
@@ -286,12 +286,12 @@
         'ping、traceroute、curl、Wireshark——工程师的诊断工具。',
         '约 4.8 万字',
         [
-          createNode('net-09-1', '§ 9.1 · ping 与 ICMP', '通不通、延迟多少、丢包多少——第一诊断命令。', '8306 字', [], { href: 'chapters/network/09-1-ping.html', spec: 'pass' }),
-          createNode('net-09-2', '§ 9.2 · traceroute 路径追踪', '数据包走了哪几跳、卡在哪一跳。', '7115 字', [], { href: 'chapters/network/09-2-traceroute.html', spec: 'pass' }),
-          createNode('net-09-3', '§ 9.3 · nslookup / dig', 'DNS 解析结果排查——域名到底指向哪。', '8051 字', [], { href: 'chapters/network/09-3-nslookup-dig.html', spec: 'pass' }),
-          createNode('net-09-4', '§ 9.4 · curl / wget', '命令行发 HTTP 请求——看原始响应头和状态码。', '8046 字', [], { href: 'chapters/network/09-4-curl-wget.html', spec: 'pass' }),
-          createNode('net-09-5', '§ 9.5 · netstat / ss', '本机端口占用、连接状态——谁在监听、谁连着谁。', '7722 字', [], { href: 'chapters/network/09-5-netstat-ss.html', spec: 'pass' }),
-          createNode('net-09-6', '§ 9.6 · Wireshark 抓包', '逐包分析——网络排错的终极武器。', '8682 字', [], { href: 'chapters/network/09-6-wireshark.html', spec: 'pass' })
+          createNode('net-09-1', '§ 9.1 · ping 与 ICMP', '通不通、延迟多少、丢包多少——第一诊断命令。', '8306 字', [], { href: 'chapters/network/09-1-ping.html', spec: 'pass'}),
+          createNode('net-09-2', '§ 9.2 · traceroute 路径追踪', '数据包走了哪几跳、卡在哪一跳。', '7115 字', [], { href: 'chapters/network/09-2-traceroute.html', spec: 'pass'}),
+          createNode('net-09-3', '§ 9.3 · nslookup / dig', 'DNS 解析结果排查——域名到底指向哪。', '8051 字', [], { href: 'chapters/network/09-3-nslookup-dig.html', spec: 'pass'}),
+          createNode('net-09-4', '§ 9.4 · curl / wget', '命令行发 HTTP 请求——看原始响应头和状态码。', '8046 字', [], { href: 'chapters/network/09-4-curl-wget.html', spec: 'pass'}),
+          createNode('net-09-5', '§ 9.5 · netstat / ss', '本机端口占用、连接状态——谁在监听、谁连着谁。', '7722 字', [], { href: 'chapters/network/09-5-netstat-ss.html', spec: 'pass'}),
+          createNode('net-09-6', '§ 9.6 · Wireshark 抓包', '逐包分析——网络排错的终极武器。', '8682 字', [], { href: 'chapters/network/09-6-wireshark.html', spec: 'pass'})
         ],
         { href: 'chapters/network/09-toolbox.html' }
       ),
@@ -299,11 +299,11 @@
         'HTTP/3、IPv6、DoH、BBR——网络协议的最新进化。',
         '约 4.6 万字',
         [
-          createNode('net-10-1', '§ 10.1 · HTTP/2 与 HTTP/3', '多路复用、头部压缩、QUIC 基于 UDP 重造可靠传输。', '9598 字', [], { href: 'chapters/network/10-1-http2-http3.html', spec: 'pass' }),
-          createNode('net-10-2', '§ 10.2 · QUIC 协议', '0-RTT 握手、连接迁移——为什么抛弃 TCP。', '9113 字', [], { href: 'chapters/network/10-2-quic.html', spec: 'pass' }),
-          createNode('net-10-3', '§ 10.3 · IPv6 全面部署', '地址耗尽、双栈过渡、为什么推了二十年还没完。', '8640 字', [], { href: 'chapters/network/10-3-ipv6.html', spec: 'pass' }),
-          createNode('net-10-4', '§ 10.4 · 加密 DNS', 'DoH / DoT / DoQ——DNS 查询也要加密。', '9436 字', [], { href: 'chapters/network/10-4-encrypted-dns.html', spec: 'pass' }),
-          createNode('net-10-5', '§ 10.5 · BBR 拥塞控制', 'Google 的新算法——测带宽而不是等丢包。', '9384 字', [], { href: 'chapters/network/10-5-bbr.html', spec: 'pass' })
+          createNode('net-10-1', '§ 10.1 · HTTP/2 与 HTTP/3', '多路复用、头部压缩、QUIC 基于 UDP 重造可靠传输。', '9598 字', [], { href: 'chapters/network/10-1-http2-http3.html', spec: 'pass'}),
+          createNode('net-10-2', '§ 10.2 · QUIC 协议', '0-RTT 握手、连接迁移——为什么抛弃 TCP。', '9113 字', [], { href: 'chapters/network/10-2-quic.html', spec: 'pass'}),
+          createNode('net-10-3', '§ 10.3 · IPv6 全面部署', '地址耗尽、双栈过渡、为什么推了二十年还没完。', '8640 字', [], { href: 'chapters/network/10-3-ipv6.html', spec: 'pass'}),
+          createNode('net-10-4', '§ 10.4 · 加密 DNS', 'DoH / DoT / DoQ——DNS 查询也要加密。', '9436 字', [], { href: 'chapters/network/10-4-encrypted-dns.html', spec: 'pass'}),
+          createNode('net-10-5', '§ 10.5 · BBR 拥塞控制', 'Google 的新算法——测带宽而不是等丢包。', '9384 字', [], { href: 'chapters/network/10-5-bbr.html', spec: 'pass'})
         ], { href: 'chapters/network/10-evolution.html' })
     ],
     { color: '#556b3d' }
@@ -342,7 +342,7 @@
         '盒模型、Flex / Grid、约束布局、响应式——元素为什么待在那个位置。',
         '待撰写',
         [
-          createNode('gui-03-1', '§ 3.1 · 盒模型', 'content / padding / border / margin——一切布局的原子。', '待撰写', []),
+          createNode('gui-03-1', '§ 3.1 · 盒模型', 'content / padding / border / margin——一切布局的原子。', '待校验', [], { href: 'chapters/gui/03-1-box-model.html', spec: 'pass'}),
           createNode('gui-03-2', '§ 3.2 · 流式与定位', '文档流、浮动、absolute / fixed / sticky 的取舍。', '待撰写', []),
           createNode('gui-03-3', '§ 3.3 · Flexbox', '一维弹性布局——主轴、交叉轴、伸缩与对齐。', '待撰写', []),
           createNode('gui-03-4', '§ 3.4 · Grid 网格', '二维网格布局——真正的"报纸排版"能力。', '待撰写', []),

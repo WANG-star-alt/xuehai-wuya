@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 3.1 · 盒模型 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 3 章</span>
+      <span class="sep">›</span>
+      <span>§ 3.1</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 3.1 · Section</div>
+    <h1>盒模型</h1>
+    <div class="cn">The Box Model</div>
+  </header>
+
+  <p class="lead">
+    界面篇的前两章回答的是「屏幕上的点从哪来」：像素怎么定义、颜色怎么算、一帧画面怎么被画出来。从这一章开始，问题变得更贴近你每天见到的东西：<mark class="key">为什么这个按钮待在这个位置、是这个宽度？为什么标题和正文之间隔了那么多空？为什么我明明写的是 <code>width: 200px</code>，屏幕上量出来却是 250？</mark>回答这一切的第一块积木，叫盒模型。<strong>说白了</strong>：在 CSS 眼里，页面上没有任何「按钮」「图片」「段落」——万物皆盒子，每个元素都被装进一个矩形的盒子里，盒子有内容、有衬垫、有外壳、有与其他盒子保持的距离。这一节把这四层洋葱一层层剥开，讲清每层管什么、怎么算账，以及那些让无数新手抓狂的「怪脾气」——间距时大时小、行内元素不听话、高度百分比对不上——它们其实都不是 bug，而是盒模型这套规则推演下去的必然结果。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">📦 快递站老金的打包台</div>
+    <p>快递站的老金打包打了二十年，台面上的动作已经形成了肌肉记忆。你寄一罐蜂蜜，他做四件事：<br/>
+    先把蜂蜜罐<strong>摆正</strong>，这是要寄的<strong>东西本身</strong>；<br/>
+    然后裹上厚厚一圈<strong>气泡膜</strong>，怕路上磕碰——这层膜<strong>贴着东西</strong>，罐子多脆弱膜就裹多厚；<br/>
+    再塞进一个<strong>纸箱</strong>，纸箱有它自己的纸板厚度，箱子的强度靠它；<br/>
+    最后装车时，他往这个箱子和其他箱子之间<strong>塞出一条空隙</strong>，或者干脆隔一层木板——箱子与箱子得保持距离，免得互相挤坏。<br/><br/>
+    小徒弟问：「师父，裹膜和留空隙不都是防磕碰吗，干嘛分成两样？」老金敲敲台面：<strong>「膜是护它自己的，空隙是让它跟邻居处好关系的。护自己弄坏了是它的事，跟邻居打架是两家的事——账要分开算。」</strong><br/>
+    <mark class="key">这一节讲的就是老金这台打包机：内容、衬垫、外壳、外距——四样东西各管一件事，任何界面上的任何元素，都得先过这台机器。</mark></p>
+  </div>
+
+  <h3>术语对照：先把行话翻译成人话</h3>
+  <p>这一节的新名词不多，但每一个都会反复出现，先集中翻译一遍，后文遇到不再解释：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>老金打包台上的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>盒模型（Box Model）</td><td>「每个元素都是一个矩形盒子」这套规定</td><td>整个打包流程的规定本身</td></tr>
+        <tr><td>content（内容区）</td><td>盒子里真正装东西的部分</td><td>那罐蜂蜜</td></tr>
+        <tr><td>padding（内边距）</td><td>内容与外壳之间的衬垫，在盒子<strong>内部</strong></td><td>气泡膜</td></tr>
+        <tr><td>border（边框）</td><td>盒子的外壳本身，有厚度、能看见</td><td>纸箱的纸板</td></tr>
+        <tr><td>margin（外边距）</td><td>盒子<strong>外部</strong>与其他盒子保持的距离</td><td>箱子之间的空隙</td></tr>
+        <tr><td>box-sizing（尺寸计算方式）</td><td>「写 width: 200px 时，200 到底量到哪里」的规则</td><td>箱子标签上的尺寸是净尺寸还是连皮一起算</td></tr>
+        <tr><td>块级 / 行内（block / inline）</td><td>盒子排队方式的两种规则：独占一行 / 像文字一样排</td><td>大件货一车一件 vs 小件货排满一层</td></tr>
+        <tr><td>margin 合并（collapse）</td><td>相邻盒子的上下外距不叠加、只取大者的规则</td><td>两车货中间的空隙，留宽的那份说了算</td></tr>
+        <tr><td>替换元素（replaced element）</td><td>内容从外部「替换」进来的元素（img、video、input），自带出厂尺寸</td><td>买来的成品家具，出厂就有尺寸</td></tr>
+        <tr><td>回流（reflow）</td><td>布局规则变了，浏览器重算一遍所有盒子的「多大、在哪」</td><td>墙挪了，全屋重新量一遍</td></tr>
+        <tr><td>溢出（overflow）</td><td>内容超出盒子后怎么处理的规则</td><td>箱子塞不下，露着 / 剪掉 / 上行李架</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>一个盒子的解剖图：从里往外数四层</h3>
+  <p>把任何一个元素放到显微镜下，从里往外看，永远是同样的四层结构。不妨这样想：一个元素就像一颗<strong>四层洋葱</strong>——最里面是核，外面三层一圈套一圈。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>层（从里到外）</th><th>它是什么</th><th>背景色铺到它吗</th><th>能是负数吗</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>content</td><td>文字、图片真正待的地方</td><td>铺（元素的背景从这里开始）</td><td>—</td></tr>
+        <tr><td>padding</td><td>content 与 border 之间的衬垫</td><td><strong>铺</strong>（这是它最容易被忽略的特点）</td><td>不能</td></tr>
+        <tr><td>border</td><td>外壳，自己有厚度</td><td>它自己就是颜色</td><td>不能</td></tr>
+        <tr><td>margin</td><td>border 之外、与邻居的距离</td><td><strong>不铺</strong>（它不属于盒子本体）</td><td><strong>可以</strong>（负 margin 会把盒子往里拉）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>用代码写出来就是这样，四个属性各管一层：</p>
+  <pre><code>.card {
+  width: 200px;      /* 先记住：这个 200 默认只指最里面的 content */
+  padding: 20px;     /* 四周裹 20px 的衬垫 */
+  border: 5px solid; /* 5px 厚的外壳 */
+  margin: 16px;      /* 与邻居保持 16px 距离 */
+}</code></pre>
+  <p>这里有一个关键的账目问题：<strong>这个盒子在屏幕上实际占多宽？</strong>按 CSS 的默认算法（这个默认值叫 <code>content-box</code>，后面专门一节讲它），<code>width</code> 只量最里面那层。于是真实宽度是层层往外加出来的：</p>
+  <pre><code>content     200px
++ padding    20px × 2（左右各一圈）= 40px
++ border      5px × 2（左右各一道）= 10px
+─────────────────────────────────
+= 实际占宽  250px
+（margin 的 16px × 2 算它与其他盒子的距离，不算盒子本身）</code></pre>
+  <p><strong>其实说白了</strong>：你以为你下单了一个 200 的盒子，到手发现是个 250 的盒子——多出来的 50，是气泡膜和纸板的厚度。<mark class="key">「我明明写的是 200，为什么量出来是 250」——这是 CSS 新手第一个经典撞墙点，从今天起你知道了：不是浏览器有 bug，是你在填一张「净尺寸」的订单，而货物是带着包装发货的。</mark></p>
+
+  <div class="lab" data-lab="box-model"></div>
+  <p>上面这个实验台里，三个滑块分别拖动三层包裹，看盒子怎么一层层长大。注意 margin 那一层用的是半透明色块——因为它不属于盒子本体，只是「让开的地方」。</p>
+
+  <h3>亲手量一次：DevTools 里看盒子</h3>
+  <p>盒模型不是背出来的，是看出来的。打开任何一个网页，按 F12 调出开发者工具，在元素面板里选中任意一个元素，右侧「计算样式（Computed）」面板的最下方，浏览器会画出这个元素的<strong>盒子解剖图</strong>：一个套一层的彩色矩形，鼠标悬停在各层上，页面上对应的区域会高亮。<strong>打个比方</strong>，这就像给网页做了一次 CT：不用猜，每层多厚、数字是多少，直接标在图上。</p>
+  <p>这套图示用的颜色全网统一：内容区蓝色、padding 绿色、border 黄褐色、margin 橙色（深浅随浏览器主题，但层次不变）。<strong>翻译成人话</strong>：蓝色的方块是「货」，绿色的圈是「膜」，黄色的框是「箱」，橙色外的区域是「空地」。<mark class="key">以后遇到任何「这里为什么多出来一截」的问题，第一反应不是改代码，而是 F12 选中它、看盒子图——多出来的一截是什么颜色，病根就在哪一层。</mark>这是这一节最值得带走的工作习惯。</p>
+  <p>这套解剖图还有两个进阶玩法。一是<strong>悬停联动</strong>：鼠标悬停在盒子图的某一层上，页面里对应的区域会整体高亮——悬停橙色 margin 层时，你会亲眼看到 margin 不是「一块东西」而是「一圈让出来的地」，页面高亮的是邻居之间那条空带；二是<strong>当场改数对答案</strong>：盒子图上的数字全部可以双击直接改，改完页面实时反应。想知道「padding 从 20 改到 40 会发生什么」，不用回编辑器改代码存文件刷新，双击那个 20，敲个 40，答案一秒出来。<strong>简单说</strong>，DevTools 是盒模型的答题卡：左边是你写的卷子（源码），右边是标准答案（浏览器实际算出来的账），对账永远比猜快。</p>
+
+  <h3>content：盒子为谁而存在</h3>
+  <p>最里面那层是内容区，文字在这里排、图片在这里显示。<strong>不妨这样想</strong>：盒子是为内容服务的侍从——你没写宽高时，盒子的尺寸完全由内容决定：一段文字多长，盒子就多宽（直到容器装不下就换行）；文字几行，盒子就多高。这个「没人管就自己看着办」的行为，是 CSS 布局里最温和也最重要的默认值。</p>
+  <p>很多新手会急着给每个盒子都写上宽和高，其实那是在剥夺盒子的自理能力。你可以想象：内容是水，盒子是杯子——<strong>杯子多大水就装多少</strong>；而写死宽高相当于把杯子焊死，水多了会溢出，水少了显得空荡。什么时候该写死尺寸、什么时候该让内容自己做主，是这一章后面几节（尤其 § 3.6 响应式）反复回到的主题。这里先立一条直觉：<mark class="key">能不写死就不写死，让内容撑开盒子，是更抗变化的写法。</mark></p>
+
+  <h3>padding：贴身的软垫，背景色铺到这里</h3>
+  <p>padding 是衬垫，它有两个高频被误解的特点，值得各用一段讲清。</p>
+  <p><strong>第一个特点：padding 在盒子内部，元素的背景色会一直铺到 padding 上。</strong>你给一个按钮设了浅蓝背景，它看起来是一块舒展的浅蓝区域，文字四周留白舒舒服服——那个「留白」不是空的，是浅蓝色的 padding。<strong>就好比</strong>礼盒里的碎纸丝：它不是盒子外面的装饰，是装进盒子里的一部分，礼物陷在碎纸丝中间。<mark class="key">这就是 padding 与 margin 最本质的分界：padding 是「我的」，margin 是「我和邻居之间的」。</mark>想让按钮的蓝色变大变好点，改 padding；想让蓝色块和旁边元素离远点，改 margin——方向反了，页面就会出现「颜色怎么溢出来了」或「怎么点哪儿都是这个色」的怪相。</p>
+  <p><strong>第二个特点：padding 能扩大点击区域。</strong>手机上一个小图标，手指头按上去经常按偏——把图标的 padding 加大，视觉尺寸不变（图标本身没变大），可点区域却四外扩了一圈。这个手法叫「扩大热区」，是移动端易用性的基本功。老金那圈气泡膜不光防磕碰，还让箱子更好搬——同一个道理。</p>
+  <p>最后记两个小脾气：padding <strong>不能是负数</strong>（衬垫不能是「负的缓冲」，逻辑上说不通）；padding 写百分比时，<strong>不管上下还是左右，统统按父元素的「宽度」算</strong>——这个怪癖看着不讲理，但正是它成就过一个经典技巧：想让一个盒子保持正方形，老写法是 <code>padding-top: 100%</code>（相对宽度算出一个等于宽度的距离，上下顶出一个正方形）。现在有了更直白的 <code>aspect-ratio: 1</code> 属性，这个老手艺进了博物馆，但「% padding 按宽度算」的规则还在，见到别惊讶。</p>
+  <p>顺带把 padding 和 margin 共用的<strong>简写法</strong>一次讲透，这是读别人代码的必备识字课。一个值 <code>padding: 10px</code> 是四边同厚；两个值 <code>padding: 10px 20px</code> 是「上下 10、左右 20」；三个值「上 10、左右 20、下 30」；四个值 <code>padding: 10px 20px 30px 40px</code> 则是<strong>上、右、下、左</strong>——按顺时针转一圈。<strong>说白了</strong>，想象自己站在盒子正上方，从头顶开始顺时针数：上→右→下→左。为什么是顺时针而不是「上下左右」的中文语序？因为 CSS 的书写习惯承自英文文档的方向感，规则定了三十年，记住就好。<mark class="key">读代码时看到一行四个数字，先在心里转一圈钟，四条边的厚度立刻对号入座。</mark></p>
+
+  <h3>border：看得见的皮</h3>
+  <p>border 是外壳，它自己是实打实有厚度的实体——一段 <code>border: 5px</code> 就占 5px 的屏幕面积。它的完整写法是三件套：<strong>厚度、线型、颜色</strong>：<code>border: 1px solid #ccc</code>——1px 厚、实线（solid）、灰色。线型换成 <code>dashed</code> 是虚线，<code>dotted</code> 是点线。<strong>简单说</strong>，border 就像相框：框条有宽度、有样式、有颜色，而且每一边可以不一样——只想要下面一条分隔线，写 <code>border-bottom: 1px solid #eee</code>，比画一条 hr 干净得多。</p>
+  <p>border 有两个容易忽略的邻居概念。一是 <code>border: none</code> 和「看起来没有边框」的区别：有些表单控件默认带着边框，去掉要显式写 none，光不写 border 它还是那副样子。二是 <code>outline</code>（轮廓线）：它长得像 border，<strong>但不占布局空间</strong>——画在元素外面一层，不把别的元素挤开。你用 Tab 键在网页上切换时看到的那种高亮框就是 outline，它若占空间，每按一次 Tab 页面就得抖一次。<mark class="key">记法：border 是穿在身上的衣服，outline 是描在外面的灯光。</mark></p>
+  <p>border 还有一门传统手艺——三角形：把宽高设为 0、三边透明一边有色，边框的斜切角就拼出一个实心三角。聊天气泡的小箭头，早年都是这么画的。如今大多用 SVG 或裁剪（clip-path）来做，但这门手艺展示了一个事实：<strong>border 的四条边在角落是斜着拼接的</strong>，理解了这一点，很多「边框怎么长成这样」的疑惑会自然解开。</p>
+
+  <h3>margin：社交距离</h3>
+  <p>margin 是最外面一层，它的身份和其他三层都不一样：<strong>它不属于盒子本体</strong>。背景色不铺它、点它没反应、DevTools 里它永远是那圈橙色空心地带。它是盒子对世界宣布的「请离我远点」——<strong>好比</strong>电梯里人与人之间的社交距离：这段距离不属于任何一个人，却是每个人都需要的。</p>
+  <p>margin 有两个独门本领，是其他三层没有的。其一，<strong>它可以取负值</strong>：负 margin 的意思是「我允许别人侵占我的地盘」，比如 <code>margin-top: -10px</code> 让这个盒子向上爬 10px、压进上方元素的领地。排版里让徽章压住卡片边角、让大标题的第一个字探出版心，用的都是它。负值还有两门进阶手艺：杂志风的<strong>图文混排</strong>，一张照片设 <code>margin-left: -60px</code>，就能把照片左边「探出」正文栏，让文字绕着正文栏排、图片悬在外面，版面立刻有了呼吸感；再比如<strong>错位叠放</strong>，一排卡片每张都比前一张多往上爬 8px（<code>margin-top: -8px</code> 逐级累加），扑克牌式的层叠效果就出来了。<strong>通俗地说</strong>，正 margin 是排队时和前面的人保持距离，负 margin 是往前靠一点、主动「抢戏」——抢多少、抢得体不得体，全看你的排版审美。其二，<strong>它有一个著名的居中咒语</strong>：给一个有确定宽度的块级盒子写 <code>margin: 0 auto</code>，左右外距自动平分剩余空间，盒子就被推到了正中间。这个 <code>auto</code> 是 margin 独有的「你看着办」——上下 auto 不管用（为什么？答案藏在下一节「margin 合并」里），左右 auto 是布局里最古老的居中手段。顺带预告一句：到了 Flexbox 那一节（§ 3.3）你会看到 auto 的现代用法——在弹性布局里，某个子项写 <code>margin-left: auto</code>，它会把剩余空间全部吃掉、把自己推到最右边，一行代码实现「导航栏 logo 靠左、登录按钮靠右」的经典布局。</p>
+  <p>margin 还有一个身份必须点破：它是<strong>布局的谈判桌</strong>。两个盒子之间的实际距离，从来不是「我的 margin + 你的 margin」这么简单——有时相加，有时只取大的，有时干脆凭空消失。<strong>这正是下一节的主角，也是盒模型里最著名的「反直觉事件」。</strong></p>
+
+  <h3>块级与行内：两种排队规则</h3>
+  <p>讲合并之前必须先补一块地基：<strong>盒子怎么排队</strong>。CSS 里每个盒子都有一个 <code>display</code> 属性，决定它按哪套规则排队。最常见的三种规则，用两句话就能立住画面：</p>
+  <ul class="keylist">
+    <li><strong>块级（block）</strong>：独占一行，像银行叫号——一个人一张桌子，哪怕你只办一分钟，这张桌子也是你的。块级盒子<strong>上下摞</strong>，能设宽高。</li>
+    <li><strong>行内（inline）</strong>：像文字排队——一段话里的字挨着排，排满就换行。行内盒子<strong>横着挤</strong>，挤不开换行继续。注意：行内盒子<strong>不换行也拆得开</strong>——一行放不下时，它可以从中间断开，前半截在上行、后半截在下行，就像一个长单词被拆成两截。</li>
+    <li><strong>行内块（inline-block）</strong>：骑墙派——对外像文字排队（不独占一行），对内像块级（能设宽高、不会被拆成两截）。网页导航栏里并排的按钮、早年相册里排成行的缩略图，都是它。</li>
+  </ul>
+  <p>为什么必须懂这个？因为<strong>行内盒子有一身怪脾气</strong>：给它设 <code>width</code>、<code>height</code>——没用，它不理你；给它设 <code>margin-top</code>、<code>margin-bottom</code>——也没用；上下 padding 更有意思：颜色会画出来，却<strong>不把上下方的元素推开</strong>，甚至可能盖到上一行文字身上。<strong>听着玄？</strong>其实想通一件事就通了：行内盒子是为「文字」设计的，文字的行与行之间的距离由行高（line-height）统一管理，不允许单个字私自「把行距撑开」——<mark class="key">一个字不能自己决定这行要多高，否则一行里每两个字高度不一样，文章就没法看了。</mark>所以行内元素的上下方向的间距被「没收」了。想要上下间距生效？把它变成块级或行内块（<code>display: inline-block</code>），那一刻它就有了「块级户口」，宽高和上下间距立刻听话。这是新手排错清单上排名前三的问题，解法永远只有一句：<strong>先看它是哪种盒子。</strong></p>
+  <p>inline-block 还附赠一个著名的「幽灵空隙」悬案：三个 inline-block 的按钮在 HTML 里写得整整齐齐，横排出来却彼此隔着一条几像素的细缝，明明谁都没写 margin。<strong>听着玄？</strong>其实答案特别好笑——你在 HTML 里写标签时敲的<strong>换行和空格</strong>，被浏览器当成了「行内内容之间的一个空格」渲染了出来（这叫空白折叠）。<strong>就像</strong>两件家具之间落的灰：家具没动，灰是搬进来时带进来的。药方从老到新排一排：把标签写在同一行不换行（HTML 难看）、给父容器 <code>font-size: 0</code>（空格没字号就没宽度，但记得给子元素把字号设回去）、或者最现代的——干脆用 Flexbox 排（§ 3.3），弹性布局压根不看 HTML 空白，缝隙从物理上就不存在了。这个悬案之所以值得记，是因为它揭示了行内世界的本质：<strong>inline 的世界里，HTML 源码里的空白也是公民。</strong></p>
+
+  <h3>margin 合并：上下间距的「谦让规则」</h3>
+  <p>现在可以拆这颗最著名的地雷了。看两个上下相邻的段落：上段 <code>margin-bottom: 30px</code>，下段 <code>margin-top: 20px</code>。它们之间隔多远？直觉说 30+20=50px，<strong>实际是 30px</strong>。</p>
+  <p>这就是 <strong>margin 合并（collapse）</strong>：正常文档流里，两个<strong>块级</strong>盒子在<strong>垂直方向</strong>相遇时，它们的外距不叠加，<strong>只取较大者</strong>。老金的规矩一样：两车货中间的空隙，你说留 30、他说留 20，最后按宽的来——<strong>好比</strong>两个人碰面互相鞠躬，最后行礼的深度以鞠得更深的那位为准，浅的那位白弯了腰。</p>
+  <p>合并还有另外两张面孔，认不出它们就会怀疑人生：</p>
+  <ul class="keylist">
+    <li><strong>父子塌陷</strong>：儿子住在爸爸里，儿子喊 <code>margin-top: 40px</code>，你以为他会离爸爸的房顶远一点——结果爸爸整个被顶了下来，儿子的头还是贴着爸爸的房顶。因为儿子的上外距「穿透」了没有隔断的父盒子上沿，变成了爸爸的上外距。<strong>翻译成人话</strong>：房间里的人想离天花板远点，结果整栋楼被抬高了。</li>
+    <li><strong>空盒自并</strong>：一个没有内容、没有上下边框衬垫的空盒子，自己的 margin-top 和 margin-bottom 也会合并成一份。极端情况：一串空段落叠在一起，每个 <code>margin: 20px 0</code>，视觉上只剩 20px 而不是 40px。</li>
+  </ul>
+  <p>规矩的边界同样重要，四条记牢：<strong>只有上下合并，左右从不合并</strong>（水平的两个 margin 老老实实相加）；<strong>只有块级在普通流里合并</strong>——浮动、绝对定位的盒子、以及 Flex 和 Grid 的子项统统不合并，它们遵守的是另一套排队的纪律（§ 3.3、§ 3.4 专门讲）；想<strong>阻止</strong>合并，给父盒子加一点 padding 或 border、或设 <code>overflow: hidden</code> 都能「封住边沿」，儿子就穿透不出去了（背后的机制叫 BFC，块级格式化上下文，§ 3.2 会正式介绍它）。<mark class="key">margin 合并不是 bug，它是 CSS 设计者对「段落之间该有多远」的郑重决定：文章里两段的间距，就该是一段话的事，而不是两段话讨价还价的事。</mark></p>
+
+  <h3>box-sizing：一张订单的两种算法</h3>
+  <p>回到开头那笔 200 变 250 的账。为什么 CSS 默认 <code>width</code> 只量 content、把衬垫和外壳甩在外面？因为 1996 年定 CSS 第一版时，标准组织认为「内容是内容、包装是包装，分开算清楚才严谨」。这个立场在纸面上无懈可击，在现实里却天天出事：你想让三张卡片并排、每张恰好占三分之一，写了 <code>width: 33.33%</code>——结果卡片一加 padding 和 border 就溢出了容器，排版当场崩盘。<strong>说白了</strong>，默认算法要求你做数学题（宽度先减去衬垫和边框再填），而人心里想的永远是「这整个盒子 200 宽」。</p>
+  <p>更戏剧性的是历史：早年微软 IE 浏览器自作主张用了另一套算法——<code>width</code> 把 padding 和 border 一起算进去——被标准派骂了十几年「不标准」。结果骂着骂着大家发现：<strong>IE 那套才符合人类直觉</strong>。于是 CSS 后来把两种算法都写进标准，交给一个开关决定，这个开关就是 <code>box-sizing</code>：</p>
+  <pre><code>* { box-sizing: border-box; }  /* 现代项目开工第一行 */</code></pre>
+  <p>这行通配符重置的意思是：全站所有盒子的宽高，一律<strong>从外壳量到外壳</strong>，padding 和 border 包含在内（margin 永远在外，谁也不算它）。从此 <code>width: 33.33%</code> 的三张卡片怎么加内衬都不会崩。Bootstrap 等几乎所有现代框架都把它写进了默认样式。<strong>打个比方</strong>，这相当于服装行业统一了尺码标签的含义：标 100 就是「穿上身的实际效果 100」，而不是「布料净长 100、加上边缝你自己脑补」。<mark class="key">content-box 与 border-box 之争是 CSS 历史上「标准输给直觉」的标志性案例——规则没有对错，但哪套规则让人少算错账，哪套就赢。</mark></p>
+
+  <h3>width 与 height 的委托链</h3>
+  <p>盒子的尺寸从哪来？除了写死一个数，还有两条更常见的来源：百分比和 auto。它们背后都藏着一条「委托链」，看不清这条链，就解释不了下面这些名场面。</p>
+  <p><strong>百分比永远问爸爸。</strong> <code>width: 50%</code> 的意思是「我占父亲内容区的 50%」，父亲又可能占祖父的 50%……一层层往上委托，直到最顶层那个由浏览器窗口定宽的容器。这条链是健康的，因为每一层的父亲宽度都是确定的。<strong>height 的百分比则是重灾区</strong>：<code>height: 100%</code> 要求「我和父亲一样高」，可如果父亲自己的高度是 <code>auto</code>（高度由内容决定），这条委托就断在半空——<mark class="key">「我和你一样高」「我随你内容长」这两句话互相等对方先给答案，结果谁也定不下来，浏览器只能把 100% 当 auto 处理</mark>。所以「给盒子设 height: 100% 怎么没反应」的答案永远是：往上查，链条断在哪一环（通常是最近的某个祖先没有显式高度），补上它或改用别的高度策略。楼层想量身高，得先有人把楼盖到顶——每层楼都等上一层先封顶，最后一层等谁？</p>
+  <p><strong>auto 不是「没有」，是「你来安排」。</strong> <code>width: auto</code> 的块级盒子会自动填满父容器（这才是「独占一行」的真相），<code>height: auto</code> 会恰好包住内容。老手和新手写布局的差距，一大半在于：新手到处写死数字，老手到处写 auto 然后只锁住真正需要锁的几处。<strong>其实说白了</strong>，写布局和管团队一样——管得越少，团队越能自己应对变化。</p>
+
+  <h3>min / max：给盒子上保险</h3>
+  <p>写死 width 太僵，写 auto 又怕失控，怎么办？现代 CSS 给了一套「保险丝」：min-width、max-width、min-height、max-height。它们和 width 的关系是<strong>保险条款压过合同条款</strong>——盒子的宽度先按 width 走，一旦触碰上下限，以保险为准。最常见的三份保险：</p>
+  <pre><code>.article { max-width: 680px; }   /* 内容再短也行，再宽不超过 680 */
+.sidebar { min-width: 200px; }  /* 被压缩时不低于 200，宁可换行 */
+img { max-width: 100%; }        /* 图片再大也不撑破容器——响应式第一守则 */</code></pre>
+  <p><code>max-width: 680px</code> 这一行尤其值得单独敬礼：它配合 <code>margin: 0 auto</code>，一行管住了「手机上不溢出、宽屏上不变成万里长卷」两件大事，几乎每个正经网站的文章版心都是它的作品。再配一个近年的新属性 <code>aspect-ratio</code>（宽高比），盒子还能「锁比例生长」：<code>aspect-ratio: 16 / 9</code> 加上随便一个方向的尺寸，另一个方向自动算好——视频容器、头像框从此不用再算术。</p>
+  <p>保险家族在<strong>高度方向</strong>还有一位当家花旦：<code>min-height: 100vh</code>。vh 是「视口高度」（viewport height）的单位，100vh 就是「整个屏幕那么高」。想让一个登录页不写死任何高度、又保证短内容时也铺满整屏（页脚不悬在半空），标准答案就是给最外层容器写 <code>min-height: 100vh</code>——内容少时盒子撑满屏幕，内容多时盒子自然长高。<strong>就像</strong>给帐篷定了个「最低身高」：人少时帐篷也撑到这个高度，人多到挤不下就再往上顶。顺带一句近年来的重要更新：手机浏览器的地址栏会随滑动收起又落下，100vh 在手机上会以「地址栏展开时的高度」为准，导致底部内容被地址栏挡住——新单位 <code>dvh</code>（动态视口高度）解决了这个问题，它随地址栏状态实时变化。现代项目在移动端写全屏高度，<code>min-height: 100dvh</code> 是更稳的选择。<mark class="key">一个「保险丝」家族，管的全是「写死太僵、放开太野」的两难——这恰恰是布局工作的常态。</mark></p>
+
+  <h3>overflow：装不下了怎么办</h3>
+  <p>盒子的内容如果超出盒子（尺寸被写死、或被 max 卡住），多余的内容往哪去？这是 <code>overflow</code> 属性管的收尾问题，五种态度：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>取值</th><th>态度</th><th>生活对应</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>visible（默认）</td><td>随便露，露出去就露出去</td><td>行李箱没关严，衣服鼓在外面</td></tr>
+        <tr><td>hidden</td><td>多出来的直接裁掉，不解释</td><td>硬把箱盖压上，塞不进的剪掉</td></tr>
+        <tr><td>scroll</td><td>永远显示滚动条，能拖</td><td>箱子配了行李架，随时翻</td></tr>
+        <tr><td>auto</td><td>装得下就装，装不下才出滚动条</td><td>先试试直接关，关不上再上行李架</td></tr>
+        <tr><td>clip</td><td>像 hidden，但连编程滚动到可见区的机会都不给</td><td>焊死的箱子</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>文字场景里最常用的一招是「单行省略号三件套」：<code>white-space: nowrap</code>（不许换行）+ <code>overflow: hidden</code>（超出裁掉）+ <code>text-overflow: ellipsis</code>（裁断处画省略号）。列表里那些只显示一行、结尾自动出现「…」的标题，全是它的手笔。另外记住一个伏笔：<strong>一个盒子只要把 overflow 从 visible 改成其他任何值，它就获得了「管住自己孩子」的能力</strong>——比如不再被儿子的外距穿透（上一节父子塌陷的药方之一）。这个机制的学名 BFC，§ 3.2 讲文档流时正式开讲。</p>
+
+  <h3>替换元素：盒模型里的特殊公民</h3>
+  <p>讲完行内盒子的怪脾气，有个反例立刻会跳出来打脸：「你刚说行内元素不能设宽高——那 <code>&lt;img&gt;</code> 呢？它默认是行内元素，为什么设 width、height 立刻生效？」问到点子上了。<code>img</code>、<code>video</code>、<code>input</code>、<code>textarea</code> 这些元素属于一类特殊公民，学名叫<strong>替换元素（replaced element）</strong>：它们的内容不写在 HTML 源码里，而是从外部「替换」进来——图片文件、视频流、浏览器画的原生控件。<mark class="key">普通元素的尺寸从零开始、由内容慢慢撑出来；替换元素天生自带「出厂尺寸」（图片的原始像素数），所以它们虽然排在行内，却拥有块级的部分权利：宽高、上下 margin 都能设。</mark><strong>打个比方</strong>，普通元素是现场打的柜子，做多大门就开多大门；替换元素是买来的成品家具，出厂就有固定尺寸——你可以整体缩放它，但它不需要你从零开始定义它。</p>
+  <p>替换元素还贡献了新手排错榜上的另一件名案：<strong>图片底部的神秘缝隙</strong>。一张 <code>img</code> 放进 div，明明宽高严丝合缝，容器底部却多出三四像素的空隙，怎么都消不掉。原因正是「行内身份」：img 默认按行内元素排版，而行内元素要和文字的<strong>基线</strong>对齐——字母 g、y 的「小尾巴」要往下伸，所以行内元素脚下必须留出容纳尾巴的空间。图片自己没有尾巴，但规则不认人：脚下照样给你留出「尾巴位」。<strong>说白了</strong>，那是给字母小尾巴预留的位置，图片不用，但也不能免。药方三选一：<code>vertical-align: bottom</code>（别按基线、按底边对齐）、<code>display: block</code>（干脆退出行内世界）、或父容器 <code>line-height: 0</code>。这类问题的教育意义在于：<strong>「身份决定待遇」在盒模型世界里是铁律——img 能不能设宽高、脚下有没有缝隙，全看它挂在哪个户口下。</strong></p>
+
+  <h3>盒模型在渲染管线的哪一站</h3>
+  <p>把这一节放回界面篇的大图里。§ 2.4 讲过渲染管线的四道工序：解析、<strong>布局</strong>、绘制、合成。盒模型活在哪里？就活在第二道——布局这道工序的全部内容，就是<strong>沿着页面这棵盒子树，从上往下、从外往里，给每个盒子算出两笔账：多大、在哪</strong>。而算账用的记账规则，就是本节学的四层结构、box-sizing、min/max 保险、margin 合并这一整套。浏览器拿着 CSS 规则对盒子树做一次「从根到叶」的递归：先问最外层容器「你多宽」，再逐层往下问「你的孩子们怎么分你的宽度」，每层的答案又成为下一层的题面——§ 2.5 里那个「10 毫秒预算」中吃掉大头的一次全页布局，干的就是这件事。</p>
+  <p>这也解释了布局性能的一条核心直觉：<strong>改 margin、padding、width 这类属性，动的就是记账规则本身，浏览器必须重跑一遍或半遍布局（reflow，回流），代价高；而改颜色、阴影只影响绘制，改 transform 只影响合成，越往后工序越便宜。</strong>一个实时拖动的动画如果每一帧都改 width，每帧都要重新记账，60fps 的预算很快烧穿；换成 transform，浏览器只挪「照片」不重排「家具」。<strong>不妨这样想</strong>：布局像房子的大件定装——墙、门、柜子挪一下，全屋都得重新走一遍；绘制像刷墙漆，合成像给柜子换个摆件角度。<mark class="key">盒模型的所有属性几乎都长在「最贵的那道工序」上——这是它最重要的性能含义，也是 § 2.5 那条「动画只用 transform 和 opacity」军规的根源。</mark>把这一层关系看清，你就同时理解了盒模型「为什么是布局的地基」和「为什么动它最贵」——一枚硬币的两面。</p>
+
+  <h3>不只是 CSS：全世界界面工程师的通用积木</h3>
+  <p>盒模型最值得投入的地方在于：<strong>它不是 CSS 的方言，是整个界面行业的普通话。</strong>你在这里花一小时搞懂「内容、衬垫、外壳、外距」的分法，到了任何一套界面技术里都能直接认亲：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>技术</th><th>padding 叫法</th><th>margin 叫法</th><th>有意思的细节</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Android（XML）</td><td><code>android:padding</code></td><td><code>android:layout_margin</code></td><td>margin 带 <code>layout_</code> 前缀——因为它其实是向<strong>父布局</strong>提的请求，由父布局代为执行</td></tr>
+        <tr><td>Flutter</td><td><code>EdgeInsets</code> 给 padding</td><td><code>EdgeInsets</code> 给 margin</td><td>两者是同一类数据（四边的距离），Container 统一收</td></tr>
+        <tr><td>Qt</td><td><code>contentsMargins</code></td><td>布局器的 <code>setSpacing</code></td><td>外距常被布局器统一成「间距」概念，不归单个控件管</td></tr>
+        <tr><td>SwiftUI</td><td><code>.padding()</code></td><td>没有 margin，用 <code>Spacer</code> 或对齐表达</td><td>干脆取消 margin 这个概念，一切留白都从「内容向外」描述</td></tr>
+        <tr><td>Jetpack Compose</td><td><code>Modifier.padding()</code></td><td>同一个 <code>Modifier.padding()</code></td><td>一个属性两用：<strong>写在 background 前是外距，写在后是内距</strong>——顺序即语义</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看这张表你会发现各家微调了叫法和归属，但「贴身的归自己、社交的归邻居」这条主轴从没变过。Compose 那行尤其值得咂摸：它用「修饰符的书写顺序」表达内外——<code>Modifier.padding(16.dp).background(Red)</code> 是红色外面的留白（外距），<code>Modifier.background(Red).padding(16.dp)</code> 是红色里面的留白（内距），<strong>同一行字换个顺序，意义完全相反</strong>。这恰恰从反面印证了 CSS 的 box-sizing 之争：各家技术都在用自己的方式，回答同一个「账从哪边算」的问题。<mark class="key">学界面的人迟早要跨技术栈，而盒模型是你带得走的那张通行证。</mark></p>
+
+  <div class="callout analogy">
+    <strong>把这一节想成「一间连夜开业的快递分拣中心」</strong><br/>
+    深夜的分拣中心里，传送带就是文档流，每个包裹都是一个元素。<strong>打包台</strong>上，四层洋葱各就各位：货（content）永远在最里面；气泡膜（padding）裹在货外，纸箱的牛皮纸颜色会一直印到膜上；纸箱壳（border）有真实的厚度，快递面单贴在壳上；而<strong>箱子之间保持的距离（margin）不属于任何一个箱子</strong>，它只是传送带上让出的空位。<br/><br/>
+    排队有两种规矩：大件区一件占一整排（block），小件区像字排满一行再换行（inline），行内的小件不许多嘴决定行的高度——那归传送带统一管理（line-height）。<br/><br/>
+    两个箱子上下相遇时，间距取宽者（margin 合并），因为分拣中心的哲学是「相邻的空地只能属于一次让步」；可一旦箱子被叉车抬离传送带（float / absolute）或进了新式货架（Flex / Grid），谦让规则自动失效，间距老实相加。<br/><br/>
+    最里面还有一张<strong>面单（box-sizing）</strong>：老单据写的是净尺寸（content-box），包裹出库前还得自己加膜加壳算总账；新单据直接写「连皮总宽」（border-box），三件并排占一排再也不用做算术——如今全站第一行字就是宣布启用新单据。<br/><br/>
+    <mark class="key">分拣中心的每一条规矩都不是刁难，而是几十年包裹量换来的秩序——你在此学会的每一条，都会在你之后碰到的任何一间分拣中心里再次生效。</mark>
+  </div>
+
+  <h3>排错手册：间距问题的三步破案法</h3>
+  <p>盒模型相关的页面问题，九成可以套同一个破案流程。先把口诀摆出来：<strong>第一步 F12 看盒子图，第二步确认盒子类型，第三步核对账目算法。</strong>下面四个真实案情，全部能套进这三步：</p>
+  <ul class="keylist">
+    <li><strong>案情一：加 padding 盒子变宽、排版崩了。</strong>病根在账目算法——项目没启用 border-box。药方：全站加通配重置，或算好补偿。以后见到「一加内衬就溢出」，直接怀疑 box-sizing。</li>
+    <li><strong>案情二：两段之间的间距比写的数小。</strong>30 + 20 只剩 30？margin 合并了。药方按需求选：要真叠加，就只在一个方向写 margin（比如统一只写 margin-bottom）；要强制隔开，用 padding、border 或 overflow 封边。</li>
+    <li><strong>案情三：给「文字」「链接」设上下间距没反应。</strong>先确认盒子类型——行内元素的上下外距天生无效、上下 padding 不占位。药方：<code>display: inline-block</code>（或按语境改 block / flex）。</li>
+    <li><strong>案情四：height: 100% 没效果。</strong>委托链断了。顺着祖先一路 F12 往上查，找到第一个高度为 auto 的环节，给它定高、或改用 min-height / 弹性策略。症状在最后一级，病根常在爷爷辈。</li>
+    <li><strong>案情五：img 底部多出几像素空隙。</strong>替换元素的行内身份所致——基线对齐给「字母小尾巴」留的位置。药方：<code>display: block</code> 或 <code>vertical-align: bottom</code>，一用就灵。凡是「凭空多一条缝」的悬案，先怀疑行内世界。</li>
+    <li><strong>案情六：没写 margin，inline-block 元素间却有缝。</strong>HTML 源码里的换行和空格被渲染成了真实空格。药方：标签写同一行、父容器 <code>font-size: 0</code>，或改用 Flexbox。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Checklist · 自检</span>
+    <p>动手写任何布局前，过一遍这张单子：</p>
+    <p>① 全站第一行写通配 <code>box-sizing: border-box</code> 了吗？<br/>
+    ② 尺寸能 auto 就 auto，写死的宽高有 max/min 保险吗？<br/>
+    ③ 想扩点击热区用 padding，想离邻居远点用 margin——方向对吗？<br/>
+    ④ 设上下间距的元素，display 是块级或行内块吗？<br/>
+    ⑤ 相邻盒子的上下 margin，你预判过「只取大者」了吗？<br/>
+    ⑥ 百分比高度有没有对祖先做「显式定高」检查？<br/>
+    ⑦ 图片缝、幽灵缝这类「凭空的几像素」，排查过行内身份了吗？<br/>
+    ⑧ 高频动画的属性，尽量落在 transform / opacity 上，别每帧动布局账？<br/>
+    ⑨ 被裁切的区域，overflow 的五个取值选对了吗？</p>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="一个盒子写了 width: 200px、padding: 20px、border: 5px，项目已启用 box-sizing: border-box。它在屏幕上实际占的宽度（不含 margin）是多少？" data-opts="250px|200px|245px|150px" data-answer="1" data-explain="border-box 下，width 从外壳量到外壳：200px 里已经包含两侧 padding（40px）和两侧 border（10px），content 实际只剩 150px，但整个盒子就是 200px。这正是 border-box 让人少做算术的地方。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="上下相邻的两个块级盒子，上者 margin-bottom: 30px，下者 margin-top: 20px（都在普通文档流中）。两者之间实际间隔多少？" data-opts="50px|30px|20px|25px" data-answer="1" data-explain="普通流中块级盒子在垂直方向相遇时外距合并，只取较大者，所以是 30px。想拿到 50px，要么避免合并（加 padding/border 封边），要么干脆只写一个方向的 margin。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一节的名字叫盒模型，内核却是一句话：<mark class="key">万物皆盒子，盒子分四层——货、膜、箱、空地；贴身的归自己（padding）、社交的归邻居（margin）、外壳有厚度（border）、宽度按订单算法算（box-sizing）。</mark>四层叠出一串经典谜题，如今都有了解释：净尺寸变实尺寸是 content-box 在作祟；间距变小是垂直 margin 合并；上下间距失灵是行内盒子没了块级户口；图片能设宽高却带底部缝隙，是替换元素的「出厂尺寸+行内户口」双重身份；高度百分比失效是委托链断了祖先定高；内容溢出要选 overflow 的五种态度。别忘了盒模型在整张大图里的位置：它是渲染管线「布局」这道工序的记账规则——所以它既是一切布局的地基，也是动了最贵的属性。带走两件工具：F12 的盒子解剖图，和「先看层、再看队型、最后对账」的破案三步。下一节 § 3.2，我们要让这些盒子动起来——谁排在前、谁浮起来、谁钉在原地，这就轮到文档流与定位登场了。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./02-5-gpu-60fps.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 2.5 · GPU 合成与 60fps</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一节</span>
+      <span class="title">§ 3.2 · 流式与定位（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 3.1</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
