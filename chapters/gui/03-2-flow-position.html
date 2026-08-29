@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 3.2 · 流式与定位 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 3 章</span>
+      <span class="sep">›</span>
+      <span>§ 3.2</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 3.2 · Section</div>
+    <h1>流式与定位</h1>
+    <div class="cn">Normal Flow, Float &amp; Position</div>
+  </header>
+
+  <p class="lead">
+    上一节认识了盒子——这一节要回答的问题是：<mark class="key">页面上几百个盒子，凭什么有的从上往下摞、有的挤在文字旁边、有的钉死在屏幕角落纹丝不动、有的滚到一半突然「贴」住？</mark>答案全在两套规则里：一套叫<strong>文档流</strong>——所有盒子的默认排队秩序，像印刷厂从左上角开始一行行排铅字；另一套叫<strong>定位</strong>——五种让盒子「离开队伍」的方式，从轻微挪动到彻底自由各不相同。<strong>说白了</strong>，这一节讲的是秩序与自由的分寸：全听指挥（文档流）最省心但不够用，彻底放飞（absolute/fixed）最自由但要自己负责——而「塌陷」「参照物错位」「sticky 失灵」这些经典事故，全都是没算清这份分寸的账。读完这一节，你看到任何一个页面都能说出：这个盒子在流里，那个盒子脱了流，那个贴在玻璃上。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🖨️ 老打印店的排字车间</div>
+    <p>上世纪的打印店里，排版师傅的工作台边永远立着一版版的铅字。一页报纸怎么排出来？规矩只有一条：<strong>从左上角开始，往右排，排满一行换下一行，排满一页换下一页</strong>。文字、标题、表格，统统按到达顺序进这个流水线，谁也不许插队——这就是页面排版最原始的秩序。<br/><br/>
+    但总有些东西不守这个规矩：<br/>
+    <strong>插图</strong>：师傅把一张照片往版面里一塞，照片「浮」在版上，<strong>文字自动绕着它排</strong>——杂志那种图文环绕的效果；<br/>
+    <strong>贴纸</strong>：一张「促销！」的红贴纸，直接<strong>贴在版面某个坐标上</strong>，铅字流完全无视它，被它盖住就盖住了；<br/>
+    <strong>橱窗标签</strong>：价目表贴在店门口的玻璃橱窗上，<strong>店里报纸怎么换版，它都在玻璃上不动</strong>；<br/>
+    <strong>楼层牌</strong>：电梯里的「当前楼层」显示，平时跟着电梯一起动，<strong>一旦贴到某层就钉在那儿</strong>，等电梯再动它才继续。<br/><br/>
+    <mark class="key">文档流就是那条「从左上角开始」的排字流水线；float、absolute、fixed、sticky，就是铅字、插图、贴纸、橱窗标签、楼层牌这五种「不同自由度」的离队方式——这一节讲的，就是谁凭什么离队、离队后各自的规矩和代价。</mark></p>
+  </div>
+
+  <h3>术语对照：先把行话翻译成人话</h3>
+  <p>这一节的新词比上一节多，而且彼此咬合得紧，先集中过一遍：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>排字车间里的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>文档流（normal flow）</td><td>所有盒子的默认排队秩序</td><td>从左上角一行行排铅字的流水线</td></tr>
+        <tr><td>脱流（out of flow）</td><td>盒子离开了这条流水线，不再排队、也不占队里的位置</td><td>插图和贴纸——不在铅字队里</td></tr>
+        <tr><td>浮动（float）</td><td>盒子靠到一行的一侧，其他内容绕着它排</td><td>塞进版面的照片，文字绕行</td></tr>
+        <tr><td>清除浮动（clear）</td><td>宣布「我不许任何浮动盒子挨着我这一侧」</td><td>师傅说「这张照片不许压过我这行」</td></tr>
+        <tr><td>定位（position）</td><td>规定盒子坐标怎么算的一族规则</td><td>贴纸怎么贴、贴在哪</td></tr>
+        <tr><td>包含块（containing block）</td><td>定位时「往哪个框里看坐标」的那个参照框</td><td>贴纸相对哪张纸、还是相对玻璃窗</td></tr>
+        <tr><td>层叠上下文（stacking context）</td><td>决定「谁压着谁」的一层独立比武场</td><td>哪张贴纸压在哪张上面</td></tr>
+        <tr><td>BFC（块级格式化上下文）</td><td>一段自成体系、内外互不干扰的排版区域</td><td>隔离出的一张独立小工作台</td></tr>
+        <tr><td>z-index（层级）</td><td>定位元素在「谁压着谁」比武里的号码</td><td>贴纸叠放时的先后手</td></tr>
+        <tr><td>shape-outside（环绕形状）</td><td>规定文字沿什么形状绕开浮动元素</td><td>照片剪成圆形，文字沿圆边绕</td></tr>
+        <tr><td>锚点定位（Anchor Positioning）</td><td>声明「我贴在某个元素旁边」的新式 CSS 定位</td><td>公告牌自动跟着货架走</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>文档流：页面世界的宪法</h3>
+  <p>先把默认秩序讲透，因为后面所有的「离队」都是相对它而言的。<strong>文档流</strong>说白了就是：不写任何定位和浮动时，浏览器摆放盒子的那套默认算法——块级盒子从上往下一个个摞，行内盒子在每一行里从左往右排，排满换行，行盒从上往下摞。它有两个听起来平平无奇、实则深刻的特点。</p>
+  <p><strong>第一个特点：顺序就是书写顺序。</strong>HTML 里谁写在前面，页面上谁就在上面——文档流的世界里没有「坐标」，只有「先后」。<strong>不妨这样想</strong>：写 HTML 不是在画一张标好坐标的图纸，而是在往一条传送带上按顺序放盒子。这条纪律带来一个巨大的红利：HTML 源码的阅读顺序 = 页面的视觉顺序 = 屏幕阅读器的朗读顺序（无障碍，§ 4.6 会再遇到它）。<mark class="key">文档流不只是默认布局，它还是页面「语义顺序」的载体——所以好的布局改动尽量在流的秩序内解决，脱流是例外而非常态。</mark></p>
+  <p><strong>第二个特点：它继承自文字排版。</strong>「从左到右、从上到下」是英文书籍的书写方向，CSS 把它焊进了布局基因。中文竖排、阿拉伯文从右到左怎么办？现代 CSS 用 <code>writing-mode</code> 和 <code>direction</code> 属性把整套方向抽象化了——文档流的「行」和「下一行」会跟着书写方向旋转。这里不展开，记住一句话就好：<strong>文档流的方向不是天生的「上下左右」，是书写方向</strong>；所以逻辑属性（如 <code>margin-inline-start</code>，行的起始边）正在取代物理属性（<code>margin-left</code>），成为多语言友好的写法。</p>
+  <p>文档流里还有一层隐蔽的中间结构值得点名：<strong>行盒（line box）</strong>。行内内容不是散装地飘在页面上，而是先被装进一条条看不见的「行盒」里，行盒再从上往下摞。行盒的高度由<strong>行高</strong>撑起，而行内的每个小盒子怎么在行盒里上下对齐，由 <code>vertical-align</code> 决定——默认都往「基线」上站，字母 g、y 的小尾巴垂到基线下面。<strong>其实说白了</strong>，一行文字就像合唱队的一排站位：每个字有自己的身高和小尾巴，队伍按「脚踩同一条基线」来对齐，行盒的高度得容得下这一排里最高的那个脑袋加最长的那个尾巴。§ 3.1 讲过「img 底部神秘缝隙」，病根就在这儿——图片作为行内盒子也被拉去踩基线，脚下自然多出「尾巴位」。行内世界的对齐是一整套基线体系，遇到行内元素对不齐的悬案，往这里想。</p>
+
+  <h3>离队的五种方式：自由度阶梯</h3>
+  <p>下面所有主角可以排在同一把「自由度梯子」上，从守规矩到全自由，一级比一级远：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>梯级</th><th>方式</th><th>占不占队伍里的座</th><th>一句白话</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0</td><td>文档流（默认 static）</td><td>占</td><td>老实排队</td></tr>
+        <tr><td>1</td><td>relative 相对定位</td><td><strong>占（座位保留）</strong></td><td>人在队伍里，身体探出去一点</td></tr>
+        <tr><td>2</td><td>float 浮动</td><td>半占（行内内容绕行，块级无视）</td><td>靠边站，文字绕着我走</td></tr>
+        <tr><td>3</td><td>sticky 粘性定位</td><td>占（没贴住时就是普通队员）</td><td>平时排队，到了位置就贴住</td></tr>
+        <tr><td>4</td><td>absolute 绝对定位</td><td>不占</td><td>彻底离队，贴纸一样钉在参照框上</td></tr>
+        <tr><td>5</td><td>fixed 固定定位</td><td>不占</td><td>贴在屏幕玻璃上，页面怎么滚都不动</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>还有一个容易和「脱流」搞混的概念要单独澄清：<code>display: none</code> 不是离队，是<strong>消失</strong>——盒子从渲染树上整个拿掉，不占座、不可见、读屏软件也读不到。而 <code>visibility: hidden</code> 是「隐身」：看不见，但座位还占着。加上 <code>opacity: 0</code>（全透明），三种「看不见」各有脾气，值得拉一张对比表——动画、下拉菜单、加载占位里天天要在这三者里做选择：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>占不占座</th><th>能不能点到</th><th>读屏读不读</th><th>触发回流吗</th><th>典型用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>display: none</td><td>不占</td><td>点不到</td><td>不读</td><td>触发（布局重算）</td><td>彻底移除：标签页切换、条件渲染</td></tr>
+        <tr><td>visibility: hidden</td><td>占</td><td>点不到</td><td>不读</td><td>不触发（只重绘）</td><td>保留座位的隐藏：动画前后、表格防跳动</td></tr>
+        <tr><td>opacity: 0</td><td>占</td><td><strong>点得到！</strong></td><td><strong>读得到！</strong></td><td>不触发</td><td>淡入淡出动画；配合 pointer-events 断点击</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>表格里两个加粗的「点得到、读得到」是高频事故源：一个 <code>opacity: 0</code> 的透明按钮，用户看不见，鼠标移上去却会变成手型、甚至能点出弹窗；读屏用户更会听到一段「幽灵按钮」的朗读。<strong>说白了</strong>，opacity 只管「画不画得出来」，不管「存不存在」——想让它彻底失联，得再补一行 <code>pointer-events: none</code>，或者动画结束后切成 display: none。加上「离队但可见」的 absolute，一句话收拢：<strong>none 是退场，hidden 是隐身，opacity 是穿了隐身衣还站在台上，absolute 是离席站到了别处。</strong></p>
+
+  <h3>float：为「文字环绕」而生，却被错用成了布局工具</h3>
+  <p>float 是这把梯子上历史最曲折的一级。它<strong>出生的目的只有一个</strong>：杂志排版里那种「照片靠左，文字顺着绕过去」的效果。看它本来的样子：</p>
+  <pre><code>img { float: left; }   /* 图片浮到左侧，后续的文字环绕它 */</code></pre>
+  <p>浮动盒子会「漂」到所在行的一侧（左或右），<strong>行内内容（文字、行内元素）会感知到它并绕行</strong>，但普通的块级盒子会当它不存在、直接从它底下穿过去。这条「一半人让路、一半人无视」的分裂规则，正是 float 后续一切怪象的根源。</p>
+  <p>曲折在于历史：CSS2/3 时代，工程师们发现「两个盒子都 float: left」能让它们<strong>并排</strong>——在 Flexbox 诞生之前，这是唯一好用的多栏布局手段。于是整个 Web 时代十年间，float 被大规模「错用」成布局引擎：两栏布局、三栏布局、导航条、整个页面的骨架，全是 float 搭的。</p>
+  <p>那段「float 打天下」的岁月值得讲一段，因为它的两大遗产今天还散落在旧代码里。<strong>遗产一：百分比浮动栅格。</strong>左右两栏各 float、宽度写成百分比（比如左 65% 右 35%），窗口一缩放两栏按比例伸缩——这就是「响应式」最原始的形态，Bootstrap 早年整套栅格系统都建立在它上面。<strong>遗产二：等高难题。</strong>float 栏天生「各长各的」：左栏文字 2000 字、右栏只有一行，右栏盒子就只有一行高，两栏底边参差不齐——而设计稿要求两栏永远等高。工程师被逼出的解法千奇百怪：给短栏塞超长内边距再用负外边距拉回来（<code>padding-bottom: 9999px; margin-bottom: -9999px</code>，堪称 CSS 侧写史上的名场面）；或者干脆在父容器背景上画一条竖线假装两栏（「假栏」，faux columns）。<strong>听着像段子？</strong>每一招都是在没有正经工具的年代，用盒子模型的边角料硬凿出来的。<mark class="key">Flexbox 一行 <code>align-items: stretch</code> 就终结了等高难题——读旧代码认得这些遗产就够了，新代码请让 float 退休布局岗，回归它唯一的本职工事：文字环绕。</mark></p>
+  <p>顺带认识 float 的一位现代接班人：<code>shape-outside</code>。传统浮动环绕是「矩形绕行」——文字围着图片的盒框转，哪怕图片本身是圆的。<code>shape-outside: circle(50%)</code> 让文字真正沿着圆形边缘环绕，杂志级的有机排版在网页上成了可能。它不改变盒子的占位，只改变「文字绕行的轨迹」，和 float 是天作之合。</p>
+
+  <h3>塌陷：浮动盒子不被「认领」的经典事故</h3>
+  <p>float 最著名的怪象叫<strong>高度塌陷</strong>，一步步看它怎么发生：一个父盒子里有两个普通块级儿子，父盒子的高度由儿子们撑起来——上一节说过，<code>height: auto</code> 就是「内容多高我多高」，这是文档流的记账规则。可一旦两个儿子都 float 了，规则说「浮动的儿子不算常规内容」——父盒子一看：队里没人了，高度收成 0。<strong>就好比</strong>父母去教室点名，两个儿子都「靠边站」到教室外面去了，点名册上空空如也，老师说「这班没学生」，教室当场塌成一张纸。</p>
+  <p>塌下去的父盒子会把后面的兄弟内容都拽上来，页面布局整片错位——十年前几乎每个网页都要处理这毛病，于是江湖上流传着各种「清除浮动」的偏方。正统药方有三个，按推荐顺序排：</p>
+  <ul class="keylist">
+    <li><strong>现代首选：<code>display: flow-root</code></strong>。给父盒子加这一行，它就变成一个独立排版区域（也就是马上要讲的 BFC），浮动儿子重新被「认领」，高度正常。<strong>简单说</strong>，这是官方为这个十年老毛病新发的专用药，语义干净、零副作用。</li>
+    <li><strong>老牌偏方：伪元素 clearfix</strong>。在父盒子末尾用 <code>::after</code> 造一个看不见的块级元素，给它 <code>clear: both</code>（下一小节讲）。老项目里大量存在，读旧代码必认识它。</li>
+    <li><strong>顺手药：<code>overflow: hidden</code></strong>。副作用是会把溢出内容裁掉，能用但有风险，知其所以然再用。</li>
+  </ul>
+
+  <h3>clear：给浮动立一条「到此为止」的线</h3>
+  <p>clear 是 float 的配套管制措施。<code>clear: left</code> 的意思是：<strong>我这个盒子的左侧不许有任何左浮动的盒子贴着</strong>——如果左边真有，我就整个挪到它下面去。<code>clear: right</code> 管右侧，<code>clear: both</code> 两侧都管。注意它的措辞是「挪到下面」，不是「把上面的推开」——clear 只管自己往下躲，不动别人分毫。<strong>打个比方</strong>，这不是交警把违章车拖走，而是后车自己绕行：绕行有效，但违章车还停在那儿。</p>
+  <p>顺带一个高频细节：clear 管的是<strong>块级盒子</strong>。文字是行内内容，本来就会绕开浮动，不需要 clear；需要 clear 的是那些「会从浮动盒子底下穿过去」的块级盒子——你希望它老老实实排在浮动内容之下时，就给它 clear。</p>
+
+  <h3>BFC：自成一方的小水池</h3>
+  <p>塌陷药方里两次出现「独立排版区域」，现在把这块盖头揭开。BFC 全称<strong>块级格式化上下文</strong>（Block Formatting Context），名字吓人，<strong>换成大白话</strong>：<strong>一段被隔离出来的排版区域，里面的盒子怎么排，只由区域内部的规则说了算；区域内外互相不越界。</strong>普通文档流是一个大 BFC，但你可以让某个盒子「自立门户」，自立门户的方式包括：设 <code>overflow: hidden</code>（值不是 visible）、<code>display: flow-root</code>（专为此设计）、float、absolute 定位、flex/grid 容器等。</p>
+  <p>「自成一方」带来三个立竿见影的隔离效果，全是上一节埋的伏笔：</p>
+  <ul class="keylist">
+    <li><strong>认领浮动儿子</strong>：BFC 内部浮动盒子的高度会被算进来——高度塌陷药方的原理。</li>
+    <li><strong>挡住外距穿透</strong>：儿子的 margin 不再穿透 BFC 边界顶到外面——父子塌陷药方的原理。你<strong>可以想象</strong>成给水池砌了池壁：池内的波浪再大，也翻不出池沿。</li>
+    <li><strong>拒绝被环绕</strong>：BFC 不会和旁边的浮动盒子重叠，而是整体让开——两栏布局（左栏 float、右栏 BFC）靠的就是这条。</li>
+  </ul>
+  <p>三个效果背后是同一个原理：<strong>隔离</strong>。BFC 是 CSS 布局里「范围的圈定」：<mark class="key">想让一摊排版事务互不牵连，标准答案几乎总是「圈一个 BFC」——只是老写法副作用多（overflow: hidden 裁内容、float 传染布局），新写法 display: flow-root 专治此事，见 BFC 就该想到它。</mark></p>
+
+  <h3>position 五兄弟总谱</h3>
+  <p>现在进入定位家族。<code>position</code> 属性五个取值，一张表先看全貌，后面每个重要成员单独开小灶：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>取值</th><th>坐标相对谁</th><th>占不占座</th><th>典型场景</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>static（默认）</td><td>——没有坐标，就是排队</td><td>占</td><td>99% 的普通盒子</td></tr>
+        <tr><td>relative</td><td>相对<strong>自己原来的位置</strong></td><td>占（座位留着）</td><td>微调、给 absolute 当参照物</td></tr>
+        <tr><td>absolute</td><td>相对<strong>最近的定位祖先</strong></td><td>不占</td><td>徽章、对话框、装饰角标</td></tr>
+        <tr><td>fixed</td><td>相对<strong>浏览器视口</strong></td><td>不占</td><td>固定导航、返回顶部按钮</td></tr>
+        <tr><td>sticky</td><td>相对<strong>最近滚动容器</strong>（滚动中动态）</td><td>占（未贴住时）</td><td>吸顶表头、跟随侧栏</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>有一个全体成员共享的通用机制先交代：一旦 position 不是 static，四个偏移属性 <code>top / right / bottom / left</code> 就开始生效（static 下写了也没用），另外 <code>z-index</code> 也会解锁（后面讲）。<strong>说白了</strong>，position 是「资格证」：拿到证，坐标系统和层级系统才向你开放。</p>
+
+  <h3>relative：占着座位的探身</h3>
+  <p>relative（相对定位）最温和：盒子还待在文档流的原位、座位照留、尺寸照常参与布局，只是<strong>视觉上</strong>往四个方向偏移一段。注意「视觉上」三个字——偏移之后，原来的座位并没有交出去，邻居们完全不会因为你挪了而重新排版。<strong>就好比</strong>开会时你把身子探到旁边跟人耳语：你的椅子还占着原位，桌上的座次表没变，别人照样按老位置坐——你只是身体不老实。</p>
+  <p>两个高频用法：一是<strong>微调</strong>——图标和文字对不齐时，图标 <code>position: relative; top: 2px</code> 轻轻一顶就齐了，比改 margin 干净（margin 会把邻居推开，relative 谁都不碰）；二是<strong>当参照物</strong>——这是它更重要的身份，下一小节讲 absolute 时揭晓。还可以加一个小用途：<code>relative + z-index</code>，让某个盒子在层叠顺序里临时拔高，压过相邻元素——徽章、角标常用这招。</p>
+  <p>把「当参照物」这个身份单独放大讲透，因为它是这一节最值得形成肌肉记忆的组合拳：<strong>「父 relative + 子 absolute」是定位世界的黄金搭档</strong>。单独看，relative 挪那几像素的用处有限，absolute 又满世界乱飞认错参照物；组合起来，一个「不挪动但领了证」的父盒子 + 一个「自由但有了家」的子盒子，正好构成一个稳定的局部坐标系：徽章贴卡片角、关闭按钮贴卡片右上、标签贴卡片左上、装饰图贴卡片背后——全都是这套组合。你可以<strong>想象一下</strong>每张卡片是一个小小的「画板」，relative 是给画板领一张场地证，absolute 的子元素从此在这个画板内自由作画、互不干扰。<mark class="key">写徽章和角标时的条件反射：先给父盒子领证（relative），再给子盒子发贴纸（absolute）——一领一发，位置稳了。</mark></p>
+
+  <h3>absolute：彻底自由的贴纸</h3>
+  <p>absolute（绝对定位）是自由的代价与红利都拉满的一档。它做三件事：<strong>脱离文档流</strong>（不再占座，队友当你不存在）、<strong>尺寸收缩为包住内容</strong>（块级的「自动填满父宽」特权没了，除非你显式写宽）、<strong>按坐标钉在参照框上</strong>。典型如左上角的小红点徽章：父盒子 <code>position: relative</code>，徽章自己 <code>position: absolute; top: -6px; right: -6px</code>——半悬在父盒子右上角之外，像贴纸贴在了版面某个坐标上。</p>
+  <p>这里埋着 absolute 最核心也最容易翻车的概念：<strong>参照物到底是谁？</strong>规则是：从自己往上数祖先，<strong>第一个 position 不是 static 的祖先</strong>就是参照框；一个都没有，参照「初始包含块」（约等于整个页面）。这条规则造成两大经典事故：</p>
+  <ul class="keylist">
+    <li><strong>事故一：忘了给父级发「资格证」。</strong>你想让徽章贴在卡片右上角，忘了给卡片写 relative——浏览器一路往上找不到定位祖先，徽章直接贴到了页面右上角，飞出十万八千里。<strong>药方已刻进 DNA：写 absolute 的第一件事，检查最近的应当作参照的祖先有没有 position: relative。</strong></li>
+    <li><strong>事故二：被无意发了证的祖先截胡。</strong>某个中间祖先碰巧写了 relative（比如为了微调别的元素），你的 absolute 就近认了它当参照物，位置全错。F12 选中 absolute 元素，看它实际「贴」在哪个框上——定位其实不怕远，就怕认错爹。</li>
+  </ul>
+  <p>还有一条少有人知但很好用的公式：<strong>absolute + 拉伸四边</strong>。四个偏移全写（top/left/right/bottom 都有值）且不写宽高时，盒子会被拉伸到恰好填满参照框——这种「内衬式」绝对定位可以做遮罩层、骨架屏。<strong>其实说白了</strong>，absolute 的坐标不止「一个点」，还能表达「撑满整个参照框」——把参照框想成画框，贴纸既可以贴在画框某个角，也可以把画框整个贴满。</p>
+  <p>absolute 还承包了一个经典命题：<strong>完全居中</strong>。老三样是「left: 50%; top: 50%; margin-left: 负自身宽的一半; margin-top: 负自身高的一半」——一旦盒子尺寸变了，负值还得跟着改，脆得很。现代两式：<strong>式一</strong>，<code>left: 50%; top: 50%; transform: translate(-50%, -50%)</code>——translate 的百分比是相对<strong>自己</strong>的尺寸算的，所以「先走到参照框中心，再往回撤自己的一半」，尺寸怎么变都自动对准；<strong>式二</strong>，<code>inset: 0; margin: auto</code>（四个方向拉满 + margin auto 自动平分）——auto 平分剩余空间的规则在 absolute 里对四个方向都生效，盒子被四面的 auto 精确顶到正中。两式都值得抄进笔记：式一通用性最好，式二最干净——它们是「居中」这门手艺在绝对定位世界的标准答案。</p>
+
+  <h3>fixed：贴在屏幕玻璃上的标签</h3>
+  <p>fixed（固定定位）参照物是<strong>视口</strong>——浏览器窗口那块可见玻璃。<code>position: fixed; bottom: 24px; right: 24px</code> 的「返回顶部」按钮，无论页面滚到天涯海角，它钉在屏幕右下角不动；手机 App 底部的标签栏、桌面软件的常驻工具条，同一个道理。fixed 也脱流、也不占座，和 absolute 是亲兄弟，差别只在参照物：absolute 看「最近的定位祖先」，fixed 只看视口。</p>
+  <p>fixed 有一个现代浏览器里非常阴险的陷阱，值得专门立案：<strong>transform 会劫持它</strong>。按规范，祖先元素只要设置了 <code>transform</code>（哪怕 <code>transform: translate(0,0)</code> 这种等于没动的），就会变成后代的固定定位参照物——fixed 的行为瞬间退化成 absolute！症状极具迷惑性：一个好好的吸底按钮，在某次改版给某层容器加了动效之后就「跟着页面滚走了」。排查思路就一条：从 fixed 元素往上找 transform / filter / will-change，找到谁谁就是凶手。<mark class="key">「fixed 突然不 fixed 了」，99% 是被某个 transform 祖先收编了。</mark></p>
+  <p>另外两个 fixed 的常用配件：一是 fixed 导航栏会<strong>遮住</strong>页内锚点跳转的目标（点目录跳到某标题，标题被顶栏盖住半截）——药方是 <code>scroll-padding-top</code> 给滚动补一段「顶栏高度」的留白；二是 fixed 元素在窄屏上容易溢出，记得配 max-width 保险。</p>
+
+  <h3>sticky：排队员的「贴住」超能力</h3>
+  <p>sticky（粘性定位）是最年轻也最讨喜的一员，它把 relative 和 fixed 揉在了一起：<strong>没到阈值时，它就是个普通排队员（占座、随波逐流）；一旦滚动让它的位置越过你指定的那条线（比如 top: 0），它就地「贴住」，表现得像 fixed；等它的父容器把它整个带出屏幕，它又跟着走。</strong>电梯楼层牌、Excel 冻结的首行、手机通讯录里跟随滚动的字母索引，全是 sticky。</p>
+  <p>它有三个专属的「不生效」陷阱，几乎每个初学者都要撞一遍，一次说清：</p>
+  <ul class="keylist">
+    <li><strong>陷阱一：忘了写阈值。</strong>只写 <code>position: sticky</code> 不写 top，等于没贴——粘性需要一个「贴住线」（top/bottom/left/right 至少一个）。</li>
+    <li><strong>陷阱二：祖先不许它走。</strong>sticky 只能在<strong>最近的可滚动祖先</strong>里贴，而且<strong>不能越过父盒子的边界</strong>。父盒子本身高度就一行高，sticky 没有活动余地，看起来毫无反应。想吸顶的元素，必须直接住在那个「高高的滚动内容」里。</li>
+    <li><strong>陷阱三：祖先把溢出锁了。</strong>任何祖先设了 <code>overflow: hidden / auto / scroll</code>，滚动就发生在那一层，sticky 改贴那一层的「玻璃」——如果你以为在贴视口，就会觉得它「贴错了地方」。排查依旧是从元素往上找 overflow。</li>
+  </ul>
+  <p><strong>打个比方</strong>总结 sticky 的双重人格：它是电梯里的楼层牌——电梯不动时它就是电梯的一部分（在流里），电梯动起来它就显示当前楼层（贴住），可它终究长在电梯井里（受父容器约束），出了电梯井它什么也不是。</p>
+  <p>sticky 的两个进阶用法也顺手收下。其一：<strong>吸顶表头</strong>——<code>thead th { position: sticky; top: 0; }</code>，长表格滚动时列头恒定可见，这是 sticky 最能打的应用场景之一，而且对表格的 thead 支持良好；其二：<strong>双向贴住</strong>——top 和 bottom 同时写时，sticky 元素在「上贴线」和「下贴线」之间被拉伸，配合父容器可以做出「日程表里随滚动撑开的时间块」这类高级效果。另外提一句 sticky 的兄弟属性 <code>scroll-margin</code>：它给某个元素四周预留「滚动留白」，配合页内锚点跳转使用，效果与 scroll-padding 异曲同工，一个写在目标身上、一个写在滚动容器身上。</p>
+
+  <h3>z-index 与层叠上下文：谁压着谁</h3>
+  <p>盒子脱了流、自由了，新的问题立刻冒头：它们叠在一起时，谁在上谁在下？第一层答案很简单：<code>z-index</code>——定位元素的层级号码，数字大的压数字小的，就像扑克牌的牌面大小。但第二层答案才是精髓：<strong>z-index 只在同一个「层叠上下文」内可比</strong>。层叠上下文（stacking context）是一层独立的比武场：场内元素先分出高低，然后整个场作为一个整体，去和别的场比。而创建比武场的方式，除了我们熟知的 html 根元素，还有：position 非 static 且 z-index 非 auto、opacity 小于 1、transform、filter、fixed 和 sticky 定位本身……</p>
+  <p>这套「分组规则」造成的新手头号惨案：<strong>子元素的 z-index 调到 99999 也压不过别人</strong>。原因几乎总是：它的某个祖先自己是个比武场，且那个祖先在场外的比武中输给了对手——儿子在自己场里再高，也高不过「对方整个场」压下来。<strong>就像</strong>公司里的竞赛：你们组内部评了第一名，出去跟隔壁组比，比的是<strong>组与组</strong>的成绩——你个人再强，也强不过「隔壁组整体排在你组前面」这个事实。<mark class="key">z-index 失灵的排查口诀：别看元素本身，看它被哪个祖先圈进了哪场比赛——层叠上下文的输赢，在场外就已决定。</mark></p>
+  <p>工程上由此沉淀出一条纪律：不要随手撒 z-index 大数（999、9999 满天飞是坏味道），而是定一个项目的层级刻度（如 10 导航 / 100 遮罩 / 1000 弹窗），把「比武场」数量控制在刻意创建的几个里。<strong>说白了</strong>，层级和权限一样：号码本身不值钱，号码所在的「场」才值钱。</p>
+  <p>还有一个更深的问题值得补一笔：<strong>大家都不写 z-index 时，浏览器按什么顺序盖？</strong>答案是一套固定的「七层绘制顺序」：同一层叠上下文里，先画元素的背景和边框，再依次是负 z-index 的定位子孙、普通块级盒子、浮动盒子、行内内容、z-index 为 auto/0 的定位元素，最后是正 z-index 的定位子孙。这条顺序解释了一个朴素的现象：为什么定位元素总盖在普通内容上、浮动元素盖在块级背景上——<strong>不是谁运气好，是绘制顺序里他们本来就排在后面，后画的自然盖住先画的</strong>。<strong>好比</strong>刷墙：先刷底漆（背景），再挂照片（块级），再贴海报（浮动），最后钉公告板（定位）——后挂的盖住先挂的，谁也怨不着谁。把这个七层顺序装进脑子，多数「怎么它就压在上面了」的日常小谜案当场破案，根本用不着 z-index 出场。</p>
+
+  <h3>DOM 顺序与视觉顺序：定位的无障碍账</h3>
+  <p>本节开头说过，文档流的红利是「源码顺序 = 视觉顺序 = 读屏顺序」。定位技术一旦用多，这份三位一体就开始漏账：absolute、fixed 可以把一个盒子视觉上搬到任何地方，但屏幕阅读器完全不看坐标，只按 HTML 源码的先后朗读（§ 4.6 会讲读屏的工作方式）。于是可能出现：<strong>视觉上「确定」按钮在右、「取消」在左，而源码里顺序相反——鼠标用户看到一套界面，读屏用户听到的是另一套。</strong>更实际的隐患是 Tab 键顺序：键盘焦点同样按 DOM 顺序走，视觉顺序被定位打乱后，Tab 在页面上的跳动轨迹会变成「瞬移」，键盘用户完全跟不上。<mark class="key">定位的账单上永远有一栏「无障碍税」：能用文档流表达的顺序，就别用坐标去重排；必须重排时，回头检查一遍 DOM 顺序是否还讲得通。</mark><strong>不妨这样想</strong>：定位改的是「画」，DOM 是「剧本」——观众看画，读屏念剧本，剧本乱了，画得再好也白搭。</p>
+
+  <h3>场景取舍指南：什么活用什么刀</h3>
+  <p>规则学完，落到实战怎么选？把常见的活儿和对应的刀列成一张速查表：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你要做的事</th><th>首选方案</th><th>为什么不选别的</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>大部分内容排版</td><td>留在文档流里，或上 Flex/Grid</td><td>流保住语义顺序，弹性工具管对齐</td></tr>
+        <tr><td>图标与文字对齐差 2px</td><td>relative 微调</td><td>margin 会推别人，relative 谁都不碰</td></tr>
+        <tr><td>图片配环绕文字</td><td>float（或 shape-outside）</td><td>这是 float 的本职工事</td></tr>
+        <tr><td>多栏布局</td><td>Flex / Grid（§ 3.3、§ 3.4）</td><td>float 布局是历史错用，勿再学</td></tr>
+        <tr><td>卡片角标、徽章、气泡小箭头</td><td>父 relative + 子 absolute</td><td>坐标自由、不占座</td></tr>
+        <tr><td>全屏遮罩、居中对话框</td><td>fixed（遮罩）+ absolute（内容）</td><td>参照视口，与页面滚动无关</td></tr>
+        <tr><td>常驻导航、返回顶部</td><td>fixed</td><td>钉在玻璃上</td></tr>
+        <tr><td>吸顶表头、字母索引</td><td>sticky + top</td><td>relative 与 fixed 的合体</td></tr>
+        <tr><td>隔离一摊布局事务</td><td>display: flow-root（BFC）</td><td>官方新药，无副作用</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>前瞻：定位的未来是「锚点」</h3>
+  <p>本节的最后，看一眼定位技术正在发生的进化。今天的弹层（下拉菜单、气泡提示、右键菜单）有个老难题：它们要用 absolute 定位到触发按钮旁边，但按钮一旦处于滚动容器边缘，弹层可能溢出屏幕——于是每个组件库都内置了成百上千行的 JS「翻转、避让、贴边」逻辑。CSS 正在把这个能力原生化：<strong>锚点定位（Anchor Positioning）</strong>——让一个元素声明「我锚定在那个元素旁边」，浏览器自动处理定位、翻转和避让，几行 CSS 替掉整套 JS。这套能力在 Chromium 系浏览器已逐步落地，其他内核在跟进路上；写这篇文章时它还年轻，但方向已经清晰：<mark class="key">「贴在谁旁边」正从一门 JS 手艺，变成浏览器的一项内置服务——懂了本节的包含块和定位原理，到那天你只需要换一行声明。</mark>技术会迭代，「参照物是谁」这个问题永远成立。</p>
+
+  <div class="callout analogy">
+    <strong>把这一节想成「一间还在开工的排字车间」</strong><br/>
+    车间的中央传送带，是<strong>文档流</strong>：铅字按到达顺序从左上角开始排，一行一行往下走——这是宪法，没领「离队证」的盒子一律在此排队，HTML 里谁前谁后，带上就是谁上谁下。<br/><br/>
+    <strong>relative</strong> 是排队员探出身子说悄悄话：椅子还占着，座次表没变，只是身体偏了几像素。<strong>float</strong> 是被塞进版面的照片：靠到一侧，文字识趣地绕行，块级盒子却从它脚下一穿而过——「一半人让路、一半人无视」，塌陷和 clear 的一切恩怨都源于此。<strong>absolute</strong> 是贴纸：彻底离开传送带，钉在「最近的领证祖先」上；忘了给卡片领证（relative），贴纸就飞去钉整个车间的墙。<strong>fixed</strong> 是贴在橱窗玻璃上的价目表：车间里报纸怎么换版，它岿然不动——除非某位祖先学会了「变形术」（transform），把它从玻璃上揭下来贴回墙上。<strong>sticky</strong> 是电梯楼层牌：平时随电梯走，到层就贴住，出了电梯井啥也不是。<br/><br/>
+    三个「圈地自守」的机构守着秩序：<strong>BFC</strong> 是隔离出来的小工作台，池内的波浪翻不出池沿；<strong>包含块</strong> 是贴纸的参照框——钉在哪儿，全看最近的领证祖先是谁；<strong>层叠上下文</strong> 是一张张比武场，场内先分高下，再以场为单位与外场比——你在自己组里评第一，也赢不了「隔壁组整体压在你组上面」。<br/><br/>
+    <mark class="key">车间最大的智慧是分寸：传送带（流）养活 99% 的版面，五种离队方式各管一种例外——例外用得越少，车间越稳。</mark>
+  </div>
+
+  <h3>排错手册：定位六大名案</h3>
+  <p>和上一节一样，把高频事故和破案路径整理成案卷：</p>
+  <ul class="keylist">
+    <li><strong>名案一：父盒子高度莫名变 0，布局整体上窜。</strong>儿子全 float、父盒子不认领。药方：父级 <code>display: flow-root</code>（或老偏方 clearfix）。</li>
+    <li><strong>名案二：absolute 元素飞到页面角落。</strong>参照物认到了「初始包含块」——最近的该当参照的祖先没领证。药方：目标父级加 <code>position: relative</code>。</li>
+    <li><strong>名案三：fixed 突然跟着页面滚了。</strong>transform 祖先劫持。从元素往上找 transform / filter / will-change，找到谁处理谁。</li>
+    <li><strong>名案四：sticky 完全不贴。</strong>三连查：写了 top 吗？父容器够高吗？中间有没有祖先 overflow 锁了滚动？九成卡在第三条。</li>
+    <li><strong>名案五：z-index 调到一万也压不过人家。</strong>被祖先的层叠上下文圈住了。F12 看双方各自的「场」，让该赢的场在外层赢。</li>
+    <li><strong>名案六：锚点跳转后标题被吸顶导航盖住。</strong>在滚动容器上写 <code>scroll-padding-top: 导航高度</code>，给每个锚点预留头顶空间。</li>
+    <li><strong>名案七：两栏底边参差不齐。</strong>float 时代的等高难题（本节历史段讲过）。新代码的药方一行：<code>display: flex</code>——弹性布局的子项默认拉伸到容器高度，等高是白送的。</li>
+    <li><strong>名案八：JS 算弹层位置，页面一滚就错位。</strong>用 offsetTop 一层层累加祖先坐标的老算法，遇到嵌套滚动容器就漏账。现代药方：<code>getBoundingClientRect()</code> 拿元素相对视口的坐标（视口是所有人共同的参照物），一步到位；弹层本身用 fixed 定位钉在视口坐标系里，天然同账本。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">Checklist · 自检</span>
+    <p>动定位之前，把这张单子过一遍：</p>
+    <p>① 这个盒子真的需要离队吗？流的秩序能不能解决？<br/>
+    ② 用 float 是为了文字环绕吗？做布局请去 Flex/Grid；<br/>
+    ③ 父级有浮动儿子塌陷了吗？flow-root 补上；<br/>
+    ④ absolute 的参照祖先领证（relative）了吗？F12 验证它钉在谁身上；<br/>
+    ⑤ fixed 失灵先查 transform 祖先；<br/>
+    ⑥ sticky 记得写 top，并确认父容器和滚动祖先没把它锁死；<br/>
+    ⑦ z-index 有项目级刻度表吗？别再撒 9999；<br/>
+    ⑧ 吸顶导航配了 scroll-padding-top 吗？</p>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="一个 absolute 定位的徽章本想贴在卡片右上角，结果飞到了整个页面的右上角。最可能的原因是？" data-opts="z-index 太小|卡片没有设置 position: relative|徽章忘了写 top|卡片 overflow: hidden" data-answer="1" data-explain="absolute 的参照物是「最近的 position 非 static 的祖先」；卡片没领证（relative），浏览器一路往上找不到定位祖先，就以初始包含块（约等于整个页面）为参照，徽章自然飞去页面角落。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="关于 sticky（粘性定位）不生效的原因，下面哪一项是「不可能」的原因？" data-opts="没有写 top/bottom/left/right 阈值|父容器高度太小，没有滚动余地|某个祖先设置了 transform|祖先设了 overflow: hidden 改变了滚动层" data-answer="2" data-explain="transform 会劫持 fixed，但它不是 sticky 失效的典型原因。sticky 三大常见死因：没写阈值、父容器太矮没活动空间、滚动被某个 overflow 祖先改层。父容器太小确实会让 sticky 看不出效果，但那是「没空间」而非「不生效」。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>这一节的主线是<strong>秩序与自由的分寸</strong>：文档流是从左上角开始的排字传送带，承载着页面 99% 的内容，也承载着语义顺序；五种离队方式各有各的规矩——<mark class="key">relative 占座探身、float 靠边引文字绕行（记得 flow-root 认领儿子）、absolute 脱流钉在最近领证的祖先上、fixed 钉在视口玻璃上（提防 transform 劫持）、sticky 平时排队到点贴住（提防父容器和滚动层）。</mark>三套配套体系收尾：BFC 圈地自守治塌陷与穿透，包含块决定贴纸钉在谁身上，层叠上下文让 z-index 只在同一个比武场内有效。排错六案几乎覆盖了定位的翻车全集。下一节 § 3.3，介绍现代布局的第一件主战兵器——Flexbox：让一排盒子的对齐、分布、伸缩，从各种偏方咒语变成三五行正经代码。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-1-box-model.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 3.1 · 盒模型</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一节</span>
+      <span class="title">§ 3.3 · Flexbox（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 3.2</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
