@@ -736,6 +736,61 @@
   transform: translateY(-1px);
 }
 
+/* ============ 组件 19 · Tab 顺序演示 focus-order ============ */
+.lab-fo-stage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+  padding: 0.9rem;
+  background: var(--bg2, #f2ede4);
+  border-radius: var(--radius, 6px);
+  margin-bottom: 0.8rem;
+}
+
+.lab-fo-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  padding: 0.55rem 0.6rem;
+  border: 2px solid var(--rule, #e2dccf);
+  border-radius: var(--radius, 6px);
+  background: var(--bg3, #fff);
+  transition: all 0.2s;
+}
+
+.lab-fo-chip.dim { opacity: 0.55; border-style: dashed; }
+
+.lab-fo-chip.hit {
+  border-color: var(--accent2, #a05a2c);
+  background: rgba(160, 90, 44, 0.08);
+  box-shadow: 0 0 0 3px rgba(160, 90, 44, 0.16);
+}
+
+.lab-fo-tag {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  color: var(--muted, #8a8579);
+  letter-spacing: 0.04em;
+}
+
+.lab-fo-chip b { font-size: 0.82rem; color: var(--ink, #333); }
+
+.lab-fo-note {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.64rem;
+  color: var(--ink-soft, #4a4842);
+}
+
+.lab-fo-rank {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--accent, #556b3d);
+  border-top: 1px dotted var(--rule, #e2dccf);
+  padding-top: 0.22rem;
+}
+
+.lab-fo-rank.skip { color: var(--muted, #8a8579); font-weight: 400; }
+
 /* ============ 响应式 ============ */
 @media (max-width: 620px) {
   .lab { padding: 0.9rem 0.9rem 1rem; }

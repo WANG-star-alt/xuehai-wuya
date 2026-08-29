@@ -352,13 +352,13 @@
         { href: 'chapters/gui/03-layout.html' }),
       createNode('gui-04', '第 4 章 · 事件与交互',
         '事件循环、冒泡与捕获、手势、焦点与无障碍——点击背后发生了什么。',
-        '约 3.8 万字',
+        '约 4.7 万字',
         [
           createNode('gui-04-1', '§ 4.1 · 事件循环 Event Loop', '主线程、任务队列、微任务——界面为什么会"卡死"。', '9702 字', [], { href: 'chapters/gui/04-1-event-loop.html', spec: 'pass'}),
           createNode('gui-04-2', '§ 4.2 · 冒泡与捕获', '事件的三个阶段 + 事件委托为什么能提升性能。', '9716 字', [], { href: 'chapters/gui/04-2-bubble-capture.html', spec: 'pass'}),
           createNode('gui-04-3', '§ 4.3 · 输入设备', '鼠标、键盘、触摸、笔、手柄——不同设备的事件模型。', '9106 字', [], { href: 'chapters/gui/04-3-input-devices.html', spec: 'pass'}),
-          createNode('gui-04-4', '§ 4.4 · 手势识别', '点击、长按、拖拽、双指缩放——手势冲突怎么解。', '8976 字', [], { href: 'chapters/gui/04-4-gestures.html', spec: 'pass'}),
-          createNode('gui-04-5', '§ 4.5 · 焦点与键盘导航', 'Tab 顺序、焦点陷阱、快捷键——不用鼠标也能用。', '待撰写', []),
+          createNode('gui-04-4', '§ 4.4 · 手势识别', '点击、长按、拖拽、双指缩放——手势冲突怎么解。', '8973 字', [], { href: 'chapters/gui/04-4-gestures.html', spec: 'pass'}),
+          createNode('gui-04-5', '§ 4.5 · 焦点与键盘导航', 'Tab 顺序、焦点陷阱、快捷键——不用鼠标也能用。', '9659 字', [], { href: 'chapters/gui/04-5-focus.html', spec: 'pass'}),
           createNode('gui-04-6', '§ 4.6 · 无障碍 A11y', 'ARIA、屏幕阅读器、对比度——让所有人都能用。', '待撰写', [])
         ]),
       createNode('gui-05', '第 5 章 · 桌面 GUI 工具箱',

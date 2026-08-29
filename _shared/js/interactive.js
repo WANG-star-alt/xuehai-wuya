@@ -920,6 +920,94 @@
     foot(box, '记住首位数字就够了：<mark class="key">2 成功、3 换地方、4 你的错、5 我的错</mark>。排查问题时先看首位，能立刻判断该查自己还是找后端。');
   }
 
+  // ============ 组件 19 · Tab 顺序演示 focus-order ============
+  function buildFocusOrder(box) {
+    head(box, 'Try it', 'Tab 顺序 · 在六个元素里按一遍 Tab 看队列');
+
+    // 按 DOM 排列的六个元素；ok=有聚焦资格，ti=tabindex（0 自然入队，正数插队）
+    const items = [
+      { label: '按钮 A',   note: 'button',            ok: true,  ti: 0 },
+      { label: 'DIV B',    note: 'div（无 tabindex）', ok: false, ti: null },
+      { label: '输入框 C', note: 'input',             ok: true,  ti: 0 },
+      { label: 'DIV D',    note: 'div tabindex=2',    ok: true,  ti: 2 },
+      { label: '按钮 E',   note: 'button tabindex=1', ok: true,  ti: 1 },
+      { label: 'DIV F',    note: 'div tabindex=0',    ok: true,  ti: 0 }
+    ];
+
+    // 浏览器真实规则：正数 tabindex 按数值从小到大先走，再按 DOM 顺序走 0
+    const pool = items.map((it, i) => ({ label: it.label, note: it.note, ok: it.ok, ti: it.ti, i: i }))
+      .filter(it => it.ok);
+    const queue = pool.filter(it => it.ti > 0).sort((a, b) => a.ti - b.ti)
+      .concat(pool.filter(it => !(it.ti > 0)));
+
+    const stage = el('div', 'lab-fo-stage');
+    const chips = [];
+    items.forEach((it, i) => {
+      const chip = el('div', 'lab-fo-chip' + (it.ok ? '' : ' dim'));
+      chip.innerHTML =
+        '<span class="lab-fo-tag">DOM 第 ' + (i + 1) + ' 位</span>' +
+        '<b>' + it.label + '</b>' +
+        '<span class="lab-fo-note">' + it.note + '</span>';
+      stage.appendChild(chip);
+      chips.push(chip);
+    });
+    box.appendChild(stage);
+
+    queue.forEach((it, k) => {
+      chips[it.i].appendChild(el('span', 'lab-fo-rank', '焦点队列第 ' + (k + 1) + ' 站'));
+    });
+    items.forEach((it, i) => {
+      if (!it.ok) chips[i].appendChild(el('span', 'lab-fo-rank skip', '被跳过'));
+    });
+
+    const row = el('div', 'lab-row');
+    const btnNext = document.createElement('button');
+    btnNext.textContent = 'Tab →';
+    const btnPrev = document.createElement('button');
+    btnPrev.textContent = '← Shift+Tab';
+    const btnReset = document.createElement('button');
+    btnReset.textContent = '重置';
+    row.appendChild(btnNext); row.appendChild(btnPrev); row.appendChild(btnReset);
+    box.appendChild(row);
+
+    const log = el('div', 'lab-log', '<div class="empty">点「Tab →」出发：注意队伍不按 DOM 顺序走——持正数 tabindex 的先插队…</div>');
+    box.appendChild(log);
+    let pos = -1, started = false;
+
+    function render() {
+      chips.forEach(c => c.classList.remove('hit'));
+      if (pos >= 0) chips[queue[pos].i].classList.add('hit');
+    }
+    function noteOf(it) {
+      if (it.ti > 0) return 'tabindex=' + it.ti + ' 插队先行';
+      return 'tabindex=0 按名单顺序';
+    }
+    btnNext.addEventListener('click', () => {
+      pos = (pos + 1) % queue.length;
+      started = true;
+      writeLog();
+      render();
+    });
+    btnPrev.addEventListener('click', () => {
+      pos = started ? (pos - 1 + queue.length) % queue.length : 0;
+      started = true;
+      log.innerHTML = '';
+      log.appendChild(el('div', null, '倒退一步：焦点回到 <b>' + queue[pos].label + '</b>（Shift+Tab 同样只在队列里走，永远落不到没资格的 DIV B）'));
+      render();
+    });
+    btnReset.addEventListener('click', () => {
+      pos = -1; started = false;
+      log.innerHTML = '<div class="empty">队列清空，重新出发。</div>';
+      render();
+    });
+    function writeLog() {
+      log.innerHTML = '';
+      log.appendChild(el('div', null, '焦点走到第 ' + (pos + 1) + ' 站：<b>' + queue[pos].label + '</b>（DOM 第 ' + (queue[pos].i + 1) + ' 位 · ' + noteOf(queue[pos]) + '）'));
+    }
+
+    foot(box, '真实浏览器里按 Tab 走的就是这条队列：正数 tabindex 像<strong>插队卡</strong>，持卡人按卡号从小到大先走（E 的 1 号卡、D 的 2 号卡），然后才轮到 tabindex=0 的按 DOM 顺序（A→C→F）；没资格的 DIV B 连队都排不上。<mark class="key">视觉顺序和焦点顺序一旦打架，键盘用户就迷路——纪律是：正数 tabindex 一律别用，顺序交给 DOM。</mark>');
+  }
+
   // ============ 注册表 ============
   const builders = {
     'color-picker': buildColorPicker,
@@ -939,7 +1027,8 @@
     'subnet': buildSubnet,
     'handshake': buildHandshake,
     'latency': buildLatency,
-    'status-code': buildStatusCode
+    'status-code': buildStatusCode,
+    'focus-order': buildFocusOrder
   };
 
   // ============ 自动初始化 ============
