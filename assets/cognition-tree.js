@@ -24,7 +24,6 @@
 
   // ============ 状态变量 ============
   let NODE_W = NODE_W_DEFAULT;          // 节点宽度（可由滑块调节）
-  let NODE_LABEL_MAX = 14;              // 显示字符数上限，随宽度联动
   let selectedNodeId = null;
   let scale = 1;
   let translateX = 0;
@@ -105,10 +104,22 @@
     };
   }
 
-  // ============ 工具：文字截断 ============
-  function truncate(text, max) {
-    if (!text) return '';
-    return text.length > max ? text.slice(0, max - 1) + '…' : text;
+  // ============ 工具：标题按真实渲染宽度截断 ============
+  // 须在节点组挂进 DOM 后调用（getComputedTextLength 才反映真实字体宽度）
+  // 预算 NODE_W-58：文字起点 28px，最右止于 NODE_W-30，给右缘状态列留出空隙
+  function fitTitle(titleEl, label) {
+    if (!label) { titleEl.textContent = ''; return; }
+    const budget = NODE_W - 58;
+    titleEl.textContent = label;
+    if (titleEl.getComputedTextLength() <= budget) return;
+    let lo = 1, hi = label.length, best = 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      titleEl.textContent = label.slice(0, mid) + '…';
+      if (titleEl.getComputedTextLength() <= budget) { best = mid; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    titleEl.textContent = label.slice(0, best) + '…';
   }
 
   // ============ 工具：小字（meta）按框宽自动换行 ============
@@ -261,7 +272,6 @@
         y: 24,
         'dominant-baseline': 'middle'
       });
-      title.textContent = truncate(realNode.label, NODE_LABEL_MAX);
       g.appendChild(title);
 
       // 元信息（时间 / 子节点数）——按框宽自动换行，多行时节点加高
@@ -277,43 +287,47 @@
         g.appendChild(meta);
       });
 
-      // 改造状态标记（右侧竖直居中的小圆点）——只对有正文的节点显示
-      // spec: 'pass' 已达标（绿） / 'todo' 待改造（橙） / 未定义则不显示
-      if (realNode.spec) {
-        const isPass = realNode.spec === 'pass';
-        const dot = svg('circle', {
-          class: 'spec-dot ' + (isPass ? 'pass' : 'todo'),
-          cx: NODE_W - 11,
-          cy: H / 2,
-          r: 4
-        });
-        // 悬停提示
-        const tip = svg('title', {});
-        tip.textContent = isPass ? '已按当前规范改造完成' : '待改造：字数 / 大白话 / 生活类比未达标';
-        dot.appendChild(tip);
-        g.appendChild(dot);
-      }
-
-      // 学习标记徽章：右上角 ✓ 已学完（绿）/ ! 待改进（朱红）——读者自己打的标记
+      // 右缘统一状态区：把「我的学习标记」与「内容规范状态」集成到同一竖列，避免各占一角互相挤压
+      //   上：学习标记（若已标记）—— ✓ 已学完（绿）/ ! 待改进（朱红），读者自己打的
+      //   下：规范状态（若有 spec）—— ● 已达标（绿）/ ● 待改造（橙）
       const mark = getMark(vnode.id);
-      if (mark) {
-        const mg = svg('g', { class: 'mark-badge ' + mark.status });
-        mg.appendChild(svg('circle', { cx: NODE_W - 13, cy: 13, r: 9 }));
-        const glyph = svg('text', {
-          class: 'mark-glyph',
-          x: NODE_W - 13,
-          y: 13.8,
-          'text-anchor': 'middle',
-          'dominant-baseline': 'middle'
-        });
-        glyph.textContent = mark.status === 'done' ? '✓' : '!';
-        mg.appendChild(glyph);
-        const mtip = svg('title', {});
-        mtip.textContent = (mark.status === 'done' ? '已学完' : '待改进')
-          + ' · ' + fmtMarkDate(mark.ts)
-          + (mark.note ? ' · 备注：' + mark.note : '');
-        mg.appendChild(mtip);
-        g.appendChild(mg);
+      const hasSpec = !!realNode.spec;
+      if (mark || hasSpec) {
+        const both = !!(mark && hasSpec);
+        if (mark) {
+          const cyM = both ? H / 2 - 7 : H / 2;
+          const mg = svg('g', { class: 'mark-badge ' + mark.status });
+          mg.appendChild(svg('circle', { cx: NODE_W - 11, cy: cyM, r: 7 }));
+          const glyph = svg('text', {
+            class: 'mark-glyph',
+            x: NODE_W - 11,
+            y: cyM + 0.6,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle'
+          });
+          glyph.textContent = mark.status === 'done' ? '✓' : '!';
+          mg.appendChild(glyph);
+          const mtip = svg('title', {});
+          mtip.textContent = (mark.status === 'done' ? '已学完' : '待改进')
+            + ' · ' + fmtMarkDate(mark.ts)
+            + (mark.note ? ' · 备注：' + mark.note : '');
+          mg.appendChild(mtip);
+          g.appendChild(mg);
+        }
+        if (hasSpec) {
+          const isPass = realNode.spec === 'pass';
+          const cyS = both ? H / 2 + 8 : H / 2;
+          const dot = svg('circle', {
+            class: 'spec-dot ' + (isPass ? 'pass' : 'todo'),
+            cx: NODE_W - 11,
+            cy: cyS,
+            r: 3.5
+          });
+          const tip = svg('title', {});
+          tip.textContent = isPass ? '已按当前规范改造完成' : '待改造：字数 / 大白话 / 生活类比未达标';
+          dot.appendChild(tip);
+          g.appendChild(dot);
+        }
       }
 
       // 学习进度条：节点底部双色细条（绿=已学占比 / 朱红=待改进占比）
@@ -359,6 +373,9 @@
       });
 
       nodesG.appendChild(g);
+
+      // 挂进 DOM 后按真实渲染宽度截断标题，避免长标题压到右缘状态列
+      fitTitle(title, realNode.label);
     }
 
     drawNode(visible);
@@ -643,8 +660,6 @@
   // ============ 节点宽度调节 ============
   function setNodeWidth(w, doFit) {
     NODE_W = Math.max(NODE_W_MIN, Math.min(NODE_W_MAX, Math.round(w)));
-    // 字符数上限随宽度线性联动：184px ≈ 14 字（右侧留出状态圆点的位置）
-    NODE_LABEL_MAX = Math.max(6, Math.round((NODE_W - 58) / 8.75));
     const out = document.getElementById('node-width-value');
     if (out) out.textContent = NODE_W + 'px';
     render();
@@ -879,6 +894,8 @@
     const wOut = document.getElementById('node-width-value');
     if (wOut) wOut.textContent = NODE_W + 'px';
     render();
+    // 本地 @font-face 就绪后重绘一次：标题截断按真实渲染宽度测量，首帧可能还在用回退字体
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => render());
     // 用 requestAnimationFrame 确保 SVG 已经布局完成再计算缩放
     requestAnimationFrame(() => {
       requestAnimationFrame(fitCanvas);

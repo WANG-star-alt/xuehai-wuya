@@ -814,18 +814,20 @@
 
 /* ============================================================
    学习进度标记（progress.js 联动）
-   右上角徽章：✓ 已学完（绿）/ ! 待改进（朱红）
+   右缘统一状态区：✓ 已学完（绿）/ ! 待改进（朱红）在上，规范状态点（绿=已达标/橙=待改造）在下
    节点底部双色进度条：绿=已学占比 / 朱红=待改进占比
    ============================================================ */
 .node .mark-badge circle {
   fill: #5b9c6d;
+  stroke: #ffffff;
+  stroke-width: 1.5;
 }
 .node .mark-badge.improve circle {
   fill: #c2563a;
 }
 .node .mark-badge .mark-glyph {
   fill: #ffffff;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   pointer-events: none;
@@ -970,6 +972,7 @@
 /* 暗色模式 · 学习标记 */
 [data-theme="dark"] .node .mark-badge circle {
   fill: #6fae7e;
+  stroke: rgba(28, 30, 27, .9);
 }
 [data-theme="dark"] .node .mark-badge.improve circle {
   fill: #d97a5e;
