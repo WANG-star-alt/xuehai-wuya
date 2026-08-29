@@ -259,9 +259,9 @@
       ),
       createNode('net-07', '第 7 章 · 云与边缘',
         'CDN、VPC、边缘节点、K8s、Serverless——现代云网络。',
-        '待撰写',
+        '更新中 · 已上线 § 7.1',
         [
-          createNode('net-07-1', '§ 7.1 · CDN 内容分发', '把内容缓存到离用户最近的节点——为什么视频不卡。', '待撰写', []),
+          createNode('net-07-1', '§ 7.1 · CDN 内容分发', '把内容缓存到离用户最近的节点——为什么视频不卡。', '7382 字', [], { href: 'chapters/network/07-1-cdn.html', spec: 'pass'}),
           createNode('net-07-2', '§ 7.2 · 云网络 VPC', '虚拟私有云、子网、安全组、路由表——云上的机房。', '待撰写', []),
           createNode('net-07-3', '§ 7.3 · 容器网络', 'Docker 网络模式、K8s Service 与 Ingress。', '待撰写', []),
           createNode('net-07-4', '§ 7.4 · 服务网格', 'Istio / Envoy——微服务之间的流量治理层。', '待撰写', []),
