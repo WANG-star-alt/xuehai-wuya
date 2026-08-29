@@ -247,14 +247,16 @@
       ),
       createNode('net-06', '第 6 章 · 无线与移动',
         'WiFi、蓝牙、4G/5G、卫星互联网——切断电缆的自由。',
-        '已上线（5 节全部完结）',
+        '约 3.6 万字',
         [
-          createNode('net-06-1', '§ 6.1 · WiFi 原理', '2.4G vs 5G vs 6G 频段、信道干扰、WiFi 6/7 新特性。', '6978 字', [], { href: 'chapters/network/06-1-wifi.html', spec: 'pass'}),
-          createNode('net-06-2', '§ 6.2 · 蓝牙与近场', '蓝牙、BLE 低功耗、NFC——短距离通信三兄弟。', '6224 字', [], { href: 'chapters/network/06-2-bluetooth-nfc.html', spec: 'pass'}),
-          createNode('net-06-3', '§ 6.3 · 移动蜂窝网络', '基站、小区切换、2G 到 5G 的演进逻辑。', '7400 字', [], { href: 'chapters/network/06-3-cellular.html', spec: 'pass'}),
-          createNode('net-06-4', '§ 6.4 · 5G 与 6G 展望', '大带宽、低时延、海量连接——切片与边缘计算。', '5843 字', [], { href: 'chapters/network/06-4-5g-6g.html', spec: 'pass'}),
-          createNode('net-06-5', '§ 6.5 · 卫星互联网', 'Starlink、低轨星座——把网络铺到没有基站的地方。', '6692 字', [], { href: 'chapters/network/06-5-satellite.html', spec: 'pass'})
-        ]),
+          createNode('net-06-1', '§ 6.1 · WiFi 原理', '2.4G vs 5G vs 6G 频段、信道干扰、WiFi 6/7 新特性。', '7214 字', [], { href: 'chapters/network/06-1-wifi.html', spec: 'pass'}),
+          createNode('net-06-2', '§ 6.2 · 蓝牙与近场', '蓝牙、BLE 低功耗、NFC——短距离通信三兄弟。', '7002 字', [], { href: 'chapters/network/06-2-bluetooth-nfc.html', spec: 'pass'}),
+          createNode('net-06-3', '§ 6.3 · 移动蜂窝网络', '基站、小区切换、2G 到 5G 的演进逻辑。', '7397 字', [], { href: 'chapters/network/06-3-cellular.html', spec: 'pass'}),
+          createNode('net-06-4', '§ 6.4 · 5G 与 6G 展望', '大带宽、低时延、海量连接——切片与边缘计算。', '7054 字', [], { href: 'chapters/network/06-4-5g-6g.html', spec: 'pass'}),
+          createNode('net-06-5', '§ 6.5 · 卫星互联网', 'Starlink、低轨星座——把网络铺到没有基站的地方。', '7185 字', [], { href: 'chapters/network/06-5-satellite.html', spec: 'pass'})
+        ],
+        { href: 'chapters/network/06-1-wifi.html' }
+      ),
       createNode('net-07', '第 7 章 · 云与边缘',
         'CDN、VPC、边缘节点、K8s、Serverless——现代云网络。',
         '待撰写',

@@ -18,7 +18,7 @@ ROOT = r'd:\TRAE 工作空间\xuehai-wuya'
 TREE = os.path.join(ROOT, 'assets', 'tree-data.js')
 
 # ============ 当前规范阈值（改标准时改这里） ============
-MIN_WORDS      = 7001   # 节正文页字数下限（>7000）
+MIN_WORDS      = 7001   # 节正文页字数下限（>7000；宁长毋短为软性引导，不提高硬闸）
 MIN_H3         = 10     # h3 数量下限
 PLAIN_PER_KILO = 1.5    # 每千字应有的大白话句式数
 PLAIN_FLOOR    = 5      # 大白话句式绝对下限
