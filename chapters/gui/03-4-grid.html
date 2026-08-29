@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 3.4 · Grid 网格 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 3 章</span>
+      <span class="sep">›</span>
+      <span>§ 3.4</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 3.4 · Section</div>
+    <h1>Grid 网格布局</h1>
+    <div class="cn">CSS Grid · The Two-Dimensional Blueprint</div>
+  </header>
+
+  <p class="lead">
+    上一节结尾说，Flexbox 的车厢只管一根轴，想让两层的乘客对齐同一根柱子，得来网格车站换乘——现在到站了。<strong>CSS Grid</strong>（网格布局）2017 年在各浏览器全面落地，是 CSS 布局体系的「终点站」：它管的是 <mark class="key">「一整面墙」——既要分行、又要分列，行与列还要互相对齐</mark>的二维排版。页面骨架、仪表盘、杂志版面、照片墙，这些 Flexbox 拼不齐的活，全是 Grid 的主场。<strong>说白了</strong>，Flexbox 是「先看乘客多高多胖再安排座位」，Grid 是「先把座位表画在墙上再请人入座」——上一节反复铺垫的「内容优先 vs 结构优先」，这节正式展开。学完你会拿到布局篇最重磅的一件工具：一面想怎么分就怎么分的墙。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title">🧱 装修师傅贴砖前的那把墨线斗</div>
+    <p>装修师傅给厨房墙面贴瓷砖，第一件事不是拿砖往上怼，而是掏出墨线斗，<strong>在整面墙上弹出横平竖直的网格线</strong>：横着几行、竖着几列、每格多大，先在墙上定死。<br/><br/>
+    然后才开始贴砖：普通砖一块进一格；插座位置要留整块大板，就<strong>横跨两格</strong>贴一块大砖；烟道拐角那格干脆<strong>空着不贴</strong>。<br/>
+    砖有大有小、有占有空，但整面墙永远横成行、竖成列——因为规矩不是某块砖定的，是<strong>墙上那套墨线</strong>定的。<br/><br/>
+    对比上一节：地铁车厢（Flexbox）只有一条长轴，乘客们挤一挤让一让；装修墙面（Grid）横竖都是轴，<strong>格子先于砖存在</strong>。<br/>
+    <mark class="key">墨线弹好的那一刻，布局就已经完成了一大半——这就是「结构优先」，Grid 的全部哲学。</mark></p>
+  </div>
+
+  <h3>术语对照：先把行话翻译成人话</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>装修现场的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>网格容器（grid container）</td><td>写 display: grid 的那面墙</td><td>整面待贴的墙</td></tr>
+        <tr><td>网格项目（grid item）</td><td>墙的直接子元素</td><td>每一块砖</td></tr>
+        <tr><td>轨道（track）</td><td>一整行或一整列的空间</td><td>一行砖的横带 / 一列砖的竖带</td></tr>
+        <tr><td>网格线（grid line）</td><td>轨道之间的分界线（有编号）</td><td>墨线弹出的那根线</td></tr>
+        <tr><td>单元格（cell）</td><td>行和列交叉出的一格</td><td>一块标准砖的坑位</td></tr>
+        <tr><td>区域（area）</td><td>若干格子拼成的大块（可命名）</td><td>大板砖占据的多格区域</td></tr>
+        <tr><td>fr 单位</td><td>「剩余空间分成几份，我占几份」的份数单位</td><td>墙面剩下的长度按比例分</td></tr>
+        <tr><td>隐式网格（implicit grid）</td><td>项目太多、画好的格子装不下时自动增补的格子</td><td>预估砖数不够，师傅现弹的新线</td></tr>
+        <tr><td>自动入座（auto-placement）</td><td>没指定座位的项目按默认顺序逐格填</td><td>答题卡顺着填，一人一格</td></tr>
+        <tr><td>subgrid（子网格）</td><td>里层网格不自己画轨道，直接沿用外层的线</td><td>整栋楼统一轴线的隔断</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>两种世界观：内容优先 vs 结构优先</h3>
+  <p>把 § 3.3 埋的线正式挑明。Flexbox 的世界里，<strong>容器不预设形状</strong>：先量每个项目多大（basis），再决定空间怎么分——队伍多长，是乘客们「长」出来的，这就是内容优先。Grid 的世界反过来：<strong>容器先把形状定死</strong>——几行几列、每行多宽每列多高，全部先声明，然后项目往格子里放——墙已经砌好，砖来适应坑位，这就是结构优先。</p>
+  <p>两个世界观没有高下，只有分工。<strong>好比</strong>超市进货：货架先焊好一层层的格子（结构优先，适合 Grid——货架层高统一、商品对齐摆放）；但每个格子里商品怎么排面、标签怎么对齐，是营业员现场看着办的事（内容优先，适合 Flexbox）。<mark class="key">所以真实项目的标准答案从来不是二选一：Grid 画货架，Flexbox 管每个格子里的排面。</mark>这一节先把货架学好。</p>
+
+  <h3>十二年长跑：Grid 的身世</h3>
+  <p>Flexbox 2015 年全面落地，Grid 却等到 2017 年——但它其实<strong>出发得更早</strong>：2009 年就交了第一份提案，微软 2011 年在 IE10 里做出了史上第一个实现（带 -ms- 前缀的化石语法），随后标准大改两轮，各浏览器陆续重写，才在 2017 年 3 月同时完工。为什么一门看起来「就是画格子」的东西要走十二年？<strong>说白了</strong>，因为 Grid 不是补丁，而是 CSS 里<strong>第一门从零设计的布局语言</strong>：float 是拿排版工具凑合，Flexbox 是给一维排列立规矩，Grid 要一次性定义「轨道、线、区域、对齐」一整套从未有过的坐标系统——图纸出得慢，是因为它是真图纸。</p>
+  <p>这段身世对读者的实际意义和上一节的化石层一样：老教程里可能出现 <code>-ms-grid-rows</code> 这种 IE 时代的写法，认出来直接跳过；而「Grid 太新、不敢用」的顾虑也可以放下了——到今天它已经稳定服役快十年，2017 年后出生的浏览器个个默认认识它。<mark class="key">判断一门技术能不能放心学，不看它多时髦，看它落地几年、还有没有人在用——Grid 两项都是满分。</mark></p>
+
+  <h3>display: grid：把墙画上格子</h3>
+  <p>入会仪式和 Flexbox 同款，一行 <code>display: grid</code>，父盒子升级为网格容器，直接子元素全部成为网格项目。区别在下一步：Flexbox 容器声明的是「队形」，Grid 容器声明的是「图纸」：</p>
+  <pre><code>.wall {
+  display: grid;
+  grid-template-columns: 200px 1fr 1fr;  /* 三列：一列固定，两列平分剩余 */
+  grid-template-rows: auto 300px;         /* 两行：一行按内容，一行固定 */
+  gap: 16px;                              /* 砖缝 */
+}</code></pre>
+  <p>上面六行代码，把墙分成了 3 列 2 行共 6 个格子——这一步做完，<strong>布局的骨架已经存在了，哪怕一个子元素都还没写</strong>。子元素放进来之后按「自动放置」（auto-placement）规则入座：默认从左到右、放满一行换下一行，像考试发答题卡，一人一格顺着填。想自己挑座位的项目，可以用下面讲的线号或区域指定——但多数场景，自动入座已经够用。</p>
+
+  <h3>grid-template-columns：一条属性定下整面墙</h3>
+  <p>整个 Grid 体系里出镜率最高的一行代码就是它：它依次声明<strong>每一条列轨道的宽度</strong>，写几个值就有几列。轨道宽度的写法有四大家族，混着用：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>写法</th><th>含义</th><th>典型用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>200px</td><td>固定宽度，雷打不动</td><td>侧栏、图标列</td></tr>
+        <tr><td>1fr / 2fr</td><td>剩余空间按份数分</td><td>主内容区、等分栏</td></tr>
+        <tr><td>auto</td><td>按内容自适应（内容多宽我多宽）</td><td>按钮组、徽章列</td></tr>
+        <tr><td>minmax(220px, 1fr)</td><td>有底线有上限的弹性（下一节专讲）</td><td>自适应卡片</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><code>grid-template-rows</code> 是同一套语法的行版本，管每行多高。注意一个实际差异：页面通常<strong>纵向自然生长</strong>，行高常常交给内容（不写 rows，或全写 auto），列宽才精打细算——所以 template-columns 的使用频率远高于 template-rows，这不是巧合，是「横向定结构、纵向随内容」的排版惯例。</p>
+
+  <h3>fr 单位：分蛋糕的正主</h3>
+  <p><code>fr</code>（fraction，份数）是 Grid 自创的单位，专干「分剩余空间」这件事：<code>1fr 2fr</code> 就是「剩下的地方分成三份，你一份我两份」。听着眼熟？<strong>其实就是</strong>上一节 flex-grow 的轨道版——但有个关键升级：fr 不用写在项目上，直接写在容器的图纸里，<strong>墙的结构自包含</strong>，跟砖（项目）完全解耦。砖换一批，墙不动。</p>
+  <p>算法账也好算：容器 1200px，列宽 <code>200px 1fr 2fr</code>，无 gap——先扣掉固定列 200px，剩 1000px 是蛋糕；1fr 拿三分之一约 333px，2fr 拿三分之二约 667px。有一条容易踩的暗礁要提前打预防针：<strong>1fr 的完整含义是 minmax(auto, 1fr)</strong>——「下限看内容，上限按份数」。哪一列内容特别宽（比如一段不肯断的长词），auto 下限就会顶住，蛋糕就分不匀了。药方是显式写成 <code>minmax(0, 1fr)</code>，把底线压到零——<strong>相当于</strong>上一节弹性项目的 min-width: 0，同一个坑在两套布局里的两次现身，排错手册里立案。</p>
+
+  <h3>百分比的老大难：fr 为什么是「更好的百分比」</h3>
+  <p>fr 出现之前，「按比例分宽度」的工具是百分比——但它有两个老大难。其一，百分比相对的是<strong>父盒子的 content 区</strong>，跟兄弟轨道和 gap 一概不认识：三列各 33.3%，再加 gap 立刻溢出，只能请 calc() 手动扣减，写出来的代码全是算术题。其二，百分比说不出「把<strong>剩下的</strong>给我」——它只能算死每列占多少，一旦掺进固定列，剩下的列得人肉重新配平，改一个数全表重算。fr 把两难一起解决了：它天生分的就是「扣掉固定轨道和 gap 之后的剩余」，份数之间自动配平，固定列随你怎么混着写。<strong>好比</strong>分账：百分比是「每人按总资产的比例拿」，盘子一变人人重算；fr 是「先扣掉固定开支，余下的按人头分」——<strong>本质上就是</strong>把「剩多少分多少」这件人类语言里最自然的事，第一次写进了布局语言。也难怪它一出生，calc 减法就退化成了老手艺。</p>
+
+  <h3>minmax()：伸缩有底线</h3>
+  <p>既然提到了，单独立案讲清。<code>minmax(最小, 最大)</code> 给一条轨道同时挂上地板和天花板：<code>minmax(220px, 1fr)</code> 读作「至少 220px，最多按 1fr 的份」。它是「既想要弹性、又不许过分」的标准答案：卡片列在宽屏随份分大，窄屏再挤也不低于 220px——挤不下就触发换行（配 auto-fill），而不是把卡片压成面条。<strong>不妨这样想</strong>：fr 是「按份分」的正门，minmax 是给正门装的门框——门怎么开随你，但门框不许拆。地板也可以写 auto（内容的最小宽度），天花板可以写 1fr、固定值甚至 auto——两个位置能填的东西比直觉丰富，常用组合背下来两三个就够用。</p>
+
+  <h3>repeat() 与 auto-fill：响应式卡片墙的一行流</h3>
+  <p>图纸有个幸福的烦恼：想铺一墙卡片，宽屏放四列、中屏三列、窄屏两列——难道每个断点重写一遍 template-columns？不用。魔法在一行：</p>
+  <pre><code>.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}</code></pre>
+  <p>拆开读：repeat 是「重复」的简写（repeat(3, 1fr) 等于 1fr 1fr 1fr）；auto-fill 的意思是「你自己在容器里尽量多塞轨道，塞到塞不下为止」——浏览器拿容器宽度和 220px 一除，宽屏算出四条轨道、窄屏算出两条，<strong>全 automatic，一行代码，零媒体查询</strong>。上一节「等宽卡片排」用 flex + wrap 凑的版本，到这才算拿到完整解法：卡片墙从此不需要任何断点。这道菜是 Grid 给前端界最著名的礼物，值得整段背下来。</p>
+
+  <h3>auto-fill 与 auto-fit：空轨道的去留</h3>
+  <p>repeat 的第一个参数还有个孪生兄弟 auto-fit，两者在<strong>项目够多</strong>时行为一模一样；项目少了才分家。容器够放四列、项目只有两个时：auto-fill 依然画出四条轨道，后两条空着占位（墙上有坑没砖）；auto-fit 则把空轨道<strong>坍缩掉</strong>，把腾出来的空间分给现有轨道——两个项目各占一半，显得「撑满全场」。<strong>打个比方</strong>：图书馆一排四个书架，只到了两车书——auto-fill 是书照样只摆前两个架子，后两个空着等下一批；auto-fit 是管理员把后两个架子收起来，让两车书摊开放满整排。<mark class="key">记法：fill 填坑（给未来留位置），fit 合身（把现有的撑满）。</mark>卡片墙用 fill（内容多了自动接上），「居中三两个大元素」的场景用 fit。</p>
+
+  <h3>auto-fill 的手算账本：轨道数是怎么算出来的</h3>
+  <p>auto-fill 拿容器宽度「除」出轨道数，这笔账其实能手算——算一遍你就彻底明白卡片墙为什么会在某个宽度突然换列。设容器 1000px、gap 16px、轨道 minmax(220px, 1fr)：假设放 n 条轨道，总占用是「n 条轨道 + (n−1) 条 gap」。逐个试：n=4 时，gap 共 3×16=48px，剩 952px 分给 4 条，每条 238px，高于 220px 的地板，成立；n=5 时，gap 共 4×16=64px，剩 936px 除以 5 每条不到 188px，低于地板，不成立——所以这个宽度恰好放 4 列。<strong>其实说白了</strong>，浏览器在解一道「最多塞几条不破底线」的应用题：容器每跨过一个门槛，列数就 +1。卡片墙的「换列点」全部来自这道除法，跟魔法无关。</p>
+  <p>这本账还有个实用推论：地板值 220px 和 gap 16px 这两个数，<strong>直接决定了断点的位置</strong>——想让卡片墙在更窄的屏幕还保持两列，调的不是媒体查询，是这两个数。<mark class="key">Grid 的 auto-fill 把「响应式断点」从一堆 if 变成了一道算术题——这是它被称作零断点响应式的本钱。</mark></p>
+
+  <h3>容器查询：让卡片看「自己房间」的宽度</h3>
+  <p>auto-fill 已经把「换列」变成算术题，但还有最后一层没讲透：格子有大有小，同一张卡片组件，落在 500px 的宽格和落在 220px 的窄格里，理想长相其实不同——宽格里图文横排舒展，窄格里该上下堆叠。传统工具是媒体查询，可它问的是「<strong>整个窗户（视口）多宽</strong>」，答非所问：侧栏占走一半后，卡片实际住的那半边多宽，媒体查询根本不知道。2023 年全浏览器落地的<strong>容器查询</strong>（container queries）补上了这块：</p>
+  <pre><code>.card { container-type: inline-size; }   /* 给卡片容器装上卷尺 */
+@container (min-width: 320px) {
+  .card-body { display: flex; gap: 12px; }  /* 房间够宽：图文横排 */
+}</code></pre>
+  <p>在卡片容器上写 container-type，等于宣布「我这间房可以被打听宽度」；@container 的条件和 @media 长得几乎一样，唯一区别是量的对象从视口换成了<strong>房间自己</strong>。<strong>打个比方</strong>：连锁品牌进驻大商场的专柜和街边小店的柜台，陈列方式不一样——店长看的不是「这条街有多宽」，是「我这间铺子多大」，照着铺面调整货架。这套机制和 auto-fill 是绝配：auto-fill 负责算出每格多宽，容器查询负责让格里的内容按格宽自动换姿态。<mark class="key">组件从此「走到哪都体面」：换主题、换侧栏宽度、搬进弹窗，组件自己适配，页面一行不用改。</mark>这里先记结论，完整的响应式武器库（媒体查询、容器查询、相对单位全家）§ 3.6 展开。</p>
+
+  <h3>隐式网格：多出来的东西住哪</h3>
+  <p>图纸画了 2 行 3 列，结果项目放了 8 个——多出来的 2 个住哪？答案是网格自动<strong>增补轨道</strong>接住它们，这部分「计划外」的格子叫隐式网格。<strong>说白了</strong>，就是墨线没弹够，师傅现场补线。默认补出来的行高由内容决定，常常显得随意；两条属性管住它：<code>grid-auto-rows</code> 给隐式行统一高度（比如 minmax(100px, auto)），<code>grid-auto-flow</code> 管放置方向（row 换行填 / column 换列填，加 dense 则允许「回头填空」，像仓库理货员见缝插针——但 dense 会打乱视觉与 DOM 顺序的对应，无障碍上要留意）。<strong>就像</strong>餐厅临时来了客人，包间不够就得开备用席——备用席的规格（auto-rows）提前定好，就不会出现站着吃的尴尬。</p>
+
+  <h3>自动入座的算法：光标怎么走</h3>
+  <p>不指定座位的项目怎么入座？内部逻辑是一只「光标」：默认从左上角出发，逐格右移，放满一行换下一行——像考试答题卡顺着填。有意思的是光标的脾气：遇到一个 span 2 的大块，当前行剩余不够时，光标<strong>不会把大块拆开</strong>，而是整块跳去下一行——原位置就留下一个「洞」，这套默认行为叫稀疏填充（sparse）。想见缝插针，开 <code>grid-auto-flow: row dense</code>：光标会回头把后面的小块塞进洞里，墙面利用率立刻拉满。<strong>说白了</strong>，默认像排队打饭——你端着两人份的大餐盘，这一排坐不下就整组挪去下一排，空位就这么留着；dense 像餐厅领班现场调度——见空位就招呼落座，翻台率最高，但入座顺序和取餐顺序对不上了。<mark class="key">dense 换密度、丢顺序：视觉紧凑与 DOM 顺序（读屏、Tab 键的行进路线）二选一，无障碍敏感的界面慎用。</mark>这也是「明明有洞、卡片却换行了」的官方解释——不是 bug，是光标从不拆大块。</p>
+
+  <h3>网格线的编号体系：正着数与倒着数</h3>
+  <p>想手动给项目派座，得先会用 Grid 的地址系统。每条网格线都有编号：<strong>列线从左到右 1、2、3……行线从上到下 1、2、3……</strong>注意一个新手必踩的点：编号标在<strong>线</strong>上，不是格子上——三列墙有四条列线。所以「第 2 到第 4 条线之间」是两个格子宽，不是四个。负数是倒着数：-1 永远是最末一条线，-2 是倒数第二条——「贴到墙右缘」写 1 / -1 比数线可靠，列数改了也不用改代码。<strong>好比</strong>小区门牌从东口数 1 号起，也常配一个「倒数第几家」的说法——正数定绝对位置，负数锚定结尾，两套坐标并存。</p>
+
+  <h3>跨行跨列：grid-column 与 grid-row</h3>
+  <p>会数线了，跨格就是填区间：<code>grid-column: 2 / 4</code> 读作「从第 2 条列线跨到第 4 条」，占两列；<code>grid-row: 1 / 3</code> 占两行。不想数终点，就用 <code>span</code>：<code>grid-column: span 2</code> =「从我这跨两格」，起点交给自动放置——大板砖说「我要横跨两坑」，从哪开始无所谓。两种写法各自适合：起止线适合精确定位（顶栏从第 1 线到 -1 线通到底），span 适合只声明尺寸（这张卡占两格）。</p>
+  <pre><code>/* 大广告位：整行通到底，再高两格 */
+.hero {
+  grid-column: 1 / -1;   /* 左缘线到右缘线，通栏 */
+  grid-row: span 2;      /* 竖着占两行 */
+}</code></pre>
+  <p>跨格是 Grid 版面感的来源：杂志首页那种「头图通栏 + 左侧长文 + 右侧三张小卡」的错落版面，就是几条 span 拼出来的——每块砖形状不同，但都严格踩在墨线上，乱中有序。</p>
+
+  <h3>命名线：给墨线贴上门牌</h3>
+  <p>纯数字线号有个隐患：图纸一改（中间插一列），全线重新编号，写死的 2 / 4 全部错位。解法和命名区域同源——给线起名字。在轨道声明里用方括号随手插标签：<code>grid-template-columns: [aside-start] 220px [aside-end main-start] 1fr [main-end]</code>，之后项目就可以写 <code>grid-column: aside-start / aside-end</code>——线挪了名字跟着走，代码一行不用改。<strong>好比</strong>小区给楼栋钉了门牌：哪怕拆掉一栋重新排，写「3 号楼收快递」的单子永远有效；写「从东边数第 3 栋」的单子就得作废。<strong>不妨这样想</strong>：数字线号是「坐标」，命名线是「地址」——一次性草图用坐标快，长期维护的版面用地址稳。顺带一提，areas 语法本质上就是自动命名：你写 grid-area: header 时，浏览器自动生成了 header-start / header-end 这组线名——两套机制在地下早就是一家。</p>
+
+  <h3>图纸参数化：把可变的尺寸提成变量</h3>
+  <p>命名线解决的是「名字不动、位置动」，还有一类改版更常见：<strong>尺寸本身要变</strong>——侧栏今天 220px，设计评审说改 280px；暗色主题下砖缝统一收窄；设置页允许用户自选「每行几张卡」。这些需求靠全局搜索替换，改漏一处就是 bug。CSS 变量（自定义属性）和 Grid 是天作之合：</p>
+  <pre><code>:root {
+  --sidebar: 220px;   /* 侧栏宽：全站就这一处定义 */
+  --gap: 16px;        /* 砖缝：主题切换只改这一个数 */
+}
+.page {
+  display: grid;
+  grid-template-columns: var(--sidebar) 1fr;  /* 图纸引用变量 */
+  gap: var(--gap);
+}
+.cards { grid-template-columns: repeat(var(--cols, 3), 1fr); }  /* 列数可配置 */</code></pre>
+  <p>把图纸上所有「会变的数」统统提成变量、集中在顶部统一管理——<strong>好比</strong>装修图纸角落贴的那张「预留尺寸表」：图上到处写的都是表里的编号，改尺寸只动表，不动图。变量还能被 JS 实时改（用户点一下「四列」，一行 setProperty('--cols', 4)，页面立刻换装），也能跟着暗色主题整体换一套值——Grid 的图纸从「晒死的蓝图」升级成了「带旋钮的蓝图」。<strong>不妨这样想</strong>：命名线管位置、变量管尺寸，两招叠上，图纸才真正经得起多年维护——这也是大型项目里 Grid 骨架几乎标配变量体系的原因：结构写在 CSS 里，数字写在变量里，各归各的家。</p>
+
+  <h3>编外乘客：绝对定位在 Grid 里能领格子</h3>
+  <p>§ 3.3 说过，Flexbox 里绝对定位的子元素不算弹性项目，只能借静态位置沾点光。Grid 对编外乘客大方得多：如果一个绝对定位的子元素，它的包含块恰好是这个网格容器（容器加了 position: relative），那么它写的 <code>grid-column: 2 / 4</code> 这类线号，确定的<strong>不是自己的座位，而是它专属包含块的区域</strong>——浏览器拿那几条线围出的矩形给它当「包厢」，它再在包厢里按 top/right/bottom/left 微调。也就是说，Grid 的线号系统连不占座的元素都能服务：想在整面网格上钉一个跨三列的悬浮徽标、又不想它参与排版，线号照样指哪打哪。<strong>相当于</strong>装修完的墙上挂装饰画：画不算砖（不占坑位），但师傅仍能按墨线告诉你「挂在 2 号线到 4 号线之间、离顶 10 公分」——墨线的服务对象从来不只是砖。<mark class="key">一句话记住两代差别：Flex 的编外乘客蹭座位，Grid 的编外乘客领包厢。</mark></p>
+
+  <h3>书写方向：Grid 的逻辑基因</h3>
+  <p>上一节讲过 flex 的 row 顺着「阅读方向」走，Grid 把这套逻辑贯彻得更彻底：它的整套词汇——inline 轴、block 轴、线名的 -start / -end 后缀、grid-auto-flow 的 row——全是<strong>逻辑方向</strong>，不绑定屏幕的物理左右。阿拉伯语界面里 dir="rtl" 一开，同样的 template-columns，第一条轨道自动从右边数起；线号 1 永远是「行进方向的起点」，而不永远是「左边」。<strong>就像</strong>上一节那句门牌口诀在二维世界的延伸：门牌认「从街口数」，不认「东边数」——Grid 从娘胎里就带这套基因，做多语言站点比想象中省心：图纸一张，方向自动镜像。</p>
+
+  <h3>grid-template-areas：像填户型图一样写布局</h3>
+  <p>线号精确但费眼睛，Grid 还准备了一种「画图式」的布局语言——命名区域，整个体系里<strong>可读性之王</strong>：</p>
+  <pre><code>.page {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header  header"
+    "sidebar main"
+    "footer  footer";
+}
+.page > header  { grid-area: header; }
+.page > aside   { grid-area: sidebar; }
+.page > main    { grid-area: main; }
+.page > footer  { grid-area: footer; }</code></pre>
+  <p>读法直白到不需要解释：三行字符串就是三行墙，header 占满第一行，sidebar 和 main 平分第二行，footer 通底。<strong>通俗地说</strong>，这就是户型图——每个房间有名字，图上一眼看清谁挨着谁、谁占多大；想调布局，改的是图（那几行字符串），不动任何一块砖的代码。三条规矩记住就能用：每个字符串列数必须相同；同一个名字出现多处表示跨格（header 出现两次=跨两列）；不想放东西的格子写句点 <code>.</code> 占位。响应式改造时 areas 还有隐藏福利：窄屏下把图纸整行重画（sidebar 挪到 main 上面），布局意图依然一行行写得明明白白。</p>
+
+  <h3>对齐三件套：格子里的砖怎么摆</h3>
+  <p>砖进了格子，还有一个小问题：格子比砖大时，砖靠哪边？这套对齐属性叫 <code>justify-items</code>（水平）和 <code>align-items</code>（竖直），默认 stretch——砖拉伸撑满格子，和上一节 Flexbox 的默认站姿一致。改成 center，砖就在格子里居中；start / end 靠边。<strong>其实就是</strong>把 § 3.1 讲过的盒子和坑位的关系翻译了一遍：坑位（格子）是容器画的，砖（项目）在坑位里还能再挪。<code>place-items: center center</code> 是两轴合写。单个项目要例外，老规矩用 <code>align-self / justify-self</code>——请假条机制在 Grid 里原样继承。</p>
+  <p>注意区分它和 Flexbox 对齐的微妙差别：Flexbox 的 align-items 管的是<strong>整根交叉轴上的队形</strong>；Grid 的 items 系列管的是<strong>每个格子内部</strong>——因为 Grid 里每个项目都有自己的独立坑位，不存在「一行人共用一条线」。这正是二维布局和一维布局在心智上的分水岭。</p>
+
+  <h3>整网格对齐：墙在房间里怎么挂</h3>
+  <p>再往外一层：所有轨道加起来比容器还小（比如轨道全是固定值），整面网格就在容器里「飘」着——这时管它的是 <code>justify-content / align-content</code>，取值和上一节的队形一模一样：start、center、space-between、space-evenly……<strong>就像</strong>裱画：画（网格）画完了比相框（容器）小，怎么挂、居中还是顶边，是裱画师傅（content 系列）的事，跟画的内容（items 系列）无关。两层对齐各管一层，别混：items 管砖在坑里，content 管墙在屋里。大多数日常布局轨道里都有 fr（自动吃满容器），墙永远撑满房间，content 系列用得少——但全固定轨道的场景（比如小型棋盘、日历格子）它就是主角。</p>
+
+  <h3>嵌套与 subgrid：轨道对不齐的老大难</h3>
+  <p>网格套网格（一个格子里的子元素再开 grid）和 § 3.3 的嵌套车厢同理，但 Grid 有个 Flexbox 没有的历史顽疾：<strong>嵌套网格的线和外层网格的线对不上</strong>。外层格子宽 1fr，里层自己画了四条轨道——里层这四条线凭什么正好压在外层的某条线上？卡片墙里每张卡内部的栏目想和隔壁卡对齐，过去只能靠「里外用同一套尺寸参数」硬凑，勉强近似。<code>subgrid</code>（子网格）是 2023 年全浏览器到位的正解：里层声明 <code>grid-template-columns: subgrid</code>，意思是「轨道别自己画，直接沿用外层的线」——里外共享一套墨线，跨层对齐从此是精确的、免费的。<strong>好比</strong>写字楼里的隔断：普通嵌套是每层租户自己乱隔，subgrid 是整栋楼统一轴线，不管哪家装修，隔墙都落在同一根结构线上。</p>
+
+  <h3>三代圣杯：同一版面的三朝写法</h3>
+  <p>把前几节的工具串成一场「同题竞答」。考题是网页史上最有名的版面——圣杯布局：顶栏、左栏、主区、右栏、页脚，而且主区要在 HTML 里排最前（当年网络慢，让正文先加载、先被搜索引擎读到是硬指标）。三代答案各有一部心酸史：float 时代靠负 margin 三栏技巧——两侧栏用负值拉回、容器用 padding 留坑、末尾再清浮动收尾，代码像咒语，动一个像素塌一片；Flexbox 时代用 order 重排加容器嵌套，正大光明了许多，但「主区吃剩余、两侧固定」仍要靠 flex 属性精调，顶栏和页脚还得另开容器；Grid 时代的答案，就是下一节那张 areas 户型图——整张图纸五六行，肉眼可读，圣杯从「高难度动作」降级成了「入门第一课」。<strong>打个比方</strong>，这是木工手艺的三级跳：第一代纯手工凿榫，第二代电动工具，第三代数控机床——活还是那个活，门槛和返工率完全不同了。<mark class="key">一道考题三代答案，正是这一章的主线剧情：布局语言的每次换代，都是把上一代的「经验」固化成「语法」。</mark></p>
+
+  <h3>骨架与车厢：Grid + Flex 的标准混编</h3>
+  <p>学了三节布局，是时候把它们组装起来了。真实项目的黄金分工：<strong>Grid 搭页面骨架（二维、稳定、结构优先），Flexbox 管每块内部的排列（一维、灵活、内容优先）</strong>。拿经典的「圣杯布局」（顶栏 + 左右侧栏 + 中间主区 + 页脚）走一遍 Grid 版：</p>
+  <pre><code>.page {
+  display: grid;
+  grid-template-areas:
+    "header header header"
+    "left   main   right"
+    "footer footer footer";
+  grid-template-columns: 180px 1fr 240px;  /* 左窄右宽，主区吃剩余 */
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;    /* rows 的 1fr 撑满视口，页脚沉底 */
+}
+nav   { grid-area: header; display: flex; align-items: center; gap: 12px; } /* 顶栏内部：Flex */
+aside { grid-area: left; }
+main  { grid-area: main; }
+aside.right { grid-area: right; }
+footer { grid-area: footer; }</code></pre>
+  <p>品一下这个分工：整页的结构（谁在哪、多宽、通不通栏）全部由那张 areas 户型图一句话说清；而顶栏内部「logo 左、菜单右、垂直居中」是典型的一维排列，交给 Flex 一行搞定——每一层都在用最合适的工具，谁也不越界。同一版面若全用 Flex 写，得容器嵌容器三四层、间距靠 margin 硬调；全用 Grid 也行，但顶栏里那点「按内容排」的活会写得别扭。<mark class="key">判断口诀沉淀成一句话：先问「这是不是一整面墙」，是就 Grid 画墙，墙里每一格的内部再问 Flex。</mark></p>
+
+  <h3>综合施工：从草图到图纸的一个完整案例</h3>
+  <p>招式齐了，走一遍真实流程。需求：一个后台监控面板——顶部通栏工具条；下方左侧一列设备列表；右侧主区是 2×2 的四块监控卡；底部一条状态栏。第一步<strong>画草图</strong>：拿张纸把区块圈出来——这一步叫「把界面看成墙」，圈完数一数，横着分几段、竖着分几段。第二步<strong>定轨道</strong>：竖向三段（工具条 / 中部 / 状态栏），横向中部两列（列表 240px + 主区 1fr），主区内部自己再开 2×2。第三步<strong>翻译成代码</strong>：</p>
+  <pre><code>.panel {
+  display: grid;
+  grid-template-rows: 56px 1fr 40px;   /* 三段：工具条 / 中部 / 状态栏 */
+  grid-template-columns: 240px 1fr;     /* 两列：列表 / 主区 */
+  grid-template-areas:
+    "toolbar toolbar"
+    "list    main"
+    "status  status";
+  gap: 12px;
+  height: 100vh;    /* 中部 1fr 撑满剩余高度 */
+}
+.cards { grid-area: main; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 12px; }  /* 主区内部：自己的 2×2 */</code></pre>
+  <p>第四步<strong>打例外补丁</strong>：设备列表太长要滚动（给 list 加 overflow）；某块监控卡想跨两格（span）；窄屏想把列表收进主区下方——媒体查询里把图纸整张换掉：</p>
+  <pre><code>@media (max-width: 720px) {
+  .panel {
+    grid-template-columns: 1fr;      /* 换成单列 */
+    grid-template-areas:
+      "toolbar"
+      "main"
+      "list"
+      "status";
+  }
+}</code></pre>
+  <p>注意改的全是<strong>图纸</strong>：列数、areas 字符串；砖一块不动（toolbar/list/main/status 的 grid-area 绑定原样有效）——这就是「结构优先」在维护阶段的红利：响应式改造改声明，不动结构。<strong>说白了</strong>，Grid 施工的完整心法就这四步：<strong>画草图 → 定轨道 → 翻译成 template → 打例外补丁</strong>。整个过程像装修放样：图纸上量清楚再动工，返工率天然就低；反过来「边写边挤」的写法，再熟的工具也救不了。</p>
+
+  <h3>渲染视角：结构优先为什么快</h3>
+  <p>把 § 3.3 末尾那笔账接上。Flexbox 的 basis 默认 auto，浏览器得先量内容才知道起跑线——「量两遍」是内容优先的代价。Grid 的固定轨道（px、写死的 repeat 次数）把这张账单免了：<strong>图纸写死，每条轨道多宽是一望而知的算术，不需要去问砖</strong>。当然 fr 和 auto 轨道仍要量内容（min-content 的地板还在），但「结构优先」的图纸天然把测量的范围和层次压到了最低。<strong>本质上就是</strong>：把布局的不确定性提前在设计阶段锁死，渲染阶段就只剩执行——和「先画图纸再施工」的装修流程省的返工是同一笔钱。这也是为什么大型仪表盘、后台框架爱用固定轨道的 Grid：稳定压倒一切，性能只是稳定的副产品。</p>
+  <p>落到实操，网格性能三条军规：其一，<strong>别在动画里改轨道尺寸</strong>——template-columns 一变，所有项目的位置尺寸全部重算，布局阶段整墙返工，动画卡顿十有八九源于此；想让东西动起来用 transform（合成层直接干活，§ 2.5 的老朋友）。其二，<strong>嵌套控制在两三层</strong>——每层网格都要解一遍分配方程，层数翻倍开销翻倍，骨架一层加组件一层基本到顶，再深就该改图纸而不是继续套娃。其三，<strong>轨道数心里有数</strong>——几千条轨道的极端网格（比如上万行的虚拟表格）会拖慢首次布局，那个量级该上虚拟列表方案，早就不单是 CSS 的战场。<strong>简单说</strong>，Grid 的性能秘诀和它的设计哲学是同一句话：图纸越确定，渲染越轻松。</p>
+
+  <h3>常用件速查：六个一眼就会的网格模式</h3>
+  <p>和上一节一样收一份常用件清单，全是最小代码：</p>
+  <ul class="keylist">
+    <li><strong>响应式卡片墙</strong>：上面刚讲的一行流 <code>repeat(auto-fill, minmax(220px, 1fr))</code>——零断点，窄屏自动折行，Grid 传世名菜。</li>
+    <li><strong>圣杯骨架</strong>：areas 户型图 + 三列两 auto 一 fr——上一节完整走过。</li>
+    <li><strong>通栏加塞</strong>：普通网格里插一条 <code>grid-column: 1 / -1</code> 的公告栏——不管多少列，永远通到底。</li>
+    <li><strong>仪表盘格</strong>：<code>grid-template-columns: repeat(auto-fit, minmax(340px, 1fr))</code> + 每块卡自身 <code>aspect-ratio: 16 / 9</code>——尺寸方正的监控面板墙，宽窄屏都不变形。</li>
+    <li><strong>图片画廊</strong>：外层 auto-fill 网格，个别大图 <code>grid-area: span 2 / span 2</code> 占四格——瀑布流的规整版；至于真正的瀑布流（masonry，每列高度参差），标准化还在路上，目前多列 <code>columns</code> 或 JS 方案仍是主力，见到别硬用 Grid 拼。</li>
+    <li><strong>九宫格照片墙</strong>：<code>grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr;</code> 配每张图 <code>aspect-ratio: 1</code> + object-fit: cover——九格方正、图片不变形，头像墙和表情包面板的标配。</li>
+  </ul>
+  <p>六个模式的共性仍是那句：<strong>图纸先行</strong>。先在纸上（或脑子里）把行列画出来，再翻译成 template 那两行属性——Grid 的代码从来不难写，难的那步在动笔之前。</p>
+
+  <h3>从 Flex 迁移：常见模式对照表</h3>
+  <p>已有界面不少是 Flexbox 写就的，哪些值得换 Grid、怎么换？给一张高频对照表：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>需求</th><th>Flex 写法</th><th>Grid 等价</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>一行 N 等分</td><td>每个子项 flex: 1</td><td>容器 repeat(N, 1fr)</td></tr>
+        <tr><td>固定 + 弹性两栏</td><td>侧栏 flex: 0 0 200px，主区 flex: 1</td><td>columns: 200px 1fr</td></tr>
+        <tr><td>折行卡片墙</td><td>wrap + 子项 min-width + flex: 1</td><td>repeat(auto-fill, minmax(220px, 1fr))</td></tr>
+        <tr><td>两端对齐导航</td><td>justify-content: space-between</td><td>不换——一维的事留在 Flex</td></tr>
+        <tr><td>整页骨架</td><td>多层嵌套容器 + margin</td><td>一张 areas 图纸</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>表的读法比表本身重要：前三行是「换了好」——结构收益立竿见影；第四行是「别换」——一维对齐 Flex 一行搞定，Grid 反而要数格子；第五行是「该早换」——嵌套越深，越欠 Grid 一张图纸。迁移原则一句话：<strong>简单说</strong>，别为了新而新——Grid 解决的是二维和结构，一维的活继续交给 Flex，谁的地盘谁做主。</p>
+
+  <h3>Grid 的边界：它不擅长什么</h3>
+  <p>终点站也得说清边界，工具才不会用过头。其一，<strong>一维细排</strong>：一条导航、一行按钮组这种「一根轴上的事」，Grid 写得出来但笨重——一格一格数线不如 Flex 一行对齐，杀鸡别用牛刀。其二，<strong>内容自然流</strong>：想让内容自己决定在哪断行、谁挨着谁（比如正文里图文混排），Grid 的固定格子反而是枷锁——那是文档流的主场。其三，<strong>瀑布流</strong>：参差高度、按列排布的 masonry，Grid 目前没有原生答案（上面提过），硬拼出来的是「整齐的假瀑布」。其四，也是最重要的一条：<strong>兼容性早已不是问题（2017 年起全绿），真正滞后的往往是使用习惯</strong>——大量项目的骨架还在用 float 时代的旧偏方硬撑，不是 Grid 不行，是没人换。<mark class="key">Grid 不是 Flexbox 的升级版，是另一只手：一面墙和一节车厢，配合着才完整。</mark></p>
+
+  <h3>前尘往事：table 布局的遗产</h3>
+  <p>Grid 落地之前，Web 还有一段「表格排版」的史前史：上世纪九十年代末到两千年代初，几乎所有网站都用 &lt;table&gt; 标签画版面——表格天生就是网格，行行列列现成可用，在 CSS 布局能力约等于零的年代，它是唯一拿得出手的画格子工具。<strong>其实就是</strong>拿数据工具干了排版的活。代价在语义：读屏软件会把整个页面当一张数据表逐格朗读，搜索引擎抓到的正文被切碎在无数 td 里，改版要动几十层嵌套的表格结构，代码体积也膨胀得吓人——这些痛点，正是 CSS 布局体系（float 滥用 → Flexbox → Grid）一路演进的原始动力。</p>
+  <p>table 排版死了，两份遗产还活着：一是 <code>display: table</code> 系列值——不用 table 标签也能启用表格布局算法，偶见于「等高、垂直居中」这类老古董兼容场景；二是一个反面教材式的结论：<mark class="key">拿 A 领域的工具长期干 B 领域的活，短期省事，长期会把 A 的结构强加给 B 的语义——table 之于排版如此，后来的 div 滥用之于文档结构也是如此。</mark>今天回头看，Grid 更像一次「物归原主」：排版本来就该有一门自己的网格语言，绕了二十年，只是把表格欠的债还清了。</p>
+
+  <h3>调试神器：DevTools 的网格覆盖层</h3>
+  <p>Grid 的线号系统靠脑补很累，浏览器早就配好了可视化。Chrome/Edge 的元素检查器里，选中网格容器后样式面板的 display: grid 旁有个网格小图标，点开就能在页面上<strong>叠加显示网格线并标出线号</strong>——正数负数一目了然，跨格调线时对着数字改，比数格子快十倍。Firefox 还能给每个区域显示名字标签、给多套网格配不同颜色。这功能对学 Grid 的人价值极大：<strong>想象一下</strong>，装修师傅若能把墨线实时投影在墙上看效果，弹错线当场就发现了。<mark class="key">写 Grid 卡壳时第一反应不是改代码，是开覆盖层看线——大多数「为什么歪了」的答案就在那几条线的编号里。</mark></p>
+
+  <h3>排错手册：网格布局六案</h3>
+  <ul class="keylist">
+    <li><strong>案情一：fr 轨道分不匀，某列莫名其妙特别宽。</strong>1fr 的隐含地板是 minmax(auto, 1fr)，内容宽就顶住。药方：改 <code>minmax(0, 1fr)</code>，配项目内文本的截断三件套。</li>
+    <li><strong>案情二：跨格跨错位置，永远差一格。</strong>九成是把线号当格子号用了。线在轨道边缘上——三列四条线。开 DevTools 网格覆盖层看线号，立刻清醒。</li>
+    <li><strong>案情三：多出来的项目挤成一团或高度诡异。</strong>它们住进了隐式网格，行高没规划。药方：<code>grid-auto-rows: minmax(120px, auto)</code> 统一备用席规格。</li>
+    <li><strong>案情四：areas 画完整张图纸失效。</strong>检查每个字符串的列数是否严格相同——多一个空格少一个名字，整张图作废。</li>
+    <li><strong>案情五：嵌套网格内外线对不齐。</strong>旧解法是里外共用尺寸参数硬凑；正解 <code>subgrid</code>（2023 年起全浏览器可用），里层直接沿用外层的轨道。</li>
+    <li><strong>案情六：auto-fill 卡片墙在窄屏还是溢出。</strong>多半是卡片内容的最小宽度（长单词、长 URL）超过 minmax 的地板。药方：轨道地板适当调小，或给内容加 <code>overflow-wrap: break-word</code>。</li>
+  </ul>
+
+  <div class="callout analogy">
+    <strong>把这一节想成「装修师傅的一面弹线墙」</strong><br/>
+    师傅接活第一件事不是搬砖，是弹墨线：横几行竖几列、每格多大，先用 <strong>grid-template-columns / rows</strong> 画死在墙上——图纸先于砖存在，这就是结构优先。<br/><br/>
+    轨道宽度的四种料：固定砖（px）、按份分（fr，蛋糕的正主）、看内容（auto）、带门框的弹性（minmax，地板天花板一起装）。想一墙铺满卡片，一句 <strong>repeat(auto-fill, minmax(220px, 1fr))</strong>——浏览器自己算出宽屏几列窄屏几列，一行代码零断点，这是 Grid 送整个行业的传世名菜。<br/><br/>
+    砖入格有三种选座法：不吭声的<strong>自动入座</strong>（顺着填）；报线号的（grid-column: 2 / 4，线在轨道边缘上，三列四条线，负数从墙尾倒数）；跨格大板（span 2，只声明尺寸不挑位置）。最讲人情的选座法是<strong>命名区域</strong>——grid-template-areas 直接画户型图，header 通栏、sidebar 靠左，改布局改的是图不是砖。<br/><br/>
+    砖在坑里还能挪（justify/align-items，默认 stretch 撑满），墙比房间小还能挑位置挂（justify/align-content，裱画师傅的活）。砖多了住不下，师傅现弹新线（隐式网格），备用席规格由 grid-auto-rows 提前定好；里层还想跟外层共享墨线，就用 subgrid——整栋楼统一轴线，哪家装修隔墙都落在同一根线上。<br/><br/>
+    <mark class="key">这面墙和上一节的车厢不是对手，是分工：Grid 弹线画墙定骨架，Flexbox 管每格里那一小队人的队形——墙里开车厢，车厢嵌在墙里，布局篇的两只手从此都在你身上。</mark>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Checklist · 自检</span>
+    <p>写网格布局前过一遍：</p>
+    <p>① 这个需求是「一整面墙」吗？一根轴上的事先考虑 Flex；<br/>
+    ② 图纸画在纸上了吗？行列数和每条轨道的尺寸，动笔前先说得出；<br/>
+    ③ 弹性轨道的地板装了吗？分蛋糕用 fr，怕压扁配 minmax；<br/>
+    ④ 卡片墙用 auto-fill + minmax 了吗？别手写一堆媒体查询；<br/>
+    ⑤ 线号当线用（不是格子号）、负数锚定墙尾了吗？卡壳先开 DevTools 覆盖层；<br/>
+    ⑥ 整页骨架用 areas 户型图写了吗？可读性值回票价；<br/>
+    ⑦ 嵌套要跨层对齐吗？是就上 subgrid，别硬凑尺寸；<br/>
+    ⑧ 乱线、压扁、溢出三类事故，回排错手册对号入座了吗？</p>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="容器 1200px、无 gap，grid-template-columns: 200px 1fr 2fr。第二、三列各宽多少？" data-opts="各 500px|第二列约 333px，第三列约 667px|第二列 400px，第三列 600px|第三列是第二列的三倍宽" data-answer="1" data-explain="先扣掉固定列 200px，剩余 1000px 是蛋糕；1fr + 2fr 共 3 份，每份约 333px——第二列拿 1 份约 333px，第三列拿 2 份约 667px。400/600 错在把 200px 固定列也算进份数里了；fr 分的永远是「扣完固定轨道和 gap 之后」的剩余空间。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="grid-template-columns: repeat(auto-?, minmax(200px, 1fr))，容器很宽、项目只有两个。想让这两个项目被拉伸撑满整行，问号处该填？" data-opts="fill——多画轨道占住空间|fit——空轨道坍缩，空间分给现有轨道|两个都行，完全一样|填哪个都撑不满，必须加媒体查询" data-answer="1" data-explain="项目少、容器宽时两者分家：auto-fill 仍按容器宽度画出所有放得下的轨道，空轨道占着位（给未来内容留坑）；auto-fit 把空轨道坍缩掉，腾出的空间按 fr 分给现有轨道——两个项目各占一半，撑满整行。记法：fill 填坑留位，fit 合身撑满。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="三列网格里，grid-column: 2 / 4 的项目横跨几列？" data-opts="4 列|2 列|3 列|1 列" data-answer="1" data-explain="线号标在轨道的边缘上，不是格子上：三列墙有四条列线（1、2、3、4）。从第 2 条线跨到第 4 条线，覆盖的是第 2、3 两个格子——跨 2 列。把线号当格子号数（「2 到 4」数成 3 列或 4 列）是 Grid 新手的第一大坑，卡壳时开 DevTools 网格覆盖层看线号最清醒。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="grid-template-areas 的图纸里，同一个名字（比如 header）在一行字符串里出现两次，意味着什么？" data-opts="语法错误，一个名字只能用一次|header 区域横跨两格，两格并成一个区域|两个独立区域碰巧同名，各管各的|第二个会被忽略，只算第一个" data-answer="1" data-explain="同一行里名字出现两次，表示这个区域横跨两格——「header header」就是顶栏通栏占满整行。这正是 areas 语法表达跨格的方式（不写 span，靠名字重复）。真正会作废整张图纸的错误是：各行列数不一致——那才是浏览器拒绝解析 areas 的经典原因。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="同一张卡片组件，想让它在宽格里图文横排、窄格里上下堆叠。为什么用 @container 而不是 @media？" data-opts="@media 是老语法，迟早要淘汰|@media 量的是整个视口宽，卡片实际宽度受侧栏、嵌套容器影响，它不知道|@container 运行速度更快|两者完全等价，随便选" data-answer="1" data-explain="媒体查询的条件是视口宽度——但同一个视口下，卡片可能住满宽主区、也可能挤在侧栏旁的半宽格里，实际宽度各不相同。容器查询量的是「卡片自己容器」的宽度，搬到哪都按自己房间的大小换姿态。分工记法：@media 管页面级大变化，@container 管组件级自适配。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>Grid 的世界观一句话：<mark class="key">先把墙画好（template-columns/rows 定轨道），再往里放砖（自动入座 / 线号区间 / 命名区域）——结构优先，图纸先于内容。</mark>轨道四写法：px 固定、fr 分蛋糕（隐含地板 minmax(auto,1fr)，要均匀就写 minmax(0,1fr)）、auto 看内容、minmax 带门框。一行流传世名菜：repeat(auto-fill, minmax(220px, 1fr))，零断点卡片墙；fill 填坑留位、fit 坍缩撑满。线号在轨道边缘、负数锚定墙尾、span 只报尺寸；areas 户型图是可读性之王。对齐分两层：items 管砖在坑里、content 管墙在屋里。跨层对齐的正解是 subgrid。图纸还能带旋钮——可变尺寸全提成 CSS 变量（命名线管位置、变量管尺寸）；格里的内容能按「自己房间」的宽度换姿态——容器查询。和 Flexbox 的分工口诀：一整面墙用 Grid，墙里一格的队伍交给 Flex——两只手从此配齐。布局的技术地图到这就剩最后两块拼图：原生 App 那边的另一套思路（约束布局），和让同一张界面适配所有屏幕（响应式）——下一节先看前者。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-3-flexbox.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 3.3 · Flexbox</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一节</span>
+      <span class="title">§ 3.5 · 约束布局（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 3.4</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
