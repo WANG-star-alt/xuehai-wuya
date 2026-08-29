@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>第 4 章 · 事件与交互 · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <a href="../../index.html">界面篇</a>
+      <span class="sep">›</span>
+      <span>第 4 章</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">Chapter · 04</div>
+    <h1>第 4 章 · 事件与交互</h1>
+    <div class="cn">Interaction · Loop, Bubbling, Input, Gesture, Focus, A11y</div>
+  </header>
+
+  <p class="lead">
+    第 2 章学会了「怎么画」，第 3 章学会了「怎么摆」——但画得再好、摆得再正，那也只是一张静态的画。界面之所以是界面，在于它会<em>回应</em>：你点它，它亮；你划它，它滚；你捏它，它缩。<mark class="key">这一章追着一个问题挖到底：从你手指按下去的那一瞬间，到界面做出回应，屏幕背后到底走过了哪条路？</mark>这条路一共六段：事件先在唯一的队列里排队（循环），再沿 DOM 树走完三段旅程（传播），它说着不同设备的方言（输入），需要被翻译成用户真正的意图（手势）；键盘世界另有一条路，靠一盏追光灯引路（焦点）；而这条路修到终点，必须是「每个人都能走」（无障碍）。六节读完，「点击背后发生了什么」这句话，对你来说将不再是一团黑箱，而是一条能逐段讲清的流水线。
+  </p>
+
+  <h3>本章要回答什么</h3>
+  <p>界面为什么会「卡死」——点了没反应，连动画都停了？click 到底发生在了哪个元素身上，为什么父元素也能听到？一个列表一万行，难道要挂一万个监听器？鼠标、触摸屏、手写笔、手柄，各说各的话，程序怎么统一接待？长按和拖拽同时发生，听谁的？把鼠标拔掉、屏幕关掉，盲人用户怎么用你的界面——他们「看到」的世界长什么样？这六个问题，就是六节的入口。</p>
+
+  <div class="callout analogy">
+    <span class="tag">Analogy · 譬喻</span>
+    <p>这一章像<strong>一栋大楼的物业系统</strong>。<br/>
+    <strong>事件循环</strong>是物业前台唯一的值班员——所有报修请求排成一条队，一次只办一件，谁插队谁卡死整栋楼；<br/>
+    <strong>冒泡与捕获</strong>是一份报修单的流转——先从顶楼逐层下发，再从一楼逐层回执，沿途每层都有权处理或放行；<br/>
+    <strong>输入设备</strong>是五种报修方式——电话、短信、微信、上门、托人带话，说得再杂，前台都要翻成同一张工单；<br/>
+    <strong>手势识别</strong>是老值班员听敲门——轻敲是查访、连敲是着急、按着不松是东西卡住了，动作背后是意图；<br/>
+    <strong>焦点</strong>是大楼唯一一部电梯的呼梯权——同一时刻只认一个人，排队规矩全写在名单上；<br/>
+    <strong>无障碍</strong>是把全楼的台阶都修成坡道——推轮椅的、拉行李的、推婴儿车的，走的都是同一条路。</p>
+  </div>
+
+  <h3>本章的六节</h3>
+  <div class="cards">
+    <a class="card" href="./04-1-event-loop.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.1</div>
+      <h4>事件循环 Event Loop</h4>
+      <p>主线程、任务队列、微任务、16.7 毫秒一帧——界面为什么会「卡死」的终极答案。</p>
+    </a>
+    <a class="card" href="./04-2-bubble-capture.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.2</div>
+      <h4>冒泡与捕获</h4>
+      <p>事件的三个阶段、stopPropagation 与 preventDefault、事件委托——一个监听器管一千行。</p>
+    </a>
+    <a class="card" href="./04-3-input-devices.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.3</div>
+      <h4>输入设备</h4>
+      <p>鼠标、键盘、触摸、笔、手柄——五种方言各说什么，Pointer Events 怎么统一翻译。</p>
+    </a>
+    <a class="card" href="./04-4-gestures.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.4</div>
+      <h4>手势识别</h4>
+      <p>点击、长按、拖拽、双指缩放——状态机、阈值与仲裁，从动作里读出意图。</p>
+    </a>
+    <a class="card" href="./04-5-focus.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.5</div>
+      <h4>焦点与键盘导航</h4>
+      <p>Tab 顺序、焦点陷阱、roving tabindex、快捷键——拔掉鼠标，界面照样能用。</p>
+    </a>
+    <a class="card" href="./04-6-a11y.html" style="text-decoration:none;color:inherit;">
+      <div class="card-num">§ 4.6</div>
+      <h4>无障碍 A11y</h4>
+      <p>屏幕阅读器、语义化、ARIA、对比度、动效安全——让所有人都能走进这扇门。</p>
+    </a>
+  </div>
+
+  <h3>六节是一条事件的一生</h3>
+  <div class="journey">
+    <div class="step">
+      <h4>1. 循环 · 产地</h4>
+      <p>事件醒来第一件事：排队。主线程一次只办一件，办不完就卡——异步是唯一的解药。</p>
+    </div>
+    <div class="step">
+      <h4>2. 传播 · 旅程</h4>
+      <p>捕获下行、命中目标、冒泡上行——委托就藏在回程的车上。</p>
+    </div>
+    <div class="step">
+      <h4>3. 设备 · 方言</h4>
+      <p>五种设备各说各话，Pointer Events 把它们翻成同一本账。</p>
+    </div>
+    <div class="step">
+      <h4>4. 手势 · 意图</h4>
+      <p>位移过阈值才算拖、静止够久才算长按——状态机把动作翻译成想法。</p>
+    </div>
+    <div class="step">
+      <h4>5. 焦点 · 另一条路</h4>
+      <p>键盘不走指针的路，它跟着一盏追光灯——焦点就是键盘世界的地址。</p>
+    </div>
+    <div class="step">
+      <h4>6. 无障碍 · 终点</h4>
+      <p>路修得再快，也要人人能走——坡道效应收官：为极端修的路，所有人都在走。</p>
+    </div>
+  </div>
+
+  <h3>学之前先记住这一点</h3>
+  <ul class="keylist">
+    <li><span class="k">界面不会自己动</span><span class="v">一切「动」都是对事件的响应——而处理事件的主线程只有一个，长任务是卡死的唯一元凶。</span></li>
+    <li><span class="k">别挂一万个监听器</span><span class="v">事件会冒泡，父节点上的一个监听器能接住所有子元素——委托是工程标配，不是优化彩蛋。</span></li>
+    <li><span class="k">动作不值钱，意图才值钱</span><span class="v">用户按下的从来不是「click」，而是「我想打开」——中间隔着一台状态机。</span></li>
+    <li><span class="k">指针之外还有一条路</span><span class="v">键盘和读屏走的是焦点这条路——两条路都通，界面才算能用。</span></li>
+    <li><span class="k">交互的终点是无障碍</span><span class="v">「每个人都能点」不是加分项，是验收线——语义、焦点、对比度，一个都不能少。</span></li>
+  </ul>
+
+  <div class="pager">
+    <a class="btn prev" href="./03-6-responsive.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 3.6 · 响应式与自适应</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next" href="./04-1-event-loop.html">
+      <span class="dir">下一节 →</span>
+      <span class="title">§ 4.1 · 事件循环 Event Loop</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · 第 4 章</div>
+
+</article>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>

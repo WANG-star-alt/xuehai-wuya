@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>§ 4.6 · 无障碍 A11y · 学海无涯</title>
+<link rel="stylesheet" href="../../_shared/css/theme.css?v=ct-39">
+<link rel="stylesheet" href="../../_shared/css/interactive.css?v=ct-39">
+</head>
+<body>
+<article class="page">
+
+  <nav class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">学海无涯</a>
+      <span class="sep">›</span>
+      <span>界面篇 · 第 4 章</span>
+      <span class="sep">›</span>
+      <span>§ 4.6</span>
+    </div>
+    <a href="../../index.html">← 返回主页</a>
+  </nav>
+
+  <header class="chapter-head">
+    <div class="num">§ 4.6 · Section</div>
+    <h1>无障碍 A11y</h1>
+    <div class="cn">Accessibility · A House Open to Everyone</div>
+  </header>
+
+  <p class="lead">
+    上一节把鼠标拔掉，你已经见过键盘用户的世界。这一节把镜头拉到最远：盲人怎么用你画了三天的界面？色盲用户分得清那两个「红绿代表成败」的按钮吗？前庭障碍的用户看到你的视差动画会不会眩晕？<mark class="key">无障碍（Accessibility，圈内昵称 a11y——a 加 11 个字母加 y）不是慈善，不是加分项，而是界面工程的及格线。</mark>世界卫生组织 2023 年的报告说，全球约 16% 的人口——13 亿人——带着显著残障生活；我国各类残障人士超过八千五百万，而且每天都在变老。更要紧的是：无障碍设施服务的不只是「他们」——推婴儿车的父母、拉行李箱的旅客、强光下看手机的你，全都在用同一条坡道。这一节把屏幕阅读器、语义化、ARIA、对比度、动效安全、表单标注这六门功课一次讲透，也给整个第 4 章收官：事件循环、传播、输入、手势、焦点，前面五节修的所有路，最终都要通向「每个人都能走进来」这扇门。
+  </p>
+
+  <div class="scene">
+    <span class="scene-tag">生活场景</span>
+    <div class="scene-title"> curb cuts：人行道上那道小斜坡</div>
+    <p>上世纪七十年代，美国残疾退伍军人在伯克利的街头争取来第一批<strong>路缘坡道</strong>（curb cuts）——人行道边缘那道几厘米的小斜坡，让轮椅能从马路牙子上下来。<br/><br/>
+    坡道修好之后，街上的画面变了：推婴儿车的妈妈顺着坡道下来了，拉行李箱的旅客顺着坡道下来了，骑自行车送外卖的小哥、拄拐的老人、踩滑板的中学生，全顺着坡道下来了。<strong>为一个群体修的路，成了所有人的路</strong>——这个现象有个正式名字，叫「坡道效应」（curb-cut effect）。<br/><br/>
+    软件世界一模一样：为盲人做的屏幕朗读，帮开了三个会同时在多任务的人「听」完一封邮件；为运动障碍用户做的键盘导航，是高频用户的效率神器；为色弱用户做的「颜色之外的第二个信号」，让在太阳底下看屏幕的每个人都看得清界面。<mark class="key">无障碍设计从来不是给少数人的特殊通道，而是把整条人行道修平——你自己迟早也会走上这道坡。</mark></p>
+  </div>
+
+  <h3>术语对照：先把这一节的行话翻译成人话</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>翻译成人话</th><th>大楼里的对应物</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>a11y / 无障碍</td><td>让所有人在任何条件下都能用你的界面</td><td>整栋楼的通行制度</td></tr>
+        <tr><td>屏幕阅读器（读屏）</td><td>把界面念出声（或转盲文）的软件</td><td>楼里的导览讲解员</td></tr>
+        <tr><td>可达性树（a11y tree）</td><td>浏览器从 DOM 提炼出的「给读屏看的简版界面」</td><td>讲解员手里的导览图</td></tr>
+        <tr><td>语义化</td><td>用对标签：这是标题、这是按钮、这是导航</td><td>墙上钉的对的门牌</td></tr>
+        <tr><td>ARIA</td><td>语义不够时打的「补丁属性」，role 和 aria-* 一族</td><td>门牌不够用时贴的临时标签</td></tr>
+        <tr><td>alt 文本</td><td>图片的文字替身，读屏念的就是它</td><td>挂在画旁边的说明卡</td></tr>
+        <tr><td>live region（实况区）</td><td>内容变化时主动广播给读屏的区域</td><td>楼内广播：「电梯故障已修复」</td></tr>
+        <tr><td>对比度</td><td>文字颜色和背景色的明暗差距，有比值门槛</td><td>指示牌与墙面的色差</td></tr>
+        <tr><td>WCAG</td><td>Web 无障碍的国际标准，AA 级是全球通行及格线</td><td>建筑验收规范</td></tr>
+        <tr><td>prefers-reduced-motion</td><td>系统里「减弱动态效果」的开关，页面要听</td><td>访客提出「请放慢电梯」</td></tr>
+        <tr><td>仅靠颜色（color-only）</td><td>只用颜色区分信息——色盲用户当场失明</td><td>只写「红灯层」没有楼层号</td></tr>
+        <tr><td>焦点顺序</td><td>§ 4.5 的主角：键盘与读屏的行进路线</td><td>讲解员带队参观的路线图</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>无障碍到底在为谁修路：三种障碍，一张考卷</h3>
+  <p>先把「残障」这个词从脑子里倒出来重装。工程上把障碍分三类，这张表是无障碍设计的思维起点：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>类型</th><th>视觉</th><th>运动</th><th>听觉 / 认知</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>永久性</strong></td><td>盲人、低视力、色盲</td><td>截肢、帕金森、震颤</td><td>失聪、阅读障碍、失读症</td></tr>
+        <tr><td><strong>临时性</strong></td><td>眼科手术恢复期</td><td>手腕骨折、腱鞘炎</td><td>中耳炎、耳鸣</td></tr>
+        <tr><td><strong>情境性</strong></td><td>强光下看屏幕、屏幕太小</td><td>单手抱娃、开车、戴手套</td><td>嘈杂的地铁、开会静音</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看出门道了吗？<strong>临时性和情境性障碍人人都有</strong>——你不是在为「少数人」做适配，而是在为「所有人的某些时刻」做设计。微软的无障碍团队有句名言：永久性障碍只是这条光谱上最极端的一端，而设计要覆盖整条光谱。<br/><br/>
+  另一条腿是法律。美国有 ADA（残障人士法案）和 Section 508，每年诞生数千起针对网站的无障碍诉讼；欧洲有 EN 301 549；国际基准是 W3C 的 <strong>WCAG</strong>（Web Content Accessibility Guidelines，网页内容无障碍指南），现行 2.2 版，「AA 级」是全球通行门槛；我国 2019 年发布了国家标准 GB/T 37668-2019《信息技术 互联网内容无障碍可访问性技术要求与测试方法》，政务网站的适老化与无障碍改造是近年专项行动的重点。<strong>说白了</strong>：在多数正经项目里，无障碍 AA 已经写进合同和验收单——它不是「有情怀」，是「能上线」的硬条件。</p>
+  <p>WCAG 自己也给了一张全节骨架图——四条原则，业内缩写 <strong>POUR</strong>，本节后面讲的每一项技术，都能在这张表上对号入座：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>原则</th><th>一句话含义</th><th>本节的对应技术</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>P</strong> 可感知 Perceivable</td><td>内容至少能被一种感官接收</td><td>alt 文本、对比度、颜色之外的第二信号</td></tr>
+        <tr><td><strong>O</strong> 可操作 Operable</td><td>所有功能都有至少一种操作方式</td><td>键盘可达（§ 4.5）、目标尺寸、动画可暂停</td></tr>
+        <tr><td><strong>U</strong> 可理解 Understandable</td><td>内容与操作可预测、可明白</td><td>label 关联、表单错误播报、一致的导航</td></tr>
+        <tr><td><strong>R</strong> 健壮 Robust</td><td>能和各种设备、辅助技术互通</td><td>语义化 HTML、正确使用 ARIA</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>四条原则不是并列的口号，而是层层托底的结构：先让人<strong>收得到</strong>（可感知），再让人<strong>动得了</strong>（可操作），然后<strong>看得懂</strong>（可理解），最后保证这一切<strong>在谁的设备上都成立</strong>（健壮）。带着这张表往下读，每个单项技术你都知道它在替哪条原则站岗。</p>
+
+  <h3>屏幕阅读器怎么「看」界面：一位看不见的导览员</h3>
+  <p>读屏软件是理解一切无障碍技术的钥匙，先弄清它的工作方式。读屏<strong>不渲染像素，只消费语义</strong>：浏览器在渲染 DOM 的同时，会把它提炼成一棵<strong>可达性树</strong>（accessibility tree）——只保留「读屏关心的信息」：这是个按钮、名字叫「提交」、状态是「不可用」。读屏拿到这棵树，焦点走到哪个节点（§ 4.5 的灯），它就念哪个节点的「名字 · 角色 · 状态」：<strong>「提交，按钮」</strong>。你盯着像素画界面，它跟着语义走地图——两套世界，语义是唯一的桥。<br/><br/>
+  主流读屏四件套：Windows 上开源免费的 <strong>NVDA</strong> 和商业老牌 <strong>JAWS</strong>、苹果全家桶内置的 <strong>VoiceOver</strong>、Android 的 <strong>TalkBack</strong>（国内还有争渡、保益等中文读屏）。操作上它们共享一套心智模型：<strong>浏览模式</strong>像光标一样逐行读页面、按快捷键在标题/链接/表单之间跳；<strong>焦点模式</strong>则跟随真实焦点处理表单——这就是为什么 § 4.5 的焦点顺序对读屏用户是生命线：H 键跳标题、Tab 走表单，全楼走靠的就是那盏灯。苹果的 VoiceOver 还有「转子」手势，一根手指画圈就能切换「按标题跳 / 按链接跳 / 调语速」——老练盲人用户操作手机的速度，能快过明眼人。<br/><br/>
+  一个残酷的事实随之而来：<strong>读屏念得对不对，完全取决于你的语义给得全不全</strong>。一个用 div 拼的「按钮」，在可达性树里只是一段无名文本——读屏念出来是空白或乱码，用户根本不知道这儿有个可以按的东西。这就是下一节要讲的头号工事。</p>
+
+  <h3>语义化：免费的无障碍，第一道大门</h3>
+  <p>无障碍的第一法则便宜得不像话：<strong>把标签用对</strong>。<code>h1-h6</code> 是标题、<code>nav</code> 是导航、<code>main</code> 是正文、<code>button</code> 是按钮、<code>ul</code> 是列表——这些原生标签自带两层红利：浏览器知道它们是什么（键盘、焦点、激活行为免费送，§ 4.5 讲过），可达性树也知道它们是什么（读屏播报免费送）。<strong>相当于</strong>图书馆里书脊上印好书名和索书号：读者（读屏）顺着架子一格一格扫，全靠书脊说话；你用空白书脊（div）装帧再精美，在盲人读者眼里架上就是一片虚空。<br/><br/>
+  实操上有四条高性价比纪律：① <strong>标题层级是盲人的目录</strong>——读屏用户按 H 键在标题间跳，就像明眼人扫目录；页面主标题 h1、区块 h2、小节 h3，层级别跳号（别 h1 直接 h4）。② <strong>地标标签划出街区</strong>——<code>header / nav / main / footer</code> 让读屏用户一键跳过导航直达正文（和 § 4.5 的 skip link 是一对搭档）。③ <strong>链接写去处</strong>——「点这里」「了解更多」在链接列表模式下全长得一样，链接文字要说清去哪儿：「查看订单详情」。④ <strong>列表就用列表标签</strong>——读屏会播报「列表，共 8 项」，用户心里立刻有了一张货架图。<br/><br/>
+  <strong>说白了</strong>：语义化是全站性价比最高的无障碍投资——零成本、零运行时开销、纯结构性改动，却同时喂饱了读屏、键盘、SEO 爬虫和未来的维护者。先语义化，再谈 ARIA——这个顺序永远别倒。</p>
+
+  <h3>一颗按钮的两张名片：亲手看一次可达性树</h3>
+  <p>口说无凭，DevTools 里就能亲眼看。F12 打开开发者工具 → Elements 面板 → 右侧 Accessibility 标签页：选中的每个元素，浏览器都会列出它在可达性树里的「名片」。现在看同一颗按钮的两种写法：</p>
+  <pre><code>&lt;!-- 写法一：div 拼的按钮 --&gt;
+&lt;div class="btn" onclick="submit()"&gt;提 交&lt;/div&gt;
+
+&lt;!-- 写法二：原生按钮 --&gt;
+&lt;button type="submit"&gt;提 交&lt;/button&gt;</code></pre>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>检查项</th><th>div + onclick</th><th>原生 button</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>可达性树里的角色</td><td>generic（无名路人）</td><td>button（按钮）</td></tr>
+        <tr><td>读屏播报</td><td>「提 交」——一段不知道能干嘛的文本</td><td>「提 交，按钮」</td></tr>
+        <tr><td>Tab 聚焦资格</td><td>没有（除非手写 tabindex，§ 4.5）</td><td>天生有</td></tr>
+        <tr><td>回车 / 空格激活</td><td>没有（还得手写 keydown，§ 4.5 的陷阱）</td><td>天生有</td></tr>
+        <tr><td>禁用态播报</td><td>读屏不知道它禁用了</td><td>disabled 一挂，念「按钮，不可用」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看出规律了吗？可达性树上每个节点都是一张<strong>三件套名片：角色（role）——我是什么；名字（name）——我叫啥；状态（state）——我现在怎样</strong>。读屏念的永远是这三样：「提交，按钮」「记住我，复选框，未勾选」「城市列表，展开」。<strong>说白了</strong>，语义化这门手艺的全部内容，就是保证界面上每一个能交互的东西，都在可达性树里有一张填全的名片——角色来自标签（或 role 属性），名字来自文本内容（或 aria-label），状态来自 checked / disabled / value 这类原生属性（或 aria-* 补丁）。名片缺哪格，读屏用户的世界里就少哪样：缺角色，他不知道能不能按；缺名字，他不知道按了会怎样；缺状态，他每次都得亲手试一遍。</p>
+
+  <h3>想要什么控件，就喊对它的名字：语义速查表</h3>
+  <p>语义化的难点从来不是「不懂」，而是「没想起来」——写着写着就 div 一把梭。这张表贴在工位上，动手之前扫一眼：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>你想要的交互</th><th>喊对的名字（原生标签）</th><th>常见的错误喊法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>点击触发一个动作</td><td><code>button</code></td><td>div onclick / span onclick</td></tr>
+        <tr><td>跳转到别的页面</td><td><code>a href="…"</code></td><td>button 里写 window.location 跳转</td></tr>
+        <tr><td>开关 / 勾选</td><td><code>input type="checkbox"</code></td><td>div 换个背景色假装选中</td></tr>
+        <tr><td>输入文字</td><td><code>input / textarea</code></td><td>div contenteditable 加样式</td></tr>
+        <tr><td>章节标题</td><td><code>h1–h6</code></td><td>div class="big-title" 字号调大</td></tr>
+        <tr><td>并列的若干项</td><td><code>ul / ol / li</code></td><td>一排 div 用 margin 隔开</td></tr>
+        <tr><td>进度 / 加载</td><td><code>progress</code></td><td>div 动宽度的横条</td></tr>
+        <tr><td>弹出的对话框</td><td><code>dialog</code></td><td>fixed 定位的 div 加半透明遮罩</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>右列没有一条是夸张——它们是代码评审里天天撞见的真实写法。<strong>就像</strong>医院挂号：挂错科室，医术再好也白搭；标签喊错，样式再美，读屏和键盘照样抓瞎。而中列的每个原生标签，都自动送出上一节那张三件套名片，外带 § 4.5 的全套键盘行为——<strong>相当于</strong>用系统自带的服务，替代自己雇一支客服团队。真到了原生覆盖不了的场合（下一节的下拉框就是），再请 ARIA 出山。</p>
+
+  <h3>alt 文本的艺术：一幅画的一句话替身</h3>
+  <p>图片是读屏的天生盲区——<code>img</code> 对读屏而言只是个「有个图」的占位，念什么全看 <code>alt</code> 属性。这门手艺的原则比想象中讲究，三档分法：</p>
+  <ul class="keylist">
+    <li><strong>信息图——说内容。</strong>照片、截图、数据图里承载信息的，alt 要把「图想表达的话」写出来：产品图写「深灰色羊毛围巾，边缘流苏」；折线图写「三季度销量从 1200 万涨到 1900 万」。别写「一张图表」——那等于给盲人递了个空信封。</li>
+    <li><strong>功能图——说功能。</strong>图标按钮、logo 链接里的图，alt 写点击后的效果：放大镜图标写「搜索」，不写「白色放大镜」。图是按钮的门面，alt 是按钮的名字。</li>
+    <li><strong>装饰图——闭嘴。</strong>纯装饰（背景花纹、分隔线、氛围插图）写 <code>alt=""</code>（空的）——这个空值是<strong>明确告诉读屏「跳过我」</strong>，别让「装饰线」三个字打断用户听正文。没有 alt 属性和 alt="" 是两回事：前者读屏可能硬念文件名，后者是礼貌的沉默。</li>
+  </ul>
+  <p>两条加分项：简体 alt 跟口语一样自然（「红烧肉特写，肥瘦相间」好过「红烧肉.jpg」），且别用「图片：」开头——读屏本来就会播报「图形」，再加前缀就是复读机；复杂图表（多系列柱状图）用长描述：旁边配一段可见的文字总结，或 <code>aria-describedby</code> 指向详情段落。<strong>就像</strong>美术馆里那块小小的作品说明牌：不抢画的戏，但让看不见画的人也能聊上两句。</p>
+
+  <h3>ARIA：语义的义肢，以及它的第一戒律</h3>
+  <p>当原生标签实在表达不了你的控件（自绘下拉、评分星星、树形菜单），<strong>ARIA</strong>（Accessible Rich Internet Applications，无障碍富互联网应用）登场：一组 <code>role</code> 和 <code>aria-*</code> 属性，专门用来向可达性树「补充说明」。常用就那么几个，认识这一小口袋就够应付九成场面：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>属性</th><th>作用</th><th>生活对照</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>role="button" 等</td><td>声明「我是什么」——按钮/列表/对话框</td><td>临时贴上的门牌</td></tr>
+        <tr><td>aria-label</td><td>给无名控件起名（图标按钮必备）</td><td>门牌上补写房间名</td></tr>
+        <tr><td>aria-expanded</td><td>「我管的东西现在是展开还是收起」</td><td>门上挂的「营业中/休息」</td></tr>
+        <tr><td>aria-selected / checked</td><td>当前选中/勾选状态</td><td>货架上的「已预订」牌</td></tr>
+        <tr><td>aria-hidden</td><td>对读屏隐身（图标、装饰重复文本）</td><td>「游客止步」</td></tr>
+        <tr><td>aria-live / role="status"</td><td>内容变化时主动广播</td><td>楼内广播喇叭</td></tr>
+        <tr><td>aria-describedby</td><td>「我的说明书在那边」（指错误提示）</td><td>「详情见柜台说明」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>但 ARIA 有一条写在门口的第一戒律：<strong>能用原生元素，就不要用 ARIA</strong>。给 div 贴 <code>role="button"</code>，读屏是念「按钮」了，可回车空格激活、焦点管理、禁用态——这些<strong>行为</strong>它一个都不会有，还得你手写（§ 4.5 的 div 陷阱原样重演）。ARIA 补得了「名字」，补不了「本事」；它是义肢，义肢永远不如原装胳膊。<strong>打个比方</strong>：把仓库木门贴上「金库」的牌子，牌子再像，门后也没有保险柜——与其贴牌，不如一开始就装扇真金库门（原生控件）。还有个组合雷区要专门点名：<code>aria-hidden="true"</code> 的元素里<strong>永远别再放可聚焦的元素</strong>——读屏看不见它，键盘却停得进去，等于把导览路线引进了一间讲解员不知道存在的屋子，用户当场「消失」在系统里（修法：藏就藏干净，用 inert 一并关掉聚焦，见 § 4.5）。</p>
+
+  <h3>施工案例：把一个自绘下拉框送进读屏的世界</h3>
+  <p>前几节的原则——先原生、ARIA 补漏、键盘同步——落到真刀真枪的施工上长什么样？拿一个最常见的自绘控件——城市选择下拉框——完整走一遍。设计要求：样式完全自绘、支持方向键、Esc 关闭。DOM 骨架先立对：</p>
+  <pre><code>&lt;div class="combo"&gt;
+  &lt;button id="city-btn" aria-haspopup="listbox"
+          aria-expanded="false" aria-controls="city-list"&gt;
+    城市：北京
+  &lt;/button&gt;
+  &lt;ul id="city-list" role="listbox" aria-labelledby="city-btn" hidden&gt;
+    &lt;li role="option" aria-selected="true"&gt;北京&lt;/li&gt;
+    &lt;li role="option"&gt;上海&lt;/li&gt;
+    &lt;li role="option"&gt;广州&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/div&gt;</code></pre>
+  <p>这张骨架上每一处 ARIA 都有账可查：<code>aria-haspopup="listbox"</code> 告诉读屏「这颗按钮按下会弹出一个列表」；<code>aria-expanded</code> 是门上「营业中/休息中」的牌子，开关时同步改；<code>aria-controls</code> 把按钮和列表结成一对，读屏用户能从按钮直接跳进列表；<code>role="listbox"</code> 和 <code>role="option"</code> 给 ul/li 换发「选项组」的名片（原生 select 换不了皮，才出此下策）；<code>aria-selected</code> 汇报当前选中。键盘的账接着 § 4.5 的 roving tabindex 记：</p>
+  <pre><code>btn.addEventListener('keydown', (e) =&gt; {
+  if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+    list.hidden = false;                        // 开门
+    btn.setAttribute('aria-expanded', 'true');
+    选项[当前].focus();                          // 焦点交进列表（roving）
+  }
+});
+list.addEventListener('keydown', (e) =&gt; {
+  if (e.key === 'ArrowDown') 移动(+1);
+  if (e.key === 'ArrowUp')   移动(-1);
+  if (e.key === 'Enter')     选中(选项[当前]);
+  if (e.key === 'Escape')    关门();
+});
+function 移动(d) {
+  当前 = (当前 + d + 选项.length) % 选项.length;
+  选项.forEach((o, i) =&gt; o.setAttribute('aria-selected', i === 当前));
+  选项[当前].focus();                            // 焦点跟着走，读屏跟着念
+}
+function 选中(o) {
+  btn.textContent = '城市：' + o.textContent;    // 按钮名字同步更新
+  关门();
+}
+function 关门() {
+  list.hidden = true;
+  btn.setAttribute('aria-expanded', 'false');
+  btn.focus();                                   // 还焦：灯还回报幕员（§ 4.5）
+}</code></pre>
+  <p>验收对着读屏过五关：① 关着时念「城市：北京，按钮，弹出菜单，已折叠」；② 方向键打开，焦点进列表，逐项播报「上海，选项，2/3」；③ Enter 选中，按钮名字当场变成「城市：上海」；④ Esc 随时关门，焦点回到按钮——不还焦的弹层，读屏用户的灯就摔在一个已消失的元素上，瞬间迷路；⑤ aria-expanded 与真实开合永远一致。<mark class="key">这套账本的特点是「双记」：每个用户看得见的变化（开/关/选中/换名），都有一条对读屏的同步记录——看得见的 UI 和听得见的 UI，是同一份状态的两个视图，绝不允许各记各的账。</mark>把它和 § 4.4 的手势状态机、§ 4.5 的焦点管理对照着看：所谓无障碍施工，不过是把前几节欠下的「语义账」一并补齐而已。</p>
+
+  <h3>动态播报：live region，楼里的广播喇叭</h3>
+  <p>读屏念的是「焦点所在之处」——那焦点不在的地方变了呢？购物车数量 +1、表单校验报错、新消息弹 toast：这些<strong>发生在别处的更新</strong>，默认读屏一声不吭，盲人用户对着毫无动静的页面干等。<strong>live region</strong>（实况区）就是解决这个的广播喇叭：给一个区域标上 <code>aria-live</code>，它内容一变，读屏主动念——不管焦点在哪。<br/><br/>
+  两档音量要分清：<code>aria-live="polite"</code>（礼貌）是等当前朗读完再说，适合绝大多数场景——购物车数量、状态更新；<code>aria-live="assertive"</code>（插播）是当场打断一切，只留给真正的紧急事件——「会话即将超时」。默认全用 assertive 是新手最常犯的错：每个小更新都抢话，体验等于开着免提的菜市场。工程上更省事的是两个预包装角色：<code>role="status"</code> 自带 polite（做 toast 的标准件），<code>role="alert"</code> 自带 assertive（页面加载时就存在的错误横幅）。<br/><br/>
+  表单校验是这套机制的集大成考场：错误提示写在输入框旁（<code>aria-describedby</code> 指过去）、框本身标 <code>aria-invalid="true"</code>、提交校验失败后把焦点移到第一个出错字段——三件套下来，读屏用户听到的是完整的一句「邮箱，编辑框，无效，请输入合法邮箱地址」，而不是一段红色的沉默。</p>
+
+  <h3>对比度与颜色：别让文字在背景上裸泳</h3>
+  <p>视觉这块的硬指标是<strong>对比度</strong>：前景色和背景色的明暗比值。WCAG 给的两条线：正文至少 <strong>4.5 : 1</strong>，大号文字（约 24px 以上或粗体 18.66px 以上）和非文字界面组件（图标、输入框边框、焦点圈——§ 4.5 的 3:1 就是这条）至少 <strong>3 : 1</strong>。低对比度的浅灰字在小字、低分屏、太阳底下是重灾区——设计稿在雾面 Mac 上仙气飘飘，地铁口的阳光下全军覆没。<strong>不妨这样想</strong>：对比度就是字和背景吵架的音量，4.5:1 是「听得清」的及格线，1.8:1 的 whispers 级浅灰是「自言自语」。动手试试：</p>
+  <div class="lab" data-lab="contrast"></div>
+  <h3>4.5 : 1 是怎么算出来的：亮度，不是色差</h3>
+  <p>这两个数字不是拍脑袋定的，背后有一套能动手复算的算法。<strong>通俗地说</strong>，对比度量的不是「两个颜色差多少」（RGB 数值的差），而是<strong>「两块亮度差多少」</strong>：先把前景色和背景色各自折算成一个「相对亮度」值（0 到 1 之间），再算比值 <code>(浅的一方的亮度 + 0.05) / (深的一方的亮度 + 0.05)</code>。黑字白底 = (1.0 + 0.05) / (0.0 + 0.05) = 21 : 1——这就是对比度「满分」的由来：21:1 不是什么优选会员卡，是黑与白的物理极限。<br/><br/>
+  折算亮度时，红绿蓝三通道的权重并不相等：绿色占 0.7152、红色占 0.2126、蓝色只占 0.0722——人眼对绿光最敏感、对蓝光最迟钝。这解释了一个反直觉的现象：同样深浅的绿字和蓝字，绿字看着就是比蓝字清楚；也解释了为什么「灰底配灰字」比「白底配灰字」危险得多——两个灰一起往中间凑，亮度比迅速跳水。至于 4.5:1 这条线，是从「视力 20/40 的用户（低视力的经验门槛）在普通观看条件下刚好能流畅阅读」反推出来的；大字放宽到 3:1，是因为字号本身就在补偿辨认难度。所以下次设计师说「这个浅灰很高级」，不用争审美——打开 DevTools 的对比度检查器，让公式说话。</p>
+  <p>比对比度更隐蔽的坑是<strong>「仅靠颜色」</strong>：红色代表失败、绿色代表成功、表单必填项标红星、图表里三条线红黄蓝——色盲用户（男性约 8%，最常见的红绿色弱）看到的这一页，是一群彼此难以区分的色块。<strong>说白了</strong>，颜色是信息的最美外壳，但不能是唯一外壳：每个用颜色表达的状态，都要配一个颜色之外的信号——图标（红叉绿勾）、文字（「失败」「成功」）、形状（实心/空心）、下划线（链接）。银行 App 的转账状态只放红绿灯图标、忘了配文字，是真实世界里被投诉过无数次的案例。两件便宜的验收工具：浏览器 DevTools 自带的对比度检查器、给屏幕加个灰度滤镜（或临时把截图转黑白）——灰度之下你的界面还分得清哪儿出错了吗？分不清，就加信号。</p>
+
+  <h3>键盘可达：§ 4.5 的毕业汇报</h3>
+  <p>整个无障碍体系里<strong>权重最高的单项</strong>，就是上一节整整一节的键盘导航——它同时是运动障碍用户、读屏用户（读屏的焦点模式就骑在键盘可达性上）、高频效率用户的生命线。这里不重复展开，只把验收口径汇总成一句：拔掉鼠标，用 Tab / Shift+Tab / 方向键 / 回车 / 空格 / Esc 把主流程从头走到底，全程焦点可见、顺序合理、没有死胡同。<mark class="key">WCAG 把「键盘可达」放在无障碍原则的第一条（可感知、可操作、可理解、健壮性里的「可操作」），不是偶然——它是其余一切的地基。</mark>细节（焦点顺序、陷阱、还焦、roving tabindex）全部回 § 4.5 复习，此处只补一条新知：WCAG 2.2 新增的「目标尺寸」最低要求（24×24 像素）与苹果 HIG 的 44pt 建议（§ 4.4 讲过）——运动障碍用户手抖，目标太小就是处处脱靶。</p>
+
+  <h3>动效安全：动画不是所有人的糖</h3>
+  <p>这一节内容在很多团队的清单上压根不存在，但它是真伤人的那条：大幅视差、全屏滚动、频繁闪烁的动画，会让<strong>前庭功能障碍</strong>（vestibular disorder）用户当场眩晕恶心——内耳管平衡，大屏大幅的虚假运动感直接把人放倒。规范层面 WCAG 有「三闪阈值」：任何内容一秒内闪烁不超过三次（红色闪烁更严），防的是光敏性癫痫——1997 年那起 Pokémon 电视动画引发近七百名儿童送医的事件，是这条规则写在血上的出处。<br/><br/>
+  现代解法优雅：<strong>读系统的开关</strong>。用户在系统设置里打开「减弱动态效果」（iOS、Android、Windows、macOS 都有），页面用 CSS 媒体查询 <code>@media (prefers-reduced-motion: reduce)</code> 收到信号，把大幅动画换成淡入淡出或干脆不动；JS 侧配 <code>matchMedia('(prefers-reduced-motion: reduce)').matches</code> 判断。两边的写法都只要几行：</p>
+  <pre><code>/* CSS 侧：听到开关，降级大动画 */
+@media (prefers-reduced-motion: reduce) {
+  .parallax-hero { animation: none; scroll-behavior: auto; }
+  .fade-slide-in { animation: fadeIn 0.01s linear; }   /* 用淡入顶替大位移 */
+}
+
+/* JS 侧：滚动行为也听指挥 */
+const calm = matchMedia('(prefers-reduced-motion: reduce)');
+function 滚动到(el) {
+  el.scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth' });
+}</code></pre>
+  <p>两条配套军规：自动轮播必须<strong>可暂停</strong>（读屏用户和前庭用户都受不了一直动的页面）；页面加载的 loading 转圈可以用无限动画，但<strong>转场大动画</strong>（视差、缩放、位移）一律听开关指挥。<strong>通俗地说</strong>：动效是糖，有人糖尿病——把糖罐放在能拒收的位置，才算待客之道。</p>
+
+  <h3>表单无障碍：一个一个标注，别偷懒</h3>
+  <p>表单是无障碍事故的最高发地段，因为它全是输入控件——恰恰是读屏用户最需要精确听懂的地方。四条铁律：</p>
+  <ul class="keylist">
+    <li><strong>label 显式关联。</strong>每个输入框配 <code>&lt;label for="id"&gt;</code>：点击文字聚焦控件、读屏念全名，一举两得。没关联的 label 只是飘在旁边的装饰字。</li>
+    <li><strong>placeholder 不能当 label。</strong>placeholder 在输入后消失，浅灰对比度普遍不达标，读屏把它当提示而非名字——它是「柜台上的一次性便签」，标签才是钉在墙上的科室牌。</li>
+    <li><strong>必填与错误，别只靠颜色和符号。</strong>红星要配文字（「必填」）或 <code>aria-required</code>；错误除了变红，要有文字、可聚焦、被播报（上一节的 live region 三件套）。</li>
+    <li><strong>autocomplete 别省。</strong>给姓名、邮箱、地址、验证码填对 <code>autocomplete</code> 值——运动障碍用户填一次长表单要花你十倍的时间，浏览器自动填充是他们最依赖的捷径。</li>
+  </ul>
+  <p>四条铁律合在一起，一份合格的输入组长这个样子：</p>
+  <pre><code>&lt;label for="mail"&gt;邮箱&lt;/label&gt;
+&lt;input id="mail" type="email" autocomplete="email"
+       aria-required="true" aria-invalid="true"
+       aria-describedby="mail-err"&gt;
+&lt;p id="mail-err" role="alert"&gt;请输入合法的邮箱地址&lt;/p&gt;</code></pre>
+  <p>这套组合拳打完，读屏用户听到的是一整句人话——<strong>「邮箱，编辑框，必填，无效，请输入合法的邮箱地址」</strong>——而不是一段红色的沉默。名字（label）、状态（aria-invalid）、说明书（aria-describedby 指向错误文案）、自动填充（autocomplete），四个愿望一次满足。<strong>本质上就是</strong>把上一节 live region 的「广播」用在了表单这一个具体战场上：报错不再是无声的颜色，而是一句被读出来的完整句子。</p>
+
+  <h3>移动端无障碍：两只手搭出来的另一套语言</h3>
+  <p>手机上没有鼠标，读屏自带一套触控语言：iOS VoiceOver 是<strong>单指左右滑</strong>在元素间移动焦点、<strong>单指双击</strong>激活当前项（注意：双击的是「上一刻朗读的项」，不是手指碰到的那一下——对明眼人反直觉，对盲人天经地义）；Android TalkBack 类似（滑动 + 双击，左右滑换元素）。三件你必须配合的事：① <strong>给无文字的控件补无障碍标签</strong>——iOS 的 <code>accessibilityLabel</code>、Android 的 <code>contentDescription</code>，一个只有放大镜图标的按钮，补上「搜索」二字才在读屏世界里存在；② <strong>标签说结果不说外观</strong>——「搜索」而非「白色放大镜」；③ <strong>合并朗读</strong>——「北京市朝阳区」别拆成三个可聚焦元素让用户划三下，iOS 的 accessibilityElements 和 Android 的语义合并就是干这个的。原生控件照旧是白送的答案：系统按钮、开关、滑块的无障碍行为全部内置——又是那句老话：能原生，不自绘。自绘是给读屏世界造无名牌房间，标签是事后补挂的门牌，能少补就少补。</p>
+
+  <h3>走查实录：一位盲人用户的完整下单之旅</h3>
+  <p>这一节的技术零散铺了十几个点，最好的串线方式，是跟着一位真实的读屏用户把一次网购从头走完。想象你是她耳边的那双眼睛——她双击打开你的商城，VoiceOver 开始工作：</p>
+  <ul class="keylist">
+    <li><strong>第 1 站 · 进门。</strong>读屏先念页面标题和一级标题——「XX 商城，家用电器，一级标题」；再按地标快捷键，一步跳过顶栏 47 个导航链接，直接落进商品区。如果标题层级跳号、地标缺失，她在门口就得用方向键一格格摸完整个导航——多数用户在这里就关掉页面了。</li>
+    <li><strong>第 2 站 · 搜索。</strong>Tab 落进搜索框，听到「搜索商品，编辑框」——label 关联生效。若这格只有 placeholder 没有 label，她听到的是「编辑框」加一串念出来的占位文本：填之前不知道这是搜什么的。</li>
+    <li><strong>第 3 站 · 挑货。</strong>商品卡上，alt 写实的商品图被念成「白色滚筒洗衣机，10 公斤」；「加入购物车」是原生按钮——回车直接触发。每一步她都清楚自己在哪、面前有什么。</li>
+    <li><strong>第 4 站 · 加购。</strong>回车按下，焦点仍在按钮上，画面几乎没变化——但右上角 <code>role="status"</code> 的实况区轻声广播「购物车，3 件商品」。没有这个喇叭，这次点击对她等于掉进黑洞：页面静得像什么都没发生，她只能反复重试。</li>
+    <li><strong>第 5 站 · 出错。</strong>优惠码填错了。aria-invalid、aria-describedby 指着红字、焦点被移到出错的输入框——一整句「优惠码，编辑框，无效，该码已过期」被读出来。而最常见的实现（边框变红、文字变红、别的什么都不做）给她的信息量是：零。</li>
+    <li><strong>第 6 站 · 结账弹窗。</strong>原生 dialog 的焦点陷阱把她的灯圈在弹窗里，Tab 到头自动绕回；按 Esc，焦点回到「去结算」按钮——还焦。若是个 div 遮罩拼的弹窗，她的 Tab 会一路穿过弹窗落进背后的页面——人已进洞，灯还在街上。</li>
+    <li><strong>第 7 站 · 支付。</strong>assertive 的插播终于登场：「支付成功」当场打断一切朗读——这是全场唯一一次抢话，也是唯一一次必须抢话。</li>
+  </ul>
+  <p>七站走完，这一节的所有技术都在场：标题层级与地标（第 1 站）、label 关联（第 2 站）、alt 与原生控件（第 3 站）、live region（第 4 站）、表单三件套（第 5 站）、焦点陷阱与还焦（第 6 站）、插播特权（第 7 站）。<mark class="key">健全用户的界面上，这些坑只是「体验差一点」；在她的界面上，任何一站断掉，都不是差一点，而是旅程到此为止——那是墙，不是坎。</mark><strong>说白了</strong>，无障碍验收的最好方法，就是自己戴上耳机、关掉屏幕、打开读屏，把这七站亲耳走一遍——哪一站最吵、哪一站静得可怕，耳朵比任何 checklist 都诚实。</p>
+
+  <h3>测试金字塔：从自动扫描到真人实测</h3>
+  <p>无障碍不是写完顺手加的涂层，是每一步都要验收的工程，验收手段是个金字塔：<br/><br/>
+  <strong>塔基——自动扫描（免费，秒级）</strong>：Lighthouse 无障碍审计、axe DevTools 扫一遍，能抓出「图片缺 alt」「对比度不足」「按钮无名」「正数 tabindex」这类机械硬伤，挂进 CI，新债当场拦下。但机器只能查「有没有」，查不了「合不合理」——扫描满分只是起点，不是终点。<br/>
+  <strong>塔身——人工巡检（免费，分钟级）</strong>：拔鼠标走键盘（§ 4.5）、灰度滤镜看颜色、DevTools 的 Accessibility 面板亲眼看可达性树长什么样、模拟 prefers-reduced-motion。这层抓的是「体验顺不顺」。<br/>
+  <strong>塔尖——读屏实测（免费，小时级）</strong>：装上 NVDA 或打开 VoiceOver，闭上眼睛用十五分钟把你自己的主流程走一遍。这是最能建立同理心的一步：你会第一次「亲耳听见」自己的界面有多难用——无名按钮被念成空白、toast 一声不吭、弹窗把用户困在黑暗里。<br/>
+  <strong>塔外——真残障用户测试</strong>：终极答案。五个用户的可用性测试能发现 85% 的问题（这条经验法则界面篇后面的章节会展开），残障用户同理——他们是最严苛也最诚实的考官。<strong>本质上就是</strong>：机器管下限，人管上限，真人管真相——考试可以模拟，人生不能。</p>
+
+  <h3>无障碍的心智模型：把「正常用户」这个词扔掉</h3>
+  <p>最后把视角拔高一层。很多团队把无障碍做成「上线前的补丁冲刺」，累死交互、糊弄验收——根子出在一个隐含假设：<strong>存在一个「正常用户」，其他人是需要特殊照顾的例外</strong>。这个假设是错的。真实世界的用户是一条光谱：今天视力 1.5 的你，明天散瞳验光，下周六十岁老花；今天双手健全的你，后天骨折打石膏。所谓「正常」，只是每个人在光谱上暂时的位置。<br/><br/>
+  换了心智模型，做法就全顺了：无障碍不是「给少数人的额外功能」，而是<strong>把界面的容错带宽拉宽，罩住光谱上的所有位置</strong>——语义化是容错（换任何输出设备都成立），键盘可达是容错（换任何输入设备都成立），对比度和颜色冗余是容错（换任何观看条件都成立），动效开关是容错（换任何身体状态都成立）。<mark class="key">做到头的界面只有一个特征：它在任何输入、任何输出、任何身体状态下都还认得用户想干什么——这跟第 1 章讲的所有抽象是同一个思想：好设计为变化而生。</mark></p>
+
+  <div class="callout analogy">
+    <strong>把这一节想成「一栋对所有人开放的大楼」</strong><br/>
+    你的界面是一栋公共建筑，无障碍就是它的验收规范。<strong>坡道效应</strong>是这栋楼的第一课：为轮椅修的路缘坡道，最后成了婴儿车、行李箱、外卖车的共同大道——为极端情况设计的通道，惠及所有人。<br/><br/>
+    楼里各层分工明确：<strong>语义化</strong>是门牌系统——房间挂上「Button 101」「导航厅」的对的门牌，导览员（读屏）就能带路；门牌不够用的自建房（自绘控件）贴<strong>ARIA</strong> 临时标签，但记住第一戒律：贴牌不如装真门（原生控件）。<strong>alt 文本</strong>是画旁的说明卡——有话则长、无话则空（alt="" 是礼貌的沉默）。<strong>live region</strong> 是楼内广播——礼貌档等发言间隙，插播档只给火警；表单校验三件套（描述关联 + 无效标记 + 聚焦出错项）让每次报错都被听见。<strong>对比度</strong>是指示牌与墙面的色差（正文 4.5:1、大字 3:1），「仅靠颜色」是只写「红灯层」不给楼层号——色盲住户原地迷路。<strong>键盘焦点</strong>（§ 4.5）是导览路线图：<strong>动效开关</strong>是尊重「请放慢电梯」的请求——糖再好，也要有人能拒收；<strong>表单标注</strong>是每个窗口的科室牌与一次性便签之分；<strong>移动端标签</strong>是给每个无名房间补挂门牌。<br/><br/>
+    验收是座金字塔：机器扫描管下限（有没有）、人工巡检管上限（顺不顺）、读屏实测和真人用户管真相（好不好）。而整栋楼的地基只有一句话——<mark class="key">「正常用户」是个幻觉：所有人都在光谱上，只是位置不同。为光谱两端设计的大楼，中间的每个人都住得更舒服。</mark>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Checklist · 自检</span>
+    <p>上线前把这张单子跑一遍：</p>
+    <p>① 语义先行的骨架：标题层级不跳号，main/nav/aside/footer 地标齐全，列表用列表标签；<br/>
+    ② 图片三问：有信息吗（写内容）？有功能吗（写结果）？纯装饰吗（alt="" 沉默）；<br/>
+    ③ ARIA 第一戒律：能用原生控件绝不用 div + role；aria-hidden 里没有可聚焦元素；<br/>
+    ④ 键盘全流程可达（回 § 4.5 十条），焦点圈可见且对比度 ≥ 3:1；<br/>
+    ⑤ 对比度达标：正文 4.5:1、大字与组件 3:1；每个颜色信号都有颜色之外的第二信号；<br/>
+    ⑥ 动态更新用 live region：toast 用 status、紧急才用 alert，别让购物车抢播火警；<br/>
+    ⑦ 表单四件套：label 显式关联、placeholder 不当标签、错误可播报、autocomplete 填对；<br/>
+    ⑧ 动效听开关：prefers-reduced-motion 全覆盖，自动轮播可暂停，一秒不闪超三次；<br/>
+    ⑨ 移动端：图标控件补无障碍标签，标签说结果不说外观；<br/>
+    ⑩ 测试金字塔齐上：Lighthouse/axe 扫描进 CI，灰度滤镜过一遍，NVDA 或 VoiceOver 走一遍主流程。</p>
+  </div>
+
+  <div class="lab" data-lab="quiz" data-q="读屏用户聚焦到一颗原生复选框，听到的是「记住我，复选框，未勾选」。这句播报对应可达性名片上的哪三样？" data-opts="样式、字体、颜色|角色、名字、状态|DOM 标签名、class 名、id 名|外边距、内边距、边框" data-answer="1" data-explain="可达性树上每个节点只有三件套：角色（复选框——我是什么）、名字（记住我——我叫啥）、状态（未勾选——我现在怎样）。样式、class、DOM 细节统统不上名片——读屏不渲染像素只消费语义。这也解释了为什么纯视觉的改动（换颜色、调间距）读屏毫无感觉，而 aria-checked 一改，播报立刻变。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="电商详情页的主图是一张「深灰色羊毛围巾」的产品图，alt 该怎么写？" data-opts="写「图片」让读屏提示有图|写「深灰色羊毛围巾，边缘有流苏」——传达图里的信息|留空 alt，交给读屏自动识别|写文件名 product_01.jpg" data-answer="1" data-explain="信息图的 alt 要当「图的一句话替身」：把图想传达的内容写出来，色号、材质、特征。写「图片」等于递给盲人一个空信封；留空是告诉读屏「跳过我」——留给装饰图专用；文件名更是灾难。判据一句话：读完 alt，用户能不能和看过图的人聊这件事？"></div>
+
+  <div class="lab" data-lab="quiz" data-q="设计师画了一个漂亮的五角星评分控件，每颗星都是 span。补上 role=button 和 aria-label 就完整了吗？" data-opts="完整了，ARIA 补齐了一切|还差行为：键盘聚焦、回车空格激活、焦点管理都得手写——span 的 ARIA 只是补了名字，没补本事|还差 CSS 样式|还差 z-index" data-answer="1" data-explain="ARIA 第一戒律的另一半：ARIA 只往可达性树里补语义（读屏会念「按钮」），但不带来任何行为——键盘激活、焦点、禁用态仍要手写。这就是「义肢不如原装」：五颗星如果用原生 radio 组实现（一组 name），键盘 roving、方向键移动、读屏播报全免费。贴牌之前，先找原装门。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="深灰底上放浅灰字，设计稿很高级。对比度实测 2.9:1。能用吗？" data-opts="能用，设计优先|不能：正文要求 4.5:1，2.9:1 连大字和图标 3:1 的线都没过——在阳光下和低分屏上直接消失|看心情|加粗就能用" data-answer="1" data-explain="WCAG 的两条线：正文 4.5:1、大字（约 24px 以上）与非文字组件 3:1。2.9:1 双线全破——别被雾面屏上的仙气骗了：地铁强光下、低分屏上、低视力用户眼里，这行字等于没写。加粗也不救对比度（只影响字号阈值判断）。修法是加深前景或提亮背景，用 DevTools 的对比度检查器现场调。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="购物车数量更新、表单校验报错、会话即将超时警告——三个动态更新，live region 各配什么档位？" data-opts="全用 assertive，保证都听到|全用 polite，安全第一|数量更新和校验报错用 polite，超时警告用 assertive|数量用 assertive，其余 polite" data-answer="2" data-explain="polite 等当前朗读完再播，是一切常规更新的默认档；assertive 当场打断一切，是「火警」特权——只有真正的紧急事件（会话超时、数据将丢失）才配。全 assertive 的页面等于免提菜市场，用户什么都听不清；全 polite 则会在真正的火警时排队等到失火。插播权是稀缺资源，省着用。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="上传组件用红色边框表示「文件超过大小限制」，没有文字提示。色盲用户会怎样？" data-opts="没问题，红绿他们能看清|看不出来：约 8% 的男性有红绿色觉障碍，「仅靠颜色」的信息通道对他们整体关闭|浏览器会自动补文字|读屏会念出红色" data-answer="1" data-explain="「仅靠颜色」是 WCAG 明令的失败项：颜色是信息的最美外壳，但不能是唯一外壳。红绿色弱用户眼里，红边框和普通边框的差别微弱甚至没有。修法是加第二信号：图标、文字（「文件超过 10MB 上限」）、形状。验收土办法：灰度滤镜下截图，还分得出出错了吗？分不出，就加信号。"></div>
+
+  <div class="lab" data-lab="quiz" data-q="页面加了全屏视差滚动转场，视觉团队很满意。上线前无障碍评审应该提什么要求？" data-opts="没问题，动画让所有人愉悦|监听 prefers-reduced-motion：系统开了「减弱动态效果」的用户，视差降级为淡入淡出或静止——防前庭障碍用户眩晕|加 loading 转圈|缩短动画时长就行" data-answer="1" data-explain="大幅位移和视差会让前庭功能障碍用户眩晕恶心（内耳管平衡，大屏虚假运动感直接放倒人）。正解是读系统开关：@media (prefers-reduced-motion: reduce) 里把大动画换成温和过渡，JS 侧 matchMedia 同步。缩短时长不解决「幅度」问题。配套军规：自动轮播必须可暂停、一秒闪烁不超三次（光敏性癫痫红线）。"></div>
+
+  <div class="callout">
+    <span class="tag">Recap · 收束</span>
+    <p>无障碍一句话：<mark class="key">无障碍不是慈善，是工程——为光谱上所有位置的用户做容错设计，而验收标准只有一条：换任何输入、任何输出、任何身体状态，界面都还认得用户想干什么。</mark>WCAG 四原则 POUR（可感知、可操作、可理解、健壮）是全节技术的排班表。屏幕阅读器不渲染像素只消费语义，可达性树是两套世界唯一的桥，树上每个节点一张三件套名片（角色、名字、状态）；语义化是性价比之王（标题即目录、地标即街区、原生控件即全套服务）；alt 三档（信息说内容、功能说结果、装饰闭嘴）；ARIA 是义肢——补名字补不了本事，能用原生就别贴牌，自绘控件的铁律是「双记」：看得见的 UI 和听得见的 UI 永远是同一份状态的两个视图；live region 是楼内广播（polite 常态、assertive 火警特权）；对比度 4.5:1 / 3:1 是硬门槛（算的是加权亮度之比，不是色差），「仅靠颜色」是明令失败项；键盘可达（§ 4.5）是无障碍第一原则，动效要听 prefers-reduced-motion 的开关，表单的 label 关联和可播报报错是事故高发区的两道护栏；移动端补无障碍标签、标签说结果不说外观；测试金字塔——机器管下限、人工管上限、读屏与真人管真相。心智模型一句话：「正常用户」是幻觉，坡道效应是真相——为极端修的路，最后所有人都走。<br/><br/>
+    至此，第 4 章全部收官。回望这一章走过的路：§ 4.1 打开事件循环的心脏——唯一的店员、任务队列、微任务和 16.7 毫秒的快门；§ 4.2 追着事件跑完捕获-目标-冒泡三段旅程，学会用委托把一千个监听器装进一个；§ 4.3 检阅五种输入设备，把鼠标、键盘、触摸、笔统一进 Pointer Events 的一套账本；§ 4.4 从事件流里认出手势的意图——状态机、阈值、等待与仲裁；§ 4.5 拔掉鼠标，用一盏追光灯把焦点管理成一整套剧场制度；§ 4.6 把镜头拉到最远，为光谱上的每个位置修路。<strong>从「点击发生的一瞬间」到「每个人都能点」</strong>——事件与交互的完整故事讲完了。下一章换挡：告别原理，走进工具箱——桌面 GUI 工具箱，从「懂了」走向「做出来」。</p>
+  </div>
+
+  <div class="pager">
+    <a class="btn prev" href="./04-5-focus.html">
+      <span class="dir">← 上一节</span>
+      <span class="title">§ 4.5 · 焦点与键盘导航</span>
+    </a>
+    <a class="home" href="../../index.html">☰ 主页</a>
+    <a class="btn next disabled">
+      <span class="dir">下一章</span>
+      <span class="title">第 5 章 · 桌面 GUI 工具箱（建设中）</span>
+    </a>
+  </div>
+
+  <div class="page-foot">学海无涯 · 界面篇 · § 4.6</div>
+
+</article>
+  <script src="../../_shared/js/interactive.js?v=ct-39"></script>
+  <script src="../../_shared/js/float-pager.js?v=ct-39"></script>
+  <script src="../../_shared/js/theme-toggle.js?v=ct-39"></script>
+</body>
+</html>
